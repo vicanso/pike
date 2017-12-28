@@ -1,0 +1,26 @@
+name: pike
+directors:
+  -
+    name: tiny 
+    type: first 
+    pass:
+      - cache-control=no-cache
+    ping: /ping
+    host:
+      - macmini:3015
+    backends:
+      - proxy1:3000
+      - proxy2:3000
+  -
+    name: timtam
+    type: roundRobin
+    ping: /ping
+    prefix:
+      - /dcharts
+      - /tiny
+    host:
+      - dcharts.com
+      - www.dcharts.com
+    backends:
+      - proxy1:3000
+      - proxy2:3000
