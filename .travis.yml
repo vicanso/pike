@@ -1,0 +1,10 @@
+language: go
+
+go:
+  - 1.x
+
+script:
+  - go test -race ./...
+
+after_script:
+  - golint ./...
