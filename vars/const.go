@@ -1,5 +1,7 @@
 package vars
 
+import "errors"
+
 var (
 	// AcceptEncoding http request accept enconding header
 	AcceptEncoding = []byte("Accept-Encoding")
@@ -24,6 +26,12 @@ var (
 
 	// CacheControl http response cache control header
 	CacheControl = []byte("Cache-Control")
+
+	// ErrDirectorUnavailable 没有配置可用的director
+	ErrDirectorUnavailable = errors.New("director unavailable")
+
+	// ErrServiceUnavailable 服务器不可用
+	ErrServiceUnavailable = errors.New("service unavailable")
 )
 
 const (

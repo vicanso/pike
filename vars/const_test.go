@@ -28,4 +28,6 @@ func TestVars(t *testing.T) {
 	testVar(t, URIHash, "uriHash")
 	testVar(t, First, "first")
 	testVar(t, Header, "header")
+	testVar(t, ErrDirectorUnavailable.Error(), "director unavailable")
+	testVar(t, ErrServiceUnavailable.Error(), "service unavailable")
 }
