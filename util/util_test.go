@@ -4,9 +4,9 @@ import (
 	"bytes"
 	"testing"
 
-	"github.com/valyala/fasthttp"
+	"../vars"
 
-	"github.com/vicanso/pike/vars"
+	"github.com/valyala/fasthttp"
 )
 
 func testPass(t *testing.T, uri, method string, resultExpected bool) {

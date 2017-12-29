@@ -5,8 +5,8 @@ import (
 	"regexp"
 	"strconv"
 
+	"../vars"
 	"github.com/valyala/fasthttp"
-	"github.com/vicanso/pike/vars"
 )
 
 // Pass 判断该请求是否直接pass（不可缓存）
