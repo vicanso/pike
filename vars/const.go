@@ -27,11 +27,16 @@ var (
 	// CacheControl http response cache control header
 	CacheControl = []byte("Cache-Control")
 
+	// ResponseBucket the response bucket
+	ResponseBucket = []byte("response")
+
 	// ErrDirectorUnavailable 没有配置可用的director
 	ErrDirectorUnavailable = errors.New("director unavailable")
 
 	// ErrServiceUnavailable 服务器不可用
 	ErrServiceUnavailable = errors.New("service unavailable")
+	// ErrDbNotInit 没有初始化db
+	ErrDbNotInit = errors.New("db isn't init")
 )
 
 const (
@@ -51,4 +56,10 @@ const (
 	First = "first"
 	// Header policy
 	Header = "header"
+	// None request stauts: none
+	None = "none"
+	// Fetching request status: fetching
+	Fetching = "fetching"
+	// HitForPass request status: hitForPass
+	HitForPass = "hitForPass"
 )
