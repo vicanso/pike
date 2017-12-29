@@ -16,6 +16,7 @@ type UpstreamHost struct {
 	Fails     int32
 	Successes int32
 	Healthy   int32
+	Disabled  bool // 表示该upstream为禁止状态
 }
 
 // UpstreamHostPool 保存Upstream列表
@@ -28,20 +29,43 @@ func (uh *UpstreamHost) Full() bool {
 
 // Available 判断当前upstream是否可用
 func (uh *UpstreamHost) Available() bool {
-	return atomic.LoadInt32(&uh.Healthy) != 0 && !uh.Full()
+	healthy := atomic.LoadInt32(&uh.Healthy)
+	// disabled 通过配置修改，每次检测，可以忽略原子性的问题
+	return !uh.Disabled && healthy != 0 && !uh.Full()
 }
 
-func (uh *UpstreamHost) healthCheck(ping string) {
+// Disable 禁用该upstream
+func (uh *UpstreamHost) Disable() {
+	uh.Disabled = true
+}
+
+// Enable 启用该upstream
+func (uh *UpstreamHost) Enable() {
+	uh.Disabled = false
+}
+
+func (uh *UpstreamHost) healthCheck(ping string, interval time.Duration) {
 	url := "http://" + uh.Host + ping
-	interval := time.Second
+	if interval <= 0 {
+		interval = time.Second
+	}
+
+	// 如果该upstream为禁止状态，则直接延时做health check
+	if uh.Disabled {
+		// 等待时间调整为2倍
+		time.Sleep(2 * interval)
+		go uh.healthCheck(ping, interval)
+		return
+	}
 	req := fasthttp.AcquireRequest()
 	req.SetRequestURI(url)
 	resp := fasthttp.AcquireResponse()
 	client := &fasthttp.Client{}
 	start := time.Now()
 	err := client.DoTimeout(req, resp, 3*time.Second)
+	statusCode := resp.StatusCode()
 	// 每个upstream每次只有一个health check在运行
-	if err != nil {
+	if err != nil || (statusCode >= 400) {
 		uh.Fails++
 	} else {
 		uh.Successes++
@@ -64,7 +88,7 @@ func (uh *UpstreamHost) healthCheck(ping string) {
 	use := time.Since(start)
 	// 根据调用时间决定延时
 	time.Sleep(interval - use)
-	go uh.healthCheck(ping)
+	go uh.healthCheck(ping, interval)
 }
 
 // Upstream 保存backend列表
@@ -75,11 +99,11 @@ type Upstream struct {
 }
 
 // StartHealthcheck 启动 health check
-func (us *Upstream) StartHealthcheck(ping string) {
+func (us *Upstream) StartHealthcheck(ping string, interval time.Duration) {
 	// url := uh.Host + uh.Ping
 	// log.Println(url)
 	for _, uh := range us.Hosts {
-		go uh.healthCheck(ping)
+		go uh.healthCheck(ping, interval)
 	}
 }
 
