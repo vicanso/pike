@@ -2,12 +2,11 @@ package proxy
 
 import (
 	"bytes"
-	"errors"
 	"net"
 	"sync/atomic"
 
+	"../vars"
 	"github.com/valyala/fasthttp"
-	"github.com/vicanso/pike/vars"
 )
 
 var (
@@ -20,11 +19,11 @@ func RegisterPolicy(name string, policy func(string) Policy) {
 }
 
 // Do 将当前请求转发至upstream
-func Do(ctx *fasthttp.RequestCtx, us *Upstream, isPass bool) (*fasthttp.Response, error) {
+func Do(ctx *fasthttp.RequestCtx, us *Upstream) (*fasthttp.Response, error) {
 	policy := us.Policy
 	uh := policy.Select(us.Hosts, ctx)
 	if uh == nil {
-		return nil, errors.New("No backend is avaliable")
+		return nil, vars.ErrServiceUnavailable
 	}
 	atomic.AddInt64(&uh.Conns, 1)
 	defer atomic.AddInt64(&uh.Conns, -1)
@@ -68,7 +67,7 @@ func Do(ctx *fasthttp.RequestCtx, us *Upstream, isPass bool) (*fasthttp.Response
 }
 
 // CreateUpstream 创建一个新的Upstream
-func CreateUpstream(name string, policy string) *Upstream {
+func CreateUpstream(name, policy, arg string) *Upstream {
 	policyFunc := supportedPolicies[policy]
 	if policyFunc == nil {
 		policyFunc = supportedPolicies[vars.RoundRobin]
@@ -76,6 +75,6 @@ func CreateUpstream(name string, policy string) *Upstream {
 	return &Upstream{
 		Name:   name,
 		Hosts:  make([]*UpstreamHost, 0),
-		Policy: policyFunc(name),
+		Policy: policyFunc(arg),
 	}
 }
