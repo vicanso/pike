@@ -2,8 +2,10 @@ package util
 
 import (
 	"bytes"
+	"encoding/binary"
 	"regexp"
 	"strconv"
+	"time"
 
 	"../vars"
 	"github.com/valyala/fasthttp"
@@ -64,4 +66,17 @@ func SupportGzip(ctx *fasthttp.RequestCtx) bool {
 // SupportBr 判断是否支持brotli压缩
 func SupportBr(ctx *fasthttp.RequestCtx) bool {
 	return ctx.Request.Header.HasAcceptEncodingBytes(vars.Br)
+}
+
+// GetNowSecondsByte 获取当时时间的字节表示(4个字节)
+func GetNowSecondsByte() []byte {
+	seconds := uint32(time.Now().Unix() / 1000)
+	buf := make([]byte, 4)
+	binary.LittleEndian.PutUint32(buf, seconds)
+	return buf
+}
+
+// ConvertToSeconds 将字节保存的秒转换为整数
+func ConvertToSeconds(buf []byte) uint32 {
+	return binary.LittleEndian.Uint32(buf)
 }

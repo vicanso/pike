@@ -3,6 +3,7 @@ package util
 import (
 	"bytes"
 	"testing"
+	"time"
 
 	"../vars"
 
@@ -79,4 +80,13 @@ func TestSupportCompress(t *testing.T) {
 
 	testSupportCompress(t, gzip, []byte("gzip, br"), true)
 	testSupportCompress(t, br, []byte("gzip, br"), true)
+}
+
+func TestSeconds(t *testing.T) {
+	now := uint32(time.Now().Unix() / 1000)
+	buf := GetNowSecondsByte()
+	seconds := ConvertToSeconds(buf)
+	if now != seconds {
+		t.Fatalf("the seconds function fail")
+	}
 }
