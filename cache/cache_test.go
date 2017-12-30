@@ -31,18 +31,23 @@ func TestStatus(t *testing.T) {
 }
 
 func TestDB(t *testing.T) {
-	db, err := Init("/tmp/pike.db")
+	db, err := InitDB("/tmp/pike.db")
 	if err != nil {
 		t.Fatalf("open db fail, %v", err)
 	}
 	defer db.Close()
-	key := "aslant.site/users/me"
+	bucket := []byte("aslant")
+	err = InitBucket(bucket)
+	if err != nil {
+		t.Fatalf("init bucket fail, %v", err)
+	}
+	key := []byte("/users/me")
 	data := []byte("vicanso")
-	err = Save(key, data)
+	err = Save(bucket, key, data)
 	if err != nil {
 		t.Fatalf("save data fail %v", err)
 	}
-	buf, err := Get(key)
+	buf, err := Get(bucket, key)
 	if err != nil {
 		t.Fatalf("get data fail %v", err)
 	}

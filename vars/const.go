@@ -27,9 +27,6 @@ var (
 	// CacheControl http response cache control header
 	CacheControl = []byte("Cache-Control")
 
-	// ResponseBucket the response bucket
-	ResponseBucket = []byte("response")
-
 	// ErrDirectorUnavailable 没有配置可用的director
 	ErrDirectorUnavailable = errors.New("director unavailable")
 

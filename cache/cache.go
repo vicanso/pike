@@ -44,8 +44,8 @@ func SetHitForPass(key string) {
 	})
 }
 
-// Init 初始化db
-func Init(file string) (*bolt.DB, error) {
+// InitDB 初始化db
+func InitDB(file string) (*bolt.DB, error) {
 	if client != nil {
 		return client, nil
 	}
@@ -53,38 +53,41 @@ func Init(file string) (*bolt.DB, error) {
 	if err != nil {
 		return nil, err
 	}
-	err = db.Update(func(tx *bolt.Tx) error {
-		_, err = tx.CreateBucketIfNotExists(vars.ResponseBucket)
-		return err
-	})
-	if err != nil {
-		db.Close()
-		return nil, err
-	}
 	client = db
-	return db, err
+	return db, nil
 }
 
-// Save 保存数据
-func Save(key string, buf []byte) error {
+// InitBucket 初始化bucket
+func InitBucket(bucket []byte) error {
 	if client == nil {
 		return vars.ErrDbNotInit
 	}
 	return client.Update(func(tx *bolt.Tx) error {
-		b := tx.Bucket(vars.ResponseBucket)
-		return b.Put([]byte(key), buf)
+		_, err := tx.CreateBucketIfNotExists(bucket)
+		return err
+	})
+}
+
+// Save 保存数据
+func Save(bucket, key, buf []byte) error {
+	if client == nil {
+		return vars.ErrDbNotInit
+	}
+	return client.Update(func(tx *bolt.Tx) error {
+		b := tx.Bucket(bucket)
+		return b.Put(key, buf)
 	})
 }
 
 // Get 获取数据
-func Get(key string) ([]byte, error) {
+func Get(bucket, key []byte) ([]byte, error) {
 	if client == nil {
 		return nil, vars.ErrDbNotInit
 	}
 	var buf []byte
 	client.View(func(tx *bolt.Tx) error {
-		b := tx.Bucket(vars.ResponseBucket)
-		buf = b.Get([]byte(key))
+		b := tx.Bucket(bucket)
+		buf = b.Get(key)
 		return nil
 	})
 	return buf, nil
