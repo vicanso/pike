@@ -32,7 +32,7 @@ func TestPass(t *testing.T) {
 	testPass(t, "http://127.0.0.1/i18ns", "POST", true)
 }
 
-func testGetCacheAge(t *testing.T, cacheControl []byte, resultExpected int) {
+func testGetCacheAge(t *testing.T, cacheControl []byte, resultExpected uint16) {
 	ctx := &fasthttp.RequestCtx{}
 	if cacheControl != nil {
 		ctx.Response.Header.SetCanonical(vars.CacheControl, cacheControl)
@@ -82,9 +82,22 @@ func TestSupportCompress(t *testing.T) {
 	testSupportCompress(t, br, []byte("gzip, br"), true)
 }
 
+func TestConvert(t *testing.T) {
+	ttl := uint16(1000)
+	buf := ConvertUint16ToBytes(ttl)
+	if ConvertBytesToUint16(buf) != ttl {
+		t.Fatalf("the convert uint16 fail")
+	}
+	now := uint32(time.Now().Unix() / 1000)
+	buf = ConvertUint32ToBytes(now)
+	if ConvertBytesToUint32(buf) != now {
+		t.Fatalf("the convert uint32 fail")
+	}
+}
+
 func TestSeconds(t *testing.T) {
 	now := uint32(time.Now().Unix() / 1000)
-	buf := GetNowSecondsByte()
+	buf := GetNowSecondsBytes()
 	seconds := ConvertToSeconds(buf)
 	if now != seconds {
 		t.Fatalf("the seconds function fail")

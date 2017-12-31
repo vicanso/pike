@@ -28,7 +28,7 @@ func Pass(ctx *fasthttp.RequestCtx, passList [][]byte) bool {
 }
 
 // GetCacheAge 获取s-maxage或者max-age的值
-func GetCacheAge(ctx *fasthttp.RequestCtx) int {
+func GetCacheAge(ctx *fasthttp.RequestCtx) uint16 {
 	cacheControl := ctx.Response.Header.PeekBytes(vars.CacheControl)
 	if len(cacheControl) == 0 {
 		return 0
@@ -45,7 +45,7 @@ func GetCacheAge(ctx *fasthttp.RequestCtx) int {
 	result := reg.FindSubmatch(cacheControl)
 	if len(result) == 2 {
 		maxAge, _ := strconv.Atoi(string(result[1]))
-		return maxAge
+		return uint16(maxAge)
 	}
 
 	// 从max-age中获取缓存时间
@@ -55,7 +55,7 @@ func GetCacheAge(ctx *fasthttp.RequestCtx) int {
 		return 0
 	}
 	maxAge, _ := strconv.Atoi(string(result[1]))
-	return maxAge
+	return uint16(maxAge)
 }
 
 // SupportGzip 判断是否支持gzip
@@ -68,12 +68,38 @@ func SupportBr(ctx *fasthttp.RequestCtx) bool {
 	return ctx.Request.Header.HasAcceptEncodingBytes(vars.Br)
 }
 
-// GetNowSecondsByte 获取当时时间的字节表示(4个字节)
-func GetNowSecondsByte() []byte {
-	seconds := uint32(time.Now().Unix() / 1000)
-	buf := make([]byte, 4)
-	binary.LittleEndian.PutUint32(buf, seconds)
+// ConvertUint16ToBytes 将uint16转换为[]byte
+func ConvertUint16ToBytes(v uint16) []byte {
+	buf := make([]byte, 2)
+	binary.LittleEndian.PutUint16(buf, v)
 	return buf
+}
+
+// ConvertBytesToUint16 将[]byte转换为uint16
+func ConvertBytesToUint16(buf []byte) uint16 {
+	return binary.LittleEndian.Uint16(buf)
+}
+
+// ConvertUint32ToBytes 将uint32转换为[]byte
+func ConvertUint32ToBytes(v uint32) []byte {
+	buf := make([]byte, 4)
+	binary.LittleEndian.PutUint32(buf, v)
+	return buf
+}
+
+// ConvertBytesToUint32 将[]byte转换为uint32
+func ConvertBytesToUint32(buf []byte) uint32 {
+	return binary.LittleEndian.Uint32(buf)
+}
+
+// GetSeconds 获取当前时间的时间戳（秒）
+func GetSeconds() uint32 {
+	return uint32(time.Now().Unix() / 1000)
+}
+
+// GetNowSecondsBytes 获取当时时间的字节表示(4个字节)
+func GetNowSecondsBytes() []byte {
+	return ConvertUint32ToBytes(GetSeconds())
 }
 
 // ConvertToSeconds 将字节保存的秒转换为整数
