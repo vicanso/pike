@@ -94,7 +94,7 @@ func ConvertBytesToUint32(buf []byte) uint32 {
 
 // GetSeconds 获取当前时间的时间戳（秒）
 func GetSeconds() uint32 {
-	return uint32(time.Now().Unix() / 1000)
+	return uint32(time.Now().Unix())
 }
 
 // GetNowSecondsBytes 获取当时时间的字节表示(4个字节)
