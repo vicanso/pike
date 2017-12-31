@@ -88,7 +88,7 @@ func TestConvert(t *testing.T) {
 	if ConvertBytesToUint16(buf) != ttl {
 		t.Fatalf("the convert uint16 fail")
 	}
-	now := uint32(time.Now().Unix() / 1000)
+	now := uint32(time.Now().Unix())
 	buf = ConvertUint32ToBytes(now)
 	if ConvertBytesToUint32(buf) != now {
 		t.Fatalf("the convert uint32 fail")
@@ -96,10 +96,19 @@ func TestConvert(t *testing.T) {
 }
 
 func TestSeconds(t *testing.T) {
-	now := uint32(time.Now().Unix() / 1000)
+	now := uint32(time.Now().Unix())
 	buf := GetNowSecondsBytes()
 	seconds := ConvertToSeconds(buf)
 	if now != seconds {
 		t.Fatalf("the seconds function fail")
+	}
+}
+
+func TestGenRequestKey(t *testing.T) {
+	ctx := &fasthttp.RequestCtx{}
+	ctx.Request.SetRequestURI("http://127.0.0.1:5018/users/me")
+	key := string(GenRequestKey(ctx))
+	if key != "GET127.0.0.1:5018/users/me" {
+		t.Fatalf("gen request key fail, %q", key)
 	}
 }

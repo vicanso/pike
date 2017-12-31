@@ -106,3 +106,12 @@ func GetNowSecondsBytes() []byte {
 func ConvertToSeconds(buf []byte) uint32 {
 	return binary.LittleEndian.Uint32(buf)
 }
+
+// GenRequestKey 生成请求的key: Method + host + request uri
+func GenRequestKey(ctx *fasthttp.RequestCtx) []byte {
+	return bytes.Join([][]byte{
+		ctx.Method(),
+		ctx.Request.Host(),
+		ctx.Request.RequestURI(),
+	}, []byte(""))
+}
