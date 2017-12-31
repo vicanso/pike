@@ -3,8 +3,11 @@ package cache
 import (
 	"bytes"
 	"testing"
+	"time"
 
+	"../util"
 	"../vars"
+	"github.com/valyala/fasthttp"
 )
 
 func TestStatus(t *testing.T) {
@@ -53,5 +56,31 @@ func TestDB(t *testing.T) {
 	}
 	if bytes.Compare(data, buf) != 0 {
 		t.Fatalf("get data fail")
+	}
+
+	ctx := &fasthttp.RequestCtx{}
+	ctx.Response.SetBody(data)
+	ctx.Response.Header.SetCanonical(vars.CacheControl, []byte("public, max-age=30"))
+
+	resBody := ctx.Response.Body()
+	resHeader := ctx.Response.Header.Header()
+	ttl := util.GetCacheAge(ctx)
+
+	SaveResponseData(bucket, key, resBody, resHeader, ttl)
+	respData, err := GetResponse(bucket, key)
+	if err != nil {
+		t.Fatalf("get the response fail, %v", err)
+	}
+	if uint32(time.Now().Unix())-respData.CreatedAt > 1 {
+		t.Fatalf("get the create time fail")
+	}
+	if respData.TTL != 30 {
+		t.Fatalf("get the ttle fail")
+	}
+	if bytes.Compare(respData.Header, ctx.Response.Header.Header()) != 0 {
+		t.Fatalf("the response header fail")
+	}
+	if bytes.Compare(respData.Body, data) != 0 {
+		t.Fatalf("the response body fail")
 	}
 }

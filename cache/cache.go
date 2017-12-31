@@ -1,11 +1,13 @@
 package cache
 
 import (
+	"bytes"
 	"sync"
 	"time"
 
 	"github.com/boltdb/bolt"
 
+	"../util"
 	"../vars"
 )
 
@@ -17,6 +19,14 @@ var client *bolt.DB
 type Status struct {
 	Name      string
 	CreatedAt int64
+}
+
+// ResponseData 记录响应数据
+type ResponseData struct {
+	CreatedAt uint32
+	TTL       uint16
+	Header    []byte
+	Body      []byte
 }
 
 // GetStatus 获取该key对应的请求状态
@@ -66,6 +76,41 @@ func InitBucket(bucket []byte) error {
 		_, err := tx.CreateBucketIfNotExists(bucket)
 		return err
 	})
+}
+
+// SaveResponseData 保存Response
+func SaveResponseData(bucket, key, buf, header []byte, ttl uint16) error {
+	// 前四个字节保存创建时间
+	// 接着后面两个字节保存ttl
+	// 接着后面两个字节保存header的长度
+	// 接着是header
+	// 最后才是body
+	createdAt := util.GetNowSecondsBytes()
+
+	s := [][]byte{
+		createdAt,
+		util.ConvertUint16ToBytes(ttl),
+		util.ConvertUint16ToBytes(uint16(len(header))),
+		header,
+		buf,
+	}
+	data := bytes.Join(s, []byte(""))
+	return Save(bucket, key, data)
+}
+
+// GetResponse 获取response
+func GetResponse(bucket, key []byte) (*ResponseData, error) {
+	data, err := Get(bucket, key)
+	if err != nil {
+		return nil, err
+	}
+	headerLength := util.ConvertBytesToUint16(data[6:8])
+	return &ResponseData{
+		CreatedAt: util.ConvertBytesToUint32(data[0:4]),
+		TTL:       util.ConvertBytesToUint16(data[4:6]),
+		Header:    data[8 : 8+headerLength],
+		Body:      data[8+headerLength:],
+	}, nil
 }
 
 // Save 保存数据
