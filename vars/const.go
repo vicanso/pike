@@ -53,10 +53,12 @@ const (
 	First = "first"
 	// Header policy
 	Header = "header"
-	// None request stauts: none
-	None = "none"
 	// Fetching request status: fetching
 	Fetching = "fetching"
 	// HitForPass request status: hitForPass
 	HitForPass = "hitForPass"
+	// Waiting request status: wating
+	Waiting = "waiting"
+	// Cacheable request status: cacheable
+	Cacheable = "cacheable"
 )

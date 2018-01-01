@@ -3,29 +3,17 @@ package cache
 import (
 	"bytes"
 	"sync"
-	"time"
-
-	"github.com/boltdb/bolt"
-	"github.com/valyala/fasthttp"
 
 	"../util"
 	"../vars"
+	"github.com/boltdb/bolt"
+	"github.com/valyala/fasthttp"
 )
 
-// 保存请求状态
-var requestStatsMap sync.Map
+var rsMap = make(map[string]*RequestStatus)
+var rsMutex = sync.Mutex{}
 
-// 保存请求队列等待列表
-var requestWatingListMap sync.Map
 var client *bolt.DB
-
-var waitingMutex sync.Mutex
-
-// Status 请求状态
-type Status struct {
-	Name      string
-	CreatedAt int64
-}
 
 // ResponseData 记录响应数据
 type ResponseData struct {
@@ -35,42 +23,76 @@ type ResponseData struct {
 	Body      []byte
 }
 
-// RequestWatingList 等待队列
-type RequestWatingList struct {
-	lock sync.Mutex
-	list []*fasthttp.RequestCtx
+// RequestStatus 请求状态
+type RequestStatus struct {
+	createdAt   int64
+	ttl         uint16
+	status      string
+	waitingList []*fasthttp.RequestCtx
 }
 
-// Add 增加等待请求
-func (l *RequestWatingList) Add(ctx *fasthttp.RequestCtx) {
-	l.lock.Lock()
-	defer l.lock.Unlock()
-	l.list = append(l.list, ctx)
-}
-
-// GetStatus 获取该key对应的请求状态
-func GetStatus(key []byte) string {
-	v, loaded := requestStatsMap.LoadOrStore(string(key), &Status{
-		Name:      vars.Fetching,
-		CreatedAt: time.Now().Unix(),
-	})
-	if !loaded {
-		return vars.None
+func initRequestStatus(key string, ttl uint16) *RequestStatus {
+	rs := &RequestStatus{
+		createdAt: util.GetSeconds(),
+		ttl:       ttl,
 	}
-	return v.(*Status).Name
+	rsMap[key] = rs
+	return rs
 }
 
-// DeleteStatus 删除该key对应的状态
-func DeleteStatus(key []byte) {
-	requestStatsMap.Delete(string(key))
+func isExpired(rs *RequestStatus) bool {
+	if rs.ttl != 0 && util.GetSeconds()-rs.createdAt > int64(rs.ttl) {
+		return true
+	}
+	return false
 }
 
-// SetHitForPass 判断该key是否hit for pass
-func SetHitForPass(key []byte) {
-	requestStatsMap.Store(string(key), &Status{
-		Name:      vars.HitForPass,
-		CreatedAt: time.Now().Unix(),
-	})
+// GetRequestStatus 获取请求的状态
+func GetRequestStatus(ctx *fasthttp.RequestCtx) string {
+	rsMutex.Lock()
+	defer rsMutex.Unlock()
+	key := string(util.GenRequestKey(ctx))
+	rs := rsMap[key]
+	status := ""
+	if rs == nil || isExpired(rs) {
+		status = vars.Fetching
+		rs = initRequestStatus(key, 0)
+		rs.status = status
+	} else if rs.status == vars.Fetching {
+		status = vars.Waiting
+		rs.waitingList = append(rs.waitingList, ctx)
+	} else {
+		status = rs.status
+	}
+	return status
+}
+
+// GetWaitingRequests 获取等待中的请求，并重置
+func GetWaitingRequests(key []byte) []*fasthttp.RequestCtx {
+	rsMutex.Lock()
+	defer rsMutex.Unlock()
+	k := string(key)
+	rs := rsMap[k]
+	if rs == nil {
+		return nil
+	}
+	return rs.waitingList
+}
+
+// GetWatingRequstAndSetStatus 获取等待中的请求，并设置状态和有效期
+func GetWatingRequstAndSetStatus(key []byte, status string, ttl uint16) []*fasthttp.RequestCtx {
+	rsMutex.Lock()
+	defer rsMutex.Unlock()
+	k := string(key)
+	rs := rsMap[k]
+	if rs == nil {
+		return nil
+	}
+	rs.status = status
+	rs.ttl = ttl
+	waitingList := rs.waitingList
+	rs.waitingList = nil
+	return waitingList
 }
 
 // InitDB 初始化db
@@ -155,27 +177,4 @@ func Get(bucket, key []byte) ([]byte, error) {
 		return nil
 	})
 	return buf, nil
-}
-
-// AddToWaitingList 添加至等待队列
-func AddToWaitingList(key []byte, ctx *fasthttp.RequestCtx) {
-	waitingMutex.Lock()
-	defer waitingMutex.Unlock()
-	data, _ := requestWatingListMap.LoadOrStore(string(key), &RequestWatingList{
-		list: make([]*fasthttp.RequestCtx, 0, 10),
-	})
-	rwl := data.(*RequestWatingList)
-	rwl.Add(ctx)
-}
-
-// GetWatingListAndReset 获取等待队列并清除
-func GetWatingListAndReset(key []byte) []*fasthttp.RequestCtx {
-	waitingMutex.Lock()
-	defer waitingMutex.Unlock()
-	data, _ := requestWatingListMap.Load(string(key))
-	if data == nil {
-		return nil
-	}
-	requestWatingListMap.Delete(string(key))
-	return data.(*RequestWatingList).list
 }

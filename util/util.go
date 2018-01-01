@@ -93,13 +93,13 @@ func ConvertBytesToUint32(buf []byte) uint32 {
 }
 
 // GetSeconds 获取当前时间的时间戳（秒）
-func GetSeconds() uint32 {
-	return uint32(time.Now().Unix())
+func GetSeconds() int64 {
+	return time.Now().Unix()
 }
 
 // GetNowSecondsBytes 获取当时时间的字节表示(4个字节)
 func GetNowSecondsBytes() []byte {
-	return ConvertUint32ToBytes(GetSeconds())
+	return ConvertUint32ToBytes(uint32(GetSeconds()))
 }
 
 // ConvertToSeconds 将字节保存的秒转换为整数
@@ -111,7 +111,6 @@ func ConvertToSeconds(buf []byte) uint32 {
 func GenRequestKey(ctx *fasthttp.RequestCtx) []byte {
 	return bytes.Join([][]byte{
 		ctx.Method(),
-		ctx.Request.Host(),
-		ctx.Request.RequestURI(),
+		ctx.URI().FullURI(),
 	}, []byte(""))
 }

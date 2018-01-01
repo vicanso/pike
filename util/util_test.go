@@ -108,7 +108,7 @@ func TestGenRequestKey(t *testing.T) {
 	ctx := &fasthttp.RequestCtx{}
 	ctx.Request.SetRequestURI("http://127.0.0.1:5018/users/me")
 	key := string(GenRequestKey(ctx))
-	if key != "GET127.0.0.1:5018/users/me" {
+	if key != "GEThttp://127.0.0.1:5018/users/me" {
 		t.Fatalf("gen request key fail, %q", key)
 	}
 }
