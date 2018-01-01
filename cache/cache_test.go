@@ -11,7 +11,7 @@ import (
 )
 
 func TestStatus(t *testing.T) {
-	key := "aslant.site/users/me"
+	key := []byte("aslant.site/users/me")
 	status := GetStatus(key)
 	none := vars.None
 	if status != none {
@@ -82,5 +82,23 @@ func TestDB(t *testing.T) {
 	}
 	if bytes.Compare(respData.Body, data) != 0 {
 		t.Fatalf("the response body fail")
+	}
+}
+
+func TestWatingList(t *testing.T) {
+	ctx := &fasthttp.RequestCtx{}
+	ctx.Request.SetRequestURI("http://127.0.0.1:5018/users/me")
+	key := util.GenRequestKey(ctx)
+	AddToWaitingList(key, ctx)
+	list := GetWatingListAndReset(key)
+	if len(list) != 1 {
+		t.Fatalf("get the waiting list fail")
+	}
+	if list[0] != ctx {
+		t.Fatalf("get the ctx from waiting list fail")
+	}
+	list = GetWatingListAndReset(key)
+	if len(list) != 0 {
+		t.Fatalf("get the waiting list fail")
 	}
 }

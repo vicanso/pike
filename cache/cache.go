@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/boltdb/bolt"
+	"github.com/valyala/fasthttp"
 
 	"../util"
 	"../vars"
@@ -13,7 +14,12 @@ import (
 
 // 保存请求状态
 var requestStatsMap sync.Map
+
+// 保存请求队列等待列表
+var requestWatingListMap sync.Map
 var client *bolt.DB
+
+var waitingMutex sync.Mutex
 
 // Status 请求状态
 type Status struct {
@@ -29,9 +35,22 @@ type ResponseData struct {
 	Body      []byte
 }
 
+// RequestWatingList 等待队列
+type RequestWatingList struct {
+	lock sync.Mutex
+	list []*fasthttp.RequestCtx
+}
+
+// Add 增加等待请求
+func (l *RequestWatingList) Add(ctx *fasthttp.RequestCtx) {
+	l.lock.Lock()
+	defer l.lock.Unlock()
+	l.list = append(l.list, ctx)
+}
+
 // GetStatus 获取该key对应的请求状态
-func GetStatus(key string) string {
-	v, loaded := requestStatsMap.LoadOrStore(key, &Status{
+func GetStatus(key []byte) string {
+	v, loaded := requestStatsMap.LoadOrStore(string(key), &Status{
 		Name:      vars.Fetching,
 		CreatedAt: time.Now().Unix(),
 	})
@@ -42,13 +61,13 @@ func GetStatus(key string) string {
 }
 
 // DeleteStatus 删除该key对应的状态
-func DeleteStatus(key string) {
-	requestStatsMap.Delete(key)
+func DeleteStatus(key []byte) {
+	requestStatsMap.Delete(string(key))
 }
 
 // SetHitForPass 判断该key是否hit for pass
-func SetHitForPass(key string) {
-	requestStatsMap.Store(key, &Status{
+func SetHitForPass(key []byte) {
+	requestStatsMap.Store(string(key), &Status{
 		Name:      vars.HitForPass,
 		CreatedAt: time.Now().Unix(),
 	})
@@ -136,4 +155,27 @@ func Get(bucket, key []byte) ([]byte, error) {
 		return nil
 	})
 	return buf, nil
+}
+
+// AddToWaitingList 添加至等待队列
+func AddToWaitingList(key []byte, ctx *fasthttp.RequestCtx) {
+	waitingMutex.Lock()
+	defer waitingMutex.Unlock()
+	data, _ := requestWatingListMap.LoadOrStore(string(key), &RequestWatingList{
+		list: make([]*fasthttp.RequestCtx, 0, 10),
+	})
+	rwl := data.(*RequestWatingList)
+	rwl.Add(ctx)
+}
+
+// GetWatingListAndReset 获取等待队列并清除
+func GetWatingListAndReset(key []byte) []*fasthttp.RequestCtx {
+	waitingMutex.Lock()
+	defer waitingMutex.Unlock()
+	data, _ := requestWatingListMap.Load(string(key))
+	if data == nil {
+		return nil
+	}
+	requestWatingListMap.Delete(string(key))
+	return data.(*RequestWatingList).list
 }
