@@ -9,8 +9,7 @@ directors:
     host:
       - macmini:3015
     backends:
-      - proxy1:3000
-      - proxy2:3000
+      - actp.aslant.site
   -
     name: timtam
     type: roundRobin
@@ -22,5 +21,4 @@ directors:
       - dcharts.com
       - www.dcharts.com
     backends:
-      - proxy1:3000
-      - proxy2:3000
+      - npmtrend.com

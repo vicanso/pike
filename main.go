@@ -1,16 +1,17 @@
 package main
 
 import (
-	"errors"
 	"io/ioutil"
 	"log"
 	"sort"
+	"time"
 
+	"./cache"
+	"./director"
+	"./dispatch"
+	"./proxy"
+	"./vars"
 	"github.com/valyala/fasthttp"
-	"github.com/vicanso/pike/director"
-	"github.com/vicanso/pike/dispatch"
-	"github.com/vicanso/pike/proxy"
-	"github.com/vicanso/pike/util"
 	"gopkg.in/yaml.v2"
 )
 
@@ -41,39 +42,54 @@ func (s DirectorSlice) Less(i, j int) bool {
 var upstreamMap = make(map[string]*proxy.Upstream)
 var directorList = make(DirectorSlice, 0, 10)
 
-func handler(ctx *fasthttp.RequestCtx) {
-	// log.Println(string(ctx.Request.Host()))
-	// log.Println(string(ctx.Request.RequestURI()))
-	host := ctx.Request.Host()
-	uri := ctx.RequestURI()
-
+// getDirector 获取director
+func getDirector(host, uri []byte) *director.Director {
 	var found *director.Director
+	// 查找可用的director
 	for _, d := range directorList {
 		if found == nil && d.Match(host, uri) {
 			found = d
 		}
 	}
+	return found
+}
+
+func handler(ctx *fasthttp.RequestCtx) {
+	host := ctx.Request.Host()
+	uri := ctx.RequestURI()
+	found := getDirector(host, uri)
 	if found == nil {
-		// 没有可用的backend
-		err := errors.New("No avaliable backend")
-		dispatch.ErrorHandler(ctx, err)
+		// 没有可用的配置（）
+		dispatch.ErrorHandler(ctx, vars.ErrDirectorUnavailable)
 		return
 	}
 	us := upstreamMap[found.Name]
 	// 判断该请求是否直接pass到backend
-	isPass := util.Pass(ctx, found.Passes)
-	resp, err := proxy.Do(ctx, us, isPass)
+	// isPass := util.Pass(ctx, found.Passes)
+	key := string(host) + string(uri)
+	status := cache.GetStatus(key)
+	log.Println(status)
+	// log.Println(key)
+	// // hitForPass := cache.HitForPass(key)
+	// // log.Println(hitForPass)
+	// // 判断相同的key有没有fetching，没有则此请求需要从upstream获取数据
+	// isFetching := cache.IsFetching(key)
+	// // TODO
+	// if isFetching {
+	// 	// 进入等待队列
+	// 	return
+	// }
+	// log.Println(isFetching)
+
+	resp, err := proxy.Do(ctx, us)
+	if status == "none" {
+		// cache.ResetFetching(key)
+	}
 	if err != nil {
 		dispatch.ErrorHandler(ctx, err)
 		return
 	}
 	dispatch.Response(ctx, resp)
-	// resp.Header.CopyTo(&ctx.Response.Header)
-	// 对压缩数据的处理，是否需要生成新的ETag
-	// Content-Encoding 的处理
-	// ctx.SetBody(resp.Body())
-	// Content-Length 的处理
-	// log.Println(ctx.ID())
 }
 
 func main() {
@@ -89,11 +105,11 @@ func main() {
 	for _, directorConf := range conf.Directors {
 		d := director.CreateDirector(directorConf)
 		name := d.Name
-		up := proxy.CreateUpstream(name, d.Policy)
+		up := proxy.CreateUpstream(name, d.Policy, "")
 		for _, backend := range d.Backends {
 			up.AddBackend(backend)
 		}
-		up.StartHealthcheck(d.Ping)
+		up.StartHealthcheck(d.Ping, time.Second)
 		upstreamMap[name] = up
 		directorList = append(directorList, d)
 	}

@@ -4,8 +4,8 @@ import (
 	"bytes"
 	"compress/gzip"
 
+	"../vars"
 	"github.com/valyala/fasthttp"
-	"github.com/vicanso/pike/vars"
 )
 
 // 对数据压缩
@@ -34,7 +34,14 @@ func getBody(resp *fasthttp.Response) ([]byte, error) {
 // ErrorHandler 出错处理
 func ErrorHandler(ctx *fasthttp.RequestCtx, err error) {
 	// TODO 出错的处理，504 502等
-	ctx.SetStatusCode(500)
+	switch err {
+	case vars.ErrDirectorUnavailable:
+		ctx.SetStatusCode(503)
+	case vars.ErrServiceUnavailable:
+		ctx.SetStatusCode(503)
+	default:
+		ctx.SetStatusCode(500)
+	}
 	ctx.SetBodyString(err.Error())
 }
 
