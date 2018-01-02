@@ -37,7 +37,7 @@ func testGetCacheAge(t *testing.T, cacheControl []byte, resultExpected uint16) {
 	if cacheControl != nil {
 		ctx.Response.Header.SetCanonical(vars.CacheControl, cacheControl)
 	}
-	result := GetCacheAge(ctx)
+	result := GetCacheAge(&ctx.Response.Header)
 	if result != resultExpected {
 		t.Fatalf("unexpected result in GetCacheAge %q: %v. Expecting %v", cacheControl, result, resultExpected)
 	}

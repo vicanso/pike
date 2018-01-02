@@ -30,8 +30,8 @@ func Pass(ctx *fasthttp.RequestCtx, passList [][]byte) bool {
 }
 
 // GetCacheAge 获取s-maxage或者max-age的值
-func GetCacheAge(ctx *fasthttp.RequestCtx) uint16 {
-	cacheControl := ctx.Response.Header.PeekBytes(vars.CacheControl)
+func GetCacheAge(header *fasthttp.ResponseHeader) uint16 {
+	cacheControl := header.PeekBytes(vars.CacheControl)
 	if len(cacheControl) == 0 {
 		return 0
 	}

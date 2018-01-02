@@ -51,7 +51,6 @@ const (
 	HitForPass
 	// Cacheable request status: cacheable
 	Cacheable
-	//
 )
 
 const (
