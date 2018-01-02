@@ -7,7 +7,6 @@ import (
 	"../util"
 	"../vars"
 	"github.com/boltdb/bolt"
-	"github.com/valyala/fasthttp"
 )
 
 var rsMap = make(map[string]*RequestStatus)
@@ -17,18 +16,28 @@ var client *bolt.DB
 
 // ResponseData 记录响应数据
 type ResponseData struct {
-	CreatedAt uint32
-	TTL       uint16
-	Header    []byte
-	Body      []byte
+	// TODO http 状态码
+	CreatedAt  uint32
+	StatusCode uint16
+	TTL        uint16
+	Header     []byte
+	Body       []byte
 }
+
+const (
+	createIndex       = 0
+	statusCodeIndex   = 4
+	ttlIndex          = 6
+	headerLengthIndex = 8
+	headerIndex       = 10
+)
 
 // RequestStatus 请求状态
 type RequestStatus struct {
-	createdAt   int64
-	ttl         uint16
-	status      string
-	waitingList []*fasthttp.RequestCtx
+	createdAt    int64
+	ttl          uint16
+	status       int
+	waitingChans []chan int
 }
 
 func initRequestStatus(key string, ttl uint16) *RequestStatus {
@@ -48,51 +57,54 @@ func isExpired(rs *RequestStatus) bool {
 }
 
 // GetRequestStatus 获取请求的状态
-func GetRequestStatus(ctx *fasthttp.RequestCtx) string {
+func GetRequestStatus(key []byte) (int, chan int) {
 	rsMutex.Lock()
 	defer rsMutex.Unlock()
-	key := string(util.GenRequestKey(ctx))
-	rs := rsMap[key]
-	status := ""
+	var c chan int
+	k := string(key)
+	rs := rsMap[k]
+	status := vars.Fetching
 	if rs == nil || isExpired(rs) {
 		status = vars.Fetching
-		rs = initRequestStatus(key, 0)
+		rs = initRequestStatus(k, 0)
 		rs.status = status
 	} else if rs.status == vars.Fetching {
 		status = vars.Waiting
-		rs.waitingList = append(rs.waitingList, ctx)
+		c = make(chan int, 1)
+		rs.waitingChans = append(rs.waitingChans, c)
 	} else {
 		status = rs.status
 	}
-	return status
+	return status, c
 }
 
-// GetWaitingRequests 获取等待中的请求，并重置
-func GetWaitingRequests(key []byte) []*fasthttp.RequestCtx {
+// triggerWatingRequstAndSetStatus 获取等待中的请求，并设置状态和有效期
+func triggerWatingRequstAndSetStatus(key []byte, status int, ttl uint16) {
 	rsMutex.Lock()
 	defer rsMutex.Unlock()
 	k := string(key)
 	rs := rsMap[k]
 	if rs == nil {
-		return nil
-	}
-	return rs.waitingList
-}
-
-// GetWatingRequstAndSetStatus 获取等待中的请求，并设置状态和有效期
-func GetWatingRequstAndSetStatus(key []byte, status string, ttl uint16) []*fasthttp.RequestCtx {
-	rsMutex.Lock()
-	defer rsMutex.Unlock()
-	k := string(key)
-	rs := rsMap[k]
-	if rs == nil {
-		return nil
+		return
 	}
 	rs.status = status
 	rs.ttl = ttl
-	waitingList := rs.waitingList
-	rs.waitingList = nil
-	return waitingList
+	waitingChans := rs.waitingChans
+	for _, c := range waitingChans {
+		c <- status
+		close(c)
+	}
+	rs.waitingChans = nil
+}
+
+// TriggerWatingRequstAndSetHitForPass 触发等待中的请求，并设置状态为hit for pass
+func TriggerWatingRequstAndSetHitForPass(key []byte, ttl uint16) {
+	triggerWatingRequstAndSetStatus(key, vars.HitForPass, ttl)
+}
+
+// TriggerWatingRequstAndSetCacheable 触发等待中的请求，并设置状态为 cacheable
+func TriggerWatingRequstAndSetCacheable(key []byte, ttl uint16) {
+	triggerWatingRequstAndSetStatus(key, vars.Cacheable, ttl)
 }
 
 // InitDB 初始化db
@@ -120,7 +132,7 @@ func InitBucket(bucket []byte) error {
 }
 
 // SaveResponseData 保存Response
-func SaveResponseData(bucket, key, buf, header []byte, ttl uint16) error {
+func SaveResponseData(bucket, key, buf, header []byte, statusCode, ttl uint16) error {
 	// 前四个字节保存创建时间
 	// 接着后面两个字节保存ttl
 	// 接着后面两个字节保存header的长度
@@ -130,6 +142,7 @@ func SaveResponseData(bucket, key, buf, header []byte, ttl uint16) error {
 
 	s := [][]byte{
 		createdAt,
+		util.ConvertUint16ToBytes(statusCode),
 		util.ConvertUint16ToBytes(ttl),
 		util.ConvertUint16ToBytes(uint16(len(header))),
 		header,
@@ -145,12 +158,13 @@ func GetResponse(bucket, key []byte) (*ResponseData, error) {
 	if err != nil {
 		return nil, err
 	}
-	headerLength := util.ConvertBytesToUint16(data[6:8])
+	headerLength := util.ConvertBytesToUint16(data[headerLengthIndex:headerIndex])
 	return &ResponseData{
-		CreatedAt: util.ConvertBytesToUint32(data[0:4]),
-		TTL:       util.ConvertBytesToUint16(data[4:6]),
-		Header:    data[8 : 8+headerLength],
-		Body:      data[8+headerLength:],
+		CreatedAt:  util.ConvertBytesToUint32(data[createIndex:statusCodeIndex]),
+		StatusCode: util.ConvertBytesToUint16(data[statusCodeIndex:ttlIndex]),
+		TTL:        util.ConvertBytesToUint16(data[ttlIndex:headerLengthIndex]),
+		Header:     data[headerIndex : headerIndex+headerLength],
+		Body:       data[headerIndex+headerLength:],
 	}, nil
 }
 

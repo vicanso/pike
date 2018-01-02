@@ -43,7 +43,7 @@ func TestDB(t *testing.T) {
 	resHeader := ctx.Response.Header.Header()
 	ttl := util.GetCacheAge(ctx)
 
-	SaveResponseData(bucket, key, resBody, resHeader, ttl)
+	SaveResponseData(bucket, key, resBody, resHeader, 200, ttl)
 	respData, err := GetResponse(bucket, key)
 	if err != nil {
 		t.Fatalf("get the response fail, %v", err)
@@ -63,65 +63,57 @@ func TestDB(t *testing.T) {
 }
 
 func TestRequestStatus(t *testing.T) {
-	ctx := &fasthttp.RequestCtx{}
-	ctx.Request.SetRequestURI("http://aslant.site/users/me")
-	status := GetRequestStatus(ctx)
+	key := []byte("GEThttp://aslant.site/users/me")
+	status, c := GetRequestStatus(key)
 	// 第一次请求时，状态为fetching
 	if status != vars.Fetching {
 		t.Fatalf("the first request should be fetching")
 	}
-	ctx = &fasthttp.RequestCtx{}
-	ctx.Request.SetRequestURI("http://aslant.site/users/me")
-	status = GetRequestStatus(ctx)
-	// 此时有相同的请求在处理，该请求状态为waiting
+	if c != nil {
+		t.Fatalf("the chan of first request should be nil")
+	}
+
+	status, c = GetRequestStatus(key)
 	if status != vars.Waiting {
-		t.Fatalf("the second request should be wating")
+		t.Fatalf("the second request should be wating for the first request result")
 	}
-	// 获取等待的请求，数量为一
-	list := GetWaitingRequests(util.GenRequestKey(ctx))
-	if len(list) != 1 {
-		t.Fatalf("the wating list count is wrong")
+	if c == nil {
+		t.Fatalf("the chan of second request shouldn't be nil")
 	}
-	if list[0] != ctx {
-		t.Fatalf("the wating request is wrong")
-	}
+	go func(tmp chan int) {
+		tmpStatus := <-tmp
+		if tmpStatus != vars.HitForPass {
+			t.Fatalf("the waiting request should be hit for pass")
+		}
+	}(c)
 
-	//测试 hit for pass
-	ctx = &fasthttp.RequestCtx{}
-	ctx.Request.SetRequestURI("http://aslant.site/users")
-	status = GetRequestStatus(ctx)
+	TriggerWatingRequstAndSetHitForPass(key, 100)
+	time.Sleep(time.Second)
+
+	key = []byte("GEThttp://aslant.site/books")
+	status, c = GetRequestStatus(key)
 	// 第一次请求时，状态为fetching
 	if status != vars.Fetching {
 		t.Fatalf("the first request should be fetching")
 	}
-	GetWatingRequstAndSetStatus(util.GenRequestKey(ctx), vars.HitForPass, 1)
-	ctx = &fasthttp.RequestCtx{}
-	ctx.Request.SetRequestURI("http://aslant.site/users")
-	status = GetRequestStatus(ctx)
-	if status != vars.HitForPass {
-		t.Fatalf("the request shoud be hit for pass")
-	}
-	time.Sleep(2 * time.Second)
-
-	ctx = &fasthttp.RequestCtx{}
-	ctx.Request.SetRequestURI("http://aslant.site/users")
-	status = GetRequestStatus(ctx)
-	// hti for pass 已过期，状态为fetching
-	if status != vars.Fetching {
-		t.Fatalf("the request should be fetching")
+	if c != nil {
+		t.Fatalf("the chan of first request should be nil")
 	}
 
-	ctx = &fasthttp.RequestCtx{}
-	ctx.Request.SetRequestURI("http://aslant.site/books")
-	status = GetRequestStatus(ctx)
-	if status != vars.Fetching {
-		t.Fatalf("the request should be fetching")
+	status, c = GetRequestStatus(key)
+	if status != vars.Waiting {
+		t.Fatalf("the second request should be wating for the first request result")
 	}
+	if c == nil {
+		t.Fatalf("the chan of second request shouldn't be nil")
+	}
+	go func(tmp chan int) {
+		tmpStatus := <-tmp
+		if tmpStatus != vars.Cacheable {
+			t.Fatalf("the waiting request should be cacheable")
+		}
+	}(c)
 
-	GetWatingRequstAndSetStatus(util.GenRequestKey(ctx), vars.Cacheable, 100)
-
-	ctx = &fasthttp.RequestCtx{}
-	ctx.Request.SetRequestURI("http://aslant.site/books")
-	status = GetRequestStatus(ctx)
-
+	TriggerWatingRequstAndSetCacheable(key, 100)
+	time.Sleep(time.Second)
 }
