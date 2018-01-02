@@ -41,7 +41,7 @@ func TestDB(t *testing.T) {
 
 	resBody := ctx.Response.Body()
 	resHeader := ctx.Response.Header.Header()
-	ttl := util.GetCacheAge(ctx)
+	ttl := util.GetCacheAge(&ctx.Response.Header)
 
 	SaveResponseData(bucket, key, resBody, resHeader, 200, ttl)
 	respData, err := GetResponse(bucket, key)
@@ -87,7 +87,7 @@ func TestRequestStatus(t *testing.T) {
 		}
 	}(c)
 
-	TriggerWatingRequstAndSetHitForPass(key, 100)
+	HitForPass(key, 100)
 	time.Sleep(time.Second)
 
 	key = []byte("GEThttp://aslant.site/books")
@@ -114,6 +114,6 @@ func TestRequestStatus(t *testing.T) {
 		}
 	}(c)
 
-	TriggerWatingRequstAndSetCacheable(key, 100)
+	Cacheable(key, 100)
 	time.Sleep(time.Second)
 }

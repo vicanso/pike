@@ -97,13 +97,13 @@ func triggerWatingRequstAndSetStatus(key []byte, status int, ttl uint16) {
 	rs.waitingChans = nil
 }
 
-// TriggerWatingRequstAndSetHitForPass 触发等待中的请求，并设置状态为hit for pass
-func TriggerWatingRequstAndSetHitForPass(key []byte, ttl uint16) {
+// HitForPass 触发等待中的请求，并设置状态为hit for pass
+func HitForPass(key []byte, ttl uint16) {
 	triggerWatingRequstAndSetStatus(key, vars.HitForPass, ttl)
 }
 
-// TriggerWatingRequstAndSetCacheable 触发等待中的请求，并设置状态为 cacheable
-func TriggerWatingRequstAndSetCacheable(key []byte, ttl uint16) {
+// Cacheable 触发等待中的请求，并设置状态为 cacheable
+func Cacheable(key []byte, ttl uint16) {
 	triggerWatingRequstAndSetStatus(key, vars.Cacheable, ttl)
 }
 
