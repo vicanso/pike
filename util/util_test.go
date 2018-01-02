@@ -112,3 +112,18 @@ func TestGenRequestKey(t *testing.T) {
 		t.Fatalf("gen request key fail, %q", key)
 	}
 }
+
+func TestGzip(t *testing.T) {
+	data := []byte("hello world")
+	buf, err := Gzip(data)
+	if err != nil {
+		t.Fatalf("do gzip fail, %v", err)
+	}
+	buf, err = Gunzip(buf)
+	if err != nil {
+		t.Fatalf("do gunzip fail, %v", err)
+	}
+	if string(buf) != string(data) {
+		t.Fatalf("do gunzip fail")
+	}
+}

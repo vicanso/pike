@@ -2,7 +2,9 @@ package util
 
 import (
 	"bytes"
+	"compress/gzip"
 	"encoding/binary"
+	"io/ioutil"
 	"regexp"
 	"strconv"
 	"time"
@@ -113,4 +115,26 @@ func GenRequestKey(ctx *fasthttp.RequestCtx) []byte {
 		ctx.Method(),
 		ctx.URI().FullURI(),
 	}, []byte(""))
+}
+
+// Gzip 对数据压缩
+func Gzip(buf []byte) ([]byte, error) {
+	var b bytes.Buffer
+	w := gzip.NewWriter(&b)
+	_, err := w.Write(buf)
+	if err != nil {
+		return nil, err
+	}
+	w.Close()
+	return b.Bytes(), nil
+}
+
+// Gunzip 解压数据
+func Gunzip(buf []byte) ([]byte, error) {
+	r, err := gzip.NewReader(bytes.NewBuffer(buf))
+	if err != nil {
+		return nil, err
+	}
+	defer r.Close()
+	return ioutil.ReadAll(r)
 }

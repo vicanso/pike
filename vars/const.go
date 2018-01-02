@@ -8,6 +8,10 @@ var (
 
 	// ContentEncoding http response content encoding header
 	ContentEncoding = []byte("Content-Encoding")
+	// ContentLength http response content length
+	ContentLength = []byte("Content-Length")
+	// Server http response server
+	Server = []byte("Server")
 
 	// XForwardedFor http request x-forwarded-fox header
 	XForwardedFor = []byte("X-Forwarded-For")
@@ -37,6 +41,20 @@ var (
 )
 
 const (
+	// Pass request status: pass
+	Pass = iota
+	// Fetching request status: fetching
+	Fetching
+	// Waiting request status: wating
+	Waiting
+	// HitForPass request status: hitForPass
+	HitForPass
+	// Cacheable request status: cacheable
+	Cacheable
+	//
+)
+
+const (
 	// CompressMinLength the min length to gzip
 	CompressMinLength = 1024
 	// Random random policy
@@ -53,12 +71,4 @@ const (
 	First = "first"
 	// Header policy
 	Header = "header"
-	// Fetching request status: fetching
-	Fetching = "fetching"
-	// HitForPass request status: hitForPass
-	HitForPass = "hitForPass"
-	// Waiting request status: wating
-	Waiting = "waiting"
-	// Cacheable request status: cacheable
-	Cacheable = "cacheable"
 )
