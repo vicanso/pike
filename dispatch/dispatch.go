@@ -2,27 +2,23 @@ package dispatch
 
 import (
 	"bytes"
-	"compress/gzip"
 
 	"../vars"
+
 	"github.com/valyala/fasthttp"
 )
 
-// 对数据压缩
-func doGzip(buf []byte) ([]byte, error) {
-	var b bytes.Buffer
-	w := gzip.NewWriter(&b)
-	defer w.Close()
-	_, err := w.Write(buf)
-	if err != nil {
-		return nil, err
-	}
-	w.Flush()
-	return b.Bytes(), nil
+// GetResponseHeader 获取响应的header
+func GetResponseHeader(resp *fasthttp.Response) []byte {
+	newHeader := &fasthttp.ResponseHeader{}
+	resp.Header.CopyTo(newHeader)
+	newHeader.DelBytes(vars.ContentEncoding)
+	newHeader.DelBytes(vars.ContentLength)
+	return newHeader.Header()
 }
 
-// 根据Content-Encoding做数据解压
-func getBody(resp *fasthttp.Response) ([]byte, error) {
+// GetResponseBody 获取响应的数据
+func GetResponseBody(resp *fasthttp.Response) ([]byte, error) {
 	enconding := resp.Header.PeekBytes(vars.ContentEncoding)
 
 	if bytes.Compare(enconding, vars.Gzip) == 0 {
@@ -45,33 +41,30 @@ func ErrorHandler(ctx *fasthttp.RequestCtx, err error) {
 	ctx.SetBodyString(err.Error())
 }
 
-// 根据Accept-Encoding判断是否压缩数据返回
-func responseBytes(ctx *fasthttp.RequestCtx, buf []byte) {
-	// 如果数据小于最小压缩长度，不做压缩
-	if len(buf) > vars.CompressMinLength {
-		if ctx.Request.Header.HasAcceptEncodingBytes(vars.Gzip) {
-			gzipBuf, _ := doGzip(buf)
-			if len(gzipBuf) != 0 {
-				ctx.Response.Header.SetCanonical(vars.ContentEncoding, vars.Gzip)
-				buf = gzipBuf
-			} else {
-				ctx.Response.Header.DelBytes(vars.ContentEncoding)
-			}
-		} else {
-			ctx.Response.Header.DelBytes(vars.ContentEncoding)
+// ResponseBytes 数据以字节返回
+func ResponseBytes(ctx *fasthttp.RequestCtx, header, buf []byte) {
+	arr := bytes.Split(header, []byte("\n"))
+	divide := []byte(":")[0]
+	space := []byte(" ")[0]
+	for _, item := range arr {
+		index := bytes.IndexByte(item, divide)
+		if index == -1 {
+			continue
 		}
+		k := item[:index]
+		index++
+		if item[index] == space {
+			index++
+		}
+		v := item[index : len(item)-1]
+		ctx.Response.Header.SetCanonical(k, v)
 	}
 	ctx.Response.Header.SetContentLength(len(buf))
 	ctx.SetBody(buf)
 }
 
-// Response 返回请求响应数据
-func Response(ctx *fasthttp.RequestCtx, resp *fasthttp.Response) {
-	resp.Header.CopyTo(&ctx.Response.Header)
-	buf, err := getBody(resp)
-	if err != nil {
-		ErrorHandler(ctx, err)
-		return
-	}
-	responseBytes(ctx, buf)
+// ResponseGzipBytes 数据以压缩后的字节返回
+func ResponseGzipBytes(ctx *fasthttp.RequestCtx, header, buf []byte) {
+	ctx.Response.Header.SetCanonical(vars.ContentEncoding, vars.Gzip)
+	ResponseBytes(ctx, header, buf)
 }

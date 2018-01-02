@@ -10,10 +10,13 @@ import (
 	"./director"
 	"./dispatch"
 	"./proxy"
+	"./util"
 	"./vars"
 	"github.com/valyala/fasthttp"
 	"gopkg.in/yaml.v2"
 )
+
+const hitForPassTTL = 10
 
 // PikeConfig 程序配置
 type PikeConfig struct {
@@ -54,6 +57,19 @@ func getDirector(host, uri []byte) *director.Director {
 	return found
 }
 
+func doProxy(ctx *fasthttp.RequestCtx, us *proxy.Upstream) (*fasthttp.Response, []byte, []byte, error) {
+	resp, err := proxy.Do(ctx, us)
+	if err != nil {
+		return nil, nil, nil, err
+	}
+	body, err := dispatch.GetResponseBody(resp)
+	if err != nil {
+		return nil, nil, nil, err
+	}
+	header := dispatch.GetResponseHeader(resp)
+	return resp, header, body, nil
+}
+
 func handler(ctx *fasthttp.RequestCtx) {
 	host := ctx.Request.Host()
 	uri := ctx.RequestURI()
@@ -65,35 +81,55 @@ func handler(ctx *fasthttp.RequestCtx) {
 	}
 	us := upstreamMap[found.Name]
 	// 判断该请求是否直接pass到backend
-	// isPass := util.Pass(ctx, found.Passes)
-	key := string(host) + string(uri)
-	status := cache.GetStatus(key)
-	log.Println(status)
-	// log.Println(key)
-	// // hitForPass := cache.HitForPass(key)
-	// // log.Println(hitForPass)
-	// // 判断相同的key有没有fetching，没有则此请求需要从upstream获取数据
-	// isFetching := cache.IsFetching(key)
-	// // TODO
-	// if isFetching {
-	// 	// 进入等待队列
-	// 	return
-	// }
-	// log.Println(isFetching)
-
-	resp, err := proxy.Do(ctx, us)
-	if status == "none" {
-		// cache.ResetFetching(key)
+	isPass := util.Pass(ctx, found.Passes)
+	status := vars.Pass
+	var key []byte
+	if !isPass {
+		key = util.GenRequestKey(ctx)
+		s, c := cache.GetRequestStatus(key)
+		status = s
+		if c != nil {
+			status = <-c
+		}
 	}
-	if err != nil {
-		dispatch.ErrorHandler(ctx, err)
-		return
+	switch status {
+	case vars.Pass:
+		_, header, body, err := doProxy(ctx, us)
+		if err != nil {
+			dispatch.ErrorHandler(ctx, err)
+			return
+		}
+		dispatch.ResponseBytes(ctx, header, body)
+	case vars.Fetching, vars.HitForPass:
+		resp, header, body, err := doProxy(ctx, us)
+		if err != nil {
+			cache.HitForPass(key, hitForPassTTL)
+			dispatch.ErrorHandler(ctx, err)
+			return
+		}
+		dispatch.ResponseBytes(ctx, header, body)
+		cacheAge := util.GetCacheAge(&resp.Header)
+		if cacheAge == 0 {
+			cache.HitForPass(key, hitForPassTTL)
+		} else {
+			bucket := []byte(found.Name)
+			statusCode := uint16(resp.StatusCode())
+			err = cache.SaveResponseData(bucket, key, body, header, statusCode, cacheAge)
+			if err != nil {
+				cache.HitForPass(key, hitForPassTTL)
+			} else {
+				cache.Cacheable(key, cacheAge)
+			}
+		}
 	}
-	dispatch.Response(ctx, resp)
 }
 
 func main() {
 	buf, err := ioutil.ReadFile("./config.yml")
+	if err != nil {
+		log.Fatalf("error: %v", err)
+	}
+	_, err = cache.InitDB("/tmp/pike.db")
 	if err != nil {
 		log.Fatalf("error: %v", err)
 	}
