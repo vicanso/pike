@@ -94,11 +94,12 @@ func handler(ctx *fasthttp.RequestCtx) {
 	}
 	switch status {
 	case vars.Pass:
-		_, header, body, err := doProxy(ctx, us)
+		resp, header, body, err := doProxy(ctx, us)
 		if err != nil {
 			dispatch.ErrorHandler(ctx, err)
 			return
 		}
+		ctx.Response.SetStatusCode(resp.StatusCode())
 		dispatch.ResponseBytes(ctx, header, body)
 	case vars.Fetching, vars.HitForPass:
 		resp, header, body, err := doProxy(ctx, us)
@@ -107,6 +108,7 @@ func handler(ctx *fasthttp.RequestCtx) {
 			dispatch.ErrorHandler(ctx, err)
 			return
 		}
+		ctx.Response.SetStatusCode(resp.StatusCode())
 		dispatch.ResponseBytes(ctx, header, body)
 		cacheAge := util.GetCacheAge(&resp.Header)
 		if cacheAge == 0 {
@@ -121,6 +123,14 @@ func handler(ctx *fasthttp.RequestCtx) {
 				cache.Cacheable(key, cacheAge)
 			}
 		}
+	case vars.Cacheable:
+		bucket := []byte(found.Name)
+		respData, err := cache.GetResponse(bucket, key)
+		if err != nil {
+			dispatch.ErrorHandler(ctx, err)
+			return
+		}
+		dispatch.ResponseBytes(ctx, respData.Header, respData.Body)
 	}
 }
 
@@ -147,9 +157,14 @@ func main() {
 		}
 		up.StartHealthcheck(d.Ping, time.Second)
 		upstreamMap[name] = up
+		cache.InitBucket([]byte(name))
 		directorList = append(directorList, d)
 	}
 	sort.Sort(directorList)
 
-	fasthttp.ListenAndServe(":3015", handler)
+	server := &fasthttp.Server{
+		Handler:     handler,
+		Concurrency: 1024 * 1024,
+	}
+	server.ListenAndServe(":3015")
 }
