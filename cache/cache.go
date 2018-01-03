@@ -16,9 +16,9 @@ var client *bolt.DB
 
 // ResponseData 记录响应数据
 type ResponseData struct {
-	// TODO http 状态码
 	CreatedAt  uint32
 	StatusCode uint16
+	Compress   uint16
 	TTL        uint16
 	Header     []byte
 	Body       []byte
@@ -27,9 +27,10 @@ type ResponseData struct {
 const (
 	createIndex       = 0
 	statusCodeIndex   = 4
-	ttlIndex          = 6
-	headerLengthIndex = 8
-	headerIndex       = 10
+	compressIndex     = 6
+	ttlIndex          = 8
+	headerLengthIndex = 10
+	headerIndex       = 12
 )
 
 // RequestStatus 请求状态
@@ -132,7 +133,7 @@ func InitBucket(bucket []byte) error {
 }
 
 // SaveResponseData 保存Response
-func SaveResponseData(bucket, key, buf, header []byte, statusCode, ttl uint16) error {
+func SaveResponseData(bucket, key, buf, header []byte, statusCode, ttl, compressType uint16) error {
 	// 前四个字节保存创建时间
 	// 接着后面两个字节保存ttl
 	// 接着后面两个字节保存header的长度
@@ -143,6 +144,7 @@ func SaveResponseData(bucket, key, buf, header []byte, statusCode, ttl uint16) e
 	s := [][]byte{
 		createdAt,
 		util.ConvertUint16ToBytes(statusCode),
+		util.ConvertUint16ToBytes(compressType),
 		util.ConvertUint16ToBytes(ttl),
 		util.ConvertUint16ToBytes(uint16(len(header))),
 		header,
@@ -161,7 +163,8 @@ func GetResponse(bucket, key []byte) (*ResponseData, error) {
 	headerLength := util.ConvertBytesToUint16(data[headerLengthIndex:headerIndex])
 	return &ResponseData{
 		CreatedAt:  util.ConvertBytesToUint32(data[createIndex:statusCodeIndex]),
-		StatusCode: util.ConvertBytesToUint16(data[statusCodeIndex:ttlIndex]),
+		StatusCode: util.ConvertBytesToUint16(data[statusCodeIndex:compressIndex]),
+		Compress:   util.ConvertBytesToUint16(data[compressIndex:ttlIndex]),
 		TTL:        util.ConvertBytesToUint16(data[ttlIndex:headerLengthIndex]),
 		Header:     data[headerIndex : headerIndex+headerLength],
 		Body:       data[headerIndex+headerLength:],

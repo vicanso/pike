@@ -43,7 +43,7 @@ func TestDB(t *testing.T) {
 	resHeader := ctx.Response.Header.Header()
 	ttl := util.GetCacheAge(&ctx.Response.Header)
 
-	SaveResponseData(bucket, key, resBody, resHeader, 200, ttl)
+	SaveResponseData(bucket, key, resBody, resHeader, 200, ttl, vars.GzipData)
 	respData, err := GetResponse(bucket, key)
 	if err != nil {
 		t.Fatalf("get the response fail, %v", err)
@@ -59,6 +59,9 @@ func TestDB(t *testing.T) {
 	}
 	if bytes.Compare(respData.Body, data) != 0 {
 		t.Fatalf("the response body fail")
+	}
+	if respData.Compress != vars.GzipData {
+		t.Fatalf("the data should be gzip compress")
 	}
 }
 
