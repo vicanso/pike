@@ -1,9 +1,9 @@
 package dispatch
 
 import (
-	"bytes"
 	"testing"
 
+	"../cache"
 	"../util"
 	"../vars"
 
@@ -49,19 +49,33 @@ func TestErrorHandler(t *testing.T) {
 	}
 }
 
-func TestResponseGzipBytes(t *testing.T) {
+func TestResponse(t *testing.T) {
 	ctx := &fasthttp.RequestCtx{}
 	helloWorld := "hello world"
-	data, _ := util.Gzip([]byte(helloWorld))
+	data := []byte(helloWorld)
 	header := &fasthttp.ResponseHeader{}
 	responseID := []byte("X8183211")
 	header.SetCanonical([]byte("X-Response-Id"), responseID)
-	ResponseGzipBytes(ctx, header.Header(), data)
-	buf, _ := ctx.Response.BodyGunzip()
-	if string(buf) != helloWorld {
-		t.Fatalf("response gzip bytes fail")
+
+	createdAt := util.ConvertBytesToUint32(util.GetNowSecondsBytes())
+	respData := &cache.ResponseData{
+		CreatedAt:  createdAt - 20,
+		StatusCode: 200,
+		TTL:        300,
+		Header:     header.Header(),
+		Body:       data,
 	}
-	if bytes.Compare(ctx.Response.Header.Peek("X-Response-Id"), responseID) != 0 {
-		t.Fatalf("set response header fail")
+	Response(ctx, respData)
+	body := string(ctx.Response.Body())
+	if body != helloWorld {
+		t.Fatalf("the response data expect %q but %q", helloWorld, body)
+	}
+	age := string(ctx.Response.Header.PeekBytes(vars.Age))
+	if age != "20" {
+		t.Fatalf("the response age expece 20 but %q", age)
+	}
+	respID := string(ctx.Response.Header.Peek("X-Response-Id"))
+	if respID != string(responseID) {
+		t.Fatalf("the response id expect %q but %q", respID, string(responseID))
 	}
 }
