@@ -12,9 +12,12 @@ var (
 	ContentLength = []byte("Content-Length")
 	// Server http response server
 	Server = []byte("Server")
-
 	// XForwardedFor http request x-forwarded-fox header
 	XForwardedFor = []byte("X-Forwarded-For")
+	// Age http response age header
+	Age = []byte("Age")
+	// CacheControl http response cache control header
+	CacheControl = []byte("Cache-Control")
 
 	// ServerName http response server name
 	ServerName = []byte("Pike")
@@ -30,9 +33,12 @@ var (
 
 	// Head http head method
 	Head = []byte("HEAD")
-
-	// CacheControl http response cache control header
-	CacheControl = []byte("Cache-Control")
+	// LineBreak 换行符
+	LineBreak = []byte("\n")
+	// Colon 冒号
+	Colon = []byte(":")[0]
+	// Space 空格
+	Space = []byte(" ")[0]
 
 	// ErrDirectorUnavailable 没有配置可用的director
 	ErrDirectorUnavailable = errors.New("director unavailable")

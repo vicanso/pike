@@ -17,12 +17,17 @@ func TestVars(t *testing.T) {
 	testVar(t, string(ContentLength), "Content-Length")
 	testVar(t, string(Server), "Server")
 	testVar(t, string(XForwardedFor), "X-Forwarded-For")
+	testVar(t, string(Age), "Age")
+	testVar(t, string(CacheControl), "Cache-Control")
+	testVar(t, string(LineBreak), "\n")
+	testVar(t, string(Colon), ":")
+	testVar(t, string(Space), " ")
+
 	testVar(t, string(ServerName), "Pike")
 	testVar(t, string(Gzip), "gzip")
 	testVar(t, string(Br), "br")
 	testVar(t, string(Get), "GET")
 	testVar(t, string(Head), "HEAD")
-	testVar(t, string(CacheControl), "Cache-Control")
 
 	testVar(t, ErrDirectorUnavailable.Error(), "director unavailable")
 	testVar(t, ErrServiceUnavailable.Error(), "service unavailable")
