@@ -16,6 +16,9 @@ var (
 	// XForwardedFor http request x-forwarded-fox header
 	XForwardedFor = []byte("X-Forwarded-For")
 
+	// ServerName http response server name
+	ServerName = []byte("Pike")
+
 	// Gzip gzip compress
 	Gzip = []byte("gzip")
 
