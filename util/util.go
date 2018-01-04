@@ -30,7 +30,7 @@ func Pass(ctx *fasthttp.RequestCtx, passList [][]byte) bool {
 }
 
 // GetCacheAge 获取s-maxage或者max-age的值
-func GetCacheAge(header *fasthttp.ResponseHeader) uint16 {
+func GetCacheAge(header *fasthttp.ResponseHeader) uint32 {
 	cacheControl := header.PeekBytes(vars.CacheControl)
 	if len(cacheControl) == 0 {
 		return 0
@@ -47,7 +47,7 @@ func GetCacheAge(header *fasthttp.ResponseHeader) uint16 {
 	result := reg.FindSubmatch(cacheControl)
 	if len(result) == 2 {
 		maxAge, _ := strconv.Atoi(string(result[1]))
-		return uint16(maxAge)
+		return uint32(maxAge)
 	}
 
 	// 从max-age中获取缓存时间
@@ -57,7 +57,7 @@ func GetCacheAge(header *fasthttp.ResponseHeader) uint16 {
 		return 0
 	}
 	maxAge, _ := strconv.Atoi(string(result[1]))
-	return uint16(maxAge)
+	return uint32(maxAge)
 }
 
 // SupportGzip 判断是否支持gzip
@@ -95,13 +95,13 @@ func ConvertBytesToUint32(buf []byte) uint32 {
 }
 
 // GetSeconds 获取当前时间的时间戳（秒）
-func GetSeconds() int64 {
-	return time.Now().Unix()
+func GetSeconds() uint32 {
+	return uint32(time.Now().Unix())
 }
 
 // GetNowSecondsBytes 获取当时时间的字节表示(4个字节)
 func GetNowSecondsBytes() []byte {
-	return ConvertUint32ToBytes(uint32(GetSeconds()))
+	return ConvertUint32ToBytes(GetSeconds())
 }
 
 // ConvertToSeconds 将字节保存的秒转换为整数

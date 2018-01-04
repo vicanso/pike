@@ -32,7 +32,7 @@ func TestPass(t *testing.T) {
 	testPass(t, "http://127.0.0.1/i18ns", "POST", true)
 }
 
-func testGetCacheAge(t *testing.T, cacheControl []byte, resultExpected uint16) {
+func testGetCacheAge(t *testing.T, cacheControl []byte, resultExpected uint32) {
 	ctx := &fasthttp.RequestCtx{}
 	if cacheControl != nil {
 		ctx.Response.Header.SetCanonical(vars.CacheControl, cacheControl)
