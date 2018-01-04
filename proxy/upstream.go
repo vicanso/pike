@@ -45,6 +45,10 @@ func (uh *UpstreamHost) Enable() {
 }
 
 func (uh *UpstreamHost) healthCheck(ping string, interval time.Duration) {
+	if len(ping) == 0 {
+		uh.Healthy = 1
+		return
+	}
 	url := "http://" + uh.Host + ping
 	if interval <= 0 {
 		interval = time.Second
@@ -100,8 +104,6 @@ type Upstream struct {
 
 // StartHealthcheck 启动 health check
 func (us *Upstream) StartHealthcheck(ping string, interval time.Duration) {
-	// url := uh.Host + uh.Ping
-	// log.Println(url)
 	for _, uh := range us.Hosts {
 		go uh.healthCheck(ping, interval)
 	}
