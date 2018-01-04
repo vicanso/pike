@@ -10,17 +10,16 @@ var (
 	ContentEncoding = []byte("Content-Encoding")
 	// ContentLength http response content length
 	ContentLength = []byte("Content-Length")
-	// Server http response server
-	Server = []byte("Server")
 	// XForwardedFor http request x-forwarded-fox header
 	XForwardedFor = []byte("X-Forwarded-For")
+	// IfModifiedSince http request IfModifiedSince header
+	IfModifiedSince = []byte("If-Modified-Since")
+	// IfNoneMatch http request IfNoneMatch header
+	IfNoneMatch = []byte("If-None-Match")
 	// Age http response age header
 	Age = []byte("Age")
 	// CacheControl http response cache control header
 	CacheControl = []byte("Cache-Control")
-
-	// ServerName http response server name
-	ServerName = []byte("Pike")
 
 	// Gzip gzip compress
 	Gzip = []byte("gzip")
