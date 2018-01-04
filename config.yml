@@ -1,24 +1,57 @@
+# HTTP response header 中的 Server，如果未配置，则为fasthttp
 name: pike
+# 程序监听的端口
+listen: :3015
+# 数据缓存的db目录
+db: /tmp/pike.db
+# hit for pass 的缓存有效期
+hitForPass: 600
+# 程序并发限制，设置为0表示使用默认值
+concurrency: 0
+# 是否禁用 disableKeepalive，默认为 false
+disableKeepalive: false 
+# readBufferSize 的限制，0表示使用默认值
+readBufferSize: 0 
+# writeBufferSize 的限制，0表示使用默认值
+writeBufferSize: 0 
+# 设置请求的读取超时，0表示无限制(time.Duration)
+readTimeout: 0 
+# 设置响应的写超时，0表示无限制(time.Duration)
+writeTimeout: 0 
+# 限制每个IP的最大请求，0表示无限制
+maxConnsPerIP: 0
+# 设置keep-alive的保持时间，0表示无限制(time.Duration)
+maxKeepaliveDuration: 0 
+# 设置最大的请求数据大小
+maxRequestBodySize: 0
 directors:
   -
+    # 名称
     name: tiny 
+    # backend的选择策略，支持 random roundRobin leastConn ipHash uriHash first
     type: first 
+    # 配置url pass的条件，如果url符合则直接为pass（更好的性能）
     pass:
       - cache-control=no-cache
+    # backend的健康检测
     ping: /ping
+    # prefix与host是AND的关系
+    # 判断请求url的是否包含该前缀，如果是，则是此director
+    prefix:
+      - /api
+    # 判断请求的host是否符合，如果符合，则是此director
     host:
-      - macmini:3015
+      - mac:3015
+    # backend列表
     backends:
-      - actp.aslant.site
+      - 192.168.31.3:3001
+      - 192.168.31.3:3002
   -
-    name: timtam
+    name: npmtrend
     type: roundRobin
     ping: /ping
-    prefix:
-      - /dcharts
-      - /tiny
     host:
-      - dcharts.com
-      - www.dcharts.com
-    backends:
       - npmtrend.com
+    backends:
+      - 192.168.31.3:3200
+      - 192.168.31.3:3300
