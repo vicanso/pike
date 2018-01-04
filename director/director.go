@@ -2,6 +2,10 @@ package director
 
 import (
 	"bytes"
+	"sort"
+	"time"
+
+	"../proxy"
 )
 
 // Config 服务器配置列表
@@ -25,6 +29,24 @@ type Director struct {
 	Passes   [][]byte
 	Backends []string
 	Priority int
+	Upstream *proxy.Upstream
+}
+
+// DirectorSlice 用于director排序
+type DirectorSlice []*Director
+
+// Len 获取director slice的长度
+func (s DirectorSlice) Len() int {
+	return len(s)
+}
+
+// Swap 元素互换
+func (s DirectorSlice) Swap(i, j int) {
+	s[i], s[j] = s[j], s[i]
+}
+
+func (s DirectorSlice) Less(i, j int) bool {
+	return s[i].Priority < s[j].Priority
 }
 
 // Match 判断该director是否符合
@@ -88,4 +110,23 @@ func CreateDirector(config *Config) *Director {
 	}
 	d.Priority = priority
 	return d
+}
+
+// GetDirectors 获取 directors
+func GetDirectors(ds []*Config) DirectorSlice {
+	length := len(ds)
+	directorList := make(DirectorSlice, 0, length)
+	for _, directorConf := range ds {
+		d := CreateDirector(directorConf)
+		name := d.Name
+		up := proxy.CreateUpstream(name, d.Policy, "")
+		for _, backend := range d.Backends {
+			up.AddBackend(backend)
+		}
+		up.StartHealthcheck(d.Ping, time.Second)
+		d.Upstream = up
+		directorList = append(directorList, d)
+	}
+	sort.Sort(directorList)
+	return directorList
 }

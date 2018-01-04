@@ -43,7 +43,8 @@ func TestCreateDirector(t *testing.T) {
 			"host:5002",
 		},
 	}
-	d := CreateDirector(c)
+	dList := GetDirectors([]*Config{c})
+	d := dList[0]
 	testVar(t, d.Name, name)
 	testVar(t, d.Policy, policy)
 	testVar(t, d.Ping, ping)
