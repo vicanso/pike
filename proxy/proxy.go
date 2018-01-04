@@ -30,8 +30,9 @@ func Do(ctx *fasthttp.RequestCtx, us *Upstream) (*fasthttp.Response, error) {
 	uri := string(ctx.RequestURI())
 	url := "http://" + uh.Host + uri
 	req := fasthttp.AcquireRequest()
+	reqHeader := &req.Header
 	// 复制HTTP请求头
-	ctx.Request.Header.CopyTo(&req.Header)
+	ctx.Request.Header.CopyTo(reqHeader)
 
 	// 设置x-forwarded-for
 	xFor := vars.XForwardedFor
@@ -43,10 +44,10 @@ func Do(ctx *fasthttp.RequestCtx, us *Upstream) (*fasthttp.Response, error) {
 		if err != nil {
 			clientIP = remoteAddr
 		}
-		req.Header.SetCanonical(xFor, []byte(clientIP))
+		reqHeader.SetCanonical(xFor, []byte(clientIP))
 	} else {
 		// 如果原有HTTP头有x-forwarded-for
-		req.Header.SetCanonical(xFor, bytes.Join(
+		reqHeader.SetCanonical(xFor, bytes.Join(
 			[][]byte{orginalXFor, []byte(localIP)},
 			[]byte(",")))
 	}
@@ -55,8 +56,11 @@ func Do(ctx *fasthttp.RequestCtx, us *Upstream) (*fasthttp.Response, error) {
 		req.SetBody(postBody)
 	}
 	req.SetRequestURI(url)
+	// 删除有可能304的处理
+	reqHeader.DelBytes(vars.IfModifiedSince)
+	reqHeader.DelBytes(vars.IfNoneMatch)
 	// 设置支持gzip
-	req.Header.SetCanonical(vars.AcceptEncoding, vars.Gzip)
+	reqHeader.SetCanonical(vars.AcceptEncoding, vars.Gzip)
 	resp := fasthttp.AcquireResponse()
 	client := &fasthttp.Client{}
 	err := client.Do(req, resp)
