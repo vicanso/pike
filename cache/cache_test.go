@@ -43,7 +43,16 @@ func TestDB(t *testing.T) {
 	resHeader := ctx.Response.Header.Header()
 	ttl := util.GetCacheAge(&ctx.Response.Header)
 
-	SaveResponseData(bucket, key, resBody, resHeader, 200, ttl, vars.GzipData)
+	saveRespData := &ResponseData{
+		CreatedAt:  util.GetSeconds(),
+		StatusCode: 200,
+		Compress:   vars.GzipData,
+		TTL:        ttl,
+		Header:     resHeader,
+		Body:       resBody,
+	}
+
+	SaveResponseData(bucket, key, saveRespData)
 	respData, err := GetResponse(bucket, key)
 	if err != nil {
 		t.Fatalf("get the response fail, %v", err)

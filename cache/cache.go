@@ -19,7 +19,7 @@ type ResponseData struct {
 	CreatedAt  uint32
 	StatusCode uint16
 	Compress   uint16
-	TTL        uint16
+	TTL        uint32
 	Header     []byte
 	Body       []byte
 }
@@ -29,19 +29,19 @@ const (
 	statusCodeIndex   = 4
 	compressIndex     = 6
 	ttlIndex          = 8
-	headerLengthIndex = 10
-	headerIndex       = 12
+	headerLengthIndex = 12
+	headerIndex       = 14
 )
 
 // RequestStatus 请求状态
 type RequestStatus struct {
-	createdAt    int64
-	ttl          uint16
+	createdAt    uint32
+	ttl          uint32
 	status       int
 	waitingChans []chan int
 }
 
-func initRequestStatus(key string, ttl uint16) *RequestStatus {
+func initRequestStatus(key string, ttl uint32) *RequestStatus {
 	rs := &RequestStatus{
 		createdAt: util.GetSeconds(),
 		ttl:       ttl,
@@ -51,7 +51,7 @@ func initRequestStatus(key string, ttl uint16) *RequestStatus {
 }
 
 func isExpired(rs *RequestStatus) bool {
-	if rs.ttl != 0 && util.GetSeconds()-rs.createdAt > int64(rs.ttl) {
+	if rs.ttl != 0 && util.GetSeconds()-rs.createdAt > uint32(rs.ttl) {
 		return true
 	}
 	return false
@@ -80,7 +80,7 @@ func GetRequestStatus(key []byte) (int, chan int) {
 }
 
 // triggerWatingRequstAndSetStatus 获取等待中的请求，并设置状态和有效期
-func triggerWatingRequstAndSetStatus(key []byte, status int, ttl uint16) {
+func triggerWatingRequstAndSetStatus(key []byte, status int, ttl uint32) {
 	rsMutex.Lock()
 	defer rsMutex.Unlock()
 	k := string(key)
@@ -99,12 +99,12 @@ func triggerWatingRequstAndSetStatus(key []byte, status int, ttl uint16) {
 }
 
 // HitForPass 触发等待中的请求，并设置状态为hit for pass
-func HitForPass(key []byte, ttl uint16) {
+func HitForPass(key []byte, ttl uint32) {
 	triggerWatingRequstAndSetStatus(key, vars.HitForPass, ttl)
 }
 
 // Cacheable 触发等待中的请求，并设置状态为 cacheable
-func Cacheable(key []byte, ttl uint16) {
+func Cacheable(key []byte, ttl uint32) {
 	triggerWatingRequstAndSetStatus(key, vars.Cacheable, ttl)
 }
 
@@ -133,22 +133,28 @@ func InitBucket(bucket []byte) error {
 }
 
 // SaveResponseData 保存Response
-func SaveResponseData(bucket, key, buf, header []byte, statusCode, ttl, compressType uint16) error {
+func SaveResponseData(bucket, key []byte, respData *ResponseData) error {
 	// 前四个字节保存创建时间
 	// 接着后面两个字节保存ttl
 	// 接着后面两个字节保存header的长度
 	// 接着是header
 	// 最后才是body
-	createdAt := util.GetNowSecondsBytes()
+	createdAt := respData.CreatedAt
+	if createdAt == 0 {
+		createdAt = util.GetSeconds()
+	}
+	uint322b := util.ConvertUint32ToBytes
+	uint162b := util.ConvertUint16ToBytes
+	header := respData.Header
 
 	s := [][]byte{
-		createdAt,
-		util.ConvertUint16ToBytes(statusCode),
-		util.ConvertUint16ToBytes(compressType),
-		util.ConvertUint16ToBytes(ttl),
-		util.ConvertUint16ToBytes(uint16(len(header))),
+		uint322b(createdAt),
+		uint162b(respData.StatusCode),
+		uint162b(respData.Compress),
+		uint322b(respData.TTL),
+		uint162b(uint16(len(header))),
 		header,
-		buf,
+		respData.Body,
 	}
 	data := bytes.Join(s, []byte(""))
 	return Save(bucket, key, data)
@@ -160,12 +166,14 @@ func GetResponse(bucket, key []byte) (*ResponseData, error) {
 	if err != nil {
 		return nil, err
 	}
-	headerLength := util.ConvertBytesToUint16(data[headerLengthIndex:headerIndex])
+	b2uint16 := util.ConvertBytesToUint16
+	b2uint32 := util.ConvertBytesToUint32
+	headerLength := b2uint16(data[headerLengthIndex:headerIndex])
 	return &ResponseData{
-		CreatedAt:  util.ConvertBytesToUint32(data[createIndex:statusCodeIndex]),
-		StatusCode: util.ConvertBytesToUint16(data[statusCodeIndex:compressIndex]),
-		Compress:   util.ConvertBytesToUint16(data[compressIndex:ttlIndex]),
-		TTL:        util.ConvertBytesToUint16(data[ttlIndex:headerLengthIndex]),
+		CreatedAt:  b2uint32(data[createIndex:statusCodeIndex]),
+		StatusCode: b2uint16(data[statusCodeIndex:compressIndex]),
+		Compress:   b2uint16(data[compressIndex:ttlIndex]),
+		TTL:        b2uint32(data[ttlIndex:headerLengthIndex]),
 		Header:     data[headerIndex : headerIndex+headerLength],
 		Body:       data[headerIndex+headerLength:],
 	}, nil
