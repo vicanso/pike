@@ -46,9 +46,13 @@ func ErrorHandler(ctx *fasthttp.RequestCtx, err error) {
 
 // Response 响应数据
 func Response(ctx *fasthttp.RequestCtx, respData *cache.ResponseData) {
+	respHeader := &ctx.Response.Header
 	header := respData.Header
 	body := respData.Body
+	bodyLength := len(body)
 	arr := bytes.Split(header, vars.LineBreak)
+
+	// 设置响应头
 	for _, item := range arr {
 		index := bytes.IndexByte(item, vars.Colon)
 		if index == -1 {
@@ -60,13 +64,46 @@ func Response(ctx *fasthttp.RequestCtx, respData *cache.ResponseData) {
 			index++
 		}
 		v := item[index : len(item)-1]
-		ctx.Response.Header.SetCanonical(k, v)
+		respHeader.SetCanonical(k, v)
 	}
 	if respData.TTL > 0 {
-		age := util.GetSeconds() - int64(respData.CreatedAt)
-		ctx.Response.Header.SetCanonical(vars.Age, []byte(strconv.Itoa(int(age))))
+		age := util.GetSeconds() - respData.CreatedAt
+		respHeader.SetCanonical(vars.Age, []byte(strconv.Itoa(int(age))))
 	}
-	ctx.Response.Header.SetContentLength(len(body))
-	ctx.Response.Header.SetCanonical(vars.Server, vars.ServerName)
+	statusCode := int(respData.StatusCode)
+	// TODO 304
+	// method := ctx.Method()
+	// if bytes.Compare(method, vars.Get) == 0 || bytes.Compare(method, vars.Head) == 0 {
+
+	// }
+
+	supportGzip := ctx.Request.Header.HasAcceptEncodingBytes(vars.Gzip)
+	// 如果数据是gzip
+	if respData.Compress == vars.GzipData {
+		// 如果客户端不支持gzip，则解压
+		if !supportGzip {
+			rawData, err := util.Gunzip(body)
+			if err != nil {
+				ErrorHandler(ctx, err)
+				return
+			}
+			body = rawData
+			bodyLength = len(body)
+		} else {
+			// 客户端支持则设置gzip encoding
+			respHeader.SetCanonical(vars.ContentEncoding, vars.Gzip)
+		}
+	} else if supportGzip && bodyLength > vars.CompressMinLength {
+		// 支持gzip，但是数据未压缩，而且数据大于 CompressMinLength
+		gzipData, err := util.Gzip(body)
+		// 如果压缩失败，直接返回未压缩数据
+		if err == nil {
+			body = gzipData
+			bodyLength = len(body)
+			respHeader.SetCanonical(vars.ContentEncoding, vars.Gzip)
+		}
+	}
+	ctx.Response.SetStatusCode(statusCode)
+	respHeader.SetContentLength(bodyLength)
 	ctx.SetBody(body)
 }
