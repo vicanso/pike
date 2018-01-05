@@ -3,6 +3,8 @@ package vars
 import "errors"
 
 var (
+	// Name the name of application
+	Name = []byte("Pike")
 	// AcceptEncoding http request accept enconding header
 	AcceptEncoding = []byte("Accept-Encoding")
 
@@ -16,10 +18,23 @@ var (
 	IfModifiedSince = []byte("If-Modified-Since")
 	// IfNoneMatch http request IfNoneMatch header
 	IfNoneMatch = []byte("If-None-Match")
+	// ETag http response etag header
+	ETag = []byte("ETag")
+	// LastModified httpresponse LastModified header
+	LastModified = []byte("LastModified")
+	// ServerTiming http response ServerTiming header
+	ServerTiming = []byte("Server-Timing")
+
 	// Age http response age header
 	Age = []byte("Age")
 	// CacheControl http response cache control header
 	CacheControl = []byte("Cache-Control")
+	// ContentType http response content type header
+	ContentType = []byte("Content-Type")
+	// JSON http response content type json
+	JSON = []byte("application/json; charset=utf-8")
+	// NoCache http response cache-control: no-cache
+	NoCache = []byte("no-cache")
 
 	// Gzip gzip compress
 	Gzip = []byte("gzip")
@@ -35,13 +50,22 @@ var (
 	// LineBreak 换行符
 	LineBreak = []byte("\n")
 	// Colon 冒号
-	Colon = []byte(":")[0]
+	Colon = byte(':')
 	// Space 空格
-	Space = []byte(" ")[0]
+	Space = byte(' ')
+)
 
+var (
+	// PingURL the ping url
+	PingURL = []byte("/ping")
+	// AdminURL the admin url prefix
+	AdminURL = []byte("/pike")
+)
+
+// errors
+var (
 	// ErrDirectorUnavailable 没有配置可用的director
 	ErrDirectorUnavailable = errors.New("director unavailable")
-
 	// ErrServiceUnavailable 服务器不可用
 	ErrServiceUnavailable = errors.New("service unavailable")
 	// ErrDbNotInit 没有初始化db

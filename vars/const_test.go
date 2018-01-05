@@ -12,6 +12,7 @@ func testVar(t *testing.T, s1, s2 string) {
 }
 
 func TestVars(t *testing.T) {
+	testVar(t, string(Name), "Pike")
 	testVar(t, string(AcceptEncoding), "Accept-Encoding")
 	testVar(t, string(ContentEncoding), "Content-Encoding")
 	testVar(t, string(ContentLength), "Content-Length")
@@ -20,6 +21,11 @@ func TestVars(t *testing.T) {
 	testVar(t, string(IfNoneMatch), "If-None-Match")
 	testVar(t, string(Age), "Age")
 	testVar(t, string(CacheControl), "Cache-Control")
+	testVar(t, string(ServerTiming), "Server-Timing")
+	testVar(t, string(ContentType), "Content-Type")
+	testVar(t, string(JSON), "application/json; charset=utf-8")
+	testVar(t, string(NoCache), "no-cache")
+
 	testVar(t, string(LineBreak), "\n")
 	testVar(t, string(Colon), ":")
 	testVar(t, string(Space), " ")
@@ -28,6 +34,9 @@ func TestVars(t *testing.T) {
 	testVar(t, string(Br), "br")
 	testVar(t, string(Get), "GET")
 	testVar(t, string(Head), "HEAD")
+
+	testVar(t, string(PingURL), "/ping")
+	testVar(t, string(AdminURL), "/pike")
 
 	testVar(t, ErrDirectorUnavailable.Error(), "director unavailable")
 	testVar(t, ErrServiceUnavailable.Error(), "service unavailable")
