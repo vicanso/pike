@@ -1,5 +1,7 @@
 # HTTP response header 中的 Server，如果未配置，则为fasthttp
-name: pike
+name: Pike
+# 设置CPU限制，0为无限制
+cpus: 0
 # 程序监听的端口
 listen: :3015
 # 数据缓存的db目录

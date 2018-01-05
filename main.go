@@ -4,6 +4,7 @@ import (
 	"flag"
 	"io/ioutil"
 	"log"
+	"runtime"
 
 	"./cache"
 	"./director"
@@ -27,6 +28,9 @@ func main() {
 	if err != nil {
 		log.Fatalf("error: %v", err)
 	}
+	if conf.Cpus > 0 {
+		runtime.GOMAXPROCS(conf.Cpus)
+	}
 
 	_, err = cache.InitDB(conf.DB)
 	if err != nil {
@@ -37,6 +41,8 @@ func main() {
 		name := d.Name
 		cache.InitBucket([]byte(name))
 	}
-
-	server.Start(conf, directorList)
+	err = server.Start(conf, directorList)
+	if err != nil {
+		log.Fatalf("error: %v", err)
+	}
 }
