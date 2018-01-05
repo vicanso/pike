@@ -106,9 +106,9 @@ func TestSeconds(t *testing.T) {
 
 func TestGenRequestKey(t *testing.T) {
 	ctx := &fasthttp.RequestCtx{}
-	ctx.Request.SetRequestURI("http://127.0.0.1:5018/users/me")
+	ctx.Request.SetRequestURI("http://127.0.0.1:5018/users/me?a=1")
 	key := string(GenRequestKey(ctx))
-	if key != "GEThttp://127.0.0.1:5018/users/me" {
+	if key != "GET127.0.0.1:5018/users/me?a=1" {
 		t.Fatalf("gen request key fail, %q", key)
 	}
 }

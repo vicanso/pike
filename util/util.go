@@ -111,9 +111,11 @@ func ConvertToSeconds(buf []byte) uint32 {
 
 // GenRequestKey 生成请求的key: Method + host + request uri
 func GenRequestKey(ctx *fasthttp.RequestCtx) []byte {
+	uri := ctx.URI()
 	return bytes.Join([][]byte{
 		ctx.Method(),
-		ctx.URI().FullURI(),
+		uri.Host(),
+		uri.RequestURI(),
 	}, []byte(""))
 }
 
