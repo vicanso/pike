@@ -7,8 +7,8 @@ import (
 	"../cache"
 	"../util"
 	"../vars"
-
 	"github.com/valyala/fasthttp"
+	"github.com/vicanso/fresh"
 )
 
 // GetResponseHeader 获取响应的header
@@ -41,12 +41,14 @@ func ErrorHandler(ctx *fasthttp.RequestCtx, err error) {
 	default:
 		ctx.SetStatusCode(500)
 	}
+	ctx.Response.Header.SetCanonical(vars.CacheControl, vars.NoCache)
 	ctx.SetBodyString(err.Error())
 }
 
 // Response 响应数据
 func Response(ctx *fasthttp.RequestCtx, respData *cache.ResponseData) {
 	respHeader := &ctx.Response.Header
+	reqHeader := &ctx.Request.Header
 	header := respData.Header
 	body := respData.Body
 	bodyLength := len(body)
@@ -70,14 +72,32 @@ func Response(ctx *fasthttp.RequestCtx, respData *cache.ResponseData) {
 		age := util.GetSeconds() - respData.CreatedAt
 		respHeader.SetCanonical(vars.Age, []byte(strconv.Itoa(int(age))))
 	}
+
 	statusCode := int(respData.StatusCode)
-	// TODO 304
-	// method := ctx.Method()
-	// if bytes.Compare(method, vars.Get) == 0 || bytes.Compare(method, vars.Head) == 0 {
+	method := ctx.Method()
 
-	// }
+	// 只对于GET HEAD请求做304的判断
+	if bytes.Compare(method, vars.Get) == 0 || bytes.Compare(method, vars.Head) == 0 {
+		// 响应的状态码需要为20x或304
+		if (statusCode >= 200 && statusCode < 300) || statusCode == 304 {
+			requestHeaderData := &fresh.RequestHeader{
+				IfModifiedSince: reqHeader.PeekBytes(vars.IfModifiedSince),
+				IfNoneMatch:     reqHeader.PeekBytes(vars.IfNoneMatch),
+				CacheControl:    reqHeader.PeekBytes(vars.CacheControl),
+			}
+			respHeaderData := &fresh.ResponseHeader{
+				ETag:         respHeader.PeekBytes(vars.ETag),
+				LastModified: respHeader.PeekBytes(vars.LastModified),
+			}
+			// 304
+			if fresh.Fresh(requestHeaderData, respHeaderData) {
+				ctx.NotModified()
+				return
+			}
+		}
+	}
 
-	supportGzip := ctx.Request.Header.HasAcceptEncodingBytes(vars.Gzip)
+	supportGzip := reqHeader.HasAcceptEncodingBytes(vars.Gzip)
 	// 如果数据是gzip
 	if respData.Compress == vars.GzipData {
 		// 如果客户端不支持gzip，则解压
