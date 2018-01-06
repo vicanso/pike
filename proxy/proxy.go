@@ -2,7 +2,6 @@ package proxy
 
 import (
 	"bytes"
-	"net"
 	"sync/atomic"
 
 	"../vars"
@@ -37,18 +36,13 @@ func Do(ctx *fasthttp.RequestCtx, us *Upstream) (*fasthttp.Response, error) {
 	// 设置x-forwarded-for
 	xFor := vars.XForwardedFor
 	orginalXFor := ctx.Request.Header.PeekBytes(xFor)
-	localIP := ctx.LocalAddr().String()
+	clientIP := ctx.RemoteIP().String()
 	if len(orginalXFor) == 0 {
-		remoteAddr := ctx.RemoteAddr().String()
-		clientIP, _, err := net.SplitHostPort(remoteAddr)
-		if err != nil {
-			clientIP = remoteAddr
-		}
 		reqHeader.SetCanonical(xFor, []byte(clientIP))
 	} else {
 		// 如果原有HTTP头有x-forwarded-for
 		reqHeader.SetCanonical(xFor, bytes.Join(
-			[][]byte{orginalXFor, []byte(localIP)},
+			[][]byte{orginalXFor, []byte(clientIP)},
 			[]byte(",")))
 	}
 	postBody := ctx.PostBody()
