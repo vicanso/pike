@@ -177,7 +177,7 @@ func handler(ctx *fasthttp.RequestCtx, directorList director.DirectorSlice) {
 	}
 }
 
-func adminHandler(ctx *fasthttp.RequestCtx) {
+func adminHandler(ctx *fasthttp.RequestCtx, directorList director.DirectorSlice) {
 	ctx.Response.Header.SetCanonical(vars.CacheControl, vars.NoCache)
 	switch string(ctx.Path()) {
 	case "/pike/stats":
@@ -187,6 +187,13 @@ func adminHandler(ctx *fasthttp.RequestCtx) {
 		}
 		ctx.SetContentTypeBytes(vars.JSON)
 		ctx.SetBody(stats)
+	case "/pike/directors":
+		data, err := json.Marshal(directorList)
+		if err != nil {
+			dispatch.ErrorHandler(ctx, err)
+		}
+		ctx.SetContentTypeBytes(vars.JSON)
+		ctx.SetBody(data)
 	}
 }
 
@@ -219,7 +226,7 @@ func Start(conf *PikeConfig, directorList director.DirectorSlice) error {
 			}
 			// 管理界面相关接口
 			if bytes.Compare(path[0:len(vars.AdminURL)], vars.AdminURL) == 0 {
-				adminHandler(ctx)
+				adminHandler(ctx, directorList)
 				return
 			}
 			performance.IncreaseConcurrency()

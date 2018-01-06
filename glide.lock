@@ -1,6 +1,8 @@
-hash: d757895c07e6a25349bfb29886f7d10e691c37fd64c6fca72d0d786aaa6392c8
-updated: 2017-12-29T14:48:27.356361232+08:00
+hash: cac24a511ff94001d17d7c0c6d503fcd7376cf4765627dcfade3a9078b147cdb
+updated: 2018-01-05T22:25:44.999851+08:00
 imports:
+- name: github.com/boltdb/bolt
+  version: 2f1ce7a837dcb8da3ec595b1dac9d0632f0f99e8
 - name: github.com/klauspost/compress
   version: ea08389e0dc46025380296f7dd04ab0e8de36adb
   subpackages:
@@ -16,6 +18,12 @@ imports:
   subpackages:
   - fasthttputil
   - stackless
+- name: github.com/vicanso/fresh
+  version: 1a315cf0abf3451bffbb48c9141cb002bd83d573
+- name: golang.org/x/sys
+  version: a3f2cbd54cf5dfe3fbaccf76375fdb12f67654c8
+  subpackages:
+  - unix
 - name: gopkg.in/yaml.v2
   version: 287cf08546ab5e7e37d55a84f7ed3fd1db036de5
 testImports: []

@@ -21,15 +21,15 @@ type Config struct {
 
 // Director 服务器列表
 type Director struct {
-	Name     string
-	Policy   string
-	Ping     string
-	Prefixs  [][]byte
-	Hosts    [][]byte
-	Passes   [][]byte
-	Backends []string
-	Priority int
-	Upstream *proxy.Upstream
+	Name     string          `json:"name"`
+	Policy   string          `json:"policy"`
+	Ping     string          `json:"ping"`
+	Prefixs  [][]byte        `json:"prefixs"`
+	Hosts    [][]byte        `json:"hosts"`
+	Passes   [][]byte        `json:"passes"`
+	Backends []string        `json:"backends"`
+	Priority int             `json:"priority"`
+	Upstream *proxy.Upstream `json:"upstream"`
 }
 
 // DirectorSlice 用于director排序

@@ -10,13 +10,14 @@ import (
 // UpstreamHost proxy upstream
 type UpstreamHost struct {
 	// Conns 连接数
-	Conns     int64
-	MaxConns  int64
-	Host      string
-	Fails     int32
-	Successes int32
-	Healthy   int32
-	Disabled  bool // 表示该upstream为禁止状态
+	Conns     int64  `json:"connections"`
+	MaxConns  int64  `json:"maxConnections"`
+	Host      string `json:"host"`
+	Fails     int32  `json:"fails"`
+	Successes int32  `json:"success"`
+	Healthy   int32  `json:"healthy"`
+	// 表示该upstream为禁止状态
+	Disabled bool `json:"disabled"`
 }
 
 // UpstreamHostPool 保存Upstream列表
@@ -97,9 +98,9 @@ func (uh *UpstreamHost) healthCheck(ping string, interval time.Duration) {
 
 // Upstream 保存backend列表
 type Upstream struct {
-	Name   string
-	Hosts  UpstreamHostPool
-	Policy Policy
+	Name   string           `json:"name"`
+	Hosts  UpstreamHostPool `json:"hosts"`
+	Policy Policy           `json:"policy"`
 }
 
 // StartHealthcheck 启动 health check
