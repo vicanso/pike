@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"sync/atomic"
 
+	"../util"
 	"../vars"
 	"github.com/valyala/fasthttp"
 )
@@ -36,7 +37,7 @@ func Do(ctx *fasthttp.RequestCtx, us *Upstream) (*fasthttp.Response, error) {
 	// 设置x-forwarded-for
 	xFor := vars.XForwardedFor
 	orginalXFor := ctx.Request.Header.PeekBytes(xFor)
-	clientIP := ctx.RemoteIP().String()
+	clientIP := util.GetClientIP(ctx)
 	if len(orginalXFor) == 0 {
 		reqHeader.SetCanonical(xFor, []byte(clientIP))
 	} else {

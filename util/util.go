@@ -140,3 +140,13 @@ func Gunzip(buf []byte) ([]byte, error) {
 	defer r.Close()
 	return ioutil.ReadAll(r)
 }
+
+// GetClientIP 获取客户端IP
+func GetClientIP(ctx *fasthttp.RequestCtx) string {
+	xFor := ctx.Request.Header.PeekBytes(vars.XForwardedFor)
+	if len(xFor) == 0 {
+		return ctx.RemoteIP().String()
+	}
+	arr := bytes.Split(xFor, []byte(","))
+	return string(arr[0])
+}

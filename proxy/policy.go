@@ -6,9 +6,9 @@ import (
 	"hash/fnv"
 	"math"
 	"math/rand"
-	"net"
 	"sync"
 
+	"../util"
 	"../vars"
 	"github.com/valyala/fasthttp"
 )
@@ -136,11 +136,7 @@ type IPHash struct{}
 
 // Select selects an up host from the pool based on hashing the request IP
 func (r *IPHash) Select(pool UpstreamHostPool, ctx *fasthttp.RequestCtx) *UpstreamHost {
-	remoteAddr := ctx.RemoteAddr().String()
-	clientIP, _, err := net.SplitHostPort(remoteAddr)
-	if err != nil {
-		clientIP = remoteAddr
-	}
+	clientIP := util.GetClientIP(ctx)
 	return hostByHashing(pool, clientIP)
 }
 

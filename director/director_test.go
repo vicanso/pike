@@ -63,8 +63,6 @@ func TestCreateDirector(t *testing.T) {
 	testMatch(t, d, []byte("dcharts.com"), []byte("/albi"), false)
 	testMatch(t, d, []byte("aslant.site"), []byte("/abc"), false)
 
-	ToJSON(dList)
-
 	testDirector := CreateDirector(&Config{
 		Name: "TEST",
 	})

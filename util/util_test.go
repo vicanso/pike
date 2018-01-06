@@ -127,3 +127,16 @@ func TestGzip(t *testing.T) {
 		t.Fatalf("do gunzip fail")
 	}
 }
+
+func TestGetClientIP(t *testing.T) {
+	ctx := &fasthttp.RequestCtx{}
+	ip := GetClientIP(ctx)
+	if ip != "0.0.0.0" {
+		t.Fatalf("the client ip excpect 0.0.0.0 but %v", ip)
+	}
+	ctx.Request.Header.SetCanonical([]byte("X-Forwarded-For"), []byte("4.4.4.4,8.8.8.8"))
+	ip = GetClientIP(ctx)
+	if ip != "4.4.4.4" {
+		t.Fatalf("the client ip excpect 4.4.4.4 but %v", ip)
+	}
+}
