@@ -1,5 +1,5 @@
-hash: cac24a511ff94001d17d7c0c6d503fcd7376cf4765627dcfade3a9078b147cdb
-updated: 2018-01-05T22:25:44.999851+08:00
+hash: 20d858399d592f4e817dc2244b404b78b3a254a74dcdf2d127177de482361c81
+updated: 2018-01-06T20:43:06.00502+08:00
 imports:
 - name: github.com/boltdb/bolt
   version: 2f1ce7a837dcb8da3ec595b1dac9d0632f0f99e8
@@ -11,6 +11,8 @@ imports:
   - zlib
 - name: github.com/klauspost/cpuid
   version: eae9b3e628d72774e13bdf024e78c0802f85a5b9
+- name: github.com/tidwall/gjson
+  version: e62d62a3e1e9f324346170bbc04333341f803dfb
 - name: github.com/valyala/bytebufferpool
   version: e746df99fe4a3986f4d4f79e13c1e0117ce9c2f7
 - name: github.com/valyala/fasthttp
@@ -21,7 +23,7 @@ imports:
 - name: github.com/vicanso/fresh
   version: 1a315cf0abf3451bffbb48c9141cb002bd83d573
 - name: golang.org/x/sys
-  version: a3f2cbd54cf5dfe3fbaccf76375fdb12f67654c8
+  version: dd9ec17814d5b1de388ebe438ec013d57d8b3779
   subpackages:
   - unix
 - name: gopkg.in/yaml.v2

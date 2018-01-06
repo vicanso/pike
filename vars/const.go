@@ -70,6 +70,8 @@ var (
 	ErrServiceUnavailable = errors.New("service unavailable")
 	// ErrDbNotInit 没有初始化db
 	ErrDbNotInit = errors.New("db isn't init")
+	// AccessIsNotAlloed 不允许访问
+	AccessIsNotAlloed = errors.New("access is not allowed")
 )
 
 const (

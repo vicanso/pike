@@ -2,7 +2,6 @@ package server
 
 import (
 	"bytes"
-	"encoding/json"
 	"strconv"
 	"time"
 
@@ -49,6 +48,7 @@ func getDirector(host, uri []byte, directorList director.DirectorSlice) *directo
 	return found
 }
 
+// 转发处理，返回响应头与响应数据
 func doProxy(ctx *fasthttp.RequestCtx, us *proxy.Upstream) (*fasthttp.Response, []byte, []byte, error) {
 	resp, err := proxy.Do(ctx, us)
 	if err != nil {
@@ -62,6 +62,7 @@ func doProxy(ctx *fasthttp.RequestCtx, us *proxy.Upstream) (*fasthttp.Response, 
 	return resp, header, body, nil
 }
 
+// 设置响应的 Server-Timing
 func setServerTiming(ctx *fasthttp.RequestCtx, startedAt time.Time) {
 	v := startedAt.UnixNano()
 	now := time.Now().UnixNano()
@@ -86,9 +87,11 @@ func handler(ctx *fasthttp.RequestCtx, directorList director.DirectorSlice) {
 	uri := ctx.RequestURI()
 	found := getDirector(host, uri, directorList)
 	defer setServerTiming(ctx, startedAt)
+	// 出错处理
 	errorHandler := func(err error) {
 		dispatch.ErrorHandler(ctx, err)
 	}
+	// 正常的响应
 	responseHandler := func(data *cache.ResponseData) {
 		dispatch.Response(ctx, data)
 	}
@@ -102,16 +105,20 @@ func handler(ctx *fasthttp.RequestCtx, directorList director.DirectorSlice) {
 	isPass := util.Pass(ctx, found.Passes)
 	status := vars.Pass
 	var key []byte
+	// 如果不是pass的请求，则获取该请求对应的状态
 	if !isPass {
 		key = util.GenRequestKey(ctx)
+		// 如果已经有相同的key在处理，则会返回c(chan int)
 		s, c := cache.GetRequestStatus(key)
 		status = s
+		// 如果有chan，等待chan返回的状态
 		if c != nil {
 			status = <-c
 		}
 	}
 	switch status {
 	case vars.Pass:
+		// pass的请求直接转发至upstream
 		resp, header, body, err := doProxy(ctx, us)
 		if err != nil {
 			errorHandler(err)
@@ -127,6 +134,8 @@ func handler(ctx *fasthttp.RequestCtx, directorList director.DirectorSlice) {
 		}
 		responseHandler(respData)
 	case vars.Fetching, vars.HitForPass:
+		//feacthing或hitforpass的请求转至upstream
+		// 并根据返回的数据是否可以缓存设置缓存
 		resp, header, body, err := doProxy(ctx, us)
 		if err != nil {
 			cache.HitForPass(key, hitForPassTTL)
@@ -156,13 +165,18 @@ func handler(ctx *fasthttp.RequestCtx, directorList director.DirectorSlice) {
 		responseHandler(respData)
 
 		if cacheAge <= 0 {
-			cache.HitForPass(key, hitForPassTTL)
+			// 如果原来的状态不是hitForPass，则设置状态
+			if status != vars.HitForPass {
+				cache.HitForPass(key, hitForPassTTL)
+			}
 		} else {
 			bucket := []byte(found.Name)
 			err = cache.SaveResponseData(bucket, key, respData)
 			if err != nil {
+				// 如果保存数据失败，则设置hit for pass
 				cache.HitForPass(key, hitForPassTTL)
 			} else {
+				// 如果保存数据成功，则设置为cacheable
 				cache.Cacheable(key, cacheAge)
 			}
 		}
@@ -177,26 +191,6 @@ func handler(ctx *fasthttp.RequestCtx, directorList director.DirectorSlice) {
 	}
 }
 
-func adminHandler(ctx *fasthttp.RequestCtx, directorList director.DirectorSlice) {
-	ctx.Response.Header.SetCanonical(vars.CacheControl, vars.NoCache)
-	switch string(ctx.Path()) {
-	case "/pike/stats":
-		stats, err := json.Marshal(performance.GetStats())
-		if err != nil {
-			dispatch.ErrorHandler(ctx, err)
-		}
-		ctx.SetContentTypeBytes(vars.JSON)
-		ctx.SetBody(stats)
-	case "/pike/directors":
-		data, err := json.Marshal(directorList)
-		if err != nil {
-			dispatch.ErrorHandler(ctx, err)
-		}
-		ctx.SetContentTypeBytes(vars.JSON)
-		ctx.SetBody(data)
-	}
-}
-
 // Start 启动服务器
 func Start(conf *PikeConfig, directorList director.DirectorSlice) error {
 	listen := conf.Listen
@@ -206,6 +200,8 @@ func Start(conf *PikeConfig, directorList director.DirectorSlice) error {
 	if conf.HitForPass > 0 {
 		hitForPassTTL = uint32(conf.HitForPass)
 	}
+
+	var blackIP = &BlackIP{}
 	s := &fasthttp.Server{
 		Name:                 conf.Name,
 		Concurrency:          conf.Concurrency,
@@ -218,6 +214,11 @@ func Start(conf *PikeConfig, directorList director.DirectorSlice) error {
 		MaxKeepaliveDuration: conf.MaxKeepaliveDuration,
 		MaxRequestBodySize:   conf.MaxRequestBodySize,
 		Handler: func(ctx *fasthttp.RequestCtx) {
+			clientIP := util.GetClientIP(ctx)
+			if blackIP.FindIndex(clientIP) != -1 {
+				dispatch.ErrorHandler(ctx, vars.AccessIsNotAlloed)
+				return
+			}
 			path := ctx.Path()
 			// health check
 			if bytes.Compare(path, vars.PingURL) == 0 {
@@ -226,7 +227,7 @@ func Start(conf *PikeConfig, directorList director.DirectorSlice) error {
 			}
 			// 管理界面相关接口
 			if bytes.Compare(path[0:len(vars.AdminURL)], vars.AdminURL) == 0 {
-				adminHandler(ctx, directorList)
+				adminHandler(ctx, directorList, blackIP)
 				return
 			}
 			performance.IncreaseConcurrency()
