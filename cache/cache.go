@@ -166,6 +166,10 @@ func GetResponse(bucket, key []byte) (*ResponseData, error) {
 	if err != nil {
 		return nil, err
 	}
+	if len(data) == 0 {
+		return nil, nil
+	}
+
 	b2uint16 := util.ConvertBytesToUint16
 	b2uint32 := util.ConvertBytesToUint32
 	headerLength := b2uint16(data[headerLengthIndex:headerIndex])
@@ -177,6 +181,27 @@ func GetResponse(bucket, key []byte) (*ResponseData, error) {
 		Header:     data[headerIndex : headerIndex+headerLength],
 		Body:       data[headerIndex+headerLength:],
 	}, nil
+}
+
+// ClearExpiredResponseData 清除已过期缓存
+func ClearExpiredResponseData(bucket []byte) error {
+	if client == nil {
+		return vars.ErrDbNotInit
+	}
+	expiredTime := util.GetSeconds()
+	return client.Batch(func(tx *bolt.Tx) error {
+		b := tx.Bucket(bucket)
+		c := b.Cursor()
+		b2uint32 := util.ConvertBytesToUint32
+		for k, v := c.First(); k != nil; k, v = c.Next() {
+			createdAt := b2uint32(v[createIndex:statusCodeIndex])
+			ttl := b2uint32(v[ttlIndex:headerLengthIndex])
+			if expiredTime > createdAt+ttl {
+				b.Delete(k)
+			}
+		}
+		return nil
+	})
 }
 
 // Save 保存数据
@@ -202,4 +227,9 @@ func Get(bucket, key []byte) ([]byte, error) {
 		return nil
 	})
 	return buf, nil
+}
+
+// GetClient 获取 client
+func GetClient() *bolt.DB {
+	return client
 }

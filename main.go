@@ -33,10 +33,11 @@ func main() {
 		runtime.GOMAXPROCS(conf.Cpus)
 	}
 
-	_, err = cache.InitDB(conf.DB)
+	db, err := cache.InitDB(conf.DB)
 	if err != nil {
 		log.Fatalf("error: %v", err)
 	}
+	defer db.Close()
 	directorList := director.GetDirectors(conf.Directors)
 	for _, d := range directorList {
 		name := d.Name

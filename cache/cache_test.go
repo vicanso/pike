@@ -2,20 +2,22 @@ package cache
 
 import (
 	"bytes"
+	"log"
+	"strconv"
 	"testing"
 	"time"
 
 	"../util"
 	"../vars"
+	"github.com/boltdb/bolt"
 	"github.com/valyala/fasthttp"
 )
 
 func TestDB(t *testing.T) {
-	db, err := InitDB("/tmp/pike.db")
+	_, err := InitDB("/tmp/pike.db")
 	if err != nil {
 		t.Fatalf("open db fail, %v", err)
 	}
-	defer db.Close()
 	bucket := []byte("aslant")
 	err = InitBucket(bucket)
 	if err != nil {
@@ -128,4 +130,91 @@ func TestRequestStatus(t *testing.T) {
 
 	Cacheable(key, 100)
 	time.Sleep(time.Second)
+}
+
+func TestResponseCache(t *testing.T) {
+	InitDB("/tmp/pike.db")
+	bucket := []byte("aslant")
+	InitBucket(bucket)
+	var ttl uint32 = 60
+	// 设置数据保存后则刚过期
+	SaveResponseData(bucket, []byte("response-a"), &ResponseData{
+		CreatedAt:  util.GetSeconds() - ttl,
+		StatusCode: 200,
+		Compress:   vars.RawData,
+		TTL:        ttl,
+		Header:     []byte("response-a-header"),
+		Body:       []byte("response-a-body"),
+	})
+
+	SaveResponseData(bucket, []byte("response-b"), &ResponseData{
+		CreatedAt:  util.GetSeconds() - ttl - 10,
+		StatusCode: 200,
+		Compress:   vars.RawData,
+		TTL:        ttl,
+		Header:     []byte("response-b-header"),
+		Body:       []byte("response-b-body"),
+	})
+
+	err := ClearExpiredResponseData(bucket)
+	if err != nil {
+		t.Fatalf("clear expired response data fail, %v", err)
+	}
+	data, err := GetResponse(bucket, []byte("response-b"))
+	if data != nil {
+		t.Fatalf("clear expired response data fail, the response-b should be remove")
+	}
+
+	// 测试生成插入多条记录，将对过期数据删除
+	startedAt := time.Now()
+	count := 10 * 1024
+	for index := 0; index < count; index++ {
+		key := []byte("test-" + strconv.Itoa(index))
+		offset := (ttl + 10)
+		if index%2 == 0 {
+			offset = 0
+		}
+		SaveResponseData(bucket, key, &ResponseData{
+			CreatedAt:  util.GetSeconds() - offset,
+			StatusCode: 200,
+			Compress:   vars.RawData,
+			TTL:        ttl,
+			Header:     make([]byte, 3*1024),
+			Body:       make([]byte, 50*1024),
+		})
+	}
+	log.Printf("create %v use %v", count, time.Since(startedAt))
+	getCount := func() int {
+		count := 0
+		client := GetClient()
+		client.View(func(tx *bolt.Tx) error {
+			c := tx.Bucket(bucket).Cursor()
+			prefix := []byte("test-")
+			for k, v := c.Seek(prefix); k != nil && bytes.HasPrefix(k, prefix); k, v = c.Next() {
+				if v != nil {
+					count++
+				}
+			}
+			return nil
+		})
+		return count
+	}
+	startedAt = time.Now()
+	currnetCount := getCount()
+	if currnetCount != count {
+		t.Fatalf("get the test- cache expect %v but %v", count, currnetCount)
+	}
+	log.Printf("count %v use %v", count, time.Since(startedAt))
+
+	startedAt = time.Now()
+	err = ClearExpiredResponseData(bucket)
+	if err != nil {
+		t.Fatalf("clear expired response data fail, %v", err)
+	}
+	log.Printf("clear expired data %v use %v", count/2, time.Since(startedAt))
+	currnetCount = getCount()
+	if currnetCount != count/2 {
+		t.Fatalf("get the test- cache expect %v but %v", count/2, currnetCount)
+	}
+	client.Close()
 }
