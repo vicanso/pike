@@ -30,6 +30,8 @@ func TestVars(t *testing.T) {
 	testVar(t, string(Colon), ":")
 	testVar(t, string(Space), " ")
 
+	testVar(t, string(ConfigBucket), "config")
+
 	testVar(t, string(Gzip), "gzip")
 	testVar(t, string(Br), "br")
 	testVar(t, string(Get), "GET")

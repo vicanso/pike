@@ -1,6 +1,12 @@
 package server
 
-import "sort"
+import (
+	"sort"
+	"strings"
+
+	"../cache"
+	"../vars"
+)
 
 // TODO 是否将黑名单保存
 
@@ -11,12 +17,17 @@ type BlackIP struct {
 	IPList []string `json:"ipList"`
 }
 
+// 保存到bucket中对应的key
+var blackeIPKey = []byte("blackIP")
+
 // Add 添加黑名单IP
 func (b *BlackIP) Add(ip string) {
 	index := b.FindIndex(ip)
 	if index == -1 {
 		b.IPList = append(b.IPList, ip)
 		sort.Strings(b.IPList)
+		data := []byte(strings.Join(b.IPList, ","))
+		cache.Save(vars.ConfigBucket, blackeIPKey, data)
 	}
 }
 
@@ -39,4 +50,14 @@ func (b *BlackIP) Remove(ip string) {
 		ipList := b.IPList
 		b.IPList = append(ipList[:index], ipList[index+1:]...)
 	}
+}
+
+// InitFromCache 从缓存中初始化黑名单IP
+func (b *BlackIP) InitFromCache() {
+	data, err := cache.Get(vars.ConfigBucket, blackeIPKey)
+	if err != nil {
+		return
+	}
+	ips := strings.Split(string(data), ",")
+	b.IPList = append(b.IPList, ips...)
 }

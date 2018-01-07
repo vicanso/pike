@@ -202,6 +202,7 @@ func Start(conf *PikeConfig, directorList director.DirectorSlice) error {
 	}
 
 	var blackIP = &BlackIP{}
+	blackIP.InitFromCache()
 	s := &fasthttp.Server{
 		Name:                 conf.Name,
 		Concurrency:          conf.Concurrency,
