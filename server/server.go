@@ -231,6 +231,7 @@ func Start(conf *PikeConfig, directorList director.DirectorSlice) error {
 				adminHandler(ctx, directorList, blackIP)
 				return
 			}
+			performance.IncreaseRequestCount()
 			performance.IncreaseConcurrency()
 			defer performance.DecreaseConcurrency()
 			handler(ctx, directorList)
