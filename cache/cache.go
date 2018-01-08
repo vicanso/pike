@@ -3,16 +3,17 @@ package cache
 import (
 	"bytes"
 	"sync"
+	"time"
 
 	"../util"
 	"../vars"
-	"github.com/boltdb/bolt"
+	"github.com/dgraph-io/badger"
 )
 
 var rsMap = make(map[string]*RequestStatus)
 var rsMutex = sync.Mutex{}
 
-var client *bolt.DB
+var client *badger.DB
 
 // ResponseData 记录响应数据
 type ResponseData struct {
@@ -109,11 +110,15 @@ func Cacheable(key []byte, ttl uint32) {
 }
 
 // InitDB 初始化db
-func InitDB(file string) (*bolt.DB, error) {
+func InitDB(dbPath string) (*badger.DB, error) {
 	if client != nil {
 		return client, nil
 	}
-	db, err := bolt.Open(file, 0600, nil)
+
+	opts := badger.DefaultOptions
+	opts.Dir = dbPath
+	opts.ValueDir = dbPath
+	db, err := badger.Open(opts)
 	if err != nil {
 		return nil, err
 	}
@@ -121,19 +126,8 @@ func InitDB(file string) (*bolt.DB, error) {
 	return db, nil
 }
 
-// InitBucket 初始化bucket
-func InitBucket(bucket []byte) error {
-	if client == nil {
-		return vars.ErrDbNotInit
-	}
-	return client.Update(func(tx *bolt.Tx) error {
-		_, err := tx.CreateBucketIfNotExists(bucket)
-		return err
-	})
-}
-
 // SaveResponseData 保存Response
-func SaveResponseData(bucket, key []byte, respData *ResponseData) error {
+func SaveResponseData(key []byte, respData *ResponseData) error {
 	// 前四个字节保存创建时间
 	// 接着后面两个字节保存ttl
 	// 接着后面两个字节保存header的长度
@@ -146,7 +140,7 @@ func SaveResponseData(bucket, key []byte, respData *ResponseData) error {
 	uint322b := util.ConvertUint32ToBytes
 	uint162b := util.ConvertUint16ToBytes
 	header := respData.Header
-
+	ttl := respData.TTL
 	s := [][]byte{
 		uint322b(createdAt),
 		uint162b(respData.StatusCode),
@@ -157,12 +151,12 @@ func SaveResponseData(bucket, key []byte, respData *ResponseData) error {
 		respData.Body,
 	}
 	data := bytes.Join(s, []byte(""))
-	return Save(bucket, key, data)
+	return Save(key, data, ttl)
 }
 
 // GetResponse 获取response
-func GetResponse(bucket, key []byte) (*ResponseData, error) {
-	data, err := Get(bucket, key)
+func GetResponse(key []byte) (*ResponseData, error) {
+	data, err := Get(key)
 	if err != nil {
 		return nil, err
 	}
@@ -183,53 +177,60 @@ func GetResponse(bucket, key []byte) (*ResponseData, error) {
 	}, nil
 }
 
-// ClearExpiredResponseData 清除已过期缓存
-func ClearExpiredResponseData(bucket []byte) error {
-	if client == nil {
-		return vars.ErrDbNotInit
-	}
-	expiredTime := util.GetSeconds()
-	return client.Batch(func(tx *bolt.Tx) error {
-		b := tx.Bucket(bucket)
-		c := b.Cursor()
-		b2uint32 := util.ConvertBytesToUint32
-		for k, v := c.First(); k != nil; k, v = c.Next() {
-			createdAt := b2uint32(v[createIndex:statusCodeIndex])
-			ttl := b2uint32(v[ttlIndex:headerLengthIndex])
-			if expiredTime > createdAt+ttl {
-				b.Delete(k)
-			}
-		}
-		return nil
-	})
-}
-
 // Save 保存数据
-func Save(bucket, key, buf []byte) error {
+func Save(key, buf []byte, ttl uint32) error {
 	if client == nil {
 		return vars.ErrDbNotInit
 	}
-	return client.Update(func(tx *bolt.Tx) error {
-		b := tx.Bucket(bucket)
-		return b.Put(key, buf)
+	return client.Update(func(tx *badger.Txn) error {
+		return tx.SetEntry(&badger.Entry{
+			Key:   key,
+			Value: buf,
+			// 缓存的数据延期5秒过期
+			ExpiresAt: uint64(time.Now().Unix()) + uint64(ttl) + 5,
+		})
 	})
 }
 
 // Get 获取数据
-func Get(bucket, key []byte) ([]byte, error) {
+func Get(key []byte) ([]byte, error) {
 	if client == nil {
 		return nil, vars.ErrDbNotInit
 	}
 	var buf []byte
-	client.View(func(tx *bolt.Tx) error {
-		b := tx.Bucket(bucket)
-		buf = b.Get(key)
+
+	err := client.View(func(txn *badger.Txn) error {
+		item, err := txn.Get(key)
+		if err != nil {
+			return err
+		}
+		val, err := item.Value()
+		if err != nil {
+			return err
+		}
+		buf = val
 		return nil
 	})
-	return buf, nil
+
+	return buf, err
 }
 
-// GetClient 获取 client
-func GetClient() *bolt.DB {
-	return client
+// ClearExpired 清除过期数据数据
+func ClearExpired() error {
+	if client == nil {
+		return vars.ErrDbNotInit
+	}
+	err := client.PurgeOlderVersions()
+	if err != nil {
+		return err
+	}
+	return client.RunValueLogGC(0.5)
+}
+
+// Close 关闭数据库
+func Close() error {
+	if client == nil {
+		return vars.ErrDbNotInit
+	}
+	return client.Close()
 }

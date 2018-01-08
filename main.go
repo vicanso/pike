@@ -9,7 +9,6 @@ import (
 	"./cache"
 	"./director"
 	"./server"
-	"./vars"
 	"gopkg.in/yaml.v2"
 )
 
@@ -39,12 +38,6 @@ func main() {
 	}
 	defer db.Close()
 	directorList := director.GetDirectors(conf.Directors)
-	for _, d := range directorList {
-		name := d.Name
-		cache.InitBucket([]byte(name))
-	}
-	// 用于保存配置数据
-	cache.InitBucket(vars.ConfigBucket)
 	err = server.Start(conf, directorList)
 	if err != nil {
 		log.Fatalf("error: %v", err)

@@ -5,7 +5,6 @@ import (
 	"strings"
 
 	"../cache"
-	"../vars"
 )
 
 // TODO 是否将黑名单保存
@@ -18,7 +17,7 @@ type BlackIP struct {
 }
 
 // 保存到bucket中对应的key
-var blackeIPKey = []byte("blackIP")
+var blackeIPKey = []byte("config-blackIP")
 
 // Add 添加黑名单IP
 func (b *BlackIP) Add(ip string) {
@@ -27,7 +26,7 @@ func (b *BlackIP) Add(ip string) {
 		b.IPList = append(b.IPList, ip)
 		sort.Strings(b.IPList)
 		data := []byte(strings.Join(b.IPList, ","))
-		cache.Save(vars.ConfigBucket, blackeIPKey, data)
+		cache.Save(blackeIPKey, data, 365*24*3600)
 	}
 }
 
@@ -54,7 +53,7 @@ func (b *BlackIP) Remove(ip string) {
 
 // InitFromCache 从缓存中初始化黑名单IP
 func (b *BlackIP) InitFromCache() {
-	data, err := cache.Get(vars.ConfigBucket, blackeIPKey)
+	data, err := cache.Get(blackeIPKey)
 	if err != nil {
 		return
 	}

@@ -147,7 +147,7 @@ func handler(ctx *fasthttp.RequestCtx, directorList director.DirectorSlice) {
 		compressType := vars.RawData
 		// 可以缓存的数据，则将数据先压缩
 		// 不可缓存的数据，`dispatch.Response`函数会根据客户端来决定是否压缩
-		if cacheAge > 0 {
+		if cacheAge > 0 && len(body) > vars.CompressMinLength {
 			gzipData, err := util.Gzip(body)
 			if err == nil {
 				body = gzipData
@@ -170,8 +170,7 @@ func handler(ctx *fasthttp.RequestCtx, directorList director.DirectorSlice) {
 				cache.HitForPass(key, hitForPassTTL)
 			}
 		} else {
-			bucket := []byte(found.Name)
-			err = cache.SaveResponseData(bucket, key, respData)
+			err = cache.SaveResponseData(key, respData)
 			if err != nil {
 				// 如果保存数据失败，则设置hit for pass
 				cache.HitForPass(key, hitForPassTTL)
@@ -181,8 +180,7 @@ func handler(ctx *fasthttp.RequestCtx, directorList director.DirectorSlice) {
 			}
 		}
 	case vars.Cacheable:
-		bucket := []byte(found.Name)
-		respData, err := cache.GetResponse(bucket, key)
+		respData, err := cache.GetResponse(key)
 		if err != nil {
 			errorHandler(err)
 			return

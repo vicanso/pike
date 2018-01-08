@@ -53,8 +53,6 @@ var (
 	Colon = byte(':')
 	// Space 空格
 	Space = byte(' ')
-	// ConfigBucket 保存配置信息的bucket
-	ConfigBucket = []byte("config")
 )
 
 var (
