@@ -124,6 +124,10 @@ func TestRequestStatus(t *testing.T) {
 	}(c)
 
 	Cacheable(key, 100)
+	size := Size()
+	if size != 2 {
+		t.Fatalf("the cache size expect 2 but %v", size)
+	}
 	time.Sleep(time.Second)
 }
 

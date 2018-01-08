@@ -4,6 +4,8 @@ import (
 	"runtime"
 	"sync/atomic"
 	"time"
+
+	"../cache"
 )
 
 var concurrency uint32
@@ -23,6 +25,7 @@ type Stats struct {
 	HeapInuse        int      `json:"heapInuse"`
 	StartedAt        string   `json:"startedAt"`
 	RequestCountList []uint32 `json:"requestCountList"`
+	CacheCount       int      `json:"cacheCount"`
 }
 
 // IncreaseConcurrency concurrency 加一
@@ -74,6 +77,7 @@ func GetStats() *Stats {
 		HeapInuse:        int(m.HeapInuse / mb),
 		StartedAt:        startedAt,
 		RequestCountList: requestCountList,
+		CacheCount:       cache.Size(),
 	}
 	return stats
 }

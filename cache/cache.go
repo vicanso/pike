@@ -58,6 +58,11 @@ func isExpired(rs *RequestStatus) bool {
 	return false
 }
 
+// Size 获取缓存记录的总数
+func Size() int {
+	return len(rsMap)
+}
+
 // GetRequestStatus 获取请求的状态
 func GetRequestStatus(key []byte) (int, chan int) {
 	rsMutex.Lock()
@@ -217,6 +222,15 @@ func Get(key []byte) ([]byte, error) {
 
 // ClearExpired 清除过期数据数据
 func ClearExpired() error {
+	rsMutex.Lock()
+	now := uint32(time.Now().Unix())
+	for k, v := range rsMap {
+		if v.createdAt+v.ttl < now {
+			delete(rsMap, k)
+		}
+	}
+	rsMutex.Unlock()
+
 	if client == nil {
 		return vars.ErrDbNotInit
 	}
