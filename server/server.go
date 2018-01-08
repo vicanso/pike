@@ -33,6 +33,7 @@ type PikeConfig struct {
 	MaxConnsPerIP        int           `yaml:"maxConnsPerIP"`
 	MaxKeepaliveDuration time.Duration `yaml:"maxKeepaliveDuration"`
 	MaxRequestBodySize   int           `yaml:"maxRequestBodySize"`
+	ExpiredClearInterval time.Duration `yaml:"expiredClearInterval"`
 	Directors            []*director.Config
 }
 

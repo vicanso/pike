@@ -26,6 +26,8 @@ maxConnsPerIP: 0
 maxKeepaliveDuration: 0 
 # 设置最大的请求数据大小
 maxRequestBodySize: 0
+# 过期缓存的清除时间间隔
+expiredClearInterval: 300s
 directors:
   -
     # 名称

@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"log"
 	"runtime"
+	"time"
 
 	"./cache"
 	"./director"
@@ -15,6 +16,12 @@ import (
 var (
 	config string
 )
+
+func clear(interval time.Duration) {
+	time.Sleep(interval)
+	cache.ClearExpired()
+	go clear(interval)
+}
 
 func main() {
 	flag.StringVar(&config, "c", "/etc/pike/config.yml", "the config file")
@@ -31,6 +38,7 @@ func main() {
 	if conf.Cpus > 0 {
 		runtime.GOMAXPROCS(conf.Cpus)
 	}
+	go clear(conf.ExpiredClearInterval)
 
 	db, err := cache.InitDB(conf.DB)
 	if err != nil {
