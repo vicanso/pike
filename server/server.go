@@ -145,9 +145,11 @@ func handler(ctx *fasthttp.RequestCtx, directorList director.DirectorSlice) {
 		statusCode := uint16(resp.StatusCode())
 		cacheAge := util.GetCacheAge(&resp.Header)
 		compressType := vars.RawData
+		contentType := resp.Header.PeekBytes(vars.ContentType)
+		shouldCompress := util.ShouldCompress(contentType)
 		// 可以缓存的数据，则将数据先压缩
 		// 不可缓存的数据，`dispatch.Response`函数会根据客户端来决定是否压缩
-		if cacheAge > 0 && len(body) > vars.CompressMinLength {
+		if shouldCompress && cacheAge > 0 && len(body) > vars.CompressMinLength {
 			gzipData, err := util.Gzip(body)
 			if err == nil {
 				body = gzipData

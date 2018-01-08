@@ -98,6 +98,8 @@ func Response(ctx *fasthttp.RequestCtx, respData *cache.ResponseData) {
 	}
 
 	supportGzip := reqHeader.HasAcceptEncodingBytes(vars.Gzip)
+	contentType := respHeader.PeekBytes(vars.ContentType)
+	shouldCompress := util.ShouldCompress(contentType)
 	// 如果数据是gzip
 	if respData.Compress == vars.GzipData {
 		// 如果客户端不支持gzip，则解压
@@ -113,7 +115,7 @@ func Response(ctx *fasthttp.RequestCtx, respData *cache.ResponseData) {
 			// 客户端支持则设置gzip encoding
 			respHeader.SetCanonical(vars.ContentEncoding, vars.Gzip)
 		}
-	} else if supportGzip && bodyLength > vars.CompressMinLength {
+	} else if supportGzip && shouldCompress && bodyLength > vars.CompressMinLength {
 		// 支持gzip，但是数据未压缩，而且数据大于 CompressMinLength
 		gzipData, err := util.Gzip(body)
 		// 如果压缩失败，直接返回未压缩数据

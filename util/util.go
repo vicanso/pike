@@ -150,3 +150,10 @@ func GetClientIP(ctx *fasthttp.RequestCtx) string {
 	arr := bytes.Split(xFor, []byte(","))
 	return string(arr[0])
 }
+
+// ShouldCompress 判断该响应数据是否应该压缩(针对文本类压缩)
+func ShouldCompress(contentType []byte) bool {
+	// 检测是否为文本
+	reg, _ := regexp.Compile(`text|application/javascript|application/x-javascript|application/json`)
+	return reg.Match(contentType)
+}
