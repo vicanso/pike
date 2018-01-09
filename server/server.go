@@ -2,12 +2,14 @@ package server
 
 import (
 	"bytes"
+	"fmt"
 	"strconv"
 	"time"
 
 	"../cache"
 	"../director"
 	"../dispatch"
+	"../httplog"
 	"../performance"
 	"../proxy"
 	"../util"
@@ -34,6 +36,7 @@ type PikeConfig struct {
 	MaxKeepaliveDuration time.Duration `yaml:"maxKeepaliveDuration"`
 	MaxRequestBodySize   int           `yaml:"maxRequestBodySize"`
 	ExpiredClearInterval time.Duration `yaml:"expiredClearInterval"`
+	LogFormat            string        `yaml:"logFormat"`
 	Directors            []*director.Config
 }
 
@@ -82,12 +85,18 @@ func setServerTiming(ctx *fasthttp.RequestCtx, startedAt time.Time) {
 	}
 }
 
-func handler(ctx *fasthttp.RequestCtx, directorList director.DirectorSlice) {
+func handler(ctx *fasthttp.RequestCtx, directorList director.DirectorSlice, tags []*httplog.Tag) {
 	startedAt := time.Now()
 	host := ctx.Request.Host()
 	uri := ctx.RequestURI()
 	found := getDirector(host, uri, directorList)
 	defer setServerTiming(ctx, startedAt)
+	if len(tags) != 0 {
+		defer func() {
+			logBuf := httplog.Format(ctx, tags, startedAt)
+			fmt.Println(string(logBuf))
+		}()
+	}
 	// 出错处理
 	errorHandler := func(err error) {
 		dispatch.ErrorHandler(ctx, err)
@@ -204,6 +213,7 @@ func Start(conf *PikeConfig, directorList director.DirectorSlice) error {
 
 	var blackIP = &BlackIP{}
 	blackIP.InitFromCache()
+	tags := httplog.Parse([]byte(conf.LogFormat))
 	s := &fasthttp.Server{
 		Name:                 conf.Name,
 		Concurrency:          conf.Concurrency,
@@ -235,7 +245,7 @@ func Start(conf *PikeConfig, directorList director.DirectorSlice) error {
 			performance.IncreaseRequestCount()
 			performance.IncreaseConcurrency()
 			defer performance.DecreaseConcurrency()
-			handler(ctx, directorList)
+			handler(ctx, directorList, tags)
 		},
 	}
 	return s.ListenAndServe(listen)

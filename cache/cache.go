@@ -144,7 +144,7 @@ func SaveResponseData(key []byte, respData *ResponseData) error {
 	}
 	uint322b := util.ConvertUint32ToBytes
 	uint162b := util.ConvertUint16ToBytes
-	header := respData.Header
+	header := util.TrimHeader(respData.Header)
 	ttl := respData.TTL
 	s := [][]byte{
 		uint322b(createdAt),
@@ -187,12 +187,13 @@ func Save(key, buf []byte, ttl uint32) error {
 	if client == nil {
 		return vars.ErrDbNotInit
 	}
+	var stale uint64 = 5
 	return client.Update(func(tx *badger.Txn) error {
 		return tx.SetEntry(&badger.Entry{
 			Key:   key,
 			Value: buf,
 			// 缓存的数据延期5秒过期
-			ExpiresAt: uint64(time.Now().Unix()) + uint64(ttl) + 5,
+			ExpiresAt: uint64(time.Now().Unix()) + uint64(ttl) + stale,
 		})
 	})
 }

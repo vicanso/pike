@@ -28,6 +28,7 @@ maxKeepaliveDuration: 0
 maxRequestBodySize: 0
 # 过期缓存的清除时间间隔
 expiredClearInterval: 300s
+logFormat: "{when_iso} - {remote} - \"{method} {uri}\" {status} {size} {latency_ms}ms"
 directors:
   -
     # 名称

@@ -48,7 +48,7 @@ var (
 	// Head http head method
 	Head = []byte("HEAD")
 	// LineBreak 换行符
-	LineBreak = []byte("\n")
+	LineBreak = []byte("\r\n")
 	// Colon 冒号
 	Colon = byte(':')
 	// Space 空格

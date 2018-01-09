@@ -60,7 +60,8 @@ func TestDB(t *testing.T) {
 	if respData.TTL != 30 {
 		t.Fatalf("get the ttle fail")
 	}
-	if bytes.Compare(respData.Header, ctx.Response.Header.Header()) != 0 {
+	checkHeader := []byte("Server: fasthttp\r\nCache-Control: public, max-age=30")
+	if bytes.Compare(respData.Header, checkHeader) != 0 {
 		t.Fatalf("the response header fail")
 	}
 	if bytes.Compare(respData.Body, data) != 0 {

@@ -124,10 +124,6 @@ func TestServerStart(t *testing.T) {
 	}
 
 	directorList := director.GetDirectors(conf.Directors)
-	for _, d := range directorList {
-		name := d.Name
-		cache.InitBucket([]byte(name))
-	}
 	go Start(conf, directorList)
 	testCachable(t, "http://127.0.0.1:3015/cacheable")
 	testHitForPass(t, "http://127.0.0.1:3015/hit-for-pass")

@@ -53,7 +53,6 @@ func Response(ctx *fasthttp.RequestCtx, respData *cache.ResponseData) {
 	body := respData.Body
 	bodyLength := len(body)
 	arr := bytes.Split(header, vars.LineBreak)
-
 	// 设置响应头
 	for _, item := range arr {
 		index := bytes.IndexByte(item, vars.Colon)
@@ -65,7 +64,7 @@ func Response(ctx *fasthttp.RequestCtx, respData *cache.ResponseData) {
 		if item[index] == vars.Space {
 			index++
 		}
-		v := item[index : len(item)-1]
+		v := item[index:len(item)]
 		respHeader.SetCanonical(k, v)
 	}
 	if respData.TTL > 0 {
@@ -91,7 +90,8 @@ func Response(ctx *fasthttp.RequestCtx, respData *cache.ResponseData) {
 			}
 			// 304
 			if fresh.Fresh(requestHeaderData, respHeaderData) {
-				ctx.NotModified()
+				ctx.Response.ResetBody()
+				ctx.SetStatusCode(fasthttp.StatusNotModified)
 				return
 			}
 		}
