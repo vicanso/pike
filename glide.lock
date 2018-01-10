@@ -1,5 +1,5 @@
-hash: ddee5cf7b5a12901e5c1b70690d0ba05ade732abbd218ef84d018e02dd1b158e
-updated: 2018-01-08T21:12:14.027942+08:00
+hash: 799e0420fda81900354d457faece3a6ee831446ca457349106ef07d5cb13ac90
+updated: 2018-01-10T21:07:13.786233+08:00
 imports:
 - name: github.com/AndreasBriese/bbloom
   version: 28f7e881ca57bc00e028f9ede9f0d9104cfeef5e
@@ -12,7 +12,7 @@ imports:
   - table
   - "y"
 - name: github.com/dgryski/go-farm
-  version: ac7624ea8da311f2fbbd94401d8c1cf66089f9fb
+  version: 2de33835d10275975374b37b2dcfd22c9020a1f5
 - name: github.com/golang/protobuf
   version: 1e59b77b52bf8e4b449a57e6f79f21226d571845
   subpackages:
@@ -40,6 +40,8 @@ imports:
   - stackless
 - name: github.com/vicanso/fresh
   version: 1a315cf0abf3451bffbb48c9141cb002bd83d573
+- name: github.com/visionmedia/go-debug
+  version: bfacf9d8a444b50f5d7ae47727544e775486966f
 - name: golang.org/x/net
   version: 434ec0c7fe3742c984919a691b2018a6e9694425
   subpackages:
@@ -47,7 +49,7 @@ imports:
   - internal/timeseries
   - trace
 - name: golang.org/x/sys
-  version: 1792d66dc88e503d3cb2400578221cdf1f7fe26f
+  version: 810d7000345868fc619eb81f46307107118f4ae1
   subpackages:
   - unix
 - name: gopkg.in/yaml.v2

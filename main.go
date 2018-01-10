@@ -10,6 +10,7 @@ import (
 	"./cache"
 	"./director"
 	"./server"
+	"./util"
 	"gopkg.in/yaml.v2"
 )
 
@@ -31,6 +32,7 @@ func main() {
 		log.Fatalf("error: %v", err)
 	}
 	conf := &server.PikeConfig{}
+	util.Debug("conf:%v", conf)
 	err = yaml.Unmarshal(buf, conf)
 	if err != nil {
 		log.Fatalf("error: %v", err)

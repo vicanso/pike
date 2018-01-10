@@ -7,3 +7,4 @@ import:
   version: ^1.0.5
 - package: github.com/dgraph-io/badger
   version: ^1.3.0
+- package: github.com/visionmedia/go-debug

@@ -11,8 +11,12 @@ import (
 	"time"
 
 	"../vars"
+	"github.com/tj/go-debug"
 	"github.com/valyala/fasthttp"
 )
+
+// Debug debug日志输出
+var Debug = debug.Debug(string(vars.Name))
 
 // Pass 判断该请求是否直接pass（不可缓存）
 func Pass(ctx *fasthttp.RequestCtx, passList [][]byte) bool {

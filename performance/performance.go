@@ -9,7 +9,7 @@ import (
 )
 
 var concurrency uint32
-var startedAt = time.Now().Format(time.RFC3339)
+var startedAt = time.Now().UTC().Format(time.RFC3339)
 
 // 记录每分钟的处理请求数
 var requestCountList []uint32
