@@ -24,8 +24,12 @@ type Stats struct {
 	HeapSys          int      `json:"heapSys"`
 	HeapInuse        int      `json:"heapInuse"`
 	StartedAt        string   `json:"startedAt"`
-	RequestCountList []uint32 `json:"requestCountList"`
 	CacheCount       int      `json:"cacheCount"`
+	Fetching int `json:"fetching"`
+	Waiting int `json:"waiting"`
+	Cacheable int `json:"cacheable"`
+	HitForPass int `json:"hitForPass"`
+	RequestCountList []uint32 `json:"requestCountList"`
 }
 
 // IncreaseConcurrency concurrency 加一
@@ -70,14 +74,19 @@ func GetStats() *Stats {
 	var mb uint64 = 1024 * 1024
 	m := &runtime.MemStats{}
 	runtime.ReadMemStats(m)
+	fetching, waiting, cacheable, hitForPass := cache.Stats()
 	stats := &Stats{
 		Concurrency:      GetConcurrency(),
 		Sys:              int(m.Sys / mb),
 		HeapSys:          int(m.HeapSys / mb),
 		HeapInuse:        int(m.HeapInuse / mb),
 		StartedAt:        startedAt,
-		RequestCountList: requestCountList,
 		CacheCount:       cache.Size(),
+		Fetching: fetching,
+		Waiting: waiting,
+		Cacheable: cacheable,
+		HitForPass: hitForPass,
+		RequestCountList: requestCountList,
 	}
 	return stats
 }

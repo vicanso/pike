@@ -34,12 +34,12 @@ func GetResponseBody(resp *fasthttp.Response) ([]byte, error) {
 func ErrorHandler(ctx *fasthttp.RequestCtx, err error) {
 	// TODO 出错的处理，504 502等
 	switch err {
-	case vars.ErrDirectorUnavailable:
-		ctx.SetStatusCode(503)
-	case vars.ErrServiceUnavailable:
-		ctx.SetStatusCode(503)
+	case vars.ErrDirectorUnavailable, vars.ErrServiceUnavailable:
+		ctx.SetStatusCode(fasthttp.StatusServiceUnavailable)
+	case vars.ErrGatewayTimeout:
+	  ctx.SetStatusCode(fasthttp.StatusGatewayTimeout)
 	default:
-		ctx.SetStatusCode(500)
+		ctx.SetStatusCode(fasthttp.StatusInternalServerError)
 	}
 	ctx.Response.Header.SetCanonical(vars.CacheControl, vars.NoCache)
 	ctx.SetBodyString(err.Error())

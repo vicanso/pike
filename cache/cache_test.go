@@ -129,6 +129,16 @@ func TestRequestStatus(t *testing.T) {
 	if size != 2 {
 		t.Fatalf("the cache size expect 2 but %v", size)
 	}
+	fetchingCount, waitingCount, cacheableCount, hitForPassCount := Stats()
+	if fetchingCount != 0 || waitingCount != 0 {
+		t.Fatalf("the fecthing and wating count is wrong")
+	}
+	if cacheableCount != 1 {
+		t.Fatalf("the cacheable couunt expect 1 but %v", cacheableCount)
+	}
+	if hitForPassCount != 1 {
+		t.Fatalf("the hit for pass couunt expect 1 but %v", hitForPassCount)
+	}
 	time.Sleep(time.Second)
 }
 

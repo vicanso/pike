@@ -16,6 +16,8 @@ disableKeepalive: false
 readBufferSize: 0 
 # writeBufferSize 的限制，0表示使用默认值
 writeBufferSize: 0 
+# 设置upstream的连接超时，0表示无限制(time.Duration)
+connectTimeout: 5s 
 # 设置请求的读取超时，0表示无限制(time.Duration)
 readTimeout: 0 
 # 设置响应的写超时，0表示无限制(time.Duration)
@@ -28,7 +30,7 @@ maxKeepaliveDuration: 0
 maxRequestBodySize: 0
 # 过期缓存的清除时间间隔
 expiredClearInterval: 300s
-logFormat: "{when_iso} - {remote} - \"{method} {uri}\" {status} {size} {latency_ms}ms"
+logFormat: "{when-iso-ms} - {client-ip} - \"{method} {uri}\" {status} {size} {latency-ms}ms"
 directors:
   -
     # 名称

@@ -63,10 +63,31 @@ func Size() int {
 	return len(rsMap)
 }
 
+// Stats 获取请求状态的统计
+func Stats() (int, int, int, int) {
+	fetchingCount := 0
+	waitingCount := 0
+	cacheableCount := 0
+	hitForPassCount := 0
+	rsMutex.Lock()
+	for _, v := range rsMap {
+		switch v.status {
+		case vars.Fetching:
+			fetchingCount++
+			waitingCount += len(v.waitingChans)
+		case vars.HitForPass:
+			hitForPassCount++
+		case vars.Cacheable:
+			cacheableCount++
+		}
+	}
+	rsMutex.Unlock()
+	return fetchingCount, waitingCount, cacheableCount, hitForPassCount
+}
+
 // GetRequestStatus 获取请求的状态
 func GetRequestStatus(key []byte) (int, chan int) {
 	rsMutex.Lock()
-	defer rsMutex.Unlock()
 	var c chan int
 	k := string(key)
 	rs := rsMap[k]
@@ -82,6 +103,7 @@ func GetRequestStatus(key []byte) (int, chan int) {
 	} else {
 		status = rs.status
 	}
+	rsMutex.Unlock()
 	return status, c
 }
 
