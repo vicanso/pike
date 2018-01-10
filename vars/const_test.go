@@ -40,6 +40,7 @@ func TestVars(t *testing.T) {
 
 	testVar(t, ErrDirectorUnavailable.Error(), "director unavailable")
 	testVar(t, ErrServiceUnavailable.Error(), "service unavailable")
+	testVar(t, ErrGatewayTimeout.Error(), "gateway timeout")
 	testVar(t, ErrDbNotInit.Error(), "db isn't init")
 
 	testVar(t, strconv.Itoa(Pass), "0")

@@ -68,6 +68,8 @@ var (
 	ErrDirectorUnavailable = errors.New("director unavailable")
 	// ErrServiceUnavailable 服务器不可用
 	ErrServiceUnavailable = errors.New("service unavailable")
+	// ErrGatewayTimeout 网关超时（未能从upstream中获取数据)）
+	ErrGatewayTimeout = errors.New("gateway timeout")
 	// ErrDbNotInit 没有初始化db
 	ErrDbNotInit = errors.New("db isn't init")
 	// AccessIsNotAlloed 不允许访问

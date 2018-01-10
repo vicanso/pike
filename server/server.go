@@ -30,6 +30,7 @@ type PikeConfig struct {
 	HitForPass           int           `yaml:"hitForPass"`
 	ReadBufferSize       int           `yaml:"readBufferSize"`
 	WriteBufferSize      int           `yaml:"writeBufferSize"`
+	ConnectTimeout time.Duration `yaml:"connectTimeout"`
 	ReadTimeout          time.Duration `yaml:"readTimeout"`
 	WriteTimeout         time.Duration `yaml:"writeTimeout"`
 	MaxConnsPerIP        int           `yaml:"maxConnsPerIP"`
@@ -53,8 +54,8 @@ func getDirector(host, uri []byte, directorList director.DirectorSlice) *directo
 }
 
 // 转发处理，返回响应头与响应数据
-func doProxy(ctx *fasthttp.RequestCtx, us *proxy.Upstream) (*fasthttp.Response, []byte, []byte, error) {
-	resp, err := proxy.Do(ctx, us)
+func doProxy(ctx *fasthttp.RequestCtx, us *proxy.Upstream, timeout time.Duration) (*fasthttp.Response, []byte, []byte, error) {
+	resp, err := proxy.Do(ctx, us, timeout)
 	if err != nil {
 		return nil, nil, nil, err
 	}
@@ -85,7 +86,7 @@ func setServerTiming(ctx *fasthttp.RequestCtx, startedAt time.Time) {
 	}
 }
 
-func handler(ctx *fasthttp.RequestCtx, directorList director.DirectorSlice, tags []*httplog.Tag) {
+func handler(ctx *fasthttp.RequestCtx, directorList director.DirectorSlice, conf *PikeConfig, tags []*httplog.Tag) {
 	startedAt := time.Now()
 	host := ctx.Request.Host()
 	uri := ctx.RequestURI()
@@ -129,7 +130,7 @@ func handler(ctx *fasthttp.RequestCtx, directorList director.DirectorSlice, tags
 	switch status {
 	case vars.Pass:
 		// pass的请求直接转发至upstream
-		resp, header, body, err := doProxy(ctx, us)
+		resp, header, body, err := doProxy(ctx, us, conf.ConnectTimeout)
 		if err != nil {
 			errorHandler(err)
 			return
@@ -146,7 +147,7 @@ func handler(ctx *fasthttp.RequestCtx, directorList director.DirectorSlice, tags
 	case vars.Fetching, vars.HitForPass:
 		//feacthing或hitforpass的请求转至upstream
 		// 并根据返回的数据是否可以缓存设置缓存
-		resp, header, body, err := doProxy(ctx, us)
+		resp, header, body, err := doProxy(ctx, us, conf.ConnectTimeout)
 		if err != nil {
 			cache.HitForPass(key, hitForPassTTL)
 			errorHandler(err)
@@ -245,7 +246,7 @@ func Start(conf *PikeConfig, directorList director.DirectorSlice) error {
 			performance.IncreaseRequestCount()
 			performance.IncreaseConcurrency()
 			defer performance.DecreaseConcurrency()
-			handler(ctx, directorList, tags)
+			handler(ctx, directorList, conf, tags)
 		},
 	}
 	return s.ListenAndServe(listen)

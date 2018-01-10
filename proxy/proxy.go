@@ -3,6 +3,7 @@ package proxy
 import (
 	"bytes"
 	"sync/atomic"
+	"time"
 
 	"../util"
 	"../vars"
@@ -19,7 +20,7 @@ func RegisterPolicy(name string, policy func(string) Policy) {
 }
 
 // Do 将当前请求转发至upstream
-func Do(ctx *fasthttp.RequestCtx, us *Upstream) (*fasthttp.Response, error) {
+func Do(ctx *fasthttp.RequestCtx, us *Upstream, timeout time.Duration) (*fasthttp.Response, error) {
 	policy := us.Policy
 	uh := policy.Select(us.Hosts, ctx)
 	if uh == nil {
@@ -58,8 +59,16 @@ func Do(ctx *fasthttp.RequestCtx, us *Upstream) (*fasthttp.Response, error) {
 	reqHeader.SetCanonical(vars.AcceptEncoding, vars.Gzip)
 	resp := fasthttp.AcquireResponse()
 	client := &fasthttp.Client{}
-	err := client.Do(req, resp)
+	var err error
+	if timeout > 0 {
+		err = client.DoTimeout(req, resp, timeout)
+	} else {
+		err = client.Do(req, resp)
+	}
 	if err != nil {
+		if err == fasthttp.ErrTimeout {
+			return nil, vars.ErrGatewayTimeout
+		}
 		return nil, err
 	}
 	return resp, nil

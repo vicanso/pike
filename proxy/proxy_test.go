@@ -27,7 +27,7 @@ func TestCreateUpstream(t *testing.T) {
 func testDo(t *testing.T, us *Upstream, uri, data string, status int) {
 	ctx := &fasthttp.RequestCtx{}
 	ctx.Request.SetRequestURI(uri)
-	resp, err := Do(ctx, us)
+	resp, err := Do(ctx, us, time.Second)
 	if err != nil {
 		t.Fatalf("do request fail %v", err)
 	}
