@@ -18,17 +18,22 @@ const (
 	proto     = "proto"
 	query     = "query"
 	remote    = "remote"
+	clientIP = "client-ip"
 	scheme    = "scheme"
 	uri       = "uri"
 	referer   = "referer"
-	userAgent = "user-agent"
+	userAgent = "userAgent"
 	when      = "when"
-	whenISO   = "when_iso"
-	whenUnix  = "when_unix"
+	whenISO   = "when-iso"
+	whenUnix  = "when-unix"
+	whenISOMs = "when-iso-ms"
 	size      = "size"
 	status    = "status"
 	latency   = "latency"
-	latencyMs = "latency_ms"
+	latencyMs = "latency-ms"
+	cookie = "cookie"
+	requestHeader = "requestHeader"
+	responseHeader = "responseHeader"
 )
 
 var (
@@ -64,11 +69,29 @@ func Parse(desc []byte) []*Tag {
 				data:     desc[index:start],
 			})
 		}
-		k := string(desc[start+1 : end-1])
-		arr = append(arr, &Tag{
-			category: k,
-			data:     nil,
-		})
+		k := desc[start+1 : end-1]
+		switch k[0] {
+		case byte('~'):
+			arr = append(arr, &Tag{
+				category: cookie,
+				data: k[1:],
+			})
+		case byte('>'):
+			arr = append(arr, &Tag{
+				category: requestHeader,
+				data: k[1:],
+			})
+		case byte('<'):
+			arr = append(arr, &Tag{
+				category: responseHeader,
+				data: k[1:],
+			})
+		default:
+			arr = append(arr, &Tag{
+				category: string(k),
+				data:     nil,
+			})
+		}
 		index = result[1] + index
 	}
 	if index < len(desc) {
@@ -82,6 +105,7 @@ func Parse(desc []byte) []*Tag {
 
 // Format 格式化访问日志信息
 func Format(ctx *fasthttp.RequestCtx, tags []*Tag, startedAt time.Time) []byte {
+	// ctx.Request.Header.Cookie
 	fn := func(tag *Tag) []byte {
 		switch tag.category {
 		case host:
@@ -98,6 +122,8 @@ func Format(ctx *fasthttp.RequestCtx, tags []*Tag, startedAt time.Time) []byte {
 		case query:
 			return ctx.QueryArgs().QueryString()
 		case remote:
+			return []byte(ctx.RemoteIP().String())
+		case clientIP:
 			return []byte(util.GetClientIP(ctx))
 		case scheme:
 			if ctx.IsTLS() {
@@ -106,6 +132,12 @@ func Format(ctx *fasthttp.RequestCtx, tags []*Tag, startedAt time.Time) []byte {
 			return http
 		case uri:
 			return ctx.URI().RequestURI()
+		case cookie:
+			return ctx.Request.Header.CookieBytes(tag.data)
+		case requestHeader:
+			return ctx.Request.Header.PeekBytes(tag.data)
+		case responseHeader:
+			return ctx.Response.Header.PeekBytes(tag.data)
 		case referer:
 			return ctx.Referer()
 		case userAgent:
@@ -114,6 +146,8 @@ func Format(ctx *fasthttp.RequestCtx, tags []*Tag, startedAt time.Time) []byte {
 			return []byte(time.Now().Format(time.RFC1123Z))
 		case whenISO:
 			return []byte(time.Now().UTC().Format(time.RFC3339))
+		case whenISOMs:
+			return []byte(time.Now().UTC().Format("2006-01-02T15:04:05.999Z07:00"))
 		case whenUnix:
 			return []byte(strconv.FormatInt(time.Now().Unix(), 10))
 		case status:
