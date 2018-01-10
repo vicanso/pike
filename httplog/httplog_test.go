@@ -11,7 +11,7 @@ import (
 
 func TestParse(t *testing.T) {
 	tags := Parse([]byte("Pike {host} {method} {path} {proto} {query} {remote} {client-ip} {scheme} {uri} {~jt} {>X-Request-Id} {<X-Response-Id} {when} {when-iso} {when-iso-ms} {when-unix} {status} {size} {referer} {userAgent} {latency} {latency-ms}ms"))
-	count := 45 
+	count := 45
 	if len(tags) != count {
 		t.Fatalf("the tags length expect %v but %v", count, len(tags))
 	}

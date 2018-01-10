@@ -30,7 +30,7 @@ type PikeConfig struct {
 	HitForPass           int           `yaml:"hitForPass"`
 	ReadBufferSize       int           `yaml:"readBufferSize"`
 	WriteBufferSize      int           `yaml:"writeBufferSize"`
-	ConnectTimeout time.Duration `yaml:"connectTimeout"`
+	ConnectTimeout       time.Duration `yaml:"connectTimeout"`
 	ReadTimeout          time.Duration `yaml:"readTimeout"`
 	WriteTimeout         time.Duration `yaml:"writeTimeout"`
 	MaxConnsPerIP        int           `yaml:"maxConnsPerIP"`

@@ -37,7 +37,7 @@ func ErrorHandler(ctx *fasthttp.RequestCtx, err error) {
 	case vars.ErrDirectorUnavailable, vars.ErrServiceUnavailable:
 		ctx.SetStatusCode(fasthttp.StatusServiceUnavailable)
 	case vars.ErrGatewayTimeout:
-	  ctx.SetStatusCode(fasthttp.StatusGatewayTimeout)
+		ctx.SetStatusCode(fasthttp.StatusGatewayTimeout)
 	default:
 		ctx.SetStatusCode(fasthttp.StatusInternalServerError)
 	}

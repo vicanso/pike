@@ -25,10 +25,10 @@ type Stats struct {
 	HeapInuse        int      `json:"heapInuse"`
 	StartedAt        string   `json:"startedAt"`
 	CacheCount       int      `json:"cacheCount"`
-	Fetching int `json:"fetching"`
-	Waiting int `json:"waiting"`
-	Cacheable int `json:"cacheable"`
-	HitForPass int `json:"hitForPass"`
+	Fetching         int      `json:"fetching"`
+	Waiting          int      `json:"waiting"`
+	Cacheable        int      `json:"cacheable"`
+	HitForPass       int      `json:"hitForPass"`
 	RequestCountList []uint32 `json:"requestCountList"`
 }
 
@@ -82,10 +82,10 @@ func GetStats() *Stats {
 		HeapInuse:        int(m.HeapInuse / mb),
 		StartedAt:        startedAt,
 		CacheCount:       cache.Size(),
-		Fetching: fetching,
-		Waiting: waiting,
-		Cacheable: cacheable,
-		HitForPass: hitForPass,
+		Fetching:         fetching,
+		Waiting:          waiting,
+		Cacheable:        cacheable,
+		HitForPass:       hitForPass,
 		RequestCountList: requestCountList,
 	}
 	return stats

@@ -12,27 +12,27 @@ import (
 )
 
 const (
-	host      = "host"
-	method    = "method"
-	path      = "path"
-	proto     = "proto"
-	query     = "query"
-	remote    = "remote"
-	clientIP = "client-ip"
-	scheme    = "scheme"
-	uri       = "uri"
-	referer   = "referer"
-	userAgent = "userAgent"
-	when      = "when"
-	whenISO   = "when-iso"
-	whenUnix  = "when-unix"
-	whenISOMs = "when-iso-ms"
-	size      = "size"
-	status    = "status"
-	latency   = "latency"
-	latencyMs = "latency-ms"
-	cookie = "cookie"
-	requestHeader = "requestHeader"
+	host           = "host"
+	method         = "method"
+	path           = "path"
+	proto          = "proto"
+	query          = "query"
+	remote         = "remote"
+	clientIP       = "client-ip"
+	scheme         = "scheme"
+	uri            = "uri"
+	referer        = "referer"
+	userAgent      = "userAgent"
+	when           = "when"
+	whenISO        = "when-iso"
+	whenUnix       = "when-unix"
+	whenISOMs      = "when-iso-ms"
+	size           = "size"
+	status         = "status"
+	latency        = "latency"
+	latencyMs      = "latency-ms"
+	cookie         = "cookie"
+	requestHeader  = "requestHeader"
 	responseHeader = "responseHeader"
 )
 
@@ -74,17 +74,17 @@ func Parse(desc []byte) []*Tag {
 		case byte('~'):
 			arr = append(arr, &Tag{
 				category: cookie,
-				data: k[1:],
+				data:     k[1:],
 			})
 		case byte('>'):
 			arr = append(arr, &Tag{
 				category: requestHeader,
-				data: k[1:],
+				data:     k[1:],
 			})
 		case byte('<'):
 			arr = append(arr, &Tag{
 				category: responseHeader,
-				data: k[1:],
+				data:     k[1:],
 			})
 		default:
 			arr = append(arr, &Tag{

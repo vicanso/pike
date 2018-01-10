@@ -26,7 +26,6 @@ func init() {
 	RegisterPolicy(vars.First, func(arg string) Policy { return &First{} })
 	RegisterPolicy(vars.URIHash, func(arg string) Policy { return &URIHash{} })
 	RegisterPolicy(vars.Header, func(arg string) Policy { return &Header{arg} })
-
 }
 
 // Random is a policy that selects up hosts from a pool at random.
