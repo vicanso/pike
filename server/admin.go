@@ -6,6 +6,7 @@ import (
 	"../director"
 	"../dispatch"
 	"../performance"
+	"../util"
 	"../vars"
 	"github.com/tidwall/gjson"
 	"github.com/valyala/fasthttp"
@@ -13,6 +14,13 @@ import (
 
 func responseJSON(ctx *fasthttp.RequestCtx, data []byte) {
 	ctx.SetContentTypeBytes(vars.JSON)
+	if len(data) > vars.CompressMinLength {
+		rawData, err := util.Gzip(data)
+		if err == nil {
+			data = rawData
+			ctx.Response.Header.SetCanonical(vars.ContentEncoding, vars.Gzip)
+		}
+	}
 	ctx.SetBody(data)
 }
 
