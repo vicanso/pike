@@ -24,6 +24,7 @@ type Stats struct {
 	HeapSys          int      `json:"heapSys"`
 	HeapInuse        int      `json:"heapInuse"`
 	StartedAt        string   `json:"startedAt"`
+	RoutineCount     int      `json:"routine"`
 	CacheCount       int      `json:"cacheCount"`
 	Fetching         int      `json:"fetching"`
 	Waiting          int      `json:"waiting"`
@@ -81,6 +82,7 @@ func GetStats() *Stats {
 		HeapSys:          int(m.HeapSys / mb),
 		HeapInuse:        int(m.HeapInuse / mb),
 		StartedAt:        startedAt,
+		RoutineCount:     runtime.NumGoroutine(),
 		CacheCount:       cache.Size(),
 		Fetching:         fetching,
 		Waiting:          waiting,
