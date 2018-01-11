@@ -2,8 +2,10 @@ package httplog
 
 import (
 	"bytes"
+	"os"
 	"regexp"
 	"strconv"
+	"sync"
 	"time"
 
 	"../util"
@@ -47,6 +49,55 @@ var (
 type Tag struct {
 	category string
 	data     []byte
+}
+
+const (
+	// Normal 普通模式（所有日志写到同一个文件）
+	Normal = iota
+	// Date 日期分割（按天分割日志）
+	Date
+)
+
+// FileWriter 以文件形式写日志
+type FileWriter struct {
+	Path     string
+	Category int
+	fd       *os.File
+	m        sync.Mutex
+	date     string
+	file     string
+}
+
+func (f *FileWriter) Write(buf []byte) error {
+	f.m.Lock()
+	defer f.m.Unlock()
+	// 如果是按日期分割
+	if f.Category == Date {
+		now := time.Now()
+		date := now.Format("2006-01-02")
+		// 如果日期有变化
+		if f.date != date {
+			f.date = date
+			// 关闭当前的file
+			if f.fd != nil {
+				f.fd.Close()
+			}
+			f.fd = nil
+			f.file = f.Path + "/" + f.date
+		}
+	} else {
+		f.file = f.Path
+	}
+	// 如果文件未打开，打开文件
+	if f.fd == nil {
+		fd, err := os.OpenFile(f.file, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0666)
+		if err != nil {
+			return err
+		}
+		f.fd = fd
+	}
+	_, err := f.fd.Write(append(buf, '\n'))
+	return err
 }
 
 // Parse 转换日志的输出格式
@@ -105,7 +156,6 @@ func Parse(desc []byte) []*Tag {
 
 // Format 格式化访问日志信息
 func Format(ctx *fasthttp.RequestCtx, tags []*Tag, startedAt time.Time) []byte {
-	// ctx.Request.Header.Cookie
 	fn := func(tag *Tag) []byte {
 		switch tag.category {
 		case host:

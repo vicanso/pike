@@ -2,7 +2,6 @@ package server
 
 import (
 	"bytes"
-	"fmt"
 	"strconv"
 	"time"
 
@@ -38,6 +37,8 @@ type PikeConfig struct {
 	MaxRequestBodySize   int           `yaml:"maxRequestBodySize"`
 	ExpiredClearInterval time.Duration `yaml:"expiredClearInterval"`
 	LogFormat            string        `yaml:"logFormat"`
+	AccessLog            string        `yaml:"accessLog"`
+	LogType              string        `yaml:"logType"`
 	Directors            []*director.Config
 }
 
@@ -86,18 +87,10 @@ func setServerTiming(ctx *fasthttp.RequestCtx, startedAt time.Time) {
 	}
 }
 
-func handler(ctx *fasthttp.RequestCtx, directorList director.DirectorSlice, conf *PikeConfig, tags []*httplog.Tag) {
-	startedAt := time.Now()
+func handler(ctx *fasthttp.RequestCtx, directorList director.DirectorSlice, conf *PikeConfig) {
 	host := ctx.Request.Host()
 	uri := ctx.RequestURI()
 	found := getDirector(host, uri, directorList)
-	defer setServerTiming(ctx, startedAt)
-	if len(tags) != 0 {
-		defer func() {
-			logBuf := httplog.Format(ctx, tags, startedAt)
-			fmt.Println(string(logBuf))
-		}()
-	}
 	// 出错处理
 	errorHandler := func(err error) {
 		dispatch.ErrorHandler(ctx, err)
@@ -215,6 +208,18 @@ func Start(conf *PikeConfig, directorList director.DirectorSlice) error {
 	var blackIP = &BlackIP{}
 	blackIP.InitFromCache()
 	tags := httplog.Parse([]byte(conf.LogFormat))
+	writeCategory := httplog.Normal
+	if conf.LogType == "date" {
+		writeCategory = httplog.Date
+	}
+	var fileWriter *httplog.FileWriter
+	if len(conf.AccessLog) != 0 {
+		fileWriter = &httplog.FileWriter{
+			Path:     conf.AccessLog,
+			Category: writeCategory,
+		}
+	}
+	adminURLLength := len(vars.AdminURL)
 	s := &fasthttp.Server{
 		Name:                 conf.Name,
 		Concurrency:          conf.Concurrency,
@@ -239,14 +244,23 @@ func Start(conf *PikeConfig, directorList director.DirectorSlice) error {
 				return
 			}
 			// 管理界面相关接口
-			if bytes.Compare(path[0:len(vars.AdminURL)], vars.AdminURL) == 0 {
+			if len(path) >= adminURLLength && bytes.Compare(path[0:adminURLLength], vars.AdminURL) == 0 {
 				adminHandler(ctx, directorList, blackIP)
 				return
 			}
 			performance.IncreaseRequestCount()
 			performance.IncreaseConcurrency()
 			defer performance.DecreaseConcurrency()
-			handler(ctx, directorList, conf, tags)
+			startedAt := time.Now()
+
+			defer setServerTiming(ctx, startedAt)
+			if len(tags) != 0 && fileWriter != nil {
+				defer func() {
+					logBuf := httplog.Format(ctx, tags, startedAt)
+					go fileWriter.Write(logBuf)
+				}()
+			}
+			handler(ctx, directorList, conf)
 		},
 	}
 	return s.ListenAndServe(listen)

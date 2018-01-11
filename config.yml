@@ -30,7 +30,13 @@ maxKeepaliveDuration: 0
 maxRequestBodySize: 0
 # 过期缓存的清除时间间隔
 expiredClearInterval: 300s
+# 访问日志的格式化
 logFormat: "{when-iso-ms} - {client-ip} - \"{method} {uri}\" {status} {size} {latency-ms}ms"
+# 访问日志保存路径
+accessLog: "/tmp/pike/access.log"
+# accessLog: "/tmp/pike"
+# 日志类型，如果为"date"表示按天分割日志，accessLog则应该配置为一个目录
+# logType: "date"
 directors:
   -
     # 名称
