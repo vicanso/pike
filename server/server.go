@@ -37,6 +37,7 @@ type PikeConfig struct {
 	MaxRequestBodySize   int           `yaml:"maxRequestBodySize"`
 	ExpiredClearInterval time.Duration `yaml:"expiredClearInterval"`
 	LogFormat            string        `yaml:"logFormat"`
+	UDPLog               string        `yaml:"udpLog"`
 	AccessLog            string        `yaml:"accessLog"`
 	LogType              string        `yaml:"logType"`
 	Directors            []*director.Config
@@ -212,13 +213,21 @@ func Start(conf *PikeConfig, directorList director.DirectorSlice) error {
 	if conf.LogType == "date" {
 		writeCategory = httplog.Date
 	}
-	var fileWriter *httplog.FileWriter
-	if len(conf.AccessLog) != 0 {
-		fileWriter = &httplog.FileWriter{
+	var logWriter httplog.Writer
+	if len(conf.UDPLog) != 0 {
+		logWriter = &httplog.UDPWriter{
+			URI: conf.UDPLog,
+		}
+	} else if len(conf.AccessLog) != 0 {
+		logWriter = &httplog.FileWriter{
 			Path:     conf.AccessLog,
 			Category: writeCategory,
 		}
 	}
+	if logWriter != nil {
+		defer logWriter.Close()
+	}
+	enableAccessLog := len(tags) != 0 && logWriter != nil
 	adminURLLength := len(vars.AdminURL)
 	s := &fasthttp.Server{
 		Name:                 conf.Name,
@@ -254,10 +263,10 @@ func Start(conf *PikeConfig, directorList director.DirectorSlice) error {
 			startedAt := time.Now()
 
 			defer setServerTiming(ctx, startedAt)
-			if len(tags) != 0 && fileWriter != nil {
+			if enableAccessLog {
 				defer func() {
 					logBuf := httplog.Format(ctx, tags, startedAt)
-					go fileWriter.Write(logBuf)
+					go logWriter.Write(logBuf)
 				}()
 			}
 			handler(ctx, directorList, conf)

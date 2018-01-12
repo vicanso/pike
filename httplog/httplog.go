@@ -2,6 +2,7 @@ package httplog
 
 import (
 	"bytes"
+	"net"
 	"os"
 	"regexp"
 	"strconv"
@@ -58,6 +59,12 @@ const (
 	Date
 )
 
+// Writer the writer interface
+type Writer interface {
+	Write(buf []byte) error
+	Close() error
+}
+
 // FileWriter 以文件形式写日志
 type FileWriter struct {
 	Path     string
@@ -68,36 +75,75 @@ type FileWriter struct {
 	file     string
 }
 
-func (f *FileWriter) Write(buf []byte) error {
-	f.m.Lock()
-	defer f.m.Unlock()
+// Write 写日志
+func (w *FileWriter) Write(buf []byte) error {
+	w.m.Lock()
+	defer w.m.Unlock()
 	// 如果是按日期分割
-	if f.Category == Date {
+	if w.Category == Date {
 		now := time.Now()
 		date := now.Format("2006-01-02")
 		// 如果日期有变化
-		if f.date != date {
-			f.date = date
+		if w.date != date {
+			w.date = date
 			// 关闭当前的file
-			if f.fd != nil {
-				f.fd.Close()
+			if w.fd != nil {
+				w.fd.Close()
 			}
-			f.fd = nil
-			f.file = f.Path + "/" + f.date
+			w.fd = nil
+			w.file = w.Path + "/" + w.date
 		}
 	} else {
-		f.file = f.Path
+		w.file = w.Path
 	}
 	// 如果文件未打开，打开文件
-	if f.fd == nil {
-		fd, err := os.OpenFile(f.file, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0666)
+	if w.fd == nil {
+		fd, err := os.OpenFile(w.file, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0666)
 		if err != nil {
 			return err
 		}
-		f.fd = fd
+		w.fd = fd
 	}
-	_, err := f.fd.Write(append(buf, '\n'))
+	_, err := w.fd.Write(append(buf, '\n'))
 	return err
+}
+
+// Close 关闭写文件
+func (w *FileWriter) Close() error {
+	if w.fd != nil {
+		return w.fd.Close()
+	}
+	return nil
+}
+
+// UDPWriter 以UDP的形式写日志
+type UDPWriter struct {
+	URI  string
+	conn net.Conn
+	m    sync.Mutex
+}
+
+// Write 写日志
+func (w *UDPWriter) Write(buf []byte) error {
+	w.m.Lock()
+	defer w.m.Unlock()
+	if w.conn == nil {
+		conn, err := net.Dial("udp", w.URI)
+		if err != nil {
+			return err
+		}
+		w.conn = conn
+	}
+	_, err := w.conn.Write(buf)
+	return err
+}
+
+// Close 关闭udp连接
+func (w *UDPWriter) Close() error {
+	if w.conn != nil {
+		return w.conn.Close()
+	}
+	return nil
 }
 
 // Parse 转换日志的输出格式
