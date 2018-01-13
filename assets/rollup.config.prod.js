@@ -4,8 +4,12 @@ import uglify from 'rollup-plugin-uglify';
 import postcss from 'rollup-plugin-postcss';
 
 const plugins = [
-  stylusCssModules(),
   postcss({
+    plugins: [
+      precss(),
+    ],
+    extensions: ['.sss'],
+    parser: 'sugarss',
   }),
   babel({
     babelrc: false,
@@ -24,7 +28,7 @@ let config = {
     name: 'app',
     file: './dist/app.js',
     format: 'umd',
-    sourcemap: false
+    sourcemap: true, 
   },
   plugins: plugins
 }

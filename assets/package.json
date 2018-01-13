@@ -8,7 +8,8 @@
   },
   "license": "MIT",
   "dependencies": {
-    "hyperapp": "^1.0.1"
+    "hyperapp": "^1.0.1",
+    "whatwg-fetch": "^2.0.3"
   },
   "devDependencies": {
     "babel-core": "^6.26.0",

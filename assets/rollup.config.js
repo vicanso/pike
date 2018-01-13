@@ -10,7 +10,7 @@ const plugins = [
     plugins: [
       precss(),
     ],
-    // extensions: ['.sss'],
+    extensions: ['.sss'],
     parser: 'sugarss',
   }),
   babel({
