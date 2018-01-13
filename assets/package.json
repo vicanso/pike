@@ -1,0 +1,27 @@
+{
+  "name": "pike",
+  "version": "0.0.1",
+  "description": "",
+  "scripts": {
+    "dev": "node node_modules/.bin/rollup -c rollup.config.js -w",
+    "build": "node node_modules/.bin/rollup -c rollup.config.prod.js"
+  },
+  "license": "MIT",
+  "dependencies": {
+    "hyperapp": "^1.0.1"
+  },
+  "devDependencies": {
+    "babel-core": "^6.26.0",
+    "babel-plugin-transform-react-jsx": "^6.24.1",
+    "babel-preset-es2015-rollup": "^3.0.0",
+    "precss": "^2.0.0",
+    "rollup": "^0.53.4",
+    "rollup-plugin-babel": "^3.0.3",
+    "rollup-plugin-livereload": "^0.6.0",
+    "rollup-plugin-node-resolve": "^3.0.2",
+    "rollup-plugin-postcss": "^1.0.5",
+    "rollup-plugin-serve": "^0.4.2",
+    "rollup-plugin-stylus-css-modules": "^1.5.0",
+    "sugarss": "^1.0.1"
+  }
+}
