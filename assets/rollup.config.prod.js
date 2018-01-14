@@ -11,6 +11,10 @@ const plugins = [
     extensions: ['.sss'],
     parser: 'sugarss',
   }),
+  resolve({
+    jsnext: true,
+    main: true
+  }),
   babel({
     babelrc: false,
     presets: ['es2015-rollup'],

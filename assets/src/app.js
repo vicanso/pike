@@ -1,8 +1,10 @@
 import { h, app } from 'hyperapp';
 import 'whatwg-fetch';
+import 'chart.js/dist/Chart.js'
 
 import './global.sss'
 import './app.sss'
+
 
 const state = {
   concurrency: 0,
@@ -68,6 +70,10 @@ const refreshStats = () => {
     return res.json();
   }).then((data) => {
     main.getStats(data);
+    if (chart) {
+      chart.config.data.datasets[0].data = data.requestCountList;
+      chart.update();
+    }
   });
 }
 
@@ -75,6 +81,69 @@ const actions = {
   getStats: (data) => state => {
     return data;
   },
+}
+
+const getRuquesetCountChart = (ctx) => {
+  const labels = [];
+  for (let i = 0; i < 24; i++)  {
+    for(let j = 0; j < 12; j++) {
+      let hour = i;
+      if (hour < 10) {
+        hour = `0${hour}`;
+      }
+      let minute = j * 5;
+      if (minute < 10) {
+        minute = `0${minute}`;
+      }
+      labels.push(`${hour}:${minute}`);
+    }
+  }
+  const config = {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [{
+        label: "Request count per minute",
+        backgroundColor: '#e74759',
+        borderColor: '#e74759',
+        data: [
+        ],
+        fill: false,
+      }]
+    },
+    options: {
+      responsive: true,
+      title: {
+        display: true,
+        text: 'Pike Request Count'
+      },
+      tooltips: {
+        mode: 'index',
+        intersect: false,
+      },
+      hover: {
+        mode: 'nearest',
+        intersect: true
+      },
+      scales: {
+        xAxes: [{
+          display: true,
+          scaleLabel: {
+            display: true,
+            labelString: 'Time'
+          }
+        }],
+        yAxes: [{
+          display: true,
+          scaleLabel: {
+            display: true,
+            labelString: 'Count'
+          }
+        }]
+      }
+    }
+  };
+  return new Chart(ctx, config);
 }
 
 const Pluzze = ({ name, count, desc, index }) => {
@@ -120,8 +189,8 @@ const view = (state, actions) => (
       </div>
       <canvas
         oncreate={element => {
-          console.dir(element)
           const ctx = element.getContext('2d');
+          chart = getRuquesetCountChart(ctx);
         }}
       >
       </canvas>

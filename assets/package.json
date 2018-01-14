@@ -8,6 +8,7 @@
   },
   "license": "MIT",
   "dependencies": {
+    "chart.js": "^2.7.1",
     "hyperapp": "^1.0.1",
     "whatwg-fetch": "^2.0.3"
   },

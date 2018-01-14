@@ -37,6 +37,7 @@ let config = {
     format: 'umd',
     sourcemap: true,
   },
+  external: ['whatwg-fetch'],
   plugins: plugins,
 };
 
