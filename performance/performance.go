@@ -11,26 +11,23 @@ import (
 var concurrency uint32
 var startedAt = time.Now().UTC().Format(time.RFC3339)
 
-// 记录每分钟的处理请求数
-var requestCountList []uint32
-
-// 记录当前日期，日期变化时，清除每分钟的请求数统计
-var currentDay = -1
+// 记录当前处理的请求数
+var requestCount uint64
 
 // Stats 性能的统计
 type Stats struct {
-	Concurrency      uint32   `json:"concurrency"`
-	Sys              int      `json:"sys"`
-	HeapSys          int      `json:"heapSys"`
-	HeapInuse        int      `json:"heapInuse"`
-	StartedAt        string   `json:"startedAt"`
-	RoutineCount     int      `json:"routine"`
-	CacheCount       int      `json:"cacheCount"`
-	Fetching         int      `json:"fetching"`
-	Waiting          int      `json:"waiting"`
-	Cacheable        int      `json:"cacheable"`
-	HitForPass       int      `json:"hitForPass"`
-	RequestCountList []uint32 `json:"requestCountList"`
+	Concurrency  uint32 `json:"concurrency"`
+	Sys          int    `json:"sys"`
+	HeapSys      int    `json:"heapSys"`
+	HeapInuse    int    `json:"heapInuse"`
+	StartedAt    string `json:"startedAt"`
+	RoutineCount int    `json:"routine"`
+	CacheCount   int    `json:"cacheCount"`
+	Fetching     int    `json:"fetching"`
+	Waiting      int    `json:"waiting"`
+	Cacheable    int    `json:"cacheable"`
+	HitForPass   int    `json:"hitForPass"`
+	RequestCount uint64 `json:"requestCount"`
 }
 
 // IncreaseConcurrency concurrency 加一
@@ -45,24 +42,12 @@ func DecreaseConcurrency() {
 
 // IncreaseRequestCount 处理请求数加一
 func IncreaseRequestCount() {
-	now := time.Now()
-	day := now.Day()
-	if currentDay != day {
-		// 为了更好的性能，此处并没有对并发做锁处理
-		// 因为只是统计数据，如果真出错，数据就只是重置了多次
-		// 而且只是在日期变化时才有变化
-		requestCountList = make([]uint32, 24*60)
-		currentDay = day
-	}
-	hour := now.Hour()
-	minute := now.Minute()
-	index := hour*60 + minute
-	atomic.AddUint32(&requestCountList[index], 1)
+	atomic.AddUint64(&requestCount, 1)
 }
 
-// GetRequstCountList 获取处理请求数列表
-func GetRequstCountList() []uint32 {
-	return requestCountList
+// GetRequstCount 获取处理请求数
+func GetRequstCount() uint64 {
+	return requestCount
 }
 
 // GetConcurrency 获取 concurrency
@@ -77,18 +62,18 @@ func GetStats() *Stats {
 	runtime.ReadMemStats(m)
 	fetching, waiting, cacheable, hitForPass := cache.Stats()
 	stats := &Stats{
-		Concurrency:      GetConcurrency(),
-		Sys:              int(m.Sys / mb),
-		HeapSys:          int(m.HeapSys / mb),
-		HeapInuse:        int(m.HeapInuse / mb),
-		StartedAt:        startedAt,
-		RoutineCount:     runtime.NumGoroutine(),
-		CacheCount:       cache.Size(),
-		Fetching:         fetching,
-		Waiting:          waiting,
-		Cacheable:        cacheable,
-		HitForPass:       hitForPass,
-		RequestCountList: requestCountList,
+		Concurrency:  GetConcurrency(),
+		Sys:          int(m.Sys / mb),
+		HeapSys:      int(m.HeapSys / mb),
+		HeapInuse:    int(m.HeapInuse / mb),
+		StartedAt:    startedAt,
+		RoutineCount: runtime.NumGoroutine(),
+		CacheCount:   cache.Size(),
+		Fetching:     fetching,
+		Waiting:      waiting,
+		Cacheable:    cacheable,
+		HitForPass:   hitForPass,
+		RequestCount: requestCount,
 	}
 	return stats
 }

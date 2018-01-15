@@ -2,7 +2,6 @@ package performance
 
 import (
 	"testing"
-	"time"
 )
 
 func TestConcurrency(t *testing.T) {
@@ -20,12 +19,8 @@ func TestConcurrency(t *testing.T) {
 func TestIncreaseRequestCount(t *testing.T) {
 	IncreaseRequestCount()
 	IncreaseRequestCount()
-	now := time.Now()
-	hour := now.Hour()
-	minute := now.Minute()
-	index := hour*60 + minute
-	list := GetRequstCountList()
-	if list[index] != 2 {
-		t.Fatalf("the request count expect 2 but %v", list[index])
+	count := GetRequstCount()
+	if count != 2 {
+		t.Fatalf("the request count expect 2 but %v", count)
 	}
 }
