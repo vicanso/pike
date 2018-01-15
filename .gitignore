@@ -1,2 +1,4 @@
 vendor
 node_modules
+assets/dist/app.js
+assets/dist/app.js.map

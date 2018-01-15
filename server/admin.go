@@ -1,7 +1,9 @@
 package server
 
 import (
+	"bytes"
 	"encoding/json"
+	"strings"
 
 	"../director"
 	"../dispatch"
@@ -50,7 +52,25 @@ func blackIPHandler(ctx *fasthttp.RequestCtx, blackIP *BlackIP) {
 
 func adminHandler(ctx *fasthttp.RequestCtx, directorList director.DirectorSlice, blackIP *BlackIP) {
 	ctx.Response.Header.SetCanonical(vars.CacheControl, vars.NoCache)
-	switch string(ctx.Path()) {
+	path := string(ctx.Path())
+	assetPath := "/pike/admin/"
+	if strings.HasPrefix(path, assetPath) {
+		file := path[len(assetPath):]
+		data, err := Asset("assets/dist/" + file)
+		if err != nil {
+			ctx.NotFound()
+			return
+		}
+		if strings.HasSuffix(file, ".html") {
+			ctx.SetContentType("text/html; charset=utf-8")
+		} else {
+			data = bytes.Replace(data, []byte("stats.json"), []byte("/pike/stats"), 1)
+			ctx.SetContentType("application/javascript")
+		}
+		ctx.SetBody(data)
+		return
+	}
+	switch path {
 	case "/pike/stats":
 		stats, err := json.Marshal(performance.GetStats())
 		if err != nil {

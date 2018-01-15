@@ -1,10 +1,10 @@
 import { h, app } from 'hyperapp';
 import 'whatwg-fetch';
-import 'chart.js/dist/Chart.js'
 
 import './global.sss'
 import './app.sss'
 
+import * as chart from './chart';
 
 const state = {
   concurrency: 0,
@@ -19,6 +19,7 @@ const state = {
   cacheable: 0,
   hitForPass: 0,
 };
+const statsUrl = 'stats.json';
 
 const descDict = {
   concurrency: {
@@ -63,17 +64,11 @@ const descDict = {
   },
 };
 
-let chart = null;
-
 const refreshStats = () => {
-  fetch('/stats.json').then((res) => {
+  fetch(statsUrl).then((res) => {
     return res.json();
   }).then((data) => {
     main.getStats(data);
-    if (chart) {
-      chart.config.data.datasets[0].data = data.requestCountList;
-      chart.update();
-    }
   });
 }
 
@@ -83,70 +78,10 @@ const actions = {
   },
 }
 
-const getRuquesetCountChart = (ctx) => {
-  const labels = [];
-  for (let i = 0; i < 24; i++)  {
-    for(let j = 0; j < 12; j++) {
-      let hour = i;
-      if (hour < 10) {
-        hour = `0${hour}`;
-      }
-      let minute = j * 5;
-      if (minute < 10) {
-        minute = `0${minute}`;
-      }
-      labels.push(`${hour}:${minute}`);
-    }
-  }
-  const config = {
-    type: 'line',
-    data: {
-      labels,
-      datasets: [{
-        label: "Request count per minute",
-        backgroundColor: '#e74759',
-        borderColor: '#e74759',
-        data: [
-        ],
-        fill: false,
-      }]
-    },
-    options: {
-      responsive: true,
-      title: {
-        display: true,
-        text: 'Pike Request Count'
-      },
-      tooltips: {
-        mode: 'index',
-        intersect: false,
-      },
-      hover: {
-        mode: 'nearest',
-        intersect: true
-      },
-      scales: {
-        xAxes: [{
-          display: true,
-          scaleLabel: {
-            display: true,
-            labelString: 'Time'
-          }
-        }],
-        yAxes: [{
-          display: true,
-          scaleLabel: {
-            display: true,
-            labelString: 'Count'
-          }
-        }]
-      }
-    }
-  };
-  return new Chart(ctx, config);
-}
-
 const Pluzze = ({ name, count, desc, index }) => {
+  if (count == null) {
+    return;
+  }
   const colors = [
     'green',
     'red',
@@ -158,7 +93,20 @@ const Pluzze = ({ name, count, desc, index }) => {
   return <li class={cls}>
     <div class={color}>
       <span>{name}</span>
-      <h4>{count.toLocaleString()}</h4>
+      <h4
+        onupdate={() => {
+          chart.addData(name, count);
+        }}
+      >{count.toLocaleString()}</h4>
+      <div class="chartWrapper">
+        <canvas
+          style='width:100%;height:130px'
+          oncreate={element => {
+            const ctx = element.getContext('2d');
+            chart.init(ctx, name);
+          }}
+        ></canvas>
+      </div>
       <p title={desc}>{desc}</p>
     </div>
   </li>
@@ -176,6 +124,23 @@ const StatsView = ({ state }) => {
   </ul>
 }
 
+
+let prevRequestCount = 0;
+const RequestCountView = ({ state }) => {
+  const k = 'requestCount';
+  const name = 'request count';
+  const desc = 'the count of request';
+  if (prevRequestCount == 0) {
+    prevRequestCount = state[k];
+    return null;
+  }
+  const v = state[k] - prevRequestCount;
+  prevRequestCount = state[k];
+  return <ul class="statsView">
+    <Pluzze name={name} count={v} index={0} desc={desc} />
+  </ul>
+}
+
 const view = (state, actions) => (
   <div>
     <nav class="navBar">Pike Dashboard</nav>
@@ -187,20 +152,12 @@ const view = (state, actions) => (
       <div class="bkz">
         <h3 class="bla blb">REQUEST OF PER MINUTE</h3>
       </div>
-      <canvas
-        oncreate={element => {
-          const ctx = element.getContext('2d');
-          chart = getRuquesetCountChart(ctx);
-        }}
-      >
-      </canvas>
+      <RequestCountView state={state} />
     </div>
   </div>
 )
 
 const main = app(state, actions, view, document.body)
 
-setInterval(refreshStats, 5000);
-// setInterval(() => {
-// }, 1000);
-// main.getStats();
+setInterval(refreshStats, 60 * 1000);
+refreshStats();

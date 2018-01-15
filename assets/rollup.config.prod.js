@@ -2,6 +2,7 @@ import babel from 'rollup-plugin-babel';
 import resolve from 'rollup-plugin-node-resolve';
 import uglify from 'rollup-plugin-uglify';
 import postcss from 'rollup-plugin-postcss';
+import precss from 'precss';
 
 const plugins = [
   postcss({
@@ -34,6 +35,7 @@ let config = {
     format: 'umd',
     sourcemap: true, 
   },
+  external: ['whatwg-fetch'],
   plugins: plugins
 }
 
