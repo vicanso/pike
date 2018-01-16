@@ -2,8 +2,29 @@ import babel from 'rollup-plugin-babel';
 import resolve from 'rollup-plugin-node-resolve';
 import livereload from 'rollup-plugin-livereload';
 import postcss from 'rollup-plugin-postcss';
-import serve from 'rollup-plugin-serve';
 import precss from 'precss';
+import express from 'express';
+import serveStatic from 'serve-static';
+import httpProxy from 'http-proxy';
+
+const proxy = httpProxy.createProxyServer({});
+
+function serve() {
+  const app = express()
+  app.use(serveStatic('./dist'));
+  app.use((req, res) => {
+    proxy.web(req, res, {
+      target: 'http://127.0.0.1:3015',
+    });
+  });
+  app.listen(8080);
+  return {
+    name: 'serve',
+    ongenerate: () => {
+      console.info("the server is listen: http://127.0.0.1:8080/")
+    },
+  };
+}
 
 const plugins = [
   postcss({
@@ -22,11 +43,7 @@ const plugins = [
     jsnext: true,
   }),
   livereload(),
-  serve({
-    contentBase: './dist/',
-    port: 8080,
-    // open: true,
-  }),
+  serve(),
 ];
 
 let config = {

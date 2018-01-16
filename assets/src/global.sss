@@ -1,6 +1,6 @@
 body
   background-color: #262931
-  color: #fff
+  color: #f0f0f0
   margin: 0
 .green
   background-color: #5dcb8e
@@ -10,6 +10,18 @@ body
   background-color: #9f85fc
 .yellow
   background-color: #e4d836
+
+.grayColor
+  color: rgba(255, 255, 255, 0.5)
+.greenColor
+  color: #5dcb8e
+.redColor
+  color: #e74759
+
+.mleft5
+  margin-left: 5px
+.tac
+  text-align: center
 
 .bkz
   position: relative
@@ -52,3 +64,21 @@ body
   padding: 10px 20px 
   font-size: 1.3rem
   z-index: 9
+  ul
+    margin: 0
+    padding: 0
+    display: inline-block
+    list-style: none
+    margin-left: 30px
+    font-size: 1rem
+    li
+      display: inline-block
+      margin: 0 15px
+      a
+        color: rgba(255, 255, 255, 0.5)
+        &.active
+          color: #fff
+  .launthedAt
+    text-transform: uppercase
+    float: right
+    font-size: 0.7rem

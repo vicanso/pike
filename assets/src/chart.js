@@ -44,10 +44,10 @@ export function init(ctx, name) {
       },
       scales: {
         xAxes: [{
-          display: false,
+          display: true,
         }],
         yAxes: [{
-          display: false,
+          display: true,
         }],
       },
     },
@@ -69,9 +69,4 @@ export function addData(name, value) {
   data.labels.push(moment().format('HH:mm'))
   data.datasets[0].data.push(value);
   chart.update()
-  // config.data.labels.push(month);
-
-  //               config.data.datasets.forEach(function(dataset) {
-  //                   dataset.data.push(randomScalingFactor());
-  //               });
 }
