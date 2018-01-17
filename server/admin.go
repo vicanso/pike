@@ -62,6 +62,11 @@ func statisHandler(ctx *fasthttp.RequestCtx, assetPath string) {
 		ctx.NotFound()
 		return
 	}
+	gzipData, err := util.Gzip(data)
+	if err == nil {
+		ctx.Response.Header.SetCanonical(vars.ContentEncoding, vars.Gzip)
+		data = gzipData
+	}
 	if strings.HasSuffix(file, ".html") {
 		ctx.SetContentType("text/html; charset=utf-8")
 	} else {

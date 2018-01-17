@@ -2,6 +2,7 @@ package server
 
 import (
 	"bytes"
+	"log"
 	"strconv"
 	"time"
 
@@ -273,5 +274,6 @@ func Start(conf *PikeConfig, directorList director.DirectorSlice) error {
 			handler(ctx, directorList, conf)
 		},
 	}
+	log.Printf("the server will listen on " + listen)
 	return s.ListenAndServe(listen)
 }
