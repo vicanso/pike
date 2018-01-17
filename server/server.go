@@ -24,7 +24,8 @@ type PikeConfig struct {
 	Cpus                 int
 	Listen               string
 	DB                   string
-	DisableKeepalive     bool `yaml:"disableKeepalive"`
+	AdminToken           string `yaml:"adminToken"`
+	DisableKeepalive     bool   `yaml:"disableKeepalive"`
 	Concurrency          int
 	HitForPass           int           `yaml:"hitForPass"`
 	ReadBufferSize       int           `yaml:"readBufferSize"`
@@ -254,7 +255,7 @@ func Start(conf *PikeConfig, directorList director.DirectorSlice) error {
 			}
 			// 管理界面相关接口
 			if len(path) >= adminURLLength && bytes.Compare(path[0:adminURLLength], vars.AdminURL) == 0 {
-				adminHandler(ctx, directorList, blackIP)
+				adminHandler(ctx, directorList, blackIP, conf)
 				return
 			}
 			performance.IncreaseRequestCount()

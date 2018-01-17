@@ -3,33 +3,55 @@ import 'Base64';
 
 const statsUrl = '/pike/stats';
 const directorsUrl = '/pike/directors';
+const blackIPsUrl = '/pike/black-ips';
+
+const maxPointCount = 30;
+const performanceKeys = [
+  'concurrency',
+  'sys',
+  'heapSys',
+  'heapInuse',
+  'routine',
+  'cacheCount',
+  'fetching',
+  'waiting',
+  'cacheable',
+  'hitForPass',
+  'requestCount',
+];
+
+const adminToken = localStorage.getItem('adminToken');
+const defaultHeader = {
+  'X-Admin-Token': adminToken,
+};
 
 export const state = {
-  concurrency: 0,
-  sys: 0,
-  heapSys: 0,
-  heapInuse: 0,
-  startedAt: '',
-  routine: 0,
-  cacheCount: 0,
-  fetching: 0,
-  waiting: 0,
-  cacheable: 0,
-  hitForPass: 0,
+  performance: null,
   view: 'default',
   launchedAt: '',
   uptime: '',
   directors: null,
+  blackIPList: null,
 };
 
 export function getStats() {
-  return fetch(statsUrl).then((res) => {
+  return fetch(statsUrl, {
+    headers: defaultHeader,
+  }).then((res) => {
+    if (res.status >= 400) {
+      throw res
+    }
     return res.json();
   });
 }
 
 export function getDirectors() {
-  return fetch(directorsUrl).then((res) => {
+  return fetch(directorsUrl, {
+    headers: defaultHeader,
+  }).then((res) => {
+    if (res.status >= 400) {
+      throw res
+    }
     return res.json();
   }).then((data) => {
     const covert = (item, key) => {
@@ -44,13 +66,72 @@ export function getDirectors() {
   });
 }
 
+export function getBlackIPs() {
+  return fetch(blackIPsUrl, {
+    headers: defaultHeader,
+  }).then((res) => {
+    if (res.status >= 400) {
+      throw res
+    }
+    return res.json();
+  })
+}
+
+export function addBlackIP(ip) {
+  return fetch(blackIPsUrl, {
+    method: 'POST',
+    headers: defaultHeader,
+    body: JSON.stringify({
+      ip,
+    }),
+  }).then((res) => {
+    if (res.status >= 400) {
+      throw res;
+    }
+  });
+}
+
 export const actions = {
   resetDirectors: () => state => {
     return {
       directors: null,
     };
   },
-  setStats: data => state => data,
+  setPerformance: data => state => {
+    const result = {};
+    const prevPerformance = state.performance || {};
+    const now = moment().format('HH:mm');
+    performanceKeys.forEach((key) => {
+      const arr = (prevPerformance[key] || []).slice(0);
+      const value = data[key];
+      let prev = null;
+      if (arr.length === maxPointCount) {
+        prev = arr.shift()
+      }
+      if (key === 'requestCount') {
+        let v = 0;
+        let last = arr[arr.length - 1] || prev;
+        if (last) {
+          v = value - last.count;
+        }
+        arr.push({
+          time: now,
+          count: value,
+          value: v,
+        });
+      } else {
+        arr.push({
+          time: now,
+          value,
+        });
+      }
+
+      result[key] = arr;
+    });
+    return {
+      performance: result,
+    };
+  },
   setLaunchedAt: launchedAt => state => {
     return {
       launchedAt: moment(launchedAt).format('YYYY-MM-DD HH:mm:ss'),
@@ -60,6 +141,11 @@ export const actions = {
   setDirectors: data => state => {
     return {
       directors: data,
+    };
+  },
+  setBlackIPList: data => state => {
+    return {
+      blackIPList: data,
     };
   },
   changeView: view => state => {

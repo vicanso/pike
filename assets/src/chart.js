@@ -60,13 +60,13 @@ export function remove(name) {
   delete charts[name]
 }
 
-export function addData(name, value) {
+export function setData(name, data) {
   const chart = charts[name];
   if (!chart) {
     return;
   }
-  const data = chart.config.data;
-  data.labels.push(moment().format('HH:mm'))
-  data.datasets[0].data.push(value);
+  const configData = chart.config.data;
+  configData.labels = data.map(item => item.time);
+  configData.datasets[0].data = data.map(item => item.value);
   chart.update()
 }

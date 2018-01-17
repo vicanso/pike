@@ -1,24 +1,46 @@
 import { h, app } from 'hyperapp';
 import 'whatwg-fetch';
+import moment from 'moment';
 
 import './global.sss';
 import './app.sss';
 import Performance from './performance';
 import Directors from './directors';
+import AdminToken from './admin-token';
+import BlackIP from './black-ip';
 import {
   state,
   actions,
   getStats,
-  getDirectors,
 } from './actions';
 
+const views = {
+  default: 'default',
+  adminToken: 'adminToken',
+  performance: 'performance',
+  blackIP: 'blackIP',
+};
+
+let toggleCount = 0;
 
 let refreshStatsInterval = null;
 const refreshStats = () => {
   getStats().then((data) => {
-    main.setStats(data);
+    main.setPerformance(data);
   });
 }
+
+const init = () => {
+  getStats().then((data) => {
+    main.setLaunchedAt(data.startedAt);
+    refreshStats();
+    refreshStatsInterval = setInterval(refreshStats, 60 * 1000);
+  }).catch((res) => {
+    if (res.status === 401) {
+      main.changeView(views.adminToken);
+    }
+  });
+};
 
 const view = (state, actions) => {
   const currentView = state.view;
@@ -27,16 +49,7 @@ const view = (state, actions) => {
       href="javascript:;"
       class={currentView == view ? "active": ""}
       onclick={() => {
-        clearInterval(refreshStatsInterval);
-        if (view === 'performance') {
-          refreshStatsInterval = setInterval(refreshStats, 60 * 1000);
-          refreshStats();
-        } else {
-          actions.resetDirectors();
-          getDirectors().then((data) => {
-            main.setDirectors(data);
-          });
-        }
+        toggleCount++;
         actions.changeView(view);
       }}
     >
@@ -46,13 +59,14 @@ const view = (state, actions) => {
   return <div>
     <nav class="navBar">Pike Dashboard
       <ul>
-        {getNav("default", "Directors")}
-        {getNav("performance", "Performance")}
+        {getNav(views.default, "Directors")}
+        {getNav(views.performance, "Performance")}
+        {getNav(views.blackIP, "Black IP")}
       </ul>
       {
         state.uptime &&
         <div
-          class="launthedAt gray"
+          class="launthedAt grayColor"
           title={state.launchedAt}
         >
           launthed at:
@@ -61,20 +75,20 @@ const view = (state, actions) => {
       }
     </nav>
     {
-      currentView == 'performance' && <Performance state={state} />
+      currentView === views.adminToken && <AdminToken state={state} />
     }
     {
-      currentView == 'default' && <Directors state={state} />
+      currentView === views.performance && <Performance state={state} />
+    }
+    {
+      currentView === views.default && <Directors state={state} actions={actions} toggleCount={toggleCount} />
+    }
+    {
+      currentView === views.blackIP && <BlackIP state={state} actions={actions} toggleCount={toggleCount} />
     }
   </div>
 };
 
 const main = app(state, actions, view, document.body)
 
-getStats().then((data) => {
-  main.setLaunchedAt(data.startedAt);
-});
-
-getDirectors().then((data) => {
-  main.setDirectors(data);
-});
+init();

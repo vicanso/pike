@@ -6,6 +6,8 @@ cpus: 0
 listen: :3015
 # 数据缓存的db目录
 db: /tmp/pike
+# 管理员验证token
+adminToken: ry3WwvhVG
 # hit for pass 的缓存有效期
 hitForPass: 600
 # 程序并发限制，设置为0表示使用默认值

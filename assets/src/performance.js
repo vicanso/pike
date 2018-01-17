@@ -48,8 +48,8 @@ const descDict = {
 
 
 
-const Pluzze = ({ name, count, desc, index }) => {
-  if (count == null) {
+const Pluzze = ({ name, data, desc, index }) => {
+  if (data == null || data.length === 0) {
     return;
   }
   const colors = [
@@ -60,20 +60,22 @@ const Pluzze = ({ name, count, desc, index }) => {
   ];
   const color = colors[index % colors.length];
   const cls = 'col-sm';
+  const count = data[data.length - 1].value;
+  chart.setData(name, data);
   return <li class={cls}>
     <div class={color}>
       <span>{name}</span>
-      <h4
-        onupdate={() => {
-          chart.addData(name, count);
-        }}
-      >{count.toLocaleString()}</h4>
+      <h4>{count.toLocaleString()}</h4>
       <div class="chartWrapper">
         <canvas
           style='width:100%;height:130px'
           oncreate={element => {
             const ctx = element.getContext('2d');
             chart.init(ctx, name);
+            chart.setData(name, data);
+          }}
+          ondestroy={() => {
+            chart.remove(name);
           }}
         ></canvas>
       </div>
@@ -83,11 +85,15 @@ const Pluzze = ({ name, count, desc, index }) => {
 };
 
 const StatsView = ({ state }) => {
+  const performance = state.performance;
+  if (!performance) {
+    return;
+  }
   const keys = Object.keys(descDict);
   const list = keys.map((k, index) => {
     const item = descDict[k];
-    const v = state[k];
-    return <Pluzze name={item.name} count={v} index={index} desc={item.desc} />
+    const v = performance[k];
+    return <Pluzze name={item.name} data={v} index={index} desc={item.desc} />
   });
   return <ul class='row statsView'>
     {list}
@@ -95,28 +101,23 @@ const StatsView = ({ state }) => {
 }
 
 
-let prevRequestCount = -1;
 const RequestCountView = ({ state }) => {
   const k = 'requestCount';
   const name = 'request count';
   const desc = 'the count of request';
-  if (prevRequestCount == -1) {
-    prevRequestCount = state[k];
-    return null;
+  const performance = state.performance;
+  if (!performance) {
+    return;
   }
-  const v = state[k] - prevRequestCount;
-  prevRequestCount = state[k];
+  const v = performance[k];
   return <ul class="statsView">
-    <Pluzze name={name} count={v} index={0} desc={desc} />
+    <Pluzze name={name} data={v} index={0} desc={desc} />
   </ul>
 }
 
 const Performance = ({ state }) => {
   return <div
     class="performanceWrapper container"
-    ondestroy={() => {
-      prevRequestCount = -1;
-    }}
   >
     <div class="bkz">
       <h3 class="bla blb">QUICK PERFORMANCE</h3>

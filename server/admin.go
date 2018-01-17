@@ -13,6 +13,7 @@ import (
 	"github.com/valyala/fasthttp"
 )
 
+// responseJSON 返回json数据
 func responseJSON(ctx *fasthttp.RequestCtx, data []byte) {
 	ctx.SetContentTypeBytes(vars.JSON)
 	if len(data) > vars.CompressMinLength {
@@ -25,6 +26,7 @@ func responseJSON(ctx *fasthttp.RequestCtx, data []byte) {
 	ctx.SetBody(data)
 }
 
+// blackIPHandler 黑名单IP的配置处理
 func blackIPHandler(ctx *fasthttp.RequestCtx, blackIP *BlackIP) {
 	method := string(ctx.Method())
 	switch method {
@@ -36,8 +38,10 @@ func blackIPHandler(ctx *fasthttp.RequestCtx, blackIP *BlackIP) {
 		responseJSON(ctx, data)
 	case "POST":
 		body := string(ctx.Request.Body())
-		value := gjson.Get(body, "ip")
-		blackIP.Add(value.String())
+		value := gjson.Get(body, "ip").String()
+		if len(value) != 0 {
+			blackIP.Add(value)
+		}
 		ctx.SetStatusCode(201)
 	case "DELETE":
 		body := string(ctx.Request.Body())
@@ -49,6 +53,7 @@ func blackIPHandler(ctx *fasthttp.RequestCtx, blackIP *BlackIP) {
 	}
 }
 
+// statisHandler 静态文件处理
 func statisHandler(ctx *fasthttp.RequestCtx, assetPath string) {
 	path := string(ctx.Path())
 	file := path[len(assetPath):]
@@ -65,12 +70,20 @@ func statisHandler(ctx *fasthttp.RequestCtx, assetPath string) {
 	ctx.SetBody(data)
 }
 
-func adminHandler(ctx *fasthttp.RequestCtx, directorList director.DirectorSlice, blackIP *BlackIP) {
+// adminHandler 管理员相关接口处理
+func adminHandler(ctx *fasthttp.RequestCtx, directorList director.DirectorSlice, blackIP *BlackIP, conf *PikeConfig) {
 	ctx.Response.Header.SetCanonical(vars.CacheControl, vars.NoCache)
 	path := string(ctx.Path())
 	assetPath := "/pike/admin/"
 	if strings.HasPrefix(path, assetPath) {
 		statisHandler(ctx, assetPath)
+		return
+	}
+	// 对token校验
+	if string(ctx.Request.Header.Peek("X-Admin-Token")) != conf.AdminToken {
+		ctx.SetBody([]byte("{\"error\": \"The token is invalid\"}"))
+		ctx.SetContentTypeBytes(vars.JSON)
+		ctx.SetStatusCode(fasthttp.StatusUnauthorized)
 		return
 	}
 	switch path {
