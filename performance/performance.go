@@ -28,6 +28,8 @@ type Stats struct {
 	Cacheable    int    `json:"cacheable"`
 	HitForPass   int    `json:"hitForPass"`
 	RequestCount uint64 `json:"requestCount"`
+	LSM          int    `json:"lsm"`
+	VLog         int    `json:"vLog"`
 }
 
 // IncreaseConcurrency concurrency 加一
@@ -61,6 +63,7 @@ func GetStats() *Stats {
 	m := &runtime.MemStats{}
 	runtime.ReadMemStats(m)
 	fetching, waiting, cacheable, hitForPass := cache.Stats()
+	lsm, vlog := cache.DataSize()
 	stats := &Stats{
 		Concurrency:  GetConcurrency(),
 		Sys:          int(m.Sys / mb),
@@ -74,6 +77,8 @@ func GetStats() *Stats {
 		Cacheable:    cacheable,
 		HitForPass:   hitForPass,
 		RequestCount: requestCount,
+		LSM:          lsm,
+		VLog:         vlog,
 	}
 	return stats
 }
