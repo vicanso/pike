@@ -1,9 +1,12 @@
 package util
 
 import (
+	"bufio"
 	"bytes"
 	"compress/gzip"
 	"encoding/binary"
+	"expvar"
+	"fmt"
 	"io/ioutil"
 	"regexp"
 	"strconv"
@@ -192,4 +195,22 @@ func TrimHeader(header []byte) []byte {
 		data = append(data, item)
 	}
 	return bytes.Join(data, vars.LineBreak)
+}
+
+// GetDebugVars 获取 debug vars
+func GetDebugVars() []byte {
+	var b bytes.Buffer
+	w := bufio.NewWriter(&b)
+	fmt.Fprintf(w, "{\n")
+	first := true
+	expvar.Do(func(kv expvar.KeyValue) {
+		if !first {
+			fmt.Fprintf(w, ",\n")
+		}
+		first = false
+		fmt.Fprintf(w, "%q: %s", kv.Key, kv.Value)
+	})
+	fmt.Fprintf(w, "\n}\n")
+	w.Flush()
+	return b.Bytes()
 }

@@ -170,3 +170,10 @@ func TestTrimHeader(t *testing.T) {
 		t.Fatalf("trim header fail expect %v but %v", str, data)
 	}
 }
+
+func TestGetDebugVars(t *testing.T) {
+	buf := GetDebugVars()
+	if len(buf) < 10 {
+		t.Fatalf("get the debug vars fail, %v", string(buf))
+	}
+}
