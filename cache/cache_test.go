@@ -129,6 +129,10 @@ func TestRequestStatus(t *testing.T) {
 	if size != 2 {
 		t.Fatalf("the cache size expect 2 but %v", size)
 	}
+	lsm, vLog := DataSize()
+	if lsm == -1 || vLog == -1 {
+		t.Fatalf("get the data size fail")
+	}
 	fetchingCount, waitingCount, cacheableCount, hitForPassCount := Stats()
 	if fetchingCount != 0 || waitingCount != 0 {
 		t.Fatalf("the fecthing and wating count is wrong")

@@ -42,12 +42,11 @@ type RequestStatus struct {
 	waitingChans []chan int
 }
 
-func initRequestStatus(key string, ttl uint32) *RequestStatus {
+func initRequestStatus(ttl uint32) *RequestStatus {
 	rs := &RequestStatus{
 		createdAt: util.GetSeconds(),
 		ttl:       ttl,
 	}
-	rsMap[key] = rs
 	return rs
 }
 
@@ -61,6 +60,16 @@ func isExpired(rs *RequestStatus) bool {
 // Size 获取缓存记录的总数
 func Size() int {
 	return len(rsMap)
+}
+
+// DataSize 获取数据大小
+func DataSize() (int, int) {
+	if client == nil {
+		return -1, -1
+	}
+	lsm, vLog := client.Size()
+	mb := int64(1024 * 1024)
+	return int(lsm / mb), int(vLog / mb)
 }
 
 // Stats 获取请求状态的统计
@@ -94,7 +103,8 @@ func GetRequestStatus(key []byte) (int, chan int) {
 	status := vars.Fetching
 	if rs == nil || isExpired(rs) {
 		status = vars.Fetching
-		rs = initRequestStatus(k, 0)
+		rs = initRequestStatus(0)
+		rsMap[k] = rs
 		rs.status = status
 	} else if rs.status == vars.Fetching {
 		status = vars.Waiting
