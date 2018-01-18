@@ -18,6 +18,8 @@ const performanceKeys = [
   'cacheable',
   'hitForPass',
   'requestCount',
+  'lsm',
+  'vLog',
 ];
 
 const adminToken = localStorage.getItem('adminToken');

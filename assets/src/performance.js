@@ -44,6 +44,14 @@ const descDict = {
     name: 'waiting count',
     desc: 'the count of waiting request',
   },
+  lsm: {
+    name: 'LSM size of db',
+    desc: 'the data size of db\'s lsm',
+  },
+  vLog: {
+    name: 'VLog size of db',
+    desc: 'the data size of db\'s vlog',
+  },
 };
 
 
