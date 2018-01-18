@@ -106,11 +106,11 @@ func CreateDirector(config *Config) *Director {
 	}
 	priority := 8
 	if len(config.Prefix) != 0 {
-		priority -= 2
+		priority -= 4
 		d.Prefixs = strListToByteList(config.Prefix)
 	}
 	if len(config.Host) != 0 {
-		priority -= 4
+		priority -= 2
 		d.Hosts = strListToByteList(config.Host)
 	}
 	if len(config.Pass) != 0 {
