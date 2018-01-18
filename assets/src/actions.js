@@ -3,7 +3,7 @@ import 'Base64';
 
 const statsUrl = '/pike/stats';
 const directorsUrl = '/pike/directors';
-const blackIPsUrl = '/pike/black-ips';
+const blockIPsUrl = '/pike/block-ips';
 
 const maxPointCount = 30;
 const performanceKeys = [
@@ -31,7 +31,7 @@ export const state = {
   launchedAt: '',
   uptime: '',
   directors: null,
-  blackIPList: null,
+  blockIPList: null,
 };
 
 export function getStats() {
@@ -66,8 +66,8 @@ export function getDirectors() {
   });
 }
 
-export function getBlackIPs() {
-  return fetch(blackIPsUrl, {
+export function getBlockIPs() {
+  return fetch(blockIPsUrl, {
     headers: defaultHeader,
   }).then((res) => {
     if (res.status >= 400) {
@@ -77,9 +77,23 @@ export function getBlackIPs() {
   })
 }
 
-export function addBlackIP(ip) {
-  return fetch(blackIPsUrl, {
+export function addBlockIP(ip) {
+  return fetch(blockIPsUrl, {
     method: 'POST',
+    headers: defaultHeader,
+    body: JSON.stringify({
+      ip,
+    }),
+  }).then((res) => {
+    if (res.status >= 400) {
+      throw res;
+    }
+  });
+}
+
+export function removeBlockIP(ip) {
+  return fetch(blockIPsUrl, {
+    method: 'DELETE',
     headers: defaultHeader,
     body: JSON.stringify({
       ip,
@@ -143,9 +157,9 @@ export const actions = {
       directors: data,
     };
   },
-  setBlackIPList: data => state => {
+  setBlockIPList: data => state => {
     return {
-      blackIPList: data,
+      blockIPList: data,
     };
   },
   changeView: view => state => {

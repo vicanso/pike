@@ -7,7 +7,7 @@ import './app.sss';
 import Performance from './performance';
 import Directors from './directors';
 import AdminToken from './admin-token';
-import BlackIP from './black-ip';
+import BlockIP from './block-ip';
 import {
   state,
   actions,
@@ -18,7 +18,7 @@ const views = {
   default: 'default',
   adminToken: 'adminToken',
   performance: 'performance',
-  blackIP: 'blackIP',
+  blockIP: 'blockIP',
 };
 
 let toggleCount = 0;
@@ -61,7 +61,7 @@ const view = (state, actions) => {
       <ul>
         {getNav(views.default, "Directors")}
         {getNav(views.performance, "Performance")}
-        {getNav(views.blackIP, "Black IP")}
+        {getNav(views.blockIP, "Block IP List")}
       </ul>
       {
         state.uptime &&
@@ -84,7 +84,7 @@ const view = (state, actions) => {
       currentView === views.default && <Directors state={state} actions={actions} toggleCount={toggleCount} />
     }
     {
-      currentView === views.blackIP && <BlackIP state={state} actions={actions} toggleCount={toggleCount} />
+      currentView === views.blockIP && <BlockIP state={state} actions={actions} toggleCount={toggleCount} />
     }
   </div>
 };
