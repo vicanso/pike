@@ -54,7 +54,7 @@ func testCachable(t *testing.T, url string) {
 func testHitForPass(t *testing.T, url string) {
 	mutex := sync.Mutex{}
 	count := 10
-	result := make([]string, 0, count)
+	result := make([]string, 0)
 	for index := 0; index < count; index++ {
 		go func() {
 			resp, err := get(url)
@@ -111,6 +111,7 @@ func TestServerStart(t *testing.T) {
 			&director.Config{
 				Name: "test",
 				Type: "first",
+				Ping: "/ping",
 				Backends: []string{
 					"127.0.0.1:" + strconv.Itoa(port),
 				},
@@ -125,6 +126,7 @@ func TestServerStart(t *testing.T) {
 
 	directorList := director.GetDirectors(conf.Directors)
 	go Start(conf, directorList)
+	time.Sleep(5 * time.Second)
 	testCachable(t, "http://127.0.0.1:3015/cacheable")
 	testHitForPass(t, "http://127.0.0.1:3015/hit-for-pass")
 }

@@ -123,8 +123,10 @@ func handler(ctx *fasthttp.RequestCtx, directorList director.DirectorSlice, conf
 			status = <-c
 		}
 	}
+	respHeadr := &ctx.Response.Header
 	switch status {
 	case vars.Pass:
+		respHeadr.SetCanonical(vars.XCache, vars.XCacheMiss)
 		// pass的请求直接转发至upstream
 		resp, header, body, err := doProxy(ctx, us, conf.ConnectTimeout)
 		if err != nil {
@@ -141,6 +143,7 @@ func handler(ctx *fasthttp.RequestCtx, directorList director.DirectorSlice, conf
 		}
 		responseHandler(respData)
 	case vars.Fetching, vars.HitForPass:
+		respHeadr.SetCanonical(vars.XCache, vars.XCacheMiss)
 		//feacthing或hitforpass的请求转至upstream
 		// 并根据返回的数据是否可以缓存设置缓存
 		resp, header, body, err := doProxy(ctx, us, conf.ConnectTimeout)
@@ -189,6 +192,7 @@ func handler(ctx *fasthttp.RequestCtx, directorList director.DirectorSlice, conf
 			}
 		}
 	case vars.Cacheable:
+		respHeadr.SetCanonical(vars.XCache, vars.XCacheHit)
 		respData, err := cache.GetResponse(key)
 		if err != nil {
 			errorHandler(err)
@@ -208,8 +212,8 @@ func Start(conf *PikeConfig, directorList director.DirectorSlice) error {
 		hitForPassTTL = uint32(conf.HitForPass)
 	}
 
-	var blackIP = &BlackIP{}
-	blackIP.InitFromCache()
+	var blockIP = &BlockIP{}
+	blockIP.InitFromCache()
 	tags := httplog.Parse([]byte(conf.LogFormat))
 	writeCategory := httplog.Normal
 	if conf.LogType == "date" {
@@ -244,8 +248,8 @@ func Start(conf *PikeConfig, directorList director.DirectorSlice) error {
 		MaxRequestBodySize:   conf.MaxRequestBodySize,
 		Handler: func(ctx *fasthttp.RequestCtx) {
 			clientIP := util.GetClientIP(ctx)
-			if blackIP.FindIndex(clientIP) != -1 {
-				dispatch.ErrorHandler(ctx, vars.AccessIsNotAlloed)
+			if blockIP.FindIndex(clientIP) != -1 {
+				dispatch.ErrorHandler(ctx, vars.ErrAccessIsNotAlloed)
 				return
 			}
 			path := ctx.Path()
@@ -256,7 +260,7 @@ func Start(conf *PikeConfig, directorList director.DirectorSlice) error {
 			}
 			// 管理界面相关接口
 			if len(path) >= adminURLLength && bytes.Compare(path[0:adminURLLength], vars.AdminURL) == 0 {
-				adminHandler(ctx, directorList, blackIP, conf)
+				adminHandler(ctx, directorList, blockIP, conf)
 				return
 			}
 			performance.IncreaseRequestCount()

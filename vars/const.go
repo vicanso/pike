@@ -24,6 +24,12 @@ var (
 	LastModified = []byte("LastModified")
 	// ServerTiming http response ServerTiming header
 	ServerTiming = []byte("Server-Timing")
+	// XCache whether the data of response is from cache
+	XCache = []byte("X-Cache")
+	// XCacheHit the response hit the cache
+	XCacheHit = []byte("hit")
+	// XCacheMiss the response miss the cache
+	XCacheMiss = []byte("miss")
 
 	// Age http response age header
 	Age = []byte("Age")
@@ -72,8 +78,8 @@ var (
 	ErrGatewayTimeout = errors.New("gateway timeout")
 	// ErrDbNotInit 没有初始化db
 	ErrDbNotInit = errors.New("db isn't init")
-	// AccessIsNotAlloed 不允许访问
-	AccessIsNotAlloed = errors.New("access is not allowed")
+	// ErrAccessIsNotAlloed 不允许访问
+	ErrAccessIsNotAlloed = errors.New("access is not allowed")
 )
 
 const (
