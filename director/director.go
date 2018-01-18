@@ -59,7 +59,15 @@ func (d *Director) Match(host, uri []byte) bool {
 	match := false
 	if hosts != nil {
 		for _, item := range hosts {
-			if !match && bytes.Compare(host, item) == 0 {
+			if match {
+				continue
+			}
+			// 如果配置的host以~开头，表示只要包含则符合
+			if item[0] == byte('~') {
+				if bytes.Index(host, item[1:]) != -1 {
+					match = true
+				}
+			} else if bytes.Compare(host, item) == 0 {
 				match = true
 			}
 		}

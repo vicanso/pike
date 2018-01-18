@@ -37,6 +37,7 @@ func TestCreateDirector(t *testing.T) {
 		Host: []string{
 			"www.aslant.site",
 			"aslant.site",
+			"~npmtrend",
 		},
 		Backends: []string{
 			"host:5001",
@@ -52,7 +53,7 @@ func TestCreateDirector(t *testing.T) {
 	testVar(t, strconv.Itoa(len(d.Prefixs)), "2")
 	testVar(t, string(d.Prefixs[0]), "/tiny")
 	testVar(t, string(d.Prefixs[1]), "/albi")
-	testVar(t, strconv.Itoa(len(d.Hosts)), "2")
+	testVar(t, strconv.Itoa(len(d.Hosts)), "3")
 	testVar(t, string(d.Hosts[0]), "www.aslant.site")
 	testVar(t, string(d.Hosts[1]), "aslant.site")
 	testVar(t, strconv.Itoa(len(d.Passes)), "1")
@@ -60,6 +61,7 @@ func TestCreateDirector(t *testing.T) {
 
 	testMatch(t, d, []byte("aslant.site"), []byte("/tiny"), true)
 	testMatch(t, d, []byte("www.aslant.site"), []byte("/albi"), true)
+	testMatch(t, d, []byte("www.npmtrend.com"), []byte("/albi"), true)
 	testMatch(t, d, []byte("dcharts.com"), []byte("/albi"), false)
 	testMatch(t, d, []byte("aslant.site"), []byte("/abc"), false)
 
