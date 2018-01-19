@@ -40,9 +40,16 @@ func main() {
 	if conf.Cpus > 0 {
 		runtime.GOMAXPROCS(conf.Cpus)
 	}
-	go clear(conf.ExpiredClearInterval)
-
-	db, err := cache.InitDB(conf.DB)
+	clearInterval := conf.ExpiredClearInterval
+	if clearInterval <= 0 {
+		clearInterval = 300 * time.Second
+	}
+	go clear(clearInterval)
+	dbPath := conf.DB
+	if len(dbPath) == 0 {
+		dbPath = "/tmp/pike"
+	}
+	db, err := cache.InitDB(dbPath)
 	if err != nil {
 		log.Fatalf("error: %v", err)
 	}

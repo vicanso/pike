@@ -79,7 +79,8 @@ func statisHandler(ctx *fasthttp.RequestCtx, assetPath string) {
 func adminHandler(ctx *fasthttp.RequestCtx, directorList director.DirectorSlice, blockIP *BlockIP, conf *PikeConfig) {
 	ctx.Response.Header.SetCanonical(vars.CacheControl, vars.NoCache)
 	path := string(ctx.Path())
-	assetPath := "/pike/admin/"
+	adminPath := conf.AdminPath
+	assetPath := adminPath + "/admin/"
 	if strings.HasPrefix(path, assetPath) {
 		statisHandler(ctx, assetPath)
 		return
@@ -92,19 +93,19 @@ func adminHandler(ctx *fasthttp.RequestCtx, directorList director.DirectorSlice,
 		return
 	}
 	switch path {
-	case "/pike/stats":
+	case adminPath + "/stats":
 		stats, err := json.Marshal(performance.GetStats())
 		if err != nil {
 			dispatch.ErrorHandler(ctx, err)
 		}
 		responseJSON(ctx, stats)
-	case "/pike/directors":
+	case adminPath + "/directors":
 		data, err := json.Marshal(directorList)
 		if err != nil {
 			dispatch.ErrorHandler(ctx, err)
 		}
 		responseJSON(ctx, data)
-	case "/pike/block-ips":
+	case adminPath + "/block-ips":
 		blockIPHandler(ctx, blockIP)
 	default:
 		ctx.NotFound()

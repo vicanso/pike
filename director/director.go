@@ -60,11 +60,11 @@ func (d *Director) Match(host, uri []byte) bool {
 	if hosts != nil {
 		for _, item := range hosts {
 			if match {
-				continue
+				break
 			}
 			// 如果配置的host以~开头，表示只要包含则符合
 			if item[0] == byte('~') {
-				if bytes.Index(host, item[1:]) != -1 {
+				if bytes.Contains(host, item[1:]) {
 					match = true
 				}
 			} else if bytes.Compare(host, item) == 0 {
@@ -80,7 +80,7 @@ func (d *Director) Match(host, uri []byte) bool {
 		// 重置match状态，判断prefix
 		match = false
 		for _, item := range prefixs {
-			if !match && bytes.Contains(uri, item) {
+			if !match && bytes.HasPrefix(uri, item) {
 				match = true
 			}
 		}

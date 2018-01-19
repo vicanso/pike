@@ -64,8 +64,6 @@ var (
 var (
 	// PingURL the ping url
 	PingURL = []byte("/ping")
-	// AdminURL the admin url prefix
-	AdminURL = []byte("/pike")
 )
 
 // errors

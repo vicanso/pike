@@ -25,6 +25,7 @@ type PikeConfig struct {
 	Cpus                 int
 	Listen               string
 	DB                   string
+	AdminPath            string `yaml:"adminPath"`
 	AdminToken           string `yaml:"adminToken"`
 	DisableKeepalive     bool   `yaml:"disableKeepalive"`
 	Concurrency          int
@@ -234,7 +235,7 @@ func Start(conf *PikeConfig, directorList director.DirectorSlice) error {
 		defer logWriter.Close()
 	}
 	enableAccessLog := len(tags) != 0 && logWriter != nil
-	adminURLLength := len(vars.AdminURL)
+	adminPath := []byte(conf.AdminPath)
 	s := &fasthttp.Server{
 		Name:                 conf.Name,
 		Concurrency:          conf.Concurrency,
@@ -259,7 +260,7 @@ func Start(conf *PikeConfig, directorList director.DirectorSlice) error {
 				return
 			}
 			// 管理界面相关接口
-			if len(path) >= adminURLLength && bytes.Compare(path[0:adminURLLength], vars.AdminURL) == 0 {
+			if len(adminPath) != 0 && bytes.HasPrefix(path, adminPath) {
 				adminHandler(ctx, directorList, blockIP, conf)
 				return
 			}

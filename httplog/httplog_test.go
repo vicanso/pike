@@ -28,4 +28,9 @@ func TestParse(t *testing.T) {
 	if bytes.Index(buf, []byte("{")) != -1 {
 		t.Fatalf("the log of request fail")
 	}
+
+	tags = Parse([]byte(""))
+	if len(tags) != 0 {
+		t.Fatalf("the empty log format should be null")
+	}
 }

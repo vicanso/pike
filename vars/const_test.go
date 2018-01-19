@@ -36,7 +36,6 @@ func TestVars(t *testing.T) {
 	testVar(t, string(Head), "HEAD")
 
 	testVar(t, string(PingURL), "/ping")
-	testVar(t, string(AdminURL), "/pike")
 
 	testVar(t, ErrDirectorUnavailable.Error(), "director unavailable")
 	testVar(t, ErrServiceUnavailable.Error(), "service unavailable")
