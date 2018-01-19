@@ -1,6 +1,7 @@
 package proxy
 
 import (
+	"strings"
 	"sync/atomic"
 	"time"
 
@@ -50,7 +51,10 @@ func (uh *UpstreamHost) healthCheck(ping string, interval time.Duration) {
 		uh.Healthy = 1
 		return
 	}
-	url := "http://" + uh.Host + ping
+	url := uh.Host + ping
+	if !strings.HasPrefix(url, "http") {
+		url = "http://" + url
+	}
 	if interval <= 0 {
 		interval = time.Second
 	}

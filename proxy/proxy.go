@@ -2,6 +2,7 @@ package proxy
 
 import (
 	"bytes"
+	"strings"
 	"sync/atomic"
 	"time"
 
@@ -29,7 +30,10 @@ func Do(ctx *fasthttp.RequestCtx, us *Upstream, timeout time.Duration) (*fasthtt
 	atomic.AddInt64(&uh.Conns, 1)
 	defer atomic.AddInt64(&uh.Conns, -1)
 	uri := string(ctx.RequestURI())
-	url := "http://" + uh.Host + uri
+	url := uh.Host + uri
+	if !strings.HasPrefix(url, "http") {
+		url = "http://" + url
+	}
 	req := fasthttp.AcquireRequest()
 	reqHeader := &req.Header
 	// 复制HTTP请求头
