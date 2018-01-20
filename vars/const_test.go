@@ -26,7 +26,7 @@ func TestVars(t *testing.T) {
 	testVar(t, string(JSON), "application/json; charset=utf-8")
 	testVar(t, string(NoCache), "no-cache")
 
-	testVar(t, string(LineBreak), "\n")
+	testVar(t, string(LineBreak), "\r\n")
 	testVar(t, string(Colon), ":")
 	testVar(t, string(Space), " ")
 
