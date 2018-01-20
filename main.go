@@ -2,7 +2,6 @@ package main
 
 import (
 	"log"
-	"runtime"
 	"time"
 
 	"github.com/vicanso/pike/cache"
@@ -18,9 +17,6 @@ func clear(interval time.Duration) {
 
 func main() {
 	conf := config.Current
-	if conf.Cpus > 0 {
-		runtime.GOMAXPROCS(conf.Cpus)
-	}
 	clearInterval := conf.ExpiredClearInterval
 	if clearInterval <= 0 {
 		clearInterval = 300 * time.Second

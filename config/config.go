@@ -32,7 +32,6 @@ type Director struct {
 // Config 程序配置
 type Config struct {
 	Name                 string
-	Cpus                 int
 	Listen               string
 	DB                   string
 	AdminPath            string `yaml:"adminPath"`
