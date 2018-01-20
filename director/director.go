@@ -5,7 +5,7 @@ import (
 	"sort"
 	"time"
 
-	"../proxy"
+	"github.com/vicanso/pike/proxy"
 )
 
 // Config 服务器配置列表

@@ -4,13 +4,13 @@ import (
 	"encoding/json"
 	"strings"
 
-	"../director"
-	"../dispatch"
-	"../performance"
-	"../util"
-	"../vars"
 	"github.com/tidwall/gjson"
 	"github.com/valyala/fasthttp"
+	"github.com/vicanso/pike/director"
+	"github.com/vicanso/pike/dispatch"
+	"github.com/vicanso/pike/performance"
+	"github.com/vicanso/pike/util"
+	"github.com/vicanso/pike/vars"
 )
 
 // responseJSON 返回json数据

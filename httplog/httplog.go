@@ -9,7 +9,7 @@ import (
 	"sync"
 	"time"
 
-	"../util"
+	"github.com/vicanso/pike/util"
 
 	"github.com/valyala/fasthttp"
 )

@@ -8,9 +8,9 @@ import (
 	"math/rand"
 	"sync"
 
-	"../util"
-	"../vars"
 	"github.com/valyala/fasthttp"
+	"github.com/vicanso/pike/util"
+	"github.com/vicanso/pike/vars"
 )
 
 // Policy 从upstream pool中选择一个upstream

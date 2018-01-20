@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"../vars"
+	"github.com/vicanso/pike/vars"
 
 	"github.com/valyala/fasthttp"
 )

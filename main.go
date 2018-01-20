@@ -7,10 +7,10 @@ import (
 	"runtime"
 	"time"
 
-	"./cache"
-	"./director"
-	"./server"
-	"./util"
+	"github.com/vicanso/pike/cache"
+	"github.com/vicanso/pike/director"
+	"github.com/vicanso/pike/server"
+	"github.com/vicanso/pike/util"
 	"gopkg.in/yaml.v2"
 )
 

@@ -13,8 +13,8 @@ import (
 	"strings"
 	"time"
 
-	"../vars"
 	"github.com/valyala/fasthttp"
+	"github.com/vicanso/pike/vars"
 	"github.com/visionmedia/go-debug"
 )
 

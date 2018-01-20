@@ -8,8 +8,8 @@ import (
 	"testing"
 	"time"
 
-	"../cache"
-	"../director"
+	"github.com/vicanso/pike/cache"
+	"github.com/vicanso/pike/director"
 
 	"github.com/valyala/fasthttp"
 )

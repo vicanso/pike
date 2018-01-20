@@ -4,11 +4,11 @@ import (
 	"bytes"
 	"strconv"
 
-	"../cache"
-	"../util"
-	"../vars"
 	"github.com/valyala/fasthttp"
 	"github.com/vicanso/fresh"
+	"github.com/vicanso/pike/cache"
+	"github.com/vicanso/pike/util"
+	"github.com/vicanso/pike/vars"
 )
 
 // GetResponseHeader 获取响应的header

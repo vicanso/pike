@@ -6,15 +6,15 @@ import (
 	"strconv"
 	"time"
 
-	"../cache"
-	"../director"
-	"../dispatch"
-	"../httplog"
-	"../performance"
-	"../proxy"
-	"../util"
-	"../vars"
 	"github.com/valyala/fasthttp"
+	"github.com/vicanso/pike/cache"
+	"github.com/vicanso/pike/director"
+	"github.com/vicanso/pike/dispatch"
+	"github.com/vicanso/pike/httplog"
+	"github.com/vicanso/pike/performance"
+	"github.com/vicanso/pike/proxy"
+	"github.com/vicanso/pike/util"
+	"github.com/vicanso/pike/vars"
 )
 
 var hitForPassTTL uint32 = 300

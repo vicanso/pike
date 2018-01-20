@@ -5,7 +5,7 @@ import (
 	"sync/atomic"
 	"time"
 
-	"../cache"
+	"github.com/vicanso/pike/cache"
 )
 
 var concurrency uint32

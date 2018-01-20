@@ -4,7 +4,7 @@ import (
 	"sort"
 	"strings"
 
-	"../cache"
+	"github.com/vicanso/pike/cache"
 )
 
 // TODO 是否将黑名单保存

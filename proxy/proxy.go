@@ -6,9 +6,9 @@ import (
 	"sync/atomic"
 	"time"
 
-	"../util"
-	"../vars"
 	"github.com/valyala/fasthttp"
+	"github.com/vicanso/pike/util"
+	"github.com/vicanso/pike/vars"
 )
 
 var (

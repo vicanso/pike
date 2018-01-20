@@ -5,9 +5,9 @@ import (
 	"sync"
 	"time"
 
-	"../util"
-	"../vars"
 	"github.com/dgraph-io/badger"
+	"github.com/vicanso/pike/util"
+	"github.com/vicanso/pike/vars"
 )
 
 var rsMap = make(map[string]*RequestStatus)
