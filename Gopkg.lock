@@ -3,13 +3,109 @@
 
 [[projects]]
   branch = "master"
+  name = "github.com/AndreasBriese/bbloom"
+  packages = ["."]
+  revision = "28f7e881ca57bc00e028f9ede9f0d9104cfeef5e"
+
+[[projects]]
+  name = "github.com/dgraph-io/badger"
+  packages = [".","options","protos","skl","table","y"]
+  revision = "69611218c7078be6de16f4ea13fb256e701b6b73"
+  version = "v1.3.0"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/dgryski/go-farm"
+  packages = ["."]
+  revision = "2de33835d10275975374b37b2dcfd22c9020a1f5"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/golang/protobuf"
+  packages = ["proto"]
+  revision = "1e59b77b52bf8e4b449a57e6f79f21226d571845"
+
+[[projects]]
+  name = "github.com/klauspost/compress"
+  packages = ["flate","gzip","zlib"]
+  revision = "6c8db69c4b49dd4df1fff66996cf556176d0b9bf"
+  version = "v1.2.1"
+
+[[projects]]
+  name = "github.com/klauspost/cpuid"
+  packages = ["."]
+  revision = "ae7887de9fa5d2db4eaa8174a7eff2c1ac00f2da"
+  version = "v1.1"
+
+[[projects]]
+  name = "github.com/klauspost/crc32"
+  packages = ["."]
+  revision = "cb6bfca970f6908083f26f39a79009d608efd5cd"
+  version = "v1.1"
+
+[[projects]]
+  name = "github.com/pkg/errors"
+  packages = ["."]
+  revision = "645ef00459ed84a119197bfb8d8205042c6df63d"
+  version = "v0.8.0"
+
+[[projects]]
+  name = "github.com/tidwall/gjson"
+  packages = ["."]
+  revision = "e62d62a3e1e9f324346170bbc04333341f803dfb"
+  version = "v1.0.5"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/tidwall/match"
+  packages = ["."]
+  revision = "1731857f09b1f38450e2c12409748407822dc6be"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/valyala/bytebufferpool"
+  packages = ["."]
+  revision = "e746df99fe4a3986f4d4f79e13c1e0117ce9c2f7"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/valyala/fasthttp"
+  packages = [".","fasthttputil","stackless"]
+  revision = "e5f51c11919d4f66400334047b897ef0a94c6f3c"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/vicanso/fresh"
+  packages = ["."]
+  revision = "1a315cf0abf3451bffbb48c9141cb002bd83d573"
+
+[[projects]]
+  branch = "master"
   name = "github.com/visionmedia/go-debug"
   packages = ["."]
   revision = "bfacf9d8a444b50f5d7ae47727544e775486966f"
 
+[[projects]]
+  branch = "master"
+  name = "golang.org/x/net"
+  packages = ["context","internal/timeseries","trace"]
+  revision = "5ccada7d0a7ba9aeb5d3aca8d3501b4c2a509fec"
+
+[[projects]]
+  branch = "master"
+  name = "golang.org/x/sys"
+  packages = ["unix"]
+  revision = "2c42eef0765b9837fbdab12011af7830f55f88f0"
+
+[[projects]]
+  branch = "v2"
+  name = "gopkg.in/yaml.v2"
+  packages = ["."]
+  revision = "d670f9405373e636a5a2765eea47fac0c9bc91a4"
+
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "55b17b6271a0ae47a5d961d42a7f34b7bad9707e4a4cce1a5bfc30e9630a34ea"
+  inputs-digest = "bc33dc8428d5f81c7f7629a291de40575de381b73c3b5cab0c8dd1cb3548f160"
   solver-name = "gps-cdcl"
   solver-version = 1

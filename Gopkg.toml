@@ -30,8 +30,9 @@
   version = "1.3.0"
 
 [[constraint]]
+  branch = "master"
   name = "github.com/valyala/fasthttp"
-  version = "20160617.0.0"
+#  version = "20160617.0.0"
 
 [[constraint]]
   branch = "master"
