@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/vicanso/pike/cache"
-	"github.com/vicanso/pike/director"
+	"github.com/vicanso/pike/config"
 
 	"github.com/valyala/fasthttp"
 )
@@ -104,28 +104,27 @@ func TestServerStart(t *testing.T) {
 		server.ListenAndServe(":" + strconv.Itoa(port))
 	}()
 
-	conf := &PikeConfig{
+	config.Current = &config.Config{
 		Listen: ":3015",
 		DB:     "/tmp/pike.db",
-		Directors: []*director.Config{
-			&director.Config{
+		Directors: []*config.Director{
+			&config.Director{
 				Name: "test",
 				Type: "first",
-				Ping: "/ping",
 				Backends: []string{
 					"127.0.0.1:" + strconv.Itoa(port),
 				},
 			},
 		},
 	}
+	conf := config.Current
 
 	_, err := cache.InitDB(conf.DB)
 	if err != nil {
 		t.Fatalf("init database fail, %v", err)
 	}
 
-	directorList := director.GetDirectors(conf.Directors)
-	go Start(conf, directorList)
+	go Start()
 	time.Sleep(5 * time.Second)
 	testCachable(t, "http://127.0.0.1:3015/cacheable")
 	testHitForPass(t, "http://127.0.0.1:3015/hit-for-pass")

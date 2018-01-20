@@ -8,6 +8,7 @@ import (
 
 	"github.com/valyala/fasthttp"
 	"github.com/vicanso/pike/cache"
+	"github.com/vicanso/pike/config"
 	"github.com/vicanso/pike/director"
 	"github.com/vicanso/pike/dispatch"
 	"github.com/vicanso/pike/httplog"
@@ -18,33 +19,6 @@ import (
 )
 
 var hitForPassTTL uint32 = 300
-
-// PikeConfig 程序配置
-type PikeConfig struct {
-	Name                 string
-	Cpus                 int
-	Listen               string
-	DB                   string
-	AdminPath            string `yaml:"adminPath"`
-	AdminToken           string `yaml:"adminToken"`
-	DisableKeepalive     bool   `yaml:"disableKeepalive"`
-	Concurrency          int
-	HitForPass           int           `yaml:"hitForPass"`
-	ReadBufferSize       int           `yaml:"readBufferSize"`
-	WriteBufferSize      int           `yaml:"writeBufferSize"`
-	ConnectTimeout       time.Duration `yaml:"connectTimeout"`
-	ReadTimeout          time.Duration `yaml:"readTimeout"`
-	WriteTimeout         time.Duration `yaml:"writeTimeout"`
-	MaxConnsPerIP        int           `yaml:"maxConnsPerIP"`
-	MaxKeepaliveDuration time.Duration `yaml:"maxKeepaliveDuration"`
-	MaxRequestBodySize   int           `yaml:"maxRequestBodySize"`
-	ExpiredClearInterval time.Duration `yaml:"expiredClearInterval"`
-	LogFormat            string        `yaml:"logFormat"`
-	UDPLog               string        `yaml:"udpLog"`
-	AccessLog            string        `yaml:"accessLog"`
-	LogType              string        `yaml:"logType"`
-	Directors            []*director.Config
-}
 
 // getDirector 获取director
 func getDirector(host, uri []byte, directorList director.DirectorSlice) *director.Director {
@@ -91,7 +65,8 @@ func setServerTiming(ctx *fasthttp.RequestCtx, startedAt time.Time) {
 	}
 }
 
-func handler(ctx *fasthttp.RequestCtx, directorList director.DirectorSlice, conf *PikeConfig) {
+func handler(ctx *fasthttp.RequestCtx, directorList director.DirectorSlice) {
+	conf := config.Current
 	host := ctx.Request.Host()
 	uri := ctx.RequestURI()
 	found := getDirector(host, uri, directorList)
@@ -204,11 +179,10 @@ func handler(ctx *fasthttp.RequestCtx, directorList director.DirectorSlice, conf
 }
 
 // Start 启动服务器
-func Start(conf *PikeConfig, directorList director.DirectorSlice) error {
+func Start() error {
+	conf := config.Current
+	directorList := director.GetDirectors(conf.Directors)
 	listen := conf.Listen
-	if len(listen) == 0 {
-		listen = ":3015"
-	}
 	if conf.HitForPass > 0 {
 		hitForPassTTL = uint32(conf.HitForPass)
 	}
@@ -261,14 +235,13 @@ func Start(conf *PikeConfig, directorList director.DirectorSlice) error {
 			}
 			// 管理界面相关接口
 			if len(adminPath) != 0 && bytes.HasPrefix(path, adminPath) {
-				adminHandler(ctx, directorList, blockIP, conf)
+				adminHandler(ctx, directorList, blockIP)
 				return
 			}
 			performance.IncreaseRequestCount()
 			performance.IncreaseConcurrency()
 			defer performance.DecreaseConcurrency()
 			startedAt := time.Now()
-
 			defer setServerTiming(ctx, startedAt)
 			if enableAccessLog {
 				defer func() {
@@ -276,7 +249,7 @@ func Start(conf *PikeConfig, directorList director.DirectorSlice) error {
 					go logWriter.Write(logBuf)
 				}()
 			}
-			handler(ctx, directorList, conf)
+			handler(ctx, directorList)
 		},
 	}
 	log.Printf("the server will listen on " + listen)

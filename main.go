@@ -1,21 +1,13 @@
 package main
 
 import (
-	"flag"
-	"io/ioutil"
 	"log"
 	"runtime"
 	"time"
 
 	"github.com/vicanso/pike/cache"
-	"github.com/vicanso/pike/director"
+	"github.com/vicanso/pike/config"
 	"github.com/vicanso/pike/server"
-	"github.com/vicanso/pike/util"
-	"gopkg.in/yaml.v2"
-)
-
-var (
-	config string
 )
 
 func clear(interval time.Duration) {
@@ -25,18 +17,7 @@ func clear(interval time.Duration) {
 }
 
 func main() {
-	flag.StringVar(&config, "c", "/etc/pike/config.yml", "the config file")
-	flag.Parse()
-	buf, err := ioutil.ReadFile(config)
-	if err != nil {
-		log.Fatalf("error: %v", err)
-	}
-	conf := &server.PikeConfig{}
-	util.Debug("conf:%v", conf)
-	err = yaml.Unmarshal(buf, conf)
-	if err != nil {
-		log.Fatalf("error: %v", err)
-	}
+	conf := config.Current
 	if conf.Cpus > 0 {
 		runtime.GOMAXPROCS(conf.Cpus)
 	}
@@ -45,17 +26,12 @@ func main() {
 		clearInterval = 300 * time.Second
 	}
 	go clear(clearInterval)
-	dbPath := conf.DB
-	if len(dbPath) == 0 {
-		dbPath = "/tmp/pike"
-	}
-	db, err := cache.InitDB(dbPath)
+	db, err := cache.InitDB(conf.DB)
 	if err != nil {
 		log.Fatalf("error: %v", err)
 	}
 	defer db.Close()
-	directorList := director.GetDirectors(conf.Directors)
-	err = server.Start(conf, directorList)
+	err = server.Start()
 	if err != nil {
 		log.Fatalf("error: %v", err)
 	}

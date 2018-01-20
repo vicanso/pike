@@ -3,6 +3,8 @@ package director
 import (
 	"strconv"
 	"testing"
+
+	"github.com/vicanso/pike/config"
 )
 
 func testVar(t *testing.T, s1, s2 string) {
@@ -23,7 +25,7 @@ func TestCreateDirector(t *testing.T) {
 	policy := "random"
 	ping := "/ping"
 	pass := "cache-control=no-cache"
-	c := &Config{
+	c := &config.Director{
 		Name: name,
 		Type: policy,
 		Ping: ping,
@@ -44,7 +46,7 @@ func TestCreateDirector(t *testing.T) {
 			"host:5002",
 		},
 	}
-	dList := GetDirectors([]*Config{c})
+	dList := GetDirectors([]*config.Director{c})
 	d := dList[0]
 	testVar(t, d.Name, name)
 	testVar(t, d.Policy, policy)
@@ -65,7 +67,7 @@ func TestCreateDirector(t *testing.T) {
 	testMatch(t, d, []byte("dcharts.com"), []byte("/albi"), false)
 	testMatch(t, d, []byte("aslant.site"), []byte("/abc"), false)
 
-	testDirector := CreateDirector(&Config{
+	testDirector := CreateDirector(&config.Director{
 		Name: "TEST",
 	})
 	testMatch(t, testDirector, []byte("aslant.site"), []byte("/tiny"), true)

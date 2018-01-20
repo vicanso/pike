@@ -5,19 +5,9 @@ import (
 	"sort"
 	"time"
 
+	"github.com/vicanso/pike/config"
 	"github.com/vicanso/pike/proxy"
 )
-
-// Config 服务器配置列表
-type Config struct {
-	Name     string
-	Type     string
-	Ping     string
-	Prefix   []string
-	Host     []string
-	Pass     []string
-	Backends []string
-}
 
 // Director 服务器列表
 type Director struct {
@@ -97,31 +87,31 @@ func strListToByteList(original []string) [][]byte {
 }
 
 // CreateDirector 创建一个director
-func CreateDirector(config *Config) *Director {
+func CreateDirector(directorConfig *config.Director) *Director {
 	d := &Director{
-		Name:     config.Name,
-		Policy:   config.Type,
-		Ping:     config.Ping,
-		Backends: config.Backends,
+		Name:     directorConfig.Name,
+		Policy:   directorConfig.Type,
+		Ping:     directorConfig.Ping,
+		Backends: directorConfig.Backends,
 	}
 	priority := 8
-	if len(config.Prefix) != 0 {
+	if len(directorConfig.Prefix) != 0 {
 		priority -= 4
-		d.Prefixs = strListToByteList(config.Prefix)
+		d.Prefixs = strListToByteList(directorConfig.Prefix)
 	}
-	if len(config.Host) != 0 {
+	if len(directorConfig.Host) != 0 {
 		priority -= 2
-		d.Hosts = strListToByteList(config.Host)
+		d.Hosts = strListToByteList(directorConfig.Host)
 	}
-	if len(config.Pass) != 0 {
-		d.Passes = strListToByteList(config.Pass)
+	if len(directorConfig.Pass) != 0 {
+		d.Passes = strListToByteList(directorConfig.Pass)
 	}
 	d.Priority = priority
 	return d
 }
 
 // GetDirectors 获取 directors
-func GetDirectors(ds []*Config) DirectorSlice {
+func GetDirectors(ds []*config.Director) DirectorSlice {
 	length := len(ds)
 	directorList := make(DirectorSlice, 0, length)
 	for _, directorConf := range ds {

@@ -6,6 +6,7 @@ import (
 
 	"github.com/tidwall/gjson"
 	"github.com/valyala/fasthttp"
+	"github.com/vicanso/pike/config"
 	"github.com/vicanso/pike/director"
 	"github.com/vicanso/pike/dispatch"
 	"github.com/vicanso/pike/performance"
@@ -76,7 +77,8 @@ func statisHandler(ctx *fasthttp.RequestCtx, assetPath string) {
 }
 
 // adminHandler 管理员相关接口处理
-func adminHandler(ctx *fasthttp.RequestCtx, directorList director.DirectorSlice, blockIP *BlockIP, conf *PikeConfig) {
+func adminHandler(ctx *fasthttp.RequestCtx, directorList director.DirectorSlice, blockIP *BlockIP) {
+	conf := config.Current
 	ctx.Response.Header.SetCanonical(vars.CacheControl, vars.NoCache)
 	path := string(ctx.Path())
 	adminPath := conf.AdminPath
