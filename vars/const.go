@@ -64,6 +64,8 @@ var (
 var (
 	// PingURL the ping url
 	PingURL = []byte("/ping")
+	// FaviconURL the favicon url
+	FaviconURL = []byte("/favicon.ico")
 )
 
 // errors

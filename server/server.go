@@ -2,6 +2,7 @@ package server
 
 import (
 	"bytes"
+	"encoding/base64"
 	"log"
 	"strconv"
 	"time"
@@ -178,6 +179,17 @@ func handler(ctx *fasthttp.RequestCtx, directorList director.DirectorSlice) {
 	}
 }
 
+func pingHandler(ctx *fasthttp.RequestCtx) {
+	ctx.SetBody([]byte("pong"))
+}
+
+func faviconHandler(ctx *fasthttp.RequestCtx) {
+	conf := config.Current
+	buf, _ := base64.StdEncoding.DecodeString(conf.Favicon)
+	ctx.SetContentType("image/x-icon")
+	ctx.SetBody(buf)
+}
+
 // Start 启动服务器
 func Start() error {
 	conf := config.Current
@@ -230,7 +242,12 @@ func Start() error {
 			path := ctx.Path()
 			// health check
 			if bytes.Compare(path, vars.PingURL) == 0 {
-				ctx.SetBody([]byte("pong"))
+				pingHandler(ctx)
+				return
+			}
+			// favicon
+			if bytes.Compare(path, vars.FaviconURL) == 0 {
+				faviconHandler(ctx)
 				return
 			}
 			// 管理界面相关接口

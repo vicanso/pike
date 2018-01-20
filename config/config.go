@@ -54,6 +54,7 @@ type Config struct {
 	AccessLog            string        `yaml:"accessLog"`
 	LogType              string        `yaml:"logType"`
 	Directors            []*Director
+	Favicon              string `yaml:"favicon"`
 }
 
 func init() {
