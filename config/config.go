@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
+	"strings"
 	"time"
 
 	"gopkg.in/yaml.v2"
@@ -27,6 +28,12 @@ type Director struct {
 	Host     []string
 	Pass     []string
 	Backends []string
+}
+
+// Header HTTP response header
+type Header struct {
+	Key   []byte
+	Value []byte
 }
 
 // Config 程序配置
@@ -53,7 +60,10 @@ type Config struct {
 	AccessLog            string        `yaml:"accessLog"`
 	LogType              string        `yaml:"logType"`
 	Directors            []*Director
-	Favicon              string `yaml:"favicon"`
+	Favicon              string   `yaml:"favicon"`
+	ResponseHeader       []string `yaml:"responseHeader"`
+	ResponseHeaderByte   [][]byte
+	ExtraHeaders         []*Header
 }
 
 func init() {
@@ -78,6 +88,19 @@ func init() {
 	}
 	if len(Current.DB) == 0 {
 		Current.DB = "/tmp/pike"
+	}
+	if len(Current.ResponseHeader) != 0 {
+		for _, str := range Current.ResponseHeader {
+			arr := strings.Split(str, ":")
+			if len(arr) != 2 {
+				continue
+			}
+			h := &Header{
+				Key:   []byte(arr[0]),
+				Value: []byte(arr[1]),
+			}
+			Current.ExtraHeaders = append(Current.ExtraHeaders, h)
+		}
 	}
 	Debug("conf: %v", Current)
 }

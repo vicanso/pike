@@ -66,6 +66,13 @@ func setServerTiming(ctx *fasthttp.RequestCtx, startedAt time.Time) {
 	}
 }
 
+func addExtraHeader(ctx *fasthttp.RequestCtx) {
+	headers := config.Current.ExtraHeaders
+	for _, header := range headers {
+		ctx.Response.Header.SetCanonical(header.Key, header.Value)
+	}
+}
+
 func handler(ctx *fasthttp.RequestCtx, directorList director.DirectorSlice) {
 	conf := config.Current
 	host := ctx.Request.Host()
@@ -234,6 +241,9 @@ func Start() error {
 		MaxKeepaliveDuration: conf.MaxKeepaliveDuration,
 		MaxRequestBodySize:   conf.MaxRequestBodySize,
 		Handler: func(ctx *fasthttp.RequestCtx) {
+			if len(conf.ExtraHeaders) != 0 {
+				defer addExtraHeader(ctx)
+			}
 			clientIP := util.GetClientIP(ctx)
 			if blockIP.FindIndex(clientIP) != -1 {
 				dispatch.ErrorHandler(ctx, vars.ErrAccessIsNotAlloed)

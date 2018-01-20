@@ -74,3 +74,6 @@ directors:
       - 192.168.31.3:3200
       - 192.168.31.3:3300
 favicon: base64-string
+responseHeader:
+  - "X-Server:My-Pike"
+  - "X-Location:GZ"
