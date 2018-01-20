@@ -14,8 +14,8 @@ import (
 	"time"
 
 	"../vars"
-	"github.com/tj/go-debug"
 	"github.com/valyala/fasthttp"
+	"github.com/visionmedia/go-debug"
 )
 
 // Debug debug日志输出
