@@ -34,8 +34,13 @@ func getDirector(host, uri []byte, directorList director.DirectorSlice) *directo
 }
 
 // 转发处理，返回响应头与响应数据
-func doProxy(ctx *fasthttp.RequestCtx, us *proxy.Upstream, timeout time.Duration) (*fasthttp.Response, []byte, []byte, error) {
-	resp, err := proxy.Do(ctx, us, timeout)
+func doProxy(ctx *fasthttp.RequestCtx, us *proxy.Upstream) (*fasthttp.Response, []byte, []byte, error) {
+	conf := config.Current
+	proxyConfig := &proxy.Config{
+		Timeout: conf.ConnectTimeout,
+		ETag:    conf.ETag,
+	}
+	resp, err := proxy.Do(ctx, us, proxyConfig)
 	if err != nil {
 		return nil, nil, nil, err
 	}
@@ -74,7 +79,6 @@ func addExtraHeader(ctx *fasthttp.RequestCtx) {
 }
 
 func handler(ctx *fasthttp.RequestCtx, directorList director.DirectorSlice) {
-	conf := config.Current
 	host := ctx.Request.Host()
 	uri := ctx.RequestURI()
 	found := getDirector(host, uri, directorList)
@@ -112,7 +116,7 @@ func handler(ctx *fasthttp.RequestCtx, directorList director.DirectorSlice) {
 	case vars.Pass:
 		respHeadr.SetCanonical(vars.XCache, vars.XCacheMiss)
 		// pass的请求直接转发至upstream
-		resp, header, body, err := doProxy(ctx, us, conf.ConnectTimeout)
+		resp, header, body, err := doProxy(ctx, us)
 		if err != nil {
 			errorHandler(err)
 			return
@@ -130,7 +134,7 @@ func handler(ctx *fasthttp.RequestCtx, directorList director.DirectorSlice) {
 		respHeadr.SetCanonical(vars.XCache, vars.XCacheMiss)
 		//feacthing或hitforpass的请求转至upstream
 		// 并根据返回的数据是否可以缓存设置缓存
-		resp, header, body, err := doProxy(ctx, us, conf.ConnectTimeout)
+		resp, header, body, err := doProxy(ctx, us)
 		if err != nil {
 			cache.HitForPass(key, hitForPassTTL)
 			errorHandler(err)

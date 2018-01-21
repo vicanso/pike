@@ -10,6 +10,8 @@ adminPath: /pike
 adminToken: ry3WwvhVG
 # hit for pass 的缓存有效期，默认为 300
 hitForPass: 600
+# 是否使用自动生成ETag（对于没有ETag的添加）
+etag: true
 # 程序并发限制，设置为0表示使用fasthttp默认值 (256 * 1024)
 concurrency: 0
 # 是否禁用 disableKeepalive，默认为 false

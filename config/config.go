@@ -46,6 +46,7 @@ type Config struct {
 	DisableKeepalive     bool   `yaml:"disableKeepalive"`
 	Concurrency          int
 	HitForPass           int           `yaml:"hitForPass"`
+	ETag                 bool          `yaml:"etag"`
 	ReadBufferSize       int           `yaml:"readBufferSize"`
 	WriteBufferSize      int           `yaml:"writeBufferSize"`
 	ConnectTimeout       time.Duration `yaml:"connectTimeout"`

@@ -4,6 +4,8 @@ import (
 	"bufio"
 	"bytes"
 	"compress/gzip"
+	"crypto/sha1"
+	"encoding/base64"
 	"encoding/binary"
 	"expvar"
 	"fmt"
@@ -213,4 +215,16 @@ func GetDebugVars() []byte {
 	fmt.Fprintf(w, "\n}\n")
 	w.Flush()
 	return b.Bytes()
+}
+
+// GetETag 获取数据对应的ETag
+func GetETag(buf []byte) string {
+	size := len(buf)
+	if size == 0 {
+		return "\"0-2jmj7l5rSw0yVb/vlWAYkK/YBwk\""
+	}
+	h := sha1.New()
+	h.Write(buf)
+	hash := base64.URLEncoding.EncodeToString(h.Sum(nil))
+	return fmt.Sprintf("\"%x-%s\"", size, hash)
 }

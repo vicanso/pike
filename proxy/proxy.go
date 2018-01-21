@@ -11,6 +11,12 @@ import (
 	"github.com/vicanso/pike/vars"
 )
 
+// Config proxy的配置
+type Config struct {
+	Timeout time.Duration
+	ETag    bool
+}
+
 var (
 	supportedPolicies = make(map[string]func(string) Policy)
 )
@@ -21,7 +27,7 @@ func RegisterPolicy(name string, policy func(string) Policy) {
 }
 
 // Do 将当前请求转发至upstream
-func Do(ctx *fasthttp.RequestCtx, us *Upstream, timeout time.Duration) (*fasthttp.Response, error) {
+func Do(ctx *fasthttp.RequestCtx, us *Upstream, config *Config) (*fasthttp.Response, error) {
 	policy := us.Policy
 	uh := policy.Select(us.Hosts, ctx)
 	if uh == nil {
@@ -64,6 +70,7 @@ func Do(ctx *fasthttp.RequestCtx, us *Upstream, timeout time.Duration) (*fasthtt
 	resp := fasthttp.AcquireResponse()
 	client := &fasthttp.Client{}
 	var err error
+	timeout := config.Timeout
 	if timeout > 0 {
 		err = client.DoTimeout(req, resp, timeout)
 	} else {
@@ -74,6 +81,10 @@ func Do(ctx *fasthttp.RequestCtx, us *Upstream, timeout time.Duration) (*fasthtt
 			return nil, vars.ErrGatewayTimeout
 		}
 		return nil, err
+	}
+	// 如果程序没有生成ETag，自动填充
+	if config.ETag && len(resp.Header.PeekBytes(vars.ETag)) == 0 {
+		resp.Header.SetBytesK(vars.ETag, util.GetETag(resp.Body()))
 	}
 	return resp, nil
 }
