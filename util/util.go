@@ -6,14 +6,12 @@ import (
 	"compress/gzip"
 	"crypto/sha1"
 	"encoding/base64"
-	"encoding/binary"
 	"expvar"
 	"fmt"
 	"io/ioutil"
 	"regexp"
 	"strconv"
 	"strings"
-	"time"
 
 	"github.com/valyala/fasthttp"
 	"github.com/vicanso/pike/vars"
@@ -78,45 +76,6 @@ func SupportGzip(ctx *fasthttp.RequestCtx) bool {
 // SupportBr 判断是否支持brotli压缩
 func SupportBr(ctx *fasthttp.RequestCtx) bool {
 	return ctx.Request.Header.HasAcceptEncodingBytes(vars.Br)
-}
-
-// ConvertUint16ToBytes 将uint16转换为[]byte
-func ConvertUint16ToBytes(v uint16) []byte {
-	buf := make([]byte, 2)
-	binary.LittleEndian.PutUint16(buf, v)
-	return buf
-}
-
-// ConvertBytesToUint16 将[]byte转换为uint16
-func ConvertBytesToUint16(buf []byte) uint16 {
-	return binary.LittleEndian.Uint16(buf)
-}
-
-// ConvertUint32ToBytes 将uint32转换为[]byte
-func ConvertUint32ToBytes(v uint32) []byte {
-	buf := make([]byte, 4)
-	binary.LittleEndian.PutUint32(buf, v)
-	return buf
-}
-
-// ConvertBytesToUint32 将[]byte转换为uint32
-func ConvertBytesToUint32(buf []byte) uint32 {
-	return binary.LittleEndian.Uint32(buf)
-}
-
-// GetSeconds 获取当前时间的时间戳（秒）
-func GetSeconds() uint32 {
-	return uint32(time.Now().Unix())
-}
-
-// GetNowSecondsBytes 获取当时时间的字节表示(4个字节)
-func GetNowSecondsBytes() []byte {
-	return ConvertUint32ToBytes(GetSeconds())
-}
-
-// ConvertToSeconds 将字节保存的秒转换为整数
-func ConvertToSeconds(buf []byte) uint32 {
-	return binary.LittleEndian.Uint32(buf)
 }
 
 // GenRequestKey 生成请求的key: Method + host + request uri

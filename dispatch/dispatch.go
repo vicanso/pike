@@ -3,6 +3,7 @@ package dispatch
 import (
 	"bytes"
 	"strconv"
+	"time"
 
 	"github.com/valyala/fasthttp"
 	"github.com/vicanso/fresh"
@@ -68,7 +69,8 @@ func Response(ctx *fasthttp.RequestCtx, respData *cache.ResponseData) {
 		respHeader.SetCanonical(k, v)
 	}
 	if respData.TTL > 0 {
-		age := util.GetSeconds() - respData.CreatedAt
+		now := uint32(time.Now().Unix())
+		age := now - respData.CreatedAt
 		respHeader.SetCanonical(vars.Age, []byte(strconv.Itoa(int(age))))
 	}
 

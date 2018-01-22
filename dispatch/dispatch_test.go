@@ -2,6 +2,7 @@ package dispatch
 
 import (
 	"testing"
+	"time"
 
 	"github.com/vicanso/pike/cache"
 	"github.com/vicanso/pike/util"
@@ -57,7 +58,7 @@ func TestResponse(t *testing.T) {
 	responseID := []byte("X8183211")
 	header.SetCanonical([]byte("X-Response-Id"), responseID)
 
-	createdAt := util.ConvertBytesToUint32(util.GetNowSecondsBytes())
+	createdAt := uint32(time.Now().Unix())
 	respData := &cache.ResponseData{
 		CreatedAt:  createdAt - 20,
 		StatusCode: 200,

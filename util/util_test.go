@@ -3,7 +3,6 @@ package util
 import (
 	"bytes"
 	"testing"
-	"time"
 
 	"github.com/vicanso/pike/vars"
 
@@ -80,28 +79,6 @@ func TestSupportCompress(t *testing.T) {
 
 	testSupportCompress(t, gzip, []byte("gzip, br"), true)
 	testSupportCompress(t, br, []byte("gzip, br"), true)
-}
-
-func TestConvert(t *testing.T) {
-	ttl := uint16(1000)
-	buf := ConvertUint16ToBytes(ttl)
-	if ConvertBytesToUint16(buf) != ttl {
-		t.Fatalf("the convert uint16 fail")
-	}
-	now := uint32(time.Now().Unix())
-	buf = ConvertUint32ToBytes(now)
-	if ConvertBytesToUint32(buf) != now {
-		t.Fatalf("the convert uint32 fail")
-	}
-}
-
-func TestSeconds(t *testing.T) {
-	now := uint32(time.Now().Unix())
-	buf := GetNowSecondsBytes()
-	seconds := ConvertToSeconds(buf)
-	if now != seconds {
-		t.Fatalf("the seconds function fail")
-	}
 }
 
 func TestGenRequestKey(t *testing.T) {
@@ -185,7 +162,7 @@ func TestGetEtag(t *testing.T) {
 	}
 	buf := []byte("测试使用的响应数据")
 	eTag = GetETag(buf)
-	if eTag != "\"27-gQEzXLxF7NjFZ-x0-GK1Pg8NBZA=\"" {
+	if eTag != "\"1b-gQEzXLxF7NjFZ-x0-GK1Pg8NBZA=\"" {
 		t.Fatalf("get etag fail")
 	}
 }

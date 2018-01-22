@@ -2,6 +2,7 @@ package cache
 
 import (
 	"bytes"
+	"encoding/binary"
 	"sync"
 	"time"
 
@@ -42,19 +43,46 @@ type RequestStatus struct {
 	waitingChans []chan int
 }
 
+// 初始化请求状态
 func initRequestStatus(ttl uint32) *RequestStatus {
 	rs := &RequestStatus{
-		createdAt: util.GetSeconds(),
+		createdAt: uint32(time.Now().Unix()),
 		ttl:       ttl,
 	}
 	return rs
 }
 
+// 判断是否已过期
 func isExpired(rs *RequestStatus) bool {
-	if rs.ttl != 0 && util.GetSeconds()-rs.createdAt > uint32(rs.ttl) {
+	now := uint32(time.Now().Unix())
+	if rs.ttl != 0 && now-rs.createdAt > uint32(rs.ttl) {
 		return true
 	}
 	return false
+}
+
+// 将uint16转换为字节
+func uint16ToBytes(v uint16) []byte {
+	buf := make([]byte, 2)
+	binary.LittleEndian.PutUint16(buf, v)
+	return buf
+}
+
+// 将字节转换为uint16
+func bytesToUint16(buf []byte) uint16 {
+	return binary.LittleEndian.Uint16(buf)
+}
+
+// 将uint32转换为字节
+func uint32ToBytes(v uint32) []byte {
+	buf := make([]byte, 4)
+	binary.LittleEndian.PutUint32(buf, v)
+	return buf
+}
+
+// 将字节转换为uint32
+func bytesToUint32(buf []byte) uint32 {
+	return binary.LittleEndian.Uint32(buf)
 }
 
 // Size 获取缓存记录的总数
@@ -172,18 +200,16 @@ func SaveResponseData(key []byte, respData *ResponseData) error {
 	// 最后才是body
 	createdAt := respData.CreatedAt
 	if createdAt == 0 {
-		createdAt = util.GetSeconds()
+		createdAt = uint32(time.Now().Unix())
 	}
-	uint322b := util.ConvertUint32ToBytes
-	uint162b := util.ConvertUint16ToBytes
 	header := util.TrimHeader(respData.Header)
 	ttl := respData.TTL
 	s := [][]byte{
-		uint322b(createdAt),
-		uint162b(respData.StatusCode),
-		uint162b(respData.Compress),
-		uint322b(respData.TTL),
-		uint162b(uint16(len(header))),
+		uint32ToBytes(createdAt),
+		uint16ToBytes(respData.StatusCode),
+		uint16ToBytes(respData.Compress),
+		uint32ToBytes(respData.TTL),
+		uint16ToBytes(uint16(len(header))),
 		header,
 		respData.Body,
 	}
@@ -201,14 +227,12 @@ func GetResponse(key []byte) (*ResponseData, error) {
 		return nil, nil
 	}
 
-	b2uint16 := util.ConvertBytesToUint16
-	b2uint32 := util.ConvertBytesToUint32
-	headerLength := b2uint16(data[headerLengthIndex:headerIndex])
+	headerLength := bytesToUint16(data[headerLengthIndex:headerIndex])
 	return &ResponseData{
-		CreatedAt:  b2uint32(data[createIndex:statusCodeIndex]),
-		StatusCode: b2uint16(data[statusCodeIndex:compressIndex]),
-		Compress:   b2uint16(data[compressIndex:ttlIndex]),
-		TTL:        b2uint32(data[ttlIndex:headerLengthIndex]),
+		CreatedAt:  bytesToUint32(data[createIndex:statusCodeIndex]),
+		StatusCode: bytesToUint16(data[statusCodeIndex:compressIndex]),
+		Compress:   bytesToUint16(data[compressIndex:ttlIndex]),
+		TTL:        bytesToUint32(data[ttlIndex:headerLengthIndex]),
 		Header:     data[headerIndex : headerIndex+headerLength],
 		Body:       data[headerIndex+headerLength:],
 	}, nil

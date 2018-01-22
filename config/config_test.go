@@ -18,7 +18,6 @@ func testInt(t *testing.T, i1, i2 int) {
 
 func TestConfig(t *testing.T) {
 	testStr(t, Current.Name, "")
-	testInt(t, Current.Cpus, 0)
 	testStr(t, Current.Listen, ":3015")
 	testStr(t, Current.DB, "/tmp/pike")
 	testStr(t, Current.AdminPath, "")

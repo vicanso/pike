@@ -41,7 +41,7 @@ func TestDB(t *testing.T) {
 	ttl := util.GetCacheAge(&ctx.Response.Header)
 
 	saveRespData := &ResponseData{
-		CreatedAt:  util.GetSeconds(),
+		CreatedAt:  uint32(time.Now().Unix()),
 		StatusCode: 200,
 		Compress:   vars.GzipData,
 		TTL:        ttl,
@@ -153,7 +153,7 @@ func TestResponseCache(t *testing.T) {
 	for index := 0; index < count; index++ {
 		key := []byte("test-" + strconv.Itoa(index))
 		SaveResponseData(key, &ResponseData{
-			CreatedAt:  util.GetSeconds(),
+			CreatedAt:  uint32(time.Now().Unix()),
 			StatusCode: 200,
 			Compress:   vars.RawData,
 			TTL:        10,
