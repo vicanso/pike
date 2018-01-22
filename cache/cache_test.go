@@ -42,7 +42,7 @@ func TestDB(t *testing.T) {
 		CreatedAt:      uint32(time.Now().Unix()),
 		StatusCode:     200,
 		Compress:       vars.GzipData,
-		ShouldCompress: 1,
+		ShouldCompress: true,
 		TTL:            30,
 		Header:         resHeader,
 		Body:           resBody,
@@ -69,7 +69,7 @@ func TestDB(t *testing.T) {
 	if respData.Compress != vars.GzipData {
 		t.Fatalf("the data should be gzip compress")
 	}
-	if respData.ShouldCompress != 1 {
+	if !respData.ShouldCompress {
 		t.Fatalf("the data should be compress")
 	}
 }

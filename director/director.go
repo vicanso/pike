@@ -22,20 +22,20 @@ type Director struct {
 	Upstream *proxy.Upstream `json:"upstream"`
 }
 
-// DirectorSlice 用于director排序
-type DirectorSlice []*Director
+// Directors 用于director排序
+type Directors []*Director
 
 // Len 获取director slice的长度
-func (s DirectorSlice) Len() int {
+func (s Directors) Len() int {
 	return len(s)
 }
 
 // Swap 元素互换
-func (s DirectorSlice) Swap(i, j int) {
+func (s Directors) Swap(i, j int) {
 	s[i], s[j] = s[j], s[i]
 }
 
-func (s DirectorSlice) Less(i, j int) bool {
+func (s Directors) Less(i, j int) bool {
 	return s[i].Priority < s[j].Priority
 }
 
@@ -111,9 +111,9 @@ func CreateDirector(directorConfig *config.Director) *Director {
 }
 
 // GetDirectors 获取 directors
-func GetDirectors(ds []*config.Director) DirectorSlice {
+func GetDirectors(ds []*config.Director) Directors {
 	length := len(ds)
-	directorList := make(DirectorSlice, 0, length)
+	directorList := make(Directors, 0, length)
 	for _, directorConf := range ds {
 		d := CreateDirector(directorConf)
 		name := d.Name
@@ -127,4 +127,16 @@ func GetDirectors(ds []*config.Director) DirectorSlice {
 	}
 	sort.Sort(directorList)
 	return directorList
+}
+
+// GetMatch 获取匹配的director
+func GetMatch(directorList []*Director, host, uri []byte) *Director {
+	var found *Director
+	// 查找可用的director
+	for _, d := range directorList {
+		if found == nil && d.Match(host, uri) {
+			found = d
+		}
+	}
+	return found
 }

@@ -22,18 +22,6 @@ import (
 
 var hitForPassTTL uint32 = 300
 
-// getDirector 获取director
-func getDirector(host, uri []byte, directorList director.DirectorSlice) *director.Director {
-	var found *director.Director
-	// 查找可用的director
-	for _, d := range directorList {
-		if found == nil && d.Match(host, uri) {
-			found = d
-		}
-	}
-	return found
-}
-
 // 转发处理，返回响应头与响应数据
 func doProxy(ctx *fasthttp.RequestCtx, us *proxy.Upstream) (*fasthttp.Response, []byte, []byte, error) {
 	conf := config.Current
@@ -146,10 +134,10 @@ func shouldCompress(header *fasthttp.ResponseHeader) bool {
 	return reg.Match(contentType)
 }
 
-func handler(ctx *fasthttp.RequestCtx, directorList director.DirectorSlice) {
+func handler(ctx *fasthttp.RequestCtx, directorList director.Directors) {
 	host := ctx.Request.Host()
 	uri := ctx.RequestURI()
-	found := getDirector(host, uri, directorList)
+	found := director.GetMatch(directorList, host, uri)
 	// 出错处理
 	errorHandler := func(err error) {
 		dispatch.ErrorHandler(ctx, err)

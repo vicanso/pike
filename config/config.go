@@ -10,7 +10,7 @@ import (
 
 	"gopkg.in/yaml.v2"
 
-	debug "github.com/tj/go-debug"
+	debug "github.com/visionmedia/go-debug"
 )
 
 // Debug debug日志输出

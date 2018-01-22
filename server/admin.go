@@ -77,7 +77,7 @@ func statisHandler(ctx *fasthttp.RequestCtx, assetPath string) {
 }
 
 // adminHandler 管理员相关接口处理
-func adminHandler(ctx *fasthttp.RequestCtx, directorList director.DirectorSlice, blockIP *BlockIP) {
+func adminHandler(ctx *fasthttp.RequestCtx, directorList director.Directors, blockIP *BlockIP) {
 	conf := config.Current
 	ctx.Response.Header.SetCanonical(vars.CacheControl, vars.NoCache)
 	path := string(ctx.Path())
