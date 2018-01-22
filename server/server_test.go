@@ -10,9 +10,62 @@ import (
 
 	"github.com/vicanso/pike/cache"
 	"github.com/vicanso/pike/config"
+	"github.com/vicanso/pike/vars"
 
 	"github.com/valyala/fasthttp"
 )
+
+func testPass(t *testing.T, uri, method string, resultExpected bool) {
+	passList := [][]byte{
+		[]byte("cache-control=no-cache"),
+	}
+	ctx := &fasthttp.RequestCtx{}
+	ctx.Request.SetRequestURI(uri)
+	ctx.Request.Header.SetMethod(method)
+	result := isPass(ctx, passList)
+	if result != resultExpected {
+		t.Fatalf("unexpected result in Pass %q %q: %v. Expecting %v", method, uri, result, resultExpected)
+	}
+}
+
+func TestPass(t *testing.T) {
+	testPass(t, "http://127.0.0.1/", "GET", false)
+	testPass(t, "http://127.0.0.1/", "HEAD", false)
+
+	testPass(t, "http://127.0.0.1/?cache-control=no-cache", "GET", true)
+
+	testPass(t, "http://127.0.0.1/i18ns", "POST", true)
+}
+
+func testGetCacheAge(t *testing.T, cacheControl []byte, resultExpected uint32) {
+	ctx := &fasthttp.RequestCtx{}
+	if cacheControl != nil {
+		ctx.Response.Header.SetCanonical(vars.CacheControl, cacheControl)
+	}
+	result := getCacheAge(&ctx.Response.Header)
+	if result != resultExpected {
+		t.Fatalf("unexpected result in GetCacheAge %q: %v. Expecting %v", cacheControl, result, resultExpected)
+	}
+}
+
+func TestGetCacheAge(t *testing.T) {
+	testGetCacheAge(t, nil, 0)
+	testGetCacheAge(t, []byte("max-age=30"), 30)
+	testGetCacheAge(t, []byte("private,max-age=30"), 0)
+	testGetCacheAge(t, []byte("no-store"), 0)
+	testGetCacheAge(t, []byte("no-cache"), 0)
+	testGetCacheAge(t, []byte("max-age=0"), 0)
+	testGetCacheAge(t, []byte("s-maxage=10, max-age=30"), 10)
+}
+
+func TestGenRequestKey(t *testing.T) {
+	ctx := &fasthttp.RequestCtx{}
+	ctx.Request.SetRequestURI("http://127.0.0.1:5018/users/me?a=1")
+	key := string(genRequestKey(ctx))
+	if key != "GET127.0.0.1:5018/users/me?a=1" {
+		t.Fatalf("gen request key fail, %q", key)
+	}
+}
 
 func get(url string) (*fasthttp.Response, error) {
 	req := fasthttp.AcquireRequest()

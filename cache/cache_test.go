@@ -7,7 +7,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/vicanso/pike/util"
 	"github.com/vicanso/pike/vars"
 
 	"github.com/valyala/fasthttp"
@@ -38,13 +37,12 @@ func TestDB(t *testing.T) {
 
 	resBody := ctx.Response.Body()
 	resHeader := ctx.Response.Header.Header()
-	ttl := util.GetCacheAge(&ctx.Response.Header)
 
 	saveRespData := &ResponseData{
 		CreatedAt:  uint32(time.Now().Unix()),
 		StatusCode: 200,
 		Compress:   vars.GzipData,
-		TTL:        ttl,
+		TTL:        30,
 		Header:     resHeader,
 		Body:       resBody,
 	}

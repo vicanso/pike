@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/base64"
 	"log"
+	"regexp"
 	"strconv"
 	"time"
 
@@ -71,11 +72,70 @@ func setServerTiming(ctx *fasthttp.RequestCtx, startedAt time.Time) {
 	}
 }
 
+// 增加额外的 Response Header
 func addExtraHeader(ctx *fasthttp.RequestCtx) {
 	headers := config.Current.ExtraHeaders
 	for _, header := range headers {
 		ctx.Response.Header.SetCanonical(header.Key, header.Value)
 	}
+}
+
+// isPass 判断该请求是否直接pass（不可缓存）
+func isPass(ctx *fasthttp.RequestCtx, passList [][]byte) bool {
+	method := ctx.Method()
+	if bytes.Compare(method, vars.Get) != 0 && bytes.Compare(method, vars.Head) != 0 {
+		return true
+	}
+	pass := false
+	uri := ctx.RequestURI()
+	for _, item := range passList {
+		if !pass && bytes.Contains(uri, item) {
+			pass = true
+		}
+	}
+	return pass
+}
+
+// 根据Cache-Control的信息，获取s-maxage或者max-age的值
+func getCacheAge(header *fasthttp.ResponseHeader) uint32 {
+	cacheControl := header.PeekBytes(vars.CacheControl)
+	if len(cacheControl) == 0 {
+		return 0
+	}
+	// 如果设置不可缓存，返回0
+	reg, _ := regexp.Compile(`no-cache|no-store|private`)
+	match := reg.Match(cacheControl)
+	if match {
+		return 0
+	}
+
+	// 优先从s-maxage中获取
+	reg, _ = regexp.Compile(`s-maxage=(\d+)`)
+	result := reg.FindSubmatch(cacheControl)
+	if len(result) == 2 {
+		maxAge, _ := strconv.Atoi(string(result[1]))
+		return uint32(maxAge)
+	}
+
+	// 从max-age中获取缓存时间
+	reg, _ = regexp.Compile(`max-age=(\d+)`)
+	result = reg.FindSubmatch(cacheControl)
+	if len(result) != 2 {
+		return 0
+	}
+	maxAge, _ := strconv.Atoi(string(result[1]))
+	return uint32(maxAge)
+}
+
+// genRequestKey 生成请求的key: Method + host + request uri
+func genRequestKey(ctx *fasthttp.RequestCtx) []byte {
+	uri := ctx.URI()
+	// 对于http https，只是与客户端的数据做加密，缓存的数据一致
+	return bytes.Join([][]byte{
+		ctx.Method(),
+		uri.Host(),
+		uri.RequestURI(),
+	}, []byte(""))
 }
 
 func handler(ctx *fasthttp.RequestCtx, directorList director.DirectorSlice) {
@@ -97,12 +157,12 @@ func handler(ctx *fasthttp.RequestCtx, directorList director.DirectorSlice) {
 	}
 	us := found.Upstream
 	// 判断该请求是否直接pass到backend
-	isPass := util.Pass(ctx, found.Passes)
+	pass := isPass(ctx, found.Passes)
 	status := vars.Pass
 	var key []byte
 	// 如果不是pass的请求，则获取该请求对应的状态
-	if !isPass {
-		key = util.GenRequestKey(ctx)
+	if !pass {
+		key = genRequestKey(ctx)
 		// 如果已经有相同的key在处理，则会返回c(chan int)
 		s, c := cache.GetRequestStatus(key)
 		status = s
@@ -122,7 +182,7 @@ func handler(ctx *fasthttp.RequestCtx, directorList director.DirectorSlice) {
 			return
 		}
 		respData := &cache.ResponseData{
-			CreatedAt:  util.GetSeconds(),
+			CreatedAt:  uint32(time.Now().Unix()),
 			StatusCode: uint16(resp.StatusCode()),
 			Compress:   vars.RawData,
 			TTL:        0,
@@ -141,7 +201,7 @@ func handler(ctx *fasthttp.RequestCtx, directorList director.DirectorSlice) {
 			return
 		}
 		statusCode := uint16(resp.StatusCode())
-		cacheAge := util.GetCacheAge(&resp.Header)
+		cacheAge := getCacheAge(&resp.Header)
 		compressType := vars.RawData
 		contentType := resp.Header.PeekBytes(vars.ContentType)
 		shouldCompress := util.ShouldCompress(contentType)
@@ -155,7 +215,7 @@ func handler(ctx *fasthttp.RequestCtx, directorList director.DirectorSlice) {
 			}
 		}
 		respData := &cache.ResponseData{
-			CreatedAt:  util.GetSeconds(),
+			CreatedAt:  uint32(time.Now().Unix()),
 			StatusCode: statusCode,
 			Compress:   uint16(compressType),
 			TTL:        cacheAge,
