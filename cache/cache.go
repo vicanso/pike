@@ -18,21 +18,23 @@ var client *badger.DB
 
 // ResponseData 记录响应数据
 type ResponseData struct {
-	CreatedAt  uint32
-	StatusCode uint16
-	Compress   uint16
-	TTL        uint32
-	Header     []byte
-	Body       []byte
+	CreatedAt      uint32
+	StatusCode     uint16
+	Compress       uint8
+	ShouldCompress bool
+	TTL            uint32
+	Header         []byte
+	Body           []byte
 }
 
 const (
-	createIndex       = 0
-	statusCodeIndex   = 4
-	compressIndex     = 6
-	ttlIndex          = 8
-	headerLengthIndex = 12
-	headerIndex       = 14
+	createIndex         = 0
+	statusCodeIndex     = 4
+	compressIndex       = 6
+	shouldCompressIndex = 7
+	ttlIndex            = 8
+	headerLengthIndex   = 12
+	headerIndex         = 14
 )
 
 // RequestStatus 请求状态
@@ -204,10 +206,15 @@ func SaveResponseData(key []byte, respData *ResponseData) error {
 	}
 	header := util.TrimHeader(respData.Header)
 	ttl := respData.TTL
+	var shouldCompressData uint8
+	if respData.ShouldCompress {
+		shouldCompressData = 1
+	}
 	s := [][]byte{
 		uint32ToBytes(createdAt),
 		uint16ToBytes(respData.StatusCode),
-		uint16ToBytes(respData.Compress),
+		[]byte{respData.Compress},
+		[]byte{shouldCompressData},
 		uint32ToBytes(respData.TTL),
 		uint16ToBytes(uint16(len(header))),
 		header,
@@ -228,14 +235,19 @@ func GetResponse(key []byte) (*ResponseData, error) {
 	}
 
 	headerLength := bytesToUint16(data[headerLengthIndex:headerIndex])
-	return &ResponseData{
+	resData := &ResponseData{
 		CreatedAt:  bytesToUint32(data[createIndex:statusCodeIndex]),
 		StatusCode: bytesToUint16(data[statusCodeIndex:compressIndex]),
-		Compress:   bytesToUint16(data[compressIndex:ttlIndex]),
+		Compress:   data[compressIndex],
 		TTL:        bytesToUint32(data[ttlIndex:headerLengthIndex]),
 		Header:     data[headerIndex : headerIndex+headerLength],
 		Body:       data[headerIndex+headerLength:],
-	}, nil
+	}
+	if data[shouldCompressIndex] == 1 {
+		resData.ShouldCompress = true
+	}
+
+	return resData, nil
 }
 
 // Save 保存数据

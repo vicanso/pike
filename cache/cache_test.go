@@ -39,12 +39,13 @@ func TestDB(t *testing.T) {
 	resHeader := ctx.Response.Header.Header()
 
 	saveRespData := &ResponseData{
-		CreatedAt:  uint32(time.Now().Unix()),
-		StatusCode: 200,
-		Compress:   vars.GzipData,
-		TTL:        30,
-		Header:     resHeader,
-		Body:       resBody,
+		CreatedAt:      uint32(time.Now().Unix()),
+		StatusCode:     200,
+		Compress:       vars.GzipData,
+		ShouldCompress: 1,
+		TTL:            30,
+		Header:         resHeader,
+		Body:           resBody,
 	}
 
 	SaveResponseData(key, saveRespData)
@@ -67,6 +68,9 @@ func TestDB(t *testing.T) {
 	}
 	if respData.Compress != vars.GzipData {
 		t.Fatalf("the data should be gzip compress")
+	}
+	if respData.ShouldCompress != 1 {
+		t.Fatalf("the data should be compress")
 	}
 }
 

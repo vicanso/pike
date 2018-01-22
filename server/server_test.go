@@ -67,6 +67,25 @@ func TestGenRequestKey(t *testing.T) {
 	}
 }
 
+func TestShouldCompress(t *testing.T) {
+	ctx := &fasthttp.RequestCtx{}
+	ctx.Response.Header.SetContentType("text/css; charset=UTF-8")
+	if shouldCompress(&ctx.Response.Header) != true {
+		t.Fatalf("the css should be compress")
+	}
+
+	ctx.Response.Header.SetContentType("application/javascript; charset=UTF-8")
+	if shouldCompress(&ctx.Response.Header) != true {
+		t.Fatalf("the js should be compress")
+	}
+
+	ctx.Response.Header.SetContentType("image/png")
+	if shouldCompress(&ctx.Response.Header) != false {
+		t.Fatalf("the image shouldn't be compress")
+	}
+
+}
+
 func get(url string) (*fasthttp.Response, error) {
 	req := fasthttp.AcquireRequest()
 	req.SetRequestURI(url)

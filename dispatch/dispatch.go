@@ -51,6 +51,7 @@ func Response(ctx *fasthttp.RequestCtx, respData *cache.ResponseData) {
 	respHeader := &ctx.Response.Header
 	reqHeader := &ctx.Request.Header
 	header := respData.Header
+	shouldCompress := respData.ShouldCompress
 	body := respData.Body
 	bodyLength := len(body)
 	arr := bytes.Split(header, vars.LineBreak)
@@ -100,8 +101,6 @@ func Response(ctx *fasthttp.RequestCtx, respData *cache.ResponseData) {
 	}
 
 	supportGzip := reqHeader.HasAcceptEncodingBytes(vars.Gzip)
-	contentType := respHeader.PeekBytes(vars.ContentType)
-	shouldCompress := util.ShouldCompress(contentType)
 	// 如果数据是gzip
 	if respData.Compress == vars.GzipData {
 		// 如果客户端不支持gzip，则解压

@@ -138,6 +138,14 @@ func genRequestKey(ctx *fasthttp.RequestCtx) []byte {
 	}, []byte(""))
 }
 
+// shouldCompress 判断该响应数据是否应该压缩(针对文本类压缩)
+func shouldCompress(header *fasthttp.ResponseHeader) bool {
+	contentType := header.PeekBytes(vars.ContentType)
+	// 检测是否为文本
+	reg, _ := regexp.Compile(`text|application/javascript|application/x-javascript|application/json`)
+	return reg.Match(contentType)
+}
+
 func handler(ctx *fasthttp.RequestCtx, directorList director.DirectorSlice) {
 	host := ctx.Request.Host()
 	uri := ctx.RequestURI()
@@ -181,13 +189,15 @@ func handler(ctx *fasthttp.RequestCtx, directorList director.DirectorSlice) {
 			errorHandler(err)
 			return
 		}
+
 		respData := &cache.ResponseData{
-			CreatedAt:  uint32(time.Now().Unix()),
-			StatusCode: uint16(resp.StatusCode()),
-			Compress:   vars.RawData,
-			TTL:        0,
-			Header:     header,
-			Body:       body,
+			CreatedAt:      uint32(time.Now().Unix()),
+			StatusCode:     uint16(resp.StatusCode()),
+			Compress:       vars.RawData,
+			ShouldCompress: shouldCompress(&resp.Header),
+			TTL:            0,
+			Header:         header,
+			Body:           body,
 		}
 		responseHandler(respData)
 	case vars.Fetching, vars.HitForPass:
@@ -203,11 +213,10 @@ func handler(ctx *fasthttp.RequestCtx, directorList director.DirectorSlice) {
 		statusCode := uint16(resp.StatusCode())
 		cacheAge := getCacheAge(&resp.Header)
 		compressType := vars.RawData
-		contentType := resp.Header.PeekBytes(vars.ContentType)
-		shouldCompress := util.ShouldCompress(contentType)
 		// 可以缓存的数据，则将数据先压缩
 		// 不可缓存的数据，`dispatch.Response`函数会根据客户端来决定是否压缩
-		if shouldCompress && cacheAge > 0 && len(body) > vars.CompressMinLength {
+		shouldDoCompress := shouldCompress(&resp.Header)
+		if shouldDoCompress && cacheAge > 0 && len(body) > vars.CompressMinLength {
 			gzipData, err := util.Gzip(body)
 			if err == nil {
 				body = gzipData
@@ -215,12 +224,13 @@ func handler(ctx *fasthttp.RequestCtx, directorList director.DirectorSlice) {
 			}
 		}
 		respData := &cache.ResponseData{
-			CreatedAt:  uint32(time.Now().Unix()),
-			StatusCode: statusCode,
-			Compress:   uint16(compressType),
-			TTL:        cacheAge,
-			Header:     header,
-			Body:       body,
+			CreatedAt:      uint32(time.Now().Unix()),
+			StatusCode:     statusCode,
+			Compress:       uint8(compressType),
+			ShouldCompress: shouldDoCompress,
+			TTL:            cacheAge,
+			Header:         header,
+			Body:           body,
 		}
 		responseHandler(respData)
 

@@ -34,21 +34,6 @@ func TestGetClientIP(t *testing.T) {
 	}
 }
 
-func TestShouldCompress(t *testing.T) {
-	if ShouldCompress([]byte("text/css; charset=UTF-8")) != true {
-		t.Fatalf("the css should be compress")
-	}
-
-	if ShouldCompress([]byte("application/javascript; charset=UTF-8")) != true {
-		t.Fatalf("the js should be compress")
-	}
-
-	if ShouldCompress([]byte("image/png")) != false {
-		t.Fatalf("the image shouldn't be compress")
-	}
-
-}
-
 func TestTrimHeader(t *testing.T) {
 	ctx := &fasthttp.RequestCtx{}
 	header := &ctx.Request.Header
