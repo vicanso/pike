@@ -3,11 +3,11 @@ package cache
 import (
 	"bytes"
 	"encoding/binary"
+	"strings"
 	"sync"
 	"time"
 
 	"github.com/dgraph-io/badger"
-	"github.com/vicanso/pike/util"
 	"github.com/vicanso/pike/vars"
 )
 
@@ -85,6 +85,37 @@ func uint32ToBytes(v uint32) []byte {
 // 将字节转换为uint32
 func bytesToUint32(buf []byte) uint32 {
 	return binary.LittleEndian.Uint32(buf)
+}
+
+// trimHeader 将无用的头属性删除（如Date Connection等）
+func trimHeader(header []byte) []byte {
+	arr := bytes.Split(header, vars.LineBreak)
+	data := make([][]byte, 0, len(arr))
+	ignoreList := []string{
+		"date",
+		"connection",
+	}
+	for _, item := range arr {
+		index := bytes.IndexByte(item, vars.Colon)
+		if index == -1 {
+			continue
+		}
+		k := strings.ToLower(string(item[:index]))
+		found := false
+		for _, ignore := range ignoreList {
+			if found {
+				break
+			}
+			if k == ignore {
+				found = true
+			}
+		}
+		if found {
+			continue
+		}
+		data = append(data, item)
+	}
+	return bytes.Join(data, vars.LineBreak)
 }
 
 // Size 获取缓存记录的总数
@@ -204,7 +235,7 @@ func SaveResponseData(key []byte, respData *ResponseData) error {
 	if createdAt == 0 {
 		createdAt = uint32(time.Now().Unix())
 	}
-	header := util.TrimHeader(respData.Header)
+	header := trimHeader(respData.Header)
 	ttl := respData.TTL
 	var shouldCompressData uint8
 	if respData.ShouldCompress {

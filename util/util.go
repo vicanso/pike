@@ -9,7 +9,6 @@ import (
 	"expvar"
 	"fmt"
 	"io/ioutil"
-	"strings"
 
 	"github.com/valyala/fasthttp"
 	"github.com/vicanso/pike/vars"
@@ -49,37 +48,6 @@ func GetClientIP(ctx *fasthttp.RequestCtx) string {
 	}
 	arr := bytes.Split(xFor, []byte(","))
 	return string(arr[0])
-}
-
-// TrimHeader 将无用的头属性删除（如Date Connection等）
-func TrimHeader(header []byte) []byte {
-	arr := bytes.Split(header, vars.LineBreak)
-	data := make([][]byte, 0, len(arr))
-	ignoreList := []string{
-		"date",
-		"connection",
-	}
-	for _, item := range arr {
-		index := bytes.IndexByte(item, vars.Colon)
-		if index == -1 {
-			continue
-		}
-		k := strings.ToLower(string(item[:index]))
-		found := false
-		for _, ignore := range ignoreList {
-			if found {
-				break
-			}
-			if k == ignore {
-				found = true
-			}
-		}
-		if found {
-			continue
-		}
-		data = append(data, item)
-	}
-	return bytes.Join(data, vars.LineBreak)
 }
 
 // GetDebugVars 获取 debug vars
