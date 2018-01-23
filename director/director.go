@@ -3,27 +3,27 @@ package director
 import (
 	"bytes"
 	"sort"
-	"time"
 
 	"github.com/vicanso/pike/config"
-	"github.com/vicanso/pike/proxy"
 )
 
 // Director 服务器列表
 type Director struct {
-	Name     string          `json:"name"`
-	Policy   string          `json:"policy"`
-	Ping     string          `json:"ping"`
-	Prefixs  [][]byte        `json:"prefixs"`
-	Hosts    [][]byte        `json:"hosts"`
-	Passes   [][]byte        `json:"passes"`
-	Backends []string        `json:"backends"`
-	Priority int             `json:"priority"`
-	Upstream *proxy.Upstream `json:"upstream"`
+	Name     string   `json:"name"`
+	Policy   string   `json:"policy"`
+	Ping     string   `json:"ping"`
+	Prefixs  [][]byte `json:"prefixs"`
+	Hosts    [][]byte `json:"hosts"`
+	Passes   [][]byte `json:"passes"`
+	Backends []string `json:"backends"`
+	Priority int      `json:"priority"`
 }
 
 // Directors 用于director排序
 type Directors []*Director
+
+// 保证director列表
+var directorList = make(Directors, 0)
 
 // Len 获取director slice的长度
 func (s Directors) Len() int {
@@ -86,8 +86,8 @@ func strListToByteList(original []string) [][]byte {
 	return items
 }
 
-// CreateDirector 创建一个director
-func CreateDirector(directorConfig *config.Director) *Director {
+// createDirector 创建一个director
+func createDirector(directorConfig *config.Director) *Director {
 	d := &Director{
 		Name:     directorConfig.Name,
 		Policy:   directorConfig.Type,
@@ -110,27 +110,16 @@ func CreateDirector(directorConfig *config.Director) *Director {
 	return d
 }
 
-// GetDirectors 获取 directors
-func GetDirectors(ds []*config.Director) Directors {
-	length := len(ds)
-	directorList := make(Directors, 0, length)
-	for _, directorConf := range ds {
-		d := CreateDirector(directorConf)
-		name := d.Name
-		up := proxy.CreateUpstream(name, d.Policy, "")
-		for _, backend := range d.Backends {
-			up.AddBackend(backend)
-		}
-		up.StartHealthcheck(d.Ping, time.Second)
-		d.Upstream = up
-		directorList = append(directorList, d)
-	}
+// Append 添加director
+// 在程序启动时做初始化添加，非线程安全，若后期需要动态修改再调整
+func Append(directorConfig *config.Director) {
+	d := createDirector(directorConfig)
+	directorList = append(directorList, d)
 	sort.Sort(directorList)
-	return directorList
 }
 
 // GetMatch 获取匹配的director
-func GetMatch(directorList []*Director, host, uri []byte) *Director {
+func GetMatch(host, uri []byte) *Director {
 	var found *Director
 	// 查找可用的director
 	for _, d := range directorList {

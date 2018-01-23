@@ -46,8 +46,8 @@ func TestCreateDirector(t *testing.T) {
 			"host:5002",
 		},
 	}
-	dList := GetDirectors([]*config.Director{c})
-	d := dList[0]
+	Append(c)
+	d := GetMatch([]byte("aslant.site"), []byte("/tiny"))
 	testVar(t, d.Name, name)
 	testVar(t, d.Policy, policy)
 	testVar(t, d.Ping, ping)
@@ -66,9 +66,4 @@ func TestCreateDirector(t *testing.T) {
 	testMatch(t, d, []byte("www.npmtrend.com"), []byte("/albi"), true)
 	testMatch(t, d, []byte("dcharts.com"), []byte("/albi"), false)
 	testMatch(t, d, []byte("aslant.site"), []byte("/abc"), false)
-
-	testDirector := CreateDirector(&config.Director{
-		Name: "TEST",
-	})
-	testMatch(t, testDirector, []byte("aslant.site"), []byte("/tiny"), true)
 }
