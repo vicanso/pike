@@ -134,10 +134,11 @@ func shouldCompress(header *fasthttp.ResponseHeader) bool {
 	return reg.Match(contentType)
 }
 
-func handler(ctx *fasthttp.RequestCtx, directorList director.Directors) {
+func handler(ctx *fasthttp.RequestCtx) {
 	host := ctx.Request.Host()
 	uri := ctx.RequestURI()
-	found := director.GetMatch(directorList, host, uri)
+	found := director.GetMatch(host, uri)
+
 	// 出错处理
 	errorHandler := func(err error) {
 		dispatch.ErrorHandler(ctx, err)
@@ -151,7 +152,8 @@ func handler(ctx *fasthttp.RequestCtx, directorList director.Directors) {
 		errorHandler(vars.ErrDirectorUnavailable)
 		return
 	}
-	us := found.Upstream
+
+	us := proxy.GetUpStream(found.Name)
 	// 判断该请求是否直接pass到backend
 	pass := isPass(ctx, found.Passes)
 	status := vars.Pass
@@ -262,7 +264,16 @@ func faviconHandler(ctx *fasthttp.RequestCtx) {
 // Start 启动服务器
 func Start() error {
 	conf := config.Current
-	directorList := director.GetDirectors(conf.Directors)
+	// directorList := director.GetDirectors(conf.Directors)
+	for _, d := range conf.Directors {
+		director.Append(d)
+		proxy.AppendUpstream(&proxy.UpstreamConfig{
+			Name:     d.Name,
+			Policy:   d.Type,
+			Ping:     d.Ping,
+			Backends: d.Backends,
+		})
+	}
 	listen := conf.Listen
 	if conf.HitForPass > 0 {
 		hitForPassTTL = uint32(conf.HitForPass)
@@ -324,7 +335,7 @@ func Start() error {
 			}
 			// 管理界面相关接口
 			if len(adminPath) != 0 && bytes.HasPrefix(path, adminPath) {
-				adminHandler(ctx, directorList, blockIP)
+				adminHandler(ctx, blockIP)
 				return
 			}
 			performance.IncreaseRequestCount()
@@ -338,7 +349,7 @@ func Start() error {
 					go logWriter.Write(logBuf)
 				}()
 			}
-			handler(ctx, directorList)
+			handler(ctx)
 		},
 	}
 	log.Printf("the server will listen on " + listen)

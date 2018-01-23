@@ -10,9 +10,14 @@ import (
 )
 
 func TestCreateUpstream(t *testing.T) {
-	name := "tiny"
+	name := "XT"
 	policy := "roundRoubin"
-	us := CreateUpstream(name, policy, "")
+	AppendUpstream(&UpstreamConfig{
+		Name:   name,
+		Policy: policy,
+	})
+	us := GetUpStream(name)
+
 	if us.Name != name {
 		t.Fatalf("create upstream fail, the name field is wrong")
 	}
@@ -61,9 +66,16 @@ func TestDo(t *testing.T) {
 		}
 		server.ListenAndServe(":" + strconv.Itoa(port))
 	}()
-	us := CreateUpstream("tiny", "roundRoubin", "")
-	us.AddBackend("127.0.0.1:" + strconv.Itoa(port))
-	us.Hosts[0].Healthy = 1
+	name := "tiny"
+	AppendUpstream(&UpstreamConfig{
+		Name:   name,
+		Policy: "roundRoubin",
+		Backends: []string{
+			"127.0.0.1:" + strconv.Itoa(port),
+		},
+	})
+	time.Sleep(time.Millisecond)
+	us := GetUpStream(name)
 
 	testDo(t, us, "/ping", "pong", 200)
 
@@ -71,4 +83,20 @@ func TestDo(t *testing.T) {
 
 	testDo(t, us, "/404", "", 404)
 
+	usList := List()
+	if len(usList) != 2 {
+		t.Fatalf("It should be 2 upstream")
+	}
+}
+
+func TestGenEtag(t *testing.T) {
+	eTag := genETag([]byte(""))
+	if eTag != "\"0-2jmj7l5rSw0yVb/vlWAYkK/YBwk\"" {
+		t.Fatalf("get empty data etag fail")
+	}
+	buf := []byte("测试使用的响应数据")
+	eTag = genETag(buf)
+	if eTag != "\"1b-gQEzXLxF7NjFZ-x0-GK1Pg8NBZA=\"" {
+		t.Fatalf("get etag fail")
+	}
 }

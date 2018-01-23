@@ -10,6 +10,7 @@ import (
 	"github.com/vicanso/pike/director"
 	"github.com/vicanso/pike/dispatch"
 	"github.com/vicanso/pike/performance"
+	"github.com/vicanso/pike/proxy"
 	"github.com/vicanso/pike/util"
 	"github.com/vicanso/pike/vars"
 )
@@ -77,7 +78,7 @@ func statisHandler(ctx *fasthttp.RequestCtx, assetPath string) {
 }
 
 // adminHandler 管理员相关接口处理
-func adminHandler(ctx *fasthttp.RequestCtx, directorList director.Directors, blockIP *BlockIP) {
+func adminHandler(ctx *fasthttp.RequestCtx, blockIP *BlockIP) {
 	conf := config.Current
 	ctx.Response.Header.SetCanonical(vars.CacheControl, vars.NoCache)
 	path := string(ctx.Path())
@@ -102,7 +103,13 @@ func adminHandler(ctx *fasthttp.RequestCtx, directorList director.Directors, blo
 		}
 		responseJSON(ctx, stats)
 	case adminPath + "/directors":
-		data, err := json.Marshal(directorList)
+		data, err := json.Marshal(director.List())
+		if err != nil {
+			dispatch.ErrorHandler(ctx, err)
+		}
+		responseJSON(ctx, data)
+	case adminPath + "/upstreams":
+		data, err := json.Marshal(proxy.List())
 		if err != nil {
 			dispatch.ErrorHandler(ctx, err)
 		}

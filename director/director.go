@@ -129,3 +129,8 @@ func GetMatch(host, uri []byte) *Director {
 	}
 	return found
 }
+
+// List 获取所有的director
+func List() Directors {
+	return directorList
+}

@@ -40,15 +40,3 @@ func TestGetDebugVars(t *testing.T) {
 		t.Fatalf("get the debug vars fail, %v", string(buf))
 	}
 }
-
-func TestGetEtag(t *testing.T) {
-	eTag := GetETag([]byte(""))
-	if eTag != "\"0-2jmj7l5rSw0yVb/vlWAYkK/YBwk\"" {
-		t.Fatalf("get empty data etag fail")
-	}
-	buf := []byte("测试使用的响应数据")
-	eTag = GetETag(buf)
-	if eTag != "\"1b-gQEzXLxF7NjFZ-x0-GK1Pg8NBZA=\"" {
-		t.Fatalf("get etag fail")
-	}
-}

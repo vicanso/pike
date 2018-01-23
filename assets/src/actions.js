@@ -1,9 +1,15 @@
 import moment from 'moment';
 import 'Base64';
 
-const statsUrl = '/pike/stats';
-const directorsUrl = '/pike/directors';
-const blockIPsUrl = '/pike/block-ips';
+let prefixUrl = '..';
+if (location.search.indexOf('dev') !== -1) {
+  prefixUrl = '/pike';
+}
+
+const statsUrl = prefixUrl + '/stats';
+const directorsUrl = prefixUrl + '/directors';
+const blockIPsUrl = prefixUrl + '/block-ips';
+const upstreamsUrl = prefixUrl + '/upstreams';
 
 const maxPointCount = 30;
 const performanceKeys = [
@@ -48,6 +54,7 @@ export function getStats() {
 }
 
 export function getDirectors() {
+  let directors = null;
   return fetch(directorsUrl, {
     headers: defaultHeader,
   }).then((res) => {
@@ -64,7 +71,24 @@ export function getDirectors() {
     data.forEach((item) => {
       ['hosts', 'passes', 'prefixs'].forEach(key => covert(item, key));
     });
-    return data;
+    directors = data;
+    return fetch(upstreamsUrl, {
+      headers: defaultHeader,
+    })
+  }).then((res) => {
+    if (res.status >= 400) {
+      throw res
+    }
+    return res.json();
+  }).then((data) => {
+    directors.forEach((item) => {
+      data.forEach((tmp) => {
+        if (tmp.name === item.name) {
+          item.upstream = tmp;
+        }
+      });
+    });
+    return directors;
   });
 }
 

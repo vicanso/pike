@@ -107,6 +107,15 @@ type Upstream struct {
 	Policy Policy           `json:"policy"`
 }
 
+// UpstreamConfig upstream的配置
+type UpstreamConfig struct {
+	Name     string
+	Backends []string
+	Policy   string
+	Arg      string
+	Ping     string
+}
+
 // StartHealthcheck 启动 health check
 func (us *Upstream) StartHealthcheck(ping string, interval time.Duration) {
 	for _, uh := range us.Hosts {

@@ -2,6 +2,9 @@ package proxy
 
 import (
 	"bytes"
+	"crypto/sha1"
+	"encoding/base64"
+	"fmt"
 	"strings"
 	"sync/atomic"
 	"time"
@@ -19,7 +22,20 @@ type Config struct {
 
 var (
 	supportedPolicies = make(map[string]func(string) Policy)
+	upstreams         = make(map[string]*Upstream)
 )
+
+// genETag 获取数据对应的ETag
+func genETag(buf []byte) string {
+	size := len(buf)
+	if size == 0 {
+		return "\"0-2jmj7l5rSw0yVb/vlWAYkK/YBwk\""
+	}
+	h := sha1.New()
+	h.Write(buf)
+	hash := base64.URLEncoding.EncodeToString(h.Sum(nil))
+	return fmt.Sprintf("\"%x-%s\"", size, hash)
+}
 
 // RegisterPolicy adds a custom policy to the proxy.
 func RegisterPolicy(name string, policy func(string) Policy) {
@@ -84,20 +100,40 @@ func Do(ctx *fasthttp.RequestCtx, us *Upstream, config *Config) (*fasthttp.Respo
 	}
 	// 如果程序没有生成ETag，自动填充
 	if config.ETag && len(resp.Header.PeekBytes(vars.ETag)) == 0 {
-		resp.Header.SetBytesK(vars.ETag, util.GetETag(resp.Body()))
+		resp.Header.SetBytesK(vars.ETag, genETag(resp.Body()))
 	}
 	return resp, nil
 }
 
-// CreateUpstream 创建一个新的Upstream
-func CreateUpstream(name, policy, arg string) *Upstream {
-	policyFunc := supportedPolicies[policy]
+// AppendUpstream 创建一个新的Upstream
+func AppendUpstream(upstreamConfig *UpstreamConfig) {
+	policyFunc := supportedPolicies[upstreamConfig.Policy]
 	if policyFunc == nil {
 		policyFunc = supportedPolicies[vars.RoundRobin]
 	}
-	return &Upstream{
+	name := upstreamConfig.Name
+	up := &Upstream{
 		Name:   name,
 		Hosts:  make([]*UpstreamHost, 0),
-		Policy: policyFunc(arg),
+		Policy: policyFunc(upstreamConfig.Arg),
 	}
+	for _, backend := range upstreamConfig.Backends {
+		up.AddBackend(backend)
+	}
+	up.StartHealthcheck(upstreamConfig.Ping, time.Second)
+	upstreams[name] = up
+}
+
+// GetUpStream 获取upstream
+func GetUpStream(name string) *Upstream {
+	return upstreams[name]
+}
+
+// List 获取所有的upstream
+func List() []*Upstream {
+	streams := make([]*Upstream, 0)
+	for _, v := range upstreams {
+		streams = append(streams, v)
+	}
+	return streams
 }
