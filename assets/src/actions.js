@@ -10,6 +10,7 @@ const statsUrl = prefixUrl + '/stats';
 const directorsUrl = prefixUrl + '/directors';
 const blockIPsUrl = prefixUrl + '/block-ips';
 const upstreamsUrl = prefixUrl + '/upstreams';
+const cachedsUrl = prefixUrl + '/cacheds';
 
 const maxPointCount = 30;
 const performanceKeys = [
@@ -40,6 +41,7 @@ export const state = {
   uptime: '',
   directors: null,
   blockIPList: null,
+  setCacheds: null,
 };
 
 export function getStats() {
@@ -100,7 +102,18 @@ export function getBlockIPs() {
       throw res
     }
     return res.json();
-  })
+  });
+}
+
+export function getCacheds() {
+  return fetch(cachedsUrl, {
+    headers: defaultHeader,
+  }).then((res) => {
+    if (res.status >= 400) {
+      throw res
+    }
+    return res.json();
+  });
 }
 
 export function addBlockIP(ip) {
@@ -132,7 +145,7 @@ export function removeBlockIP(ip) {
 }
 
 export const actions = {
-  resetDirectors: () => state => {
+  resetDirectors: () => () => {
     return {
       directors: null,
     };
@@ -172,25 +185,35 @@ export const actions = {
       performance: result,
     };
   },
-  setLaunchedAt: launchedAt => state => {
+  setLaunchedAt: launchedAt => () => {
     return {
       launchedAt: moment(launchedAt).format('YYYY-MM-DD HH:mm:ss'),
       uptime: moment(launchedAt).fromNow(),
     };
   },
-  setDirectors: data => state => {
+  setDirectors: data => () => {
     return {
       directors: data,
     };
   },
-  setBlockIPList: data => state => {
+  setBlockIPList: data => () => {
     return {
       blockIPList: data,
     };
   },
-  changeView: view => state => {
+  changeView: view => () => {
     return {
       view,
+    };
+  },
+  setCacheds: data => () => {
+    return {
+      cacheds: data,
+    };
+  },
+  resetCacheds: () => () => {
+    return {
+      cacheds: null,
     };
   },
 }

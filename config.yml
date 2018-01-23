@@ -21,7 +21,7 @@ readBufferSize: 0
 # writeBufferSize 的限制，0表示使用fasthttp默认值 (4096)
 writeBufferSize: 0 
 # 设置upstream的连接超时，0表示无限制(time.Duration)
-connectTimeout: 5s 
+connectTimeout: 3s 
 # 设置请求的读取超时，0表示无限制(time.Duration)
 readTimeout: 0 
 # 设置响应的写超时，0表示无限制(time.Duration)
@@ -75,7 +75,9 @@ directors:
     backends:
       - 192.168.31.3:3200
       - 192.168.31.3:3300
+# favicon的base64字符串
 favicon: base64-string
+# 需要添加的自定义的响应头
 responseHeader:
   - "X-Server:My-Pike"
   - "X-Location:GZ"

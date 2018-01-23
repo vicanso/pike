@@ -161,6 +161,10 @@ func TestRequestStatus(t *testing.T) {
 		t.Fatalf("the hit for pass couunt expect 1 but %v", hitForPassCount)
 	}
 	time.Sleep(time.Second)
+	buf := GetCachedList()
+	if bytes.Index(buf, []byte("GEThttp://aslant.site/books")) == -1 {
+		t.Fatalf("the cache list should include GEThttp://aslant.site/books")
+	}
 }
 
 func TestResponseCache(t *testing.T) {

@@ -32,7 +32,7 @@ const createBlockIPTable = (actions, data) => {
     </tr>
   });
   return <div class="">
-    <h5>Current Block IP List</h5>
+    <h3>Current Block IP List</h5>
     <table class="table">
       <thead><tr>
         <th>IP</th>

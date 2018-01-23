@@ -6,6 +6,7 @@ import (
 
 	"github.com/tidwall/gjson"
 	"github.com/valyala/fasthttp"
+	"github.com/vicanso/pike/cache"
 	"github.com/vicanso/pike/config"
 	"github.com/vicanso/pike/director"
 	"github.com/vicanso/pike/dispatch"
@@ -116,6 +117,9 @@ func adminHandler(ctx *fasthttp.RequestCtx, blockIP *BlockIP) {
 		responseJSON(ctx, data)
 	case adminPath + "/block-ips":
 		blockIPHandler(ctx, blockIP)
+	case adminPath + "/cacheds":
+		data := cache.GetCachedList()
+		responseJSON(ctx, data)
 	default:
 		ctx.NotFound()
 	}

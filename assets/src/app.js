@@ -8,6 +8,7 @@ import Performance from './performance';
 import Directors from './directors';
 import AdminToken from './admin-token';
 import BlockIP from './block-ip';
+import Cached from './cached';
 import {
   state,
   actions,
@@ -19,6 +20,7 @@ const views = {
   adminToken: 'adminToken',
   performance: 'performance',
   blockIP: 'blockIP',
+  cached: 'cached',
 };
 
 let toggleCount = 0;
@@ -62,6 +64,7 @@ const view = (state, actions) => {
         {getNav(views.default, "Directors")}
         {getNav(views.performance, "Performance")}
         {getNav(views.blockIP, "Block IP List")}
+        {getNav(views.cached, "Cached List")}
       </ul>
       {
         state.uptime &&
@@ -85,6 +88,9 @@ const view = (state, actions) => {
     }
     {
       currentView === views.blockIP && <BlockIP state={state} actions={actions} toggleCount={toggleCount} />
+    }
+    {
+      currentView === views.cached && <Cached state={state} actions={actions} toggleCount={toggleCount} />
     }
   </div>
 };

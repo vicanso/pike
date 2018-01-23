@@ -123,7 +123,7 @@ func genRequestKey(ctx *fasthttp.RequestCtx) []byte {
 		ctx.Method(),
 		uri.Host(),
 		uri.RequestURI(),
-	}, []byte(""))
+	}, []byte("|"))
 }
 
 // shouldCompress 判断该响应数据是否应该压缩(针对文本类压缩)

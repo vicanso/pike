@@ -3,6 +3,7 @@ package cache
 import (
 	"bytes"
 	"encoding/binary"
+	"encoding/json"
 	"strings"
 	"sync"
 	"time"
@@ -153,6 +154,30 @@ func Stats() (int, int, int, int) {
 	}
 	rsMutex.Unlock()
 	return fetchingCount, waitingCount, cacheableCount, hitForPassCount
+}
+
+// GetCachedList 获取已缓存的请求列表
+func GetCachedList() []byte {
+	rsMutex.Lock()
+	defer rsMutex.Unlock()
+	type cacheData struct {
+		Key       string `json:"key"`
+		TTL       uint32 `json:"ttl"`
+		CreatedAt uint32 `json:"createdAt"`
+	}
+	cacheDatas := make([]*cacheData, 0)
+	for key, v := range rsMap {
+		if v.status != vars.Cacheable {
+			continue
+		}
+		cacheDatas = append(cacheDatas, &cacheData{
+			Key:       key,
+			TTL:       v.ttl,
+			CreatedAt: v.createdAt,
+		})
+	}
+	data, _ := json.Marshal(cacheDatas)
+	return data
 }
 
 // GetRequestStatus 获取请求的状态
