@@ -1,10 +1,8 @@
 package config
 
 import (
-	"flag"
 	"io/ioutil"
 	"log"
-	"os"
 	"strings"
 	"time"
 
@@ -16,8 +14,16 @@ import (
 // Debug debug日志输出
 var Debug = debug.Debug("pike.config")
 
+const (
+	defaultListen = ":3015"
+	defaultDB     = "/tmp/pike"
+)
+
 // Current 当前配置
-var Current = &Config{}
+var Current = &Config{
+	Listen: defaultListen,
+	DB:     defaultDB,
+}
 
 // Director 服务器配置列表
 type Director struct {
@@ -67,15 +73,10 @@ type Config struct {
 	ExtraHeaders         []*Header
 }
 
-func init() {
-	// 优先从ENV中获取配置文件路径
-	config := os.Getenv("PIKE_CONFIG")
-	// 如果ENV中没有配置，则从启动命令获取
-	if len(config) == 0 {
-		flag.StringVar(&config, "c", "/etc/pike/config.yml", "the config file")
-		flag.Parse()
-	}
-	buf, err := ioutil.ReadFile(config)
+// InitFromFile 从文件中读取配置初始化
+func InitFromFile(file string) {
+
+	buf, err := ioutil.ReadFile(file)
 	if err != nil {
 		log.Println("get the config file fail,", err)
 	}
@@ -85,10 +86,10 @@ func init() {
 		log.Fatalf("error: %v", err)
 	}
 	if len(Current.Listen) == 0 {
-		Current.Listen = ":3015"
+		Current.Listen = defaultListen
 	}
 	if len(Current.DB) == 0 {
-		Current.DB = "/tmp/pike"
+		Current.DB = defaultDB
 	}
 	if len(Current.ResponseHeader) != 0 {
 		for _, str := range Current.ResponseHeader {

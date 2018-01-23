@@ -1,7 +1,9 @@
 package main
 
 import (
+	"flag"
 	"log"
+	"os"
 	"time"
 
 	"github.com/vicanso/pike/cache"
@@ -16,6 +18,14 @@ func clear(interval time.Duration) {
 }
 
 func main() {
+	// 优先从ENV中获取配置文件路径
+	configFile := os.Getenv("PIKE_CONFIG")
+	// 如果ENV中没有配置，则从启动命令获取
+	if len(configFile) == 0 {
+		flag.StringVar(&configFile, "c", "/etc/pike/config.yml", "the config file")
+		flag.Parse()
+	}
+	config.InitFromFile(configFile)
 	conf := config.Current
 	clearInterval := conf.ExpiredClearInterval
 	if clearInterval <= 0 {
