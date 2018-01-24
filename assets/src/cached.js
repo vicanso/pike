@@ -5,6 +5,10 @@ import {
   getCacheds,
 } from './actions';
 
+import {
+  createLineHeader,
+} from './widget';
+
 const renderTable = (data) => {
   if (data.length === 0) {
     return <p class="tac">There is no cached data</p>;
@@ -33,7 +37,7 @@ const renderTable = (data) => {
 const Cached = ({ state, actions, toggleCount }) => {
   return <div
     key={toggleCount}
-    class="cachedWrapper container"
+    class="cachedWrapper container contentWrapper"
     oncreate={() => {
       getCacheds().then((data) => {
         actions.setCacheds(data);
@@ -43,7 +47,7 @@ const Cached = ({ state, actions, toggleCount }) => {
       actions.resetCacheds();
     }}
   >
-    <h3>Current Cached List</h5>
+    { createLineHeader('Current Cached List') }
     {
       !state.cacheds && <p class="tac">Loading...</p>
     }

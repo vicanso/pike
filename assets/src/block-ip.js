@@ -6,6 +6,10 @@ import {
   removeBlockIP,
 } from './actions';
 
+import {
+  createLineHeader,
+} from './widget';
+
 let inputElement = null;
 
 const createBlockIPTable = (actions, data) => {
@@ -18,7 +22,7 @@ const createBlockIPTable = (actions, data) => {
       <td>{item}</td>
       <td title="remove the ip address">
         <a
-          class="redColor"
+          class="redColor tac"
           href="javascript:;"
           onclick={() => {
             removeBlockIP(item).then(() => {
@@ -27,13 +31,13 @@ const createBlockIPTable = (actions, data) => {
               });
             });
           }}
-        >rm</a>
+        >Remove</a>
       </td>
     </tr>
   });
-  return <div class="">
-    <h3>Current Block IP List</h5>
-    <table class="table">
+  return <div>
+    {createLineHeader('Current Block IP List')}
+    <table class="table table-bordered">
       <thead><tr>
         <th>IP</th>
         <th>OP</th>
@@ -53,12 +57,12 @@ const BlockIP = ({ state, actions, toggleCount }) => {
   };
   const blockIPList = state.blockIPList;
   return <div
-    class="blockIPWrapper container"
+    class="blockIPWrapper container contentWrapper"
     key={toggleCount}
     oncreate={refeshBlockIPList}
   >
     { createBlockIPTable(actions, blockIPList) }
-    <h5>Create New Block IP</h5>
+    { createLineHeader('Create New Block IP') }
     <form>
       <div class="form-group">
         <label for="blockIP">Block IP</label>

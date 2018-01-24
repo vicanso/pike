@@ -2,6 +2,9 @@ import { h, app } from 'hyperapp';
 
 import * as chart from './chart';
 
+import {
+  createLineHeader,
+} from './widget';
 
 const descDict = {
   concurrency: {
@@ -125,15 +128,11 @@ const RequestCountView = ({ state }) => {
 
 const Performance = ({ state }) => {
   return <div
-    class="performanceWrapper container"
+    class="performanceWrapper container contentWrapper"
   >
-    <div class="bkz">
-      <h3 class="bla blb">QUICK PERFORMANCE</h3>
-    </div>
+    {createLineHeader('QUICK PERFORMANCE')}
     <StatsView state={state} />
-    <div class="bkz">
-      <h3 class="bla blb">REQUEST COUNT</h3>
-    </div>
+    {createLineHeader('REQUEST COUNT')}
     <RequestCountView state={state} />
   </div>
 }

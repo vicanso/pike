@@ -2,7 +2,7 @@ import { h, app } from 'hyperapp';
 
 let inputElement = null;
 const AdminToken = ({ state }) => {
-  return <div class="adminTokenWrapper container"><form>
+  return <div class="adminTokenWrapper container contentWrapper"><form>
     <div class="form-group">
       <label for="adminToken">Admin Token</label>
       <input

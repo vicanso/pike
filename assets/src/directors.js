@@ -81,7 +81,7 @@ const Directors = ({ state, actions, toggleCount }) => {
   }
   return <div
     key={toggleCount}
-    class="directorsWrapper container"
+    class="directorsWrapper container contentWrapper"
     oncreate={() => {
       getDirectors().then((data) => {
         actions.setDirectors(data);

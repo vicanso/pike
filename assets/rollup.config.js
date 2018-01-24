@@ -21,7 +21,7 @@ function serve() {
   return {
     name: 'serve',
     ongenerate: () => {
-      console.info("the server is listen: http://127.0.0.1:8080/")
+      console.info("http://127.0.0.1:8080/index.html?dev")
     },
   };
 }
