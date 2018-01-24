@@ -3,7 +3,13 @@ language: go
 go:
   - 1.x
 
+install:
+  - go get -t ./...
+  - go get github.com/golang/lint/golint
+  - go get -u github.com/jteeuwen/go-bindata/...
+
 script:
+  - go-bindata -pkg server -o server/bindata.go assets/dist
   - go test -race ./...
 
 after_script:
