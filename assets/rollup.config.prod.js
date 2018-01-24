@@ -33,7 +33,7 @@ let config = {
     name: 'app',
     file: './dist/app.js',
     format: 'umd',
-    sourcemap: true, 
+    sourcemap: false, 
   },
   external: ['whatwg-fetch'],
   plugins: plugins
