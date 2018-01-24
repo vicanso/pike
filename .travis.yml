@@ -4,13 +4,19 @@ go:
   - 1.x
 
 install:
-  - go get -t ./...
-  - go get github.com/golang/lint/golint
+  - go get -u github.com/golang/dep/cmd/dep
   - go get -u github.com/jteeuwen/go-bindata/...
 
 script:
+  - dep ensure
   - go-bindata -pkg server -o server/bindata.go assets/dist
-  - go test -race ./...
-
-after_script:
-  - golint ./...
+  - go test ./cache
+  - go test ./config
+  - go test ./director
+  - go test ./dispatch
+  - go test ./httplog
+  - go test ./performance
+  - go test ./proxy
+  - go test ./server
+  - go test ./util
+  - go test ./vars
