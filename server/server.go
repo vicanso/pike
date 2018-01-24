@@ -6,6 +6,7 @@ import (
 	"log"
 	"regexp"
 	"strconv"
+	"sync"
 	"time"
 
 	"github.com/valyala/fasthttp"
@@ -279,7 +280,9 @@ func Start() error {
 		hitForPassTTL = uint32(conf.HitForPass)
 	}
 
-	var blockIP = &BlockIP{}
+	var blockIP = &BlockIP{
+		m: &sync.RWMutex{},
+	}
 	blockIP.InitFromCache()
 	tags := httplog.Parse([]byte(conf.LogFormat))
 	writeCategory := httplog.Normal

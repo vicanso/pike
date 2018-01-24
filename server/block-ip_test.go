@@ -1,9 +1,14 @@
 package server
 
-import "testing"
+import (
+	"sync"
+	"testing"
+)
 
 func TestBlockIP(t *testing.T) {
-	b := &BlockIP{}
+	b := &BlockIP{
+		m: &sync.RWMutex{},
+	}
 	ip := "4.4.4.4"
 	b.Add(ip)
 	if b.FindIndex(ip) == -1 {

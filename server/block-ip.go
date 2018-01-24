@@ -3,60 +3,72 @@ package server
 import (
 	"sort"
 	"strings"
+	"sync"
 
 	"github.com/vicanso/pike/cache"
 )
 
-// TODO 是否将黑名单保存
-
-// BlockIP 黑名单IP
-// 黑名单IP的操作由管理员操作，并不常调用
-// 因此没有锁的处理
+// BlockIP 屏蔽IP
 type BlockIP struct {
-	IPList []string `json:"ipList"`
+	// ip列表
+	List []string `json:"ipList"`
+	// 读写锁
+	m *sync.RWMutex
 }
 
 // 保存到bucket中对应的key
 var blockIPKey = []byte("config-blockIP")
 
+// 获取该ip对应的index
+func findIndex(list []string, ip string) int {
+	i := sort.Search(len(list), func(i int) bool {
+		return list[i] >= ip
+	})
+	if i >= len(list) || list[i] != ip {
+		return -1
+	}
+	return i
+}
+
 // Add 添加黑名单IP
 func (b *BlockIP) Add(ip string) {
-	index := b.FindIndex(ip)
+	b.m.Lock()
+	defer b.m.Unlock()
+	index := findIndex(b.List, ip)
 	if index == -1 {
-		b.IPList = append(b.IPList, ip)
-		sort.Strings(b.IPList)
-		data := []byte(strings.Join(b.IPList, ","))
+		b.List = append(b.List, ip)
+		sort.Strings(b.List)
+		data := []byte(strings.Join(b.List, ","))
 		cache.Save(blockIPKey, data, 365*24*3600)
 	}
 }
 
 // FindIndex 获取该IP所在的index
 func (b *BlockIP) FindIndex(ip string) int {
-	ipList := b.IPList
-	i := sort.Search(len(ipList), func(i int) bool {
-		return ipList[i] >= ip
-	})
-	if i >= len(ipList) || ipList[i] != ip {
-		return -1
-	}
-	return i
+	b.m.RLock()
+	defer b.m.RUnlock()
+	return findIndex(b.List, ip)
 }
 
 // Remove 删除黑名单IP
 func (b *BlockIP) Remove(ip string) {
-	index := b.FindIndex(ip)
+	b.m.Lock()
+	defer b.m.Unlock()
+	index := findIndex(b.List, ip)
 	if index != -1 {
-		ipList := b.IPList
-		b.IPList = append(ipList[:index], ipList[index+1:]...)
+		ipList := b.List
+		b.List = append(ipList[:index], ipList[index+1:]...)
 	}
 }
 
 // InitFromCache 从缓存中初始化黑名单IP
 func (b *BlockIP) InitFromCache() {
+	b.m.Lock()
+	defer b.m.Unlock()
 	data, err := cache.Get(blockIPKey)
 	if err != nil {
 		return
 	}
 	ips := strings.Split(string(data), ",")
-	b.IPList = append(b.IPList, ips...)
+	b.List = append(b.List, ips...)
 }
