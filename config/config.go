@@ -69,7 +69,6 @@ type Config struct {
 	Directors            []*Director
 	Favicon              string   `yaml:"favicon"`
 	ResponseHeader       []string `yaml:"responseHeader"`
-	ResponseHeaderByte   [][]byte
 	ExtraHeaders         []*Header
 }
 

@@ -69,6 +69,7 @@ func Response(ctx *fasthttp.RequestCtx, respData *cache.ResponseData) {
 		v := item[index:len(item)]
 		respHeader.SetCanonical(k, v)
 	}
+	// 如果该请求是可缓存的，要设置Age（因为客户端缓存的时间应该是 ttl - age）
 	if respData.TTL > 0 {
 		now := uint32(time.Now().Unix())
 		age := now - respData.CreatedAt

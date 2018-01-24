@@ -9,14 +9,22 @@ import (
 
 // Director 服务器列表
 type Director struct {
-	Name     string   `json:"name"`
-	Policy   string   `json:"policy"`
-	Ping     string   `json:"ping"`
-	Prefixs  [][]byte `json:"prefixs"`
-	Hosts    [][]byte `json:"hosts"`
-	Passes   [][]byte `json:"passes"`
+	// 名称
+	Name string `json:"name"`
+	// 选择backend的方式
+	Policy string `json:"policy"`
+	// 健康检测的url
+	Ping string `json:"ping"`
+	// 对应的url前缀
+	Prefixs [][]byte `json:"prefixs"`
+	// 对应的host
+	Hosts [][]byte `json:"hosts"`
+	// 设置直接pass的url规则
+	Passes [][]byte `json:"passes"`
+	// 后端服务列表
 	Backends []string `json:"backends"`
-	Priority int      `json:"priority"`
+	// 优先级（根据host prefix计算），低的优先选择
+	Priority int `json:"priority"`
 }
 
 // Directors 用于director排序
@@ -47,6 +55,7 @@ func (d *Director) Match(host, uri []byte) bool {
 		return true
 	}
 	match := false
+	// 判断host是否符合
 	if hosts != nil {
 		for _, item := range hosts {
 			if match {
@@ -66,6 +75,7 @@ func (d *Director) Match(host, uri []byte) bool {
 			return match
 		}
 	}
+	// 判断prefix是否符合
 	if prefixs != nil {
 		// 重置match状态，判断prefix
 		match = false
@@ -78,6 +88,7 @@ func (d *Director) Match(host, uri []byte) bool {
 	return match
 }
 
+// []string 转换为 [][]byte
 func strListToByteList(original []string) [][]byte {
 	items := make([][]byte, len(original))
 	for index, item := range original {
@@ -95,14 +106,17 @@ func createDirector(directorConfig *config.Director) *Director {
 		Backends: directorConfig.Backends,
 	}
 	priority := 8
-	if len(directorConfig.Prefix) != 0 {
-		priority -= 4
-		d.Prefixs = strListToByteList(directorConfig.Prefix)
-	}
+	// 如果有配置host，优先前提升4
 	if len(directorConfig.Host) != 0 {
-		priority -= 2
+		priority -= 4
 		d.Hosts = strListToByteList(directorConfig.Host)
 	}
+	// 如果有配置prefix，优先级提升2
+	if len(directorConfig.Prefix) != 0 {
+		priority -= 2
+		d.Prefixs = strListToByteList(directorConfig.Prefix)
+	}
+	// 如果配置子pass，生成pass列表
 	if len(directorConfig.Pass) != 0 {
 		d.Passes = strListToByteList(directorConfig.Pass)
 	}

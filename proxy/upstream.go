@@ -11,12 +11,17 @@ import (
 // UpstreamHost proxy upstream
 type UpstreamHost struct {
 	// Conns 连接数
-	Conns     int64  `json:"connections"`
-	MaxConns  int64  `json:"maxConnections"`
-	Host      string `json:"host"`
-	Fails     int32  `json:"fails"`
-	Successes int32  `json:"success"`
-	Healthy   int32  `json:"healthy"`
+	Conns int64 `json:"connections"`
+	// 最大连接数
+	MaxConns int64 `json:"maxConnections"`
+	// 对应的host配置
+	Host string `json:"host"`
+	// 失败次数
+	Fails int32 `json:"fails"`
+	// 成功次数
+	Successes int32 `json:"success"`
+	// 该节点是否健康
+	Healthy int32 `json:"healthy"`
 	// 表示该upstream为禁止状态
 	Disabled bool `json:"disabled"`
 }

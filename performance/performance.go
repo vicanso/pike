@@ -16,20 +16,34 @@ var requestCount uint64
 
 // Stats 性能的统计
 type Stats struct {
-	Concurrency  uint32 `json:"concurrency"`
-	Sys          int    `json:"sys"`
-	HeapSys      int    `json:"heapSys"`
-	HeapInuse    int    `json:"heapInuse"`
-	StartedAt    string `json:"startedAt"`
-	RoutineCount int    `json:"routine"`
-	CacheCount   int    `json:"cacheCount"`
-	Fetching     int    `json:"fetching"`
-	Waiting      int    `json:"waiting"`
-	Cacheable    int    `json:"cacheable"`
-	HitForPass   int    `json:"hitForPass"`
+	// 当前并发处理请求数
+	Concurrency uint32 `json:"concurrency"`
+	// 使用内存
+	Sys int `json:"sys"`
+	// heap sys内存
+	HeapSys int `json:"heapSys"`
+	// heap使用内存
+	HeapInuse int `json:"heapInuse"`
+	// 程序启动时间
+	StartedAt string `json:"startedAt"`
+	// routine数量
+	RoutineCount int `json:"routine"`
+	// 缓存数量（包括hit for pass 与 cacheable）
+	CacheCount int `json:"cacheCount"`
+	// 正在请求的数量（请求backend）
+	Fetching int `json:"fetching"`
+	// 等待中的请求数量（由于有相同的请求为fetching）
+	Waiting int `json:"waiting"`
+	// 可缓存的请求数量
+	Cacheable int `json:"cacheable"`
+	// hit for pass的缓存数量
+	HitForPass int `json:"hitForPass"`
+	// 总的处理请求量
 	RequestCount uint64 `json:"requestCount"`
-	LSM          int    `json:"lsm"`
-	VLog         int    `json:"vLog"`
+	// lsm大小
+	LSM int `json:"lsm"`
+	// vlog大小
+	VLog int `json:"vLog"`
 }
 
 // IncreaseConcurrency concurrency 加一

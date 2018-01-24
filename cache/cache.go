@@ -19,13 +19,19 @@ var client *badger.DB
 
 // ResponseData 记录响应数据
 type ResponseData struct {
-	CreatedAt      uint32
-	StatusCode     uint16
-	Compress       uint8
+	CreatedAt uint32
+	// HTTP状态码
+	StatusCode uint16
+	// 数据是否压缩
+	Compress uint8
+	// 数据是否应该压缩
 	ShouldCompress bool
-	TTL            uint32
-	Header         []byte
-	Body           []byte
+	// 缓存有效时间
+	TTL uint32
+	// HTTP响应头
+	Header []byte
+	// HTTP响应数据
+	Body []byte
 }
 
 const (
@@ -40,9 +46,11 @@ const (
 
 // RequestStatus 请求状态
 type RequestStatus struct {
-	createdAt    uint32
-	ttl          uint32
-	status       int
+	createdAt uint32
+	ttl       uint32
+	// 请求状态 fetching hitForPass 等
+	status int
+	// 如果此请求为fetching，则此时相同的请求会写入一个chan
 	waitingChans []chan int
 }
 
@@ -92,6 +100,7 @@ func bytesToUint32(buf []byte) uint32 {
 func trimHeader(header []byte) []byte {
 	arr := bytes.Split(header, vars.LineBreak)
 	data := make([][]byte, 0, len(arr))
+	// 需要清除的http头
 	ignoreList := []string{
 		"date",
 		"connection",
@@ -111,6 +120,7 @@ func trimHeader(header []byte) []byte {
 				found = true
 			}
 		}
+		// 需要忽略的http头
 		if found {
 			continue
 		}
@@ -167,9 +177,11 @@ func GetCachedList() []byte {
 	}
 	cacheDatas := make([]*cacheData, 0)
 	for key, v := range rsMap {
+		// 对于非已缓存的忽略
 		if v.status != vars.Cacheable {
 			continue
 		}
+		// 保存缓存的记录
 		cacheDatas = append(cacheDatas, &cacheData{
 			Key:       key,
 			TTL:       v.ttl,
@@ -187,16 +199,19 @@ func GetRequestStatus(key []byte) (int, chan int) {
 	k := string(key)
 	rs := rsMap[k]
 	status := vars.Fetching
+	// 如果该key对应的状态为空或者已过期
 	if rs == nil || isExpired(rs) {
 		status = vars.Fetching
 		rs = initRequestStatus(0)
 		rsMap[k] = rs
 		rs.status = status
 	} else if rs.status == vars.Fetching {
+		// 如果该key对应的请求正在处理中，添加chan
 		status = vars.Waiting
 		c = make(chan int, 1)
 		rs.waitingChans = append(rs.waitingChans, c)
 	} else {
+		// hit for pass 或者 cacheable
 		status = rs.status
 	}
 	rsMutex.Unlock()
@@ -215,6 +230,7 @@ func triggerWatingRequstAndSetStatus(key []byte, status int, ttl uint32) {
 	rs.status = status
 	rs.ttl = ttl
 	waitingChans := rs.waitingChans
+	// 对所有等待中的请求触发channel
 	for _, c := range waitingChans {
 		c <- status
 		close(c)
@@ -239,6 +255,7 @@ func InitDB(dbPath string) (*badger.DB, error) {
 	}
 
 	opts := badger.DefaultOptions
+	// 暂时未分开两个目录，如果需要更高的性能，可以考虑再调整
 	opts.Dir = dbPath
 	opts.ValueDir = dbPath
 	db, err := badger.Open(opts)
@@ -251,11 +268,6 @@ func InitDB(dbPath string) (*badger.DB, error) {
 
 // SaveResponseData 保存Response
 func SaveResponseData(key []byte, respData *ResponseData) error {
-	// 前四个字节保存创建时间
-	// 接着后面两个字节保存ttl
-	// 接着后面两个字节保存header的长度
-	// 接着是header
-	// 最后才是body
 	createdAt := respData.CreatedAt
 	if createdAt == 0 {
 		createdAt = uint32(time.Now().Unix())
@@ -266,6 +278,7 @@ func SaveResponseData(key []byte, respData *ResponseData) error {
 	if respData.ShouldCompress {
 		shouldCompressData = 1
 	}
+	// 将要保存的数据转换为bytes
 	s := [][]byte{
 		uint32ToBytes(createdAt),
 		uint16ToBytes(respData.StatusCode),
@@ -291,6 +304,7 @@ func GetResponse(key []byte) (*ResponseData, error) {
 	}
 
 	headerLength := bytesToUint16(data[headerLengthIndex:headerIndex])
+	// 将bytes转换为ResponseData
 	resData := &ResponseData{
 		CreatedAt:  bytesToUint32(data[createIndex:statusCodeIndex]),
 		StatusCode: bytesToUint16(data[statusCodeIndex:compressIndex]),
@@ -311,6 +325,7 @@ func Save(key, buf []byte, ttl uint32) error {
 	if client == nil {
 		return vars.ErrDbNotInit
 	}
+	// 缓存延期删除，为了避免在判断请求可读取缓存时，刚好缓存过期
 	var stale uint64 = 5
 	return client.Update(func(tx *badger.Txn) error {
 		return tx.SetEntry(&badger.Entry{
@@ -328,7 +343,7 @@ func Get(key []byte) ([]byte, error) {
 		return nil, vars.ErrDbNotInit
 	}
 	var buf []byte
-
+	// 从数据库中读取数据
 	err := client.View(func(txn *badger.Txn) error {
 		item, err := txn.Get(key)
 		if err != nil {
@@ -349,6 +364,7 @@ func Get(key []byte) ([]byte, error) {
 func ClearExpired() error {
 	rsMutex.Lock()
 	now := uint32(time.Now().Unix())
+	// 对保存请求状态的map清除
 	for k, v := range rsMap {
 		if v.createdAt+v.ttl < now {
 			delete(rsMap, k)
@@ -359,10 +375,12 @@ func ClearExpired() error {
 	if client == nil {
 		return vars.ErrDbNotInit
 	}
+	// 清除旧版数据
 	err := client.PurgeOlderVersions()
 	if err != nil {
 		return err
 	}
+	// 清除日志数据
 	return client.RunValueLogGC(0.5)
 }
 
