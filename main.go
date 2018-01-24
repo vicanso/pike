@@ -9,6 +9,7 @@ import (
 	"github.com/vicanso/pike/cache"
 	"github.com/vicanso/pike/config"
 	"github.com/vicanso/pike/server"
+	"github.com/vicanso/pike/vars"
 )
 
 func clear(interval time.Duration) {
@@ -17,7 +18,20 @@ func clear(interval time.Duration) {
 	go clear(interval)
 }
 
+func contains(list []string, s string) bool {
+	for _, item := range list {
+		if s == item {
+			return true
+		}
+	}
+	return false
+}
+
 func main() {
+	if contains(os.Args, "version") {
+		log.Print("pike version " + vars.Version)
+		return
+	}
 	// 优先从ENV中获取配置文件路径
 	configFile := os.Getenv("PIKE_CONFIG")
 	// 如果ENV中没有配置，则从启动命令获取

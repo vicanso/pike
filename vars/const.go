@@ -3,6 +3,8 @@ package vars
 import "errors"
 
 var (
+	// Version the application version
+	Version = "0.1.0"
 	// Name the name of application
 	Name = []byte("Pike")
 	// AcceptEncoding http request accept enconding header
