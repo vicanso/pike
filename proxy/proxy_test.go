@@ -91,7 +91,7 @@ func TestDo(t *testing.T) {
 
 func TestGenEtag(t *testing.T) {
 	eTag := genETag([]byte(""))
-	if eTag != "\"0-2jmj7l5rSw0yVb/vlWAYkK/YBwk\"" {
+	if eTag != "\"0-2jmj7l5rSw0yVb_vlWAYkK_YBwk=\"" {
 		t.Fatalf("get empty data etag fail")
 	}
 	buf := []byte("测试使用的响应数据")

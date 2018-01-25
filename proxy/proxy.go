@@ -29,7 +29,7 @@ var (
 func genETag(buf []byte) string {
 	size := len(buf)
 	if size == 0 {
-		return "\"0-2jmj7l5rSw0yVb/vlWAYkK/YBwk\""
+		return "\"0-2jmj7l5rSw0yVb_vlWAYkK_YBwk=\""
 	}
 	h := sha1.New()
 	h.Write(buf)
