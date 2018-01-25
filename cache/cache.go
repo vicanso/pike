@@ -151,6 +151,7 @@ func Stats() (int, int, int, int) {
 	cacheableCount := 0
 	hitForPassCount := 0
 	rsMutex.Lock()
+	defer rsMutex.Unlock()
 	for _, v := range rsMap {
 		switch v.status {
 		case vars.Fetching:
@@ -162,7 +163,6 @@ func Stats() (int, int, int, int) {
 			cacheableCount++
 		}
 	}
-	rsMutex.Unlock()
 	return fetchingCount, waitingCount, cacheableCount, hitForPassCount
 }
 
@@ -195,6 +195,7 @@ func GetCachedList() []byte {
 // GetRequestStatus 获取请求的状态
 func GetRequestStatus(key []byte) (int, chan int) {
 	rsMutex.Lock()
+	defer rsMutex.Unlock()
 	var c chan int
 	k := string(key)
 	rs := rsMap[k]
@@ -214,7 +215,6 @@ func GetRequestStatus(key []byte) (int, chan int) {
 		// hit for pass 或者 cacheable
 		status = rs.status
 	}
-	rsMutex.Unlock()
 	return status, c
 }
 
@@ -363,6 +363,7 @@ func Get(key []byte) ([]byte, error) {
 // ClearExpired 清除过期数据数据
 func ClearExpired() error {
 	rsMutex.Lock()
+	defer rsMutex.Unlock()
 	now := uint32(time.Now().Unix())
 	// 对保存请求状态的map清除
 	for k, v := range rsMap {
@@ -370,7 +371,6 @@ func ClearExpired() error {
 			delete(rsMap, k)
 		}
 	}
-	rsMutex.Unlock()
 
 	if client == nil {
 		return vars.ErrDbNotInit
