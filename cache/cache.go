@@ -248,6 +248,18 @@ func Cacheable(key []byte, ttl uint32) {
 	triggerWatingRequstAndSetStatus(key, vars.Cacheable, ttl)
 }
 
+// Expire 将key对应的状态设置为过期
+func Expire(key []byte) {
+	rsMutex.Lock()
+	defer rsMutex.Unlock()
+	k := string(key)
+	rs := rsMap[k]
+	if rs == nil {
+		return
+	}
+	rs.createdAt = 0
+}
+
 // InitDB 初始化db
 func InitDB(dbPath string) (*badger.DB, error) {
 	if client != nil {

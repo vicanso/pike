@@ -3,6 +3,7 @@ import moment from 'moment';
 
 import {
   getCacheds,
+  removeCache,
 } from './actions';
 
 import {
@@ -19,6 +20,18 @@ const renderTable = (data) => {
       <td>{item.ttl}</td>
       <td>{moment(item.createdAt * 1000).format('YYYY-MM-DD hh:mm:ss')}</td>
       <td>{moment((item.createdAt + item.ttl) * 1000).fromNow(true)}</td>
+      <td>
+        <a
+          href="javascript:;"
+          onclick={() => {
+            removeCache(item.key).then(() => {
+              getCacheds().then((data) => {
+                actions.setCacheds(data);
+              });
+            });
+          }}
+        >DEL</a>
+      </td>
     </tr>
   });
   return <table class="table">
@@ -27,6 +40,7 @@ const renderTable = (data) => {
       <th>TTL</th>
       <th>CreatedAt</th>
       <th>Expired</th>
+      <th>OP</th>
     </tr></thead>
     <tbody>
       { trList }

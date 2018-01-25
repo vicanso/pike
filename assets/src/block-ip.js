@@ -22,7 +22,6 @@ const createBlockIPTable = (actions, data) => {
       <td>{item}</td>
       <td title="remove the ip address">
         <a
-          class="redColor tac"
           href="javascript:;"
           onclick={() => {
             removeBlockIP(item).then(() => {
@@ -31,7 +30,7 @@ const createBlockIPTable = (actions, data) => {
               });
             });
           }}
-        >Remove</a>
+        >DEL</a>
       </td>
     </tr>
   });

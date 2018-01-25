@@ -155,15 +155,25 @@ func TestRequestStatus(t *testing.T) {
 		t.Fatalf("the fecthing and wating count is wrong")
 	}
 	if cacheableCount != 1 {
-		t.Fatalf("the cacheable couunt expect 1 but %v", cacheableCount)
+		t.Fatalf("the cacheable count expect 1 but %v", cacheableCount)
 	}
 	if hitForPassCount != 1 {
-		t.Fatalf("the hit for pass couunt expect 1 but %v", hitForPassCount)
+		t.Fatalf("the hit for pass count expect 1 but %v", hitForPassCount)
 	}
 	time.Sleep(time.Second)
 	buf := GetCachedList()
 	if bytes.Index(buf, []byte("GEThttp://aslant.site/books")) == -1 {
 		t.Fatalf("the cache list should include GEThttp://aslant.site/books")
+	}
+
+	status, _ = GetRequestStatus(key)
+	if status != vars.Cacheable {
+		t.Fatalf("the %s should be cacheable", key)
+	}
+	Expire(key)
+	status, _ = GetRequestStatus(key)
+	if status != vars.Fetching {
+		t.Fatalf("the %s should be fetching", key)
 	}
 }
 

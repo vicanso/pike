@@ -144,6 +144,20 @@ export function removeBlockIP(ip) {
   });
 }
 
+export function removeCache(key) {
+  return fetch(cachedsUrl, {
+    method: 'DELETE',
+    headers: defaultHeader,
+    body: JSON.stringify({
+      key,
+    }),
+  }).then((res) => {
+    if (res.status >= 400) {
+      throw res;
+    }
+  });
+}
+
 export const actions = {
   resetDirectors: () => () => {
     return {

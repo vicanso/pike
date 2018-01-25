@@ -45,14 +45,29 @@ func blockIPHandler(ctx *fasthttp.RequestCtx, blockIP *BlockIP) {
 		if len(value) != 0 {
 			blockIP.Add(value)
 		}
-		ctx.SetStatusCode(201)
+		ctx.SetStatusCode(fasthttp.StatusCreated)
 	case "DELETE":
 		body := string(ctx.Request.Body())
 		value := gjson.Get(body, "ip")
 		blockIP.Remove(value.String())
-		ctx.SetStatusCode(204)
+		ctx.SetStatusCode(fasthttp.StatusNoContent)
 	default:
 		ctx.NotFound()
+	}
+}
+
+// cachedHandler cache的处理
+func cachedHandler(ctx *fasthttp.RequestCtx) {
+	method := string(ctx.Method())
+	switch method {
+	case "DELETE":
+		body := string(ctx.Request.Body())
+		value := gjson.Get(body, "key").String()
+		cache.Expire([]byte(value))
+		ctx.SetStatusCode(fasthttp.StatusNoContent)
+	default:
+		data := cache.GetCachedList()
+		responseJSON(ctx, data)
 	}
 }
 
@@ -118,8 +133,7 @@ func adminHandler(ctx *fasthttp.RequestCtx, blockIP *BlockIP) {
 	case adminPath + "/block-ips":
 		blockIPHandler(ctx, blockIP)
 	case adminPath + "/cacheds":
-		data := cache.GetCachedList()
-		responseJSON(ctx, data)
+		cachedHandler(ctx)
 	default:
 		ctx.NotFound()
 	}
