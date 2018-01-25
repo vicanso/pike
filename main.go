@@ -2,6 +2,7 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"log"
 	"os"
 	"time"
@@ -28,8 +29,8 @@ func contains(list []string, s string) bool {
 }
 
 func main() {
-	if contains(os.Args, "version") {
-		log.Print("pike version " + vars.Version)
+	if contains(os.Args[1:], "version") {
+		fmt.Println("Pike version " + vars.Version)
 		return
 	}
 	// 优先从ENV中获取配置文件路径
