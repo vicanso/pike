@@ -176,9 +176,10 @@ func GetCachedList() []byte {
 		CreatedAt uint32 `json:"createdAt"`
 	}
 	cacheDatas := make([]*cacheData, 0)
+	now := uint32(time.Now().Unix())
 	for key, v := range rsMap {
 		// 对于非已缓存的忽略
-		if v.status != vars.Cacheable {
+		if v.status != vars.Cacheable || v.createdAt+v.ttl < now {
 			continue
 		}
 		// 保存缓存的记录

@@ -10,7 +10,7 @@ import {
   createLineHeader,
 } from './widget';
 
-const renderTable = (data) => {
+const renderTable = (data, actions) => {
   if (data.length === 0) {
     return <p class="tac">There is no cached data</p>;
   }
@@ -66,7 +66,7 @@ const Cached = ({ state, actions, toggleCount }) => {
       !state.cacheds && <p class="tac">Loading...</p>
     }
     {
-      state.cacheds && renderTable(state.cacheds)
+      state.cacheds && renderTable(state.cacheds, actions)
     }
   </div>
 };
