@@ -312,10 +312,7 @@ func GetResponse(key []byte) (*ResponseData, error) {
 	if err != nil {
 		return nil, err
 	}
-	if len(data) == 0 {
-		return nil, nil
-	}
-
+	// 因为数据的缓存比rs map的更晚删除，因为肯定有数据，无需要对data检测
 	headerLength := bytesToUint16(data[headerLengthIndex:headerIndex])
 	// 将bytes转换为ResponseData
 	resData := &ResponseData{

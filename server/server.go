@@ -23,6 +23,12 @@ import (
 
 var hitForPassTTL uint32 = 300
 
+var textTypes = [][]byte{
+	[]byte("text"),
+	[]byte("javascript"),
+	[]byte("json"),
+}
+
 // 转发处理，返回响应头与响应数据
 func doProxy(ctx *fasthttp.RequestCtx, us *proxy.Upstream) (*fasthttp.Response, []byte, []byte, error) {
 	conf := config.Current
@@ -78,8 +84,9 @@ func isPass(ctx *fasthttp.RequestCtx, passList [][]byte) bool {
 	pass := false
 	uri := ctx.RequestURI()
 	for _, item := range passList {
-		if !pass && bytes.Contains(uri, item) {
+		if bytes.Contains(uri, item) {
 			pass = true
+			break
 		}
 	}
 	return pass
@@ -130,9 +137,16 @@ func genRequestKey(ctx *fasthttp.RequestCtx) []byte {
 // shouldCompress 判断该响应数据是否应该压缩(针对文本类压缩)
 func shouldCompress(header *fasthttp.ResponseHeader) bool {
 	contentType := header.PeekBytes(vars.ContentType)
-	// 检测是否为文本
-	reg, _ := regexp.Compile(`text|application/javascript|application/x-javascript|application/json`)
-	return reg.Match(contentType)
+	found := false
+	for _, v := range textTypes {
+		if found {
+			break
+		}
+		if bytes.Contains(contentType, v) {
+			found = true
+		}
+	}
+	return found
 }
 
 func handler(ctx *fasthttp.RequestCtx) {

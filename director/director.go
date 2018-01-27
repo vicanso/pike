@@ -137,8 +137,9 @@ func GetMatch(host, uri []byte) *Director {
 	var found *Director
 	// 查找可用的director
 	for _, d := range directorList {
-		if found == nil && d.Match(host, uri) {
+		if d.Match(host, uri) {
 			found = d
+			break
 		}
 	}
 	return found

@@ -5,7 +5,6 @@ import (
 	"crypto/sha1"
 	"encoding/base64"
 	"fmt"
-	"strings"
 	"sync/atomic"
 	"time"
 
@@ -23,6 +22,8 @@ type Config struct {
 var (
 	supportedPolicies = make(map[string]func(string) Policy)
 	upstreams         = make(map[string]*Upstream)
+	httpBytes         = []byte("http")
+	httpProtoBytes    = []byte("http://")
 )
 
 // genETag 获取数据对应的ETag
@@ -51,10 +52,10 @@ func Do(ctx *fasthttp.RequestCtx, us *Upstream, config *Config) (*fasthttp.Respo
 	}
 	atomic.AddInt64(&uh.Conns, 1)
 	defer atomic.AddInt64(&uh.Conns, -1)
-	uri := string(ctx.RequestURI())
-	url := uh.Host + uri
-	if !strings.HasPrefix(url, "http") {
-		url = "http://" + url
+	uri := ctx.RequestURI()
+	url := append([]byte(uh.Host), uri...)
+	if !bytes.HasPrefix(url, httpBytes) {
+		url = append(httpProtoBytes, url...)
 	}
 	req := fasthttp.AcquireRequest()
 	reqHeader := &req.Header
@@ -77,7 +78,7 @@ func Do(ctx *fasthttp.RequestCtx, us *Upstream, config *Config) (*fasthttp.Respo
 	if len(postBody) != 0 {
 		req.SetBody(postBody)
 	}
-	req.SetRequestURI(url)
+	req.SetRequestURIBytes(url)
 	// 删除有可能304的处理
 	reqHeader.DelBytes(vars.IfModifiedSince)
 	reqHeader.DelBytes(vars.IfNoneMatch)
