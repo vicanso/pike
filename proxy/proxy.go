@@ -52,19 +52,11 @@ func Do(ctx *fasthttp.RequestCtx, us *Upstream, config *Config) (*fasthttp.Respo
 	}
 	atomic.AddInt64(&uh.Conns, 1)
 	defer atomic.AddInt64(&uh.Conns, -1)
-	uri := ctx.RequestURI()
-	url := append([]byte(uh.Host), uri...)
-	if !bytes.HasPrefix(url, httpBytes) {
-		url = append(httpProtoBytes, url...)
-	}
-	req := fasthttp.AcquireRequest()
-	reqHeader := &req.Header
-	// 复制HTTP请求头
-	ctx.Request.Header.CopyTo(reqHeader)
 
 	// 设置x-forwarded-for
 	xFor := vars.XForwardedFor
-	orginalXFor := ctx.Request.Header.PeekBytes(xFor)
+	reqHeader := &ctx.Request.Header
+	orginalXFor := reqHeader.PeekBytes(xFor)
 	clientIP := util.GetClientIP(ctx)
 	if len(orginalXFor) == 0 {
 		reqHeader.SetCanonical(xFor, []byte(clientIP))
@@ -74,18 +66,11 @@ func Do(ctx *fasthttp.RequestCtx, us *Upstream, config *Config) (*fasthttp.Respo
 			[][]byte{orginalXFor, []byte(clientIP)},
 			[]byte(",")))
 	}
-	postBody := ctx.PostBody()
-	if len(postBody) != 0 {
-		req.SetBody(postBody)
-	}
-	req.SetRequestURIBytes(url)
-	// 删除有可能304的处理
 	reqHeader.DelBytes(vars.IfModifiedSince)
 	reqHeader.DelBytes(vars.IfNoneMatch)
-	// 设置支持gzip
-	reqHeader.SetCanonical(vars.AcceptEncoding, vars.Gzip)
-	resp := fasthttp.AcquireResponse()
-	client := &fasthttp.Client{}
+	client := uh.Client
+	req := &ctx.Request
+	resp := &ctx.Response
 	var err error
 	timeout := config.Timeout
 	if timeout > 0 {

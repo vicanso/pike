@@ -52,8 +52,15 @@ func TestUpstreamHost(t *testing.T) {
 }
 
 func TestUpstream(t *testing.T) {
-	port := 5000 + rand.New(rand.NewSource(time.Now().UnixNano())).Intn(1000)
 	us := &Upstream{
+		Name: "test",
+	}
+	us.AddBackend("http://127.0.0.1:5012")
+	us.AddBackend("https://aslant.site")
+	us.AddBackend("127.0.0.1:5001")
+
+	port := 5000 + rand.New(rand.NewSource(time.Now().UnixNano())).Intn(1000)
+	us = &Upstream{
 		Name:   "tiny",
 		Policy: &Random{},
 	}

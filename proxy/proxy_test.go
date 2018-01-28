@@ -77,11 +77,11 @@ func TestDo(t *testing.T) {
 	time.Sleep(time.Millisecond)
 	us := GetUpStream(name)
 
-	testDo(t, us, "/ping", "pong", 200)
+	testDo(t, us, "http://test.com/ping", "pong", 200)
 
-	testDo(t, us, "/error", "fail", 500)
+	testDo(t, us, "http://test.com/error", "fail", 500)
 
-	testDo(t, us, "/404", "", 404)
+	testDo(t, us, "http://test.com/404", "", 404)
 
 	usList := List()
 	if len(usList) != 2 {

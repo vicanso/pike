@@ -36,10 +36,12 @@ directors:
 
 ## 性能
 
+Pike默认是会将缓存的数据压缩（大于配置的最小压缩长度），在响应时会根据客户端是否支持压缩而解压数据，因此为了避免解压影响性能，请求头带上支持gzip压缩头
+
 ### 对pike的压测
 
 ```
-wrk -H 'Accept-Encoding:gzip, deflate' -t10 -c200 -d1m 'http://127.0.0.1:3015/ping' --latency
+wrk -H 'Accept-Encoding: gzip, deflate' -t10 -c200 -d1m 'http://127.0.0.1:3015/ping' --latency
 
 Running 1m test @ http://127.0.0.1:3015/ping
   10 threads and 200 connections
@@ -58,58 +60,62 @@ Requests/sec: 235773.39
 ### 可缓存请求的压测
 
 ```
-# 因为缓存的数据是做压缩的，客户端支持压缩则不需要重新解压
-wrk -H 'Accept-Encoding:gzip, deflate' -t10 -c200 -d1m 'http://127.0.0.1:3015/api/sys/status' --latency
+wrk -H 'Accept-Encoding: gzip, deflate' -t10 -c200 -d1m 'http://127.0.0.1:3015/api/sys/status' --latency
 
 Running 1m test @ http://127.0.0.1:3015/api/sys/status
   10 threads and 200 connections
   Thread Stats   Avg      Stdev     Max   +/- Stdev
-    Latency    16.82ms   21.67ms 272.58ms   87.60%
-    Req/Sec     1.89k   535.73     4.61k    69.45%
+    Latency     2.17ms    2.39ms  64.81ms   90.41%
+    Req/Sec    11.27k     2.25k   22.45k    73.91%
   Latency Distribution
-     50%   10.86ms
-     75%   22.94ms
-     90%   43.45ms
-     99%  100.49ms
-  1128495 requests in 1.00m, 24.84GB read
-Requests/sec:  18784.70
+     50%    1.63ms
+     75%    2.57ms
+     90%    4.44ms
+     99%   12.08ms
+  6732203 requests in 1.00m, 32.80GB read
+Requests/sec: 112036.59
+Transfer/sec:    558.91MB
 ```
 
 ### 不可缓存请求的压测
 
 ```
 # 通过pike转发
-wrk -H 'Accept-Encoding:gzip, deflate' -t10 -c200 -d1m 'http://127.0.0.1:3015/api/users/me' --latency
+wrk -H 'Accept-Encoding: gzip, deflate' -t10 -c200 -d1m 'http://127.0.0.1:3015/api/users/me' --latency
 
 Running 1m test @ http://127.0.0.1:3015/api/users/me
   10 threads and 200 connections
   Thread Stats   Avg      Stdev     Max   +/- Stdev
-    Latency   187.35ms   16.34ms 337.80ms   70.63%
-    Req/Sec   107.18     39.39   202.00     75.45%
+    Latency    13.86ms    2.30ms  92.20ms   88.69%
+    Req/Sec     1.45k   151.81     1.62k    79.18%
   Latency Distribution
-     50%  180.62ms
-     75%  200.57ms
-     90%  210.80ms
-     99%  228.15ms
-  64001 requests in 1.00m, 1.41GB read
-Requests/sec:   1065.84
+     50%   13.20ms
+     75%   14.13ms
+     90%   16.46ms
+     99%   19.77ms
+  867906 requests in 1.00m, 191.20MB read
+Requests/sec:  14459.01
+Transfer/sec:      3.19MB
 
 # 直接压测
-wrk -H 'Accept-Encoding:gzip, deflate' -t10 -c200 -d1m 'http://127.0.0.1:5018/api/users/me' --latency
+wrk -H 'Accept-Encoding: gzip, deflate' -t10 -c200 -d1m 'http://127.0.0.1:5018/api/users/me' --latency
 
 Running 1m test @ http://127.0.0.1:5018/api/users/me
   10 threads and 200 connections
   Thread Stats   Avg      Stdev     Max   +/- Stdev
-    Latency   154.60ms    7.37ms 239.32ms   80.22%
-    Req/Sec   131.58     61.31   202.00     52.45%
+    Latency    12.42ms  834.04us  30.14ms   86.07%
+    Req/Sec     1.62k    81.15     1.82k    78.58%
   Latency Distribution
-     50%  153.79ms
-     75%  157.45ms
-     90%  162.34ms
-     99%  176.92ms
-  77588 requests in 1.00m, 1.70GB read
-Requests/sec:   1291.99
+     50%   12.17ms
+     75%   12.72ms
+     90%   13.34ms
+     99%   15.38ms
+  966524 requests in 1.00m, 140.11MB read
+Requests/sec:  16101.42
+Transfer/sec:      2.33MB
 ```
+
+由上面的测试结果可以看出，得益于`fasthttp`与`badger`的高性能，对于可缓存的请求，`pike`的处理可以达到100k Requests/sec（数据量500多MB每秒）。而对于不可缓存的转发请求，平均大概增加了1ms的处理时间。
 
 
 ## 启动方式

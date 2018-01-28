@@ -24,6 +24,8 @@ type UpstreamHost struct {
 	Healthy int32 `json:"healthy"`
 	// 表示该upstream为禁止状态
 	Disabled bool `json:"disabled"`
+	// 该节点对应的client
+	Client *fasthttp.HostClient
 }
 
 // UpstreamHostPool 保存Upstream列表
@@ -133,6 +135,15 @@ func (us *Upstream) AddBackend(host string) *UpstreamHost {
 	if us.Hosts == nil {
 		us.Hosts = make([]*UpstreamHost, 0)
 	}
+	addr := host
+	index := strings.Index(addr, "//")
+	isTLS := false
+	if index != -1 {
+		if addr[0:index] == "https:" {
+			isTLS = true
+		}
+		addr = addr[index+2:]
+	}
 	uh := &UpstreamHost{
 		Conns:     0,
 		MaxConns:  0,
@@ -140,6 +151,10 @@ func (us *Upstream) AddBackend(host string) *UpstreamHost {
 		Fails:     0,
 		Successes: 0,
 		Healthy:   0,
+		Client: &fasthttp.HostClient{
+			IsTLS: isTLS,
+			Addr:  addr,
+		},
 	}
 	us.Hosts = append(us.Hosts, uh)
 	return uh
