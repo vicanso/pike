@@ -39,6 +39,8 @@ var (
 	CacheControl = []byte("Cache-Control")
 	// ContentType http response content type header
 	ContentType = []byte("Content-Type")
+	// MultipartFormData http multi part form post
+	MultipartFormData = []byte("multipart/form-data")
 	// JSON http response content type json
 	JSON = []byte("application/json; charset=utf-8")
 	// NoCache http response cache-control: no-cache

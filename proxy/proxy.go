@@ -74,6 +74,12 @@ func Do(ctx *fasthttp.RequestCtx, us *Upstream, config *Config) (*fasthttp.Respo
 	resp := &ctx.Response
 	var err error
 	timeout := config.Timeout
+	// TODO 等待fasthttp修复
+	// 由于fasthttp中使用 do timeout时，会复制req，但是未将multipart数据复制
+	// 由此使用此方式临时修复（将超时设置为0）
+	if timeout > 0 && bytes.HasPrefix(reqHeader.PeekBytes(vars.ContentType), vars.MultipartFormData) {
+		timeout = 0
+	}
 	if timeout > 0 {
 		err = client.DoTimeout(req, resp, timeout)
 	} else {
