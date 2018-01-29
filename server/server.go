@@ -359,7 +359,9 @@ func Start() error {
 			performance.IncreaseConcurrency()
 			defer performance.DecreaseConcurrency()
 			startedAt := time.Now()
-			defer setServerTiming(ctx, startedAt)
+			if conf.EnableServerTiming {
+				defer setServerTiming(ctx, startedAt)
+			}
 			if enableAccessLog {
 				defer func() {
 					logBuf := httplog.Format(ctx, tags, startedAt)

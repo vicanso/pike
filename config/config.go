@@ -66,6 +66,7 @@ type Config struct {
 	UDPLog               string        `yaml:"udpLog"`
 	AccessLog            string        `yaml:"accessLog"`
 	LogType              string        `yaml:"logType"`
+	EnableServerTiming   bool          `yaml:"enableServerTiming"`
 	Directors            []*Director
 	Favicon              string   `yaml:"favicon"`
 	ResponseHeader       []string `yaml:"responseHeader"`
