@@ -25,7 +25,7 @@ type UpstreamHost struct {
 	// 表示该upstream为禁止状态
 	Disabled bool `json:"disabled"`
 	// 该节点对应的client
-	Client *fasthttp.HostClient
+	Client *fasthttp.HostClient `json:"-"`
 }
 
 // UpstreamHostPool 保存Upstream列表

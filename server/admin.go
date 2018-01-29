@@ -116,18 +116,21 @@ func adminHandler(ctx *fasthttp.RequestCtx, blockIP *BlockIP) {
 		stats, err := json.Marshal(performance.GetStats())
 		if err != nil {
 			dispatch.ErrorHandler(ctx, err)
+			return
 		}
 		responseJSON(ctx, stats)
 	case adminPath + "/directors":
 		data, err := json.Marshal(director.List())
 		if err != nil {
 			dispatch.ErrorHandler(ctx, err)
+			return
 		}
 		responseJSON(ctx, data)
 	case adminPath + "/upstreams":
 		data, err := json.Marshal(proxy.List())
 		if err != nil {
 			dispatch.ErrorHandler(ctx, err)
+			return
 		}
 		responseJSON(ctx, data)
 	case adminPath + "/block-ips":
