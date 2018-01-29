@@ -16,7 +16,7 @@ const renderTable = (data, actions) => {
   }
   const trList = data.map((item) => {
     return <tr>
-      <td>{item.key}</td>
+      <td class="key">{item.key}</td>
       <td>{item.ttl}</td>
       <td>{moment(item.createdAt * 1000).format('YYYY-MM-DD hh:mm:ss')}</td>
       <td>{moment((item.createdAt + item.ttl) * 1000).fromNow(true)}</td>
@@ -36,7 +36,7 @@ const renderTable = (data, actions) => {
   });
   return <table class="table">
     <thead><tr>
-      <th>Key</th>
+      <th class="key">Key</th>
       <th>TTL</th>
       <th>CreatedAt</th>
       <th>Expired</th>
