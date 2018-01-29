@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/valyala/fasthttp"
-	"github.com/vicanso/pike/util"
 	"github.com/vicanso/pike/vars"
 )
 
@@ -57,15 +56,17 @@ func Do(ctx *fasthttp.RequestCtx, us *Upstream, config *Config) (*fasthttp.Respo
 	xFor := vars.XForwardedFor
 	reqHeader := &ctx.Request.Header
 	orginalXFor := reqHeader.PeekBytes(xFor)
-	clientIP := util.GetClientIP(ctx)
+
+	ip := []byte(ctx.RemoteIP().String())
 	if len(orginalXFor) == 0 {
-		reqHeader.SetCanonical(xFor, []byte(clientIP))
+		reqHeader.SetCanonical(xFor, ip)
 	} else {
 		// 如果原有HTTP头有x-forwarded-for
 		reqHeader.SetCanonical(xFor, bytes.Join(
-			[][]byte{orginalXFor, []byte(clientIP)},
+			[][]byte{orginalXFor, ip},
 			[]byte(",")))
 	}
+
 	reqHeader.DelBytes(vars.IfModifiedSince)
 	reqHeader.DelBytes(vars.IfNoneMatch)
 	client := uh.Client
