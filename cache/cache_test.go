@@ -12,6 +12,41 @@ import (
 	"github.com/valyala/fasthttp"
 )
 
+func TestInitRequestStatus(t *testing.T) {
+	rs := initRequestStatus(30)
+	if rs.createdAt == 0 {
+		t.Fatalf("the created at should be seconds for now")
+	}
+	if rs.ttl != 30 {
+		t.Fatalf("the ttl should be 30s")
+	}
+}
+
+func TestIsExpired(t *testing.T) {
+	rs := initRequestStatus(30)
+	if isExpired(rs) != false {
+		t.Fatalf("the rs should not be expired")
+	}
+	rs.createdAt = 0
+	if isExpired(rs) != true {
+		t.Fatalf("the rs should be expired")
+	}
+}
+
+func TestByteToUnit(t *testing.T) {
+	b16 := uint16ToBytes(100)
+	v16 := bytesToUint16(b16)
+	if v16 != 100 {
+		t.Fatalf("the uint16 to bytes fail")
+	}
+
+	b32 := uint32ToBytes(100)
+	v32 := bytesToUint32(b32)
+	if v32 != 100 {
+		t.Fatalf("the uint32 to bytes fail")
+	}
+}
+
 func TestTrimHeader(t *testing.T) {
 	ctx := &fasthttp.RequestCtx{}
 	header := &ctx.Request.Header

@@ -129,6 +129,32 @@ func trimHeader(header []byte) []byte {
 	return bytes.Join(data, vars.LineBreak)
 }
 
+// GetRequestStatus 获取请求的状态
+func GetRequestStatus(key []byte) (int, chan int) {
+	rsMutex.Lock()
+	defer rsMutex.Unlock()
+	var c chan int
+	k := string(key)
+	rs := rsMap[k]
+	status := vars.Fetching
+	// 如果该key对应的状态为空或者已过期
+	if rs == nil || isExpired(rs) {
+		status = vars.Fetching
+		rs = initRequestStatus(0)
+		rsMap[k] = rs
+		rs.status = status
+	} else if rs.status == vars.Fetching {
+		// 如果该key对应的请求正在处理中，添加chan
+		status = vars.Waiting
+		c = make(chan int, 1)
+		rs.waitingChans = append(rs.waitingChans, c)
+	} else {
+		// hit for pass 或者 cacheable
+		status = rs.status
+	}
+	return status, c
+}
+
 // Size 获取缓存记录的总数
 func Size() int {
 	return len(rsMap)
@@ -191,32 +217,6 @@ func GetCachedList() []byte {
 	}
 	data, _ := json.Marshal(cacheDatas)
 	return data
-}
-
-// GetRequestStatus 获取请求的状态
-func GetRequestStatus(key []byte) (int, chan int) {
-	rsMutex.Lock()
-	defer rsMutex.Unlock()
-	var c chan int
-	k := string(key)
-	rs := rsMap[k]
-	status := vars.Fetching
-	// 如果该key对应的状态为空或者已过期
-	if rs == nil || isExpired(rs) {
-		status = vars.Fetching
-		rs = initRequestStatus(0)
-		rsMap[k] = rs
-		rs.status = status
-	} else if rs.status == vars.Fetching {
-		// 如果该key对应的请求正在处理中，添加chan
-		status = vars.Waiting
-		c = make(chan int, 1)
-		rs.waitingChans = append(rs.waitingChans, c)
-	} else {
-		// hit for pass 或者 cacheable
-		status = rs.status
-	}
-	return status, c
 }
 
 // triggerWatingRequstAndSetStatus 获取等待中的请求，并设置状态和有效期
