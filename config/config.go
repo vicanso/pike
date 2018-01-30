@@ -67,6 +67,8 @@ type Config struct {
 	AccessLog            string        `yaml:"accessLog"`
 	LogType              string        `yaml:"logType"`
 	EnableServerTiming   bool          `yaml:"enableServerTiming"`
+	TextTypes            []string      `yaml:"textTypes"`
+	TextTypeBytes        [][]byte
 	Directors            []*Director
 	Favicon              string   `yaml:"favicon"`
 	ResponseHeader       []string `yaml:"responseHeader"`

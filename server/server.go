@@ -136,9 +136,10 @@ func genRequestKey(ctx *fasthttp.RequestCtx) []byte {
 
 // shouldCompress 判断该响应数据是否应该压缩(针对文本类压缩)
 func shouldCompress(header *fasthttp.ResponseHeader) bool {
+	types := config.Current.TextTypeBytes
 	contentType := header.PeekBytes(vars.ContentType)
 	found := false
-	for _, v := range textTypes {
+	for _, v := range types {
 		if found {
 			break
 		}
@@ -319,6 +320,13 @@ func Start() error {
 	}
 	enableAccessLog := len(tags) != 0 && logWriter != nil
 	adminPath := []byte(conf.AdminPath)
+	if len(conf.TextTypes) == 0 {
+		conf.TextTypeBytes = textTypes
+	} else {
+		for _, str := range conf.TextTypes {
+			conf.TextTypeBytes = append(conf.TextTypeBytes, []byte(str))
+		}
+	}
 	s := &fasthttp.Server{
 		Name:                 conf.Name,
 		Concurrency:          conf.Concurrency,

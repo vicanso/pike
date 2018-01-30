@@ -45,6 +45,11 @@ accessLog: /tmp/pike/access.log
 # udpLog: 127.0.0.1:7349
 # 是否启用Server-Timing
 enableServerTiming: true
+# 文本类型（Content-Type包含此类型字符串会被压缩）
+textTypes:
+  - text
+  - javascript
+  - json
 directors:
   -
     # 名称
