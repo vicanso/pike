@@ -102,8 +102,16 @@ func (uh *UpstreamHost) healthCheck(ping string, interval time.Duration) {
 		}
 	}
 	use := time.Since(start)
+	delay := interval - use
+	// 如果该upstream为不可用，检测时间缩短，加快检测
+	if uh.Healthy == 0 {
+		delay = delay / 2
+	}
+	if delay < 0 {
+		delay = 0
+	}
 	// 根据调用时间决定延时
-	time.Sleep(interval - use)
+	time.Sleep(delay)
 	go uh.healthCheck(ping, interval)
 }
 
