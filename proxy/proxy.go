@@ -66,9 +66,16 @@ func Do(ctx *fasthttp.RequestCtx, us *Upstream, config *Config) (*fasthttp.Respo
 			[][]byte{orginalXFor, ip},
 			[]byte(",")))
 	}
-
-	reqHeader.DelBytes(vars.IfModifiedSince)
-	reqHeader.DelBytes(vars.IfNoneMatch)
+	// 由于pike的未支持304的方式从缓存中读取
+	// 因此调用接口时，需要将有可能导致304的HTTP暂时删除
+	ifModifiedSince := reqHeader.PeekBytes(vars.IfModifiedSince)
+	ifNoneMatch := reqHeader.PeekBytes(vars.IfNoneMatch)
+	if len(ifModifiedSince) != 0 {
+		reqHeader.DelBytes(vars.IfModifiedSince)
+	}
+	if len(ifNoneMatch) != 0 {
+		reqHeader.DelBytes(vars.IfNoneMatch)
+	}
 	client := uh.Client
 	req := &ctx.Request
 	resp := &ctx.Response
@@ -84,6 +91,13 @@ func Do(ctx *fasthttp.RequestCtx, us *Upstream, config *Config) (*fasthttp.Respo
 		err = client.DoTimeout(req, resp, timeout)
 	} else {
 		err = client.Do(req, resp)
+	}
+	// 请求结束后，将相应的HTTP头重置
+	if len(ifModifiedSince) != 0 {
+		reqHeader.SetCanonical(vars.IfModifiedSince, ifModifiedSince)
+	}
+	if len(ifNoneMatch) != 0 {
+		reqHeader.SetCanonical(vars.IfNoneMatch, ifNoneMatch)
 	}
 	if err != nil {
 		if err == fasthttp.ErrTimeout {
