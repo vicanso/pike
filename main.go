@@ -9,6 +9,8 @@ import (
 
 	"github.com/vicanso/pike/cache"
 	"github.com/vicanso/pike/config"
+	"github.com/vicanso/pike/director"
+	"github.com/vicanso/pike/proxy"
 	"github.com/vicanso/pike/server"
 	"github.com/vicanso/pike/vars"
 )
@@ -40,8 +42,7 @@ func main() {
 		flag.StringVar(&configFile, "c", "/etc/pike/config.yml", "the config file")
 		flag.Parse()
 	}
-	config.InitFromFile(configFile)
-	conf := config.Current
+	conf := config.InitFromFile(configFile)
 	clearInterval := conf.ExpiredClearInterval
 	if clearInterval <= 0 {
 		clearInterval = 300 * time.Second
@@ -52,7 +53,51 @@ func main() {
 		log.Fatalf("error: %v", err)
 	}
 	defer db.Close()
-	err = server.Start()
+
+	for _, d := range conf.Directors {
+		director.Append(&director.Config{
+			Name:     d.Name,
+			Policy:   d.Type,
+			Ping:     d.Ping,
+			Pass:     d.Pass,
+			Prefix:   d.Prefix,
+			Host:     d.Host,
+			Backends: d.Backends,
+		})
+		proxy.AppendUpstream(&proxy.UpstreamConfig{
+			Name:     d.Name,
+			Policy:   d.Type,
+			Ping:     d.Ping,
+			Backends: d.Backends,
+		})
+	}
+	err = server.Start(&server.Config{
+		Name:                 conf.Name,
+		Concurrency:          conf.Concurrency,
+		DisableKeepalive:     conf.DisableKeepalive,
+		ReadBufferSize:       conf.ReadBufferSize,
+		WriteBufferSize:      conf.WriteBufferSize,
+		ETag:                 conf.ETag,
+		ConnectTimeout:       conf.ConnectTimeout,
+		ReadTimeout:          conf.ReadTimeout,
+		WriteTimeout:         conf.WriteTimeout,
+		MaxConnsPerIP:        conf.MaxConnsPerIP,
+		MaxKeepaliveDuration: conf.MaxKeepaliveDuration,
+		MaxRequestBodySize:   conf.MaxRequestBodySize,
+		Listen:               conf.Listen,
+		HitForPass:           conf.HitForPass,
+		AdminPath:            conf.AdminPath,
+		AdminToken:           conf.AdminToken,
+		TextTypes:            conf.TextTypes,
+		ResponseHeader:       conf.ResponseHeader,
+		EnableServerTiming:   conf.EnableServerTiming,
+		Favicon:              conf.Favicon,
+		// HTTP日志相关
+		LogFormat: conf.LogFormat,
+		LogType:   conf.LogType,
+		UDPLog:    conf.UDPLog,
+		AccessLog: conf.AccessLog,
+	})
 	if err != nil {
 		log.Fatalf("error: %v", err)
 	}

@@ -107,7 +107,8 @@ func Do(ctx *fasthttp.RequestCtx, us *Upstream, config *Config) (*fasthttp.Respo
 	}
 	// 如果程序没有生成ETag，自动填充
 	if config.ETag && len(resp.Header.PeekBytes(vars.ETag)) == 0 {
-		resp.Header.SetBytesK(vars.ETag, genETag(resp.Body()))
+		etag := genETag(resp.Body())
+		resp.Header.SetCanonical(vars.ETag, []byte(etag))
 	}
 	return resp, nil
 }

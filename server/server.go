@@ -6,12 +6,12 @@ import (
 	"log"
 	"regexp"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 
 	"github.com/valyala/fasthttp"
 	"github.com/vicanso/pike/cache"
-	"github.com/vicanso/pike/config"
 	"github.com/vicanso/pike/director"
 	"github.com/vicanso/pike/dispatch"
 	"github.com/vicanso/pike/httplog"
@@ -22,16 +22,54 @@ import (
 )
 
 var hitForPassTTL uint32 = 300
+var defaultListen = ":3015"
 
-var textTypes = [][]byte{
+var defaultTextTypes = [][]byte{
 	[]byte("text"),
 	[]byte("javascript"),
 	[]byte("json"),
 }
+var compresssTypes = make([][]byte, 0)
+
+// Config the server config
+type Config struct {
+	Name             string
+	Concurrency      int
+	DisableKeepalive bool
+	ReadBufferSize   int
+	WriteBufferSize  int
+	ETag             bool
+	// 各类超时配置
+	ConnectTimeout       time.Duration
+	ReadTimeout          time.Duration
+	WriteTimeout         time.Duration
+	MaxKeepaliveDuration time.Duration
+
+	MaxConnsPerIP      int
+	MaxRequestBodySize int
+	Listen             string
+	HitForPass         int
+	AdminPath          string
+	AdminToken         string
+	TextTypes          []string
+	ResponseHeader     []string
+	EnableServerTiming bool
+	Favicon            string
+	// HTTP日志相关
+	LogFormat string
+	LogType   string
+	UDPLog    string
+	AccessLog string
+}
+
+// Header HTTP response header
+type Header struct {
+	Key   []byte
+	Value []byte
+}
 
 // 转发处理，返回响应头与响应数据
-func doProxy(ctx *fasthttp.RequestCtx, us *proxy.Upstream) (*fasthttp.Response, []byte, []byte, error) {
-	conf := config.Current
+func doProxy(ctx *fasthttp.RequestCtx, us *proxy.Upstream, conf *Config) (*fasthttp.Response, []byte, []byte, error) {
 	proxyConfig := &proxy.Config{
 		Timeout: conf.ConnectTimeout,
 		ETag:    conf.ETag,
@@ -68,8 +106,7 @@ func setServerTiming(ctx *fasthttp.RequestCtx, startedAt time.Time) {
 }
 
 // 增加额外的 Response Header
-func addExtraHeader(ctx *fasthttp.RequestCtx) {
-	headers := config.Current.ExtraHeaders
+func addExtraHeader(ctx *fasthttp.RequestCtx, headers []*Header) {
 	for _, header := range headers {
 		ctx.Response.Header.SetCanonical(header.Key, header.Value)
 	}
@@ -136,7 +173,10 @@ func genRequestKey(ctx *fasthttp.RequestCtx) []byte {
 
 // shouldCompress 判断该响应数据是否应该压缩(针对文本类压缩)
 func shouldCompress(header *fasthttp.ResponseHeader) bool {
-	types := config.Current.TextTypeBytes
+	types := compresssTypes
+	if len(compresssTypes) == 0 {
+		types = defaultTextTypes
+	}
 	contentType := header.PeekBytes(vars.ContentType)
 	found := false
 	for _, v := range types {
@@ -150,7 +190,7 @@ func shouldCompress(header *fasthttp.ResponseHeader) bool {
 	return found
 }
 
-func handler(ctx *fasthttp.RequestCtx) {
+func handler(ctx *fasthttp.RequestCtx, conf *Config) {
 	host := ctx.Request.Host()
 	uri := ctx.RequestURI()
 	found := director.GetMatch(host, uri)
@@ -190,7 +230,7 @@ func handler(ctx *fasthttp.RequestCtx) {
 	case vars.Pass:
 		respHeadr.SetCanonical(vars.XCache, vars.XCacheMiss)
 		// pass的请求直接转发至upstream
-		resp, header, body, err := doProxy(ctx, us)
+		resp, header, body, err := doProxy(ctx, us, conf)
 		if err != nil {
 			errorHandler(err)
 			return
@@ -210,7 +250,7 @@ func handler(ctx *fasthttp.RequestCtx) {
 		respHeadr.SetCanonical(vars.XCache, vars.XCacheMiss)
 		//feacthing或hitforpass的请求转至upstream
 		// 并根据返回的数据是否可以缓存设置缓存
-		resp, header, body, err := doProxy(ctx, us)
+		resp, header, body, err := doProxy(ctx, us, conf)
 		if err != nil {
 			cache.HitForPass(key, hitForPassTTL)
 			errorHandler(err)
@@ -270,27 +310,18 @@ func pingHandler(ctx *fasthttp.RequestCtx) {
 	ctx.SetBody([]byte("pong"))
 }
 
-func faviconHandler(ctx *fasthttp.RequestCtx) {
-	conf := config.Current
+func faviconHandler(ctx *fasthttp.RequestCtx, conf *Config) {
 	buf, _ := base64.StdEncoding.DecodeString(conf.Favicon)
 	ctx.SetContentType("image/x-icon")
 	ctx.SetBody(buf)
 }
 
-// Start 启动服务器
-func Start() error {
-	conf := config.Current
-	// directorList := director.GetDirectors(conf.Directors)
-	for _, d := range conf.Directors {
-		director.Append(d)
-		proxy.AppendUpstream(&proxy.UpstreamConfig{
-			Name:     d.Name,
-			Policy:   d.Type,
-			Ping:     d.Ping,
-			Backends: d.Backends,
-		})
-	}
+// Start 启动服务
+func Start(conf *Config) error {
 	listen := conf.Listen
+	if len(listen) == 0 {
+		listen = defaultListen
+	}
 	if conf.HitForPass > 0 {
 		hitForPassTTL = uint32(conf.HitForPass)
 	}
@@ -320,11 +351,21 @@ func Start() error {
 	}
 	enableAccessLog := len(tags) != 0 && logWriter != nil
 	adminPath := []byte(conf.AdminPath)
-	if len(conf.TextTypes) == 0 {
-		conf.TextTypeBytes = textTypes
-	} else {
-		for _, str := range conf.TextTypes {
-			conf.TextTypeBytes = append(conf.TextTypeBytes, []byte(str))
+	for _, str := range conf.TextTypes {
+		compresssTypes = append(compresssTypes, []byte(str))
+	}
+	extraHeaders := make([]*Header, 0)
+	if len(conf.ResponseHeader) != 0 {
+		for _, str := range conf.ResponseHeader {
+			arr := strings.Split(str, ":")
+			if len(arr) != 2 {
+				continue
+			}
+			h := &Header{
+				Key:   []byte(arr[0]),
+				Value: []byte(arr[1]),
+			}
+			extraHeaders = append(extraHeaders, h)
 		}
 	}
 	s := &fasthttp.Server{
@@ -339,8 +380,8 @@ func Start() error {
 		MaxKeepaliveDuration: conf.MaxKeepaliveDuration,
 		MaxRequestBodySize:   conf.MaxRequestBodySize,
 		Handler: func(ctx *fasthttp.RequestCtx) {
-			if len(conf.ExtraHeaders) != 0 {
-				defer addExtraHeader(ctx)
+			if len(extraHeaders) != 0 {
+				defer addExtraHeader(ctx, extraHeaders)
 			}
 			clientIP := util.GetClientIP(ctx)
 			if blockIP.FindIndex(clientIP) != -1 {
@@ -355,12 +396,12 @@ func Start() error {
 			}
 			// favicon
 			if bytes.Compare(path, vars.FaviconURL) == 0 {
-				faviconHandler(ctx)
+				faviconHandler(ctx, conf)
 				return
 			}
 			// 管理界面相关接口
 			if len(adminPath) != 0 && bytes.HasPrefix(path, adminPath) {
-				adminHandler(ctx, blockIP)
+				adminHandler(ctx, conf, blockIP)
 				return
 			}
 			performance.IncreaseRequestCount()
@@ -376,7 +417,7 @@ func Start() error {
 					go logWriter.Write(logBuf)
 				}()
 			}
-			handler(ctx)
+			handler(ctx, conf)
 		},
 	}
 	log.Printf("the server will listen on " + listen)

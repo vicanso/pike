@@ -10,6 +10,8 @@ import (
 
 	"github.com/vicanso/pike/cache"
 	"github.com/vicanso/pike/config"
+	"github.com/vicanso/pike/director"
+	"github.com/vicanso/pike/proxy"
 	"github.com/vicanso/pike/vars"
 
 	"github.com/valyala/fasthttp"
@@ -176,7 +178,7 @@ func TestServerStart(t *testing.T) {
 		server.ListenAndServe(":" + strconv.Itoa(port))
 	}()
 
-	config.Current = &config.Config{
+	conf := &config.Config{
 		Listen: ":3015",
 		DB:     "/tmp/pike.db",
 		Directors: []*config.Director{
@@ -189,14 +191,33 @@ func TestServerStart(t *testing.T) {
 			},
 		},
 	}
-	conf := config.Current
 
 	_, err := cache.InitDB(conf.DB)
 	if err != nil {
 		t.Fatalf("init database fail, %v", err)
 	}
 
-	go Start()
+	for _, d := range conf.Directors {
+		director.Append(&director.Config{
+			Name:     d.Name,
+			Policy:   d.Type,
+			Ping:     d.Ping,
+			Pass:     d.Pass,
+			Prefix:   d.Prefix,
+			Host:     d.Host,
+			Backends: d.Backends,
+		})
+		proxy.AppendUpstream(&proxy.UpstreamConfig{
+			Name:     d.Name,
+			Policy:   d.Type,
+			Ping:     d.Ping,
+			Backends: d.Backends,
+		})
+	}
+
+	go Start(&Config{
+		Listen: conf.Listen,
+	})
 	time.Sleep(5 * time.Second)
 	testCachable(t, "http://127.0.0.1:3015/cacheable")
 	testHitForPass(t, "http://127.0.0.1:3015/hit-for-pass")
