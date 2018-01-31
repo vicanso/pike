@@ -3,9 +3,18 @@ package director
 import (
 	"bytes"
 	"sort"
-
-	"github.com/vicanso/pike/config"
 )
+
+// Config 服务器列表配置
+type Config struct {
+	Name     string
+	Policy   string
+	Ping     string
+	Pass     []string
+	Prefix   []string
+	Host     []string
+	Backends []string
+}
 
 // Director 服务器列表
 type Director struct {
@@ -98,27 +107,27 @@ func strListToByteList(original []string) [][]byte {
 }
 
 // createDirector 创建一个director
-func createDirector(directorConfig *config.Director) *Director {
+func createDirector(conf *Config) *Director {
 	d := &Director{
-		Name:     directorConfig.Name,
-		Policy:   directorConfig.Type,
-		Ping:     directorConfig.Ping,
-		Backends: directorConfig.Backends,
+		Name:     conf.Name,
+		Policy:   conf.Policy,
+		Ping:     conf.Ping,
+		Backends: conf.Backends,
 	}
 	priority := 8
 	// 如果有配置host，优先前提升4
-	if len(directorConfig.Host) != 0 {
+	if len(conf.Host) != 0 {
 		priority -= 4
-		d.Hosts = strListToByteList(directorConfig.Host)
+		d.Hosts = strListToByteList(conf.Host)
 	}
 	// 如果有配置prefix，优先级提升2
-	if len(directorConfig.Prefix) != 0 {
+	if len(conf.Prefix) != 0 {
 		priority -= 2
-		d.Prefixs = strListToByteList(directorConfig.Prefix)
+		d.Prefixs = strListToByteList(conf.Prefix)
 	}
 	// 如果配置子pass，生成pass列表
-	if len(directorConfig.Pass) != 0 {
-		d.Passes = strListToByteList(directorConfig.Pass)
+	if len(conf.Pass) != 0 {
+		d.Passes = strListToByteList(conf.Pass)
 	}
 	d.Priority = priority
 	return d
@@ -126,8 +135,8 @@ func createDirector(directorConfig *config.Director) *Director {
 
 // Append 添加director
 // 在程序启动时做初始化添加，非线程安全，若后期需要动态修改再调整
-func Append(directorConfig *config.Director) {
-	d := createDirector(directorConfig)
+func Append(conf *Config) {
+	d := createDirector(conf)
 	directorList = append(directorList, d)
 	sort.Sort(directorList)
 }

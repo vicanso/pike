@@ -3,8 +3,6 @@ package director
 import (
 	"strconv"
 	"testing"
-
-	"github.com/vicanso/pike/config"
 )
 
 func testVar(t *testing.T, s1, s2 string) {
@@ -25,10 +23,10 @@ func TestCreateDirector(t *testing.T) {
 	policy := "random"
 	ping := "/ping"
 	pass := "cache-control=no-cache"
-	c := &config.Director{
-		Name: name,
-		Type: policy,
-		Ping: ping,
+	c := &Config{
+		Name:   name,
+		Policy: policy,
+		Ping:   ping,
 		Pass: []string{
 			pass,
 		},
