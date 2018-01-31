@@ -110,6 +110,8 @@ func (w *FileWriter) Write(buf []byte) error {
 
 // Close 关闭写文件
 func (w *FileWriter) Close() error {
+	w.m.Lock()
+	defer w.m.Unlock()
 	if w.fd != nil {
 		return w.fd.Close()
 	}
@@ -140,6 +142,8 @@ func (w *UDPWriter) Write(buf []byte) error {
 
 // Close 关闭udp连接
 func (w *UDPWriter) Close() error {
+	w.m.Lock()
+	defer w.m.Unlock()
 	if w.conn != nil {
 		return w.conn.Close()
 	}
