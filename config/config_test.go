@@ -17,12 +17,13 @@ func testInt(t *testing.T, i1, i2 int) {
 }
 
 func TestConfig(t *testing.T) {
-	testStr(t, Current.Name, "")
-	testStr(t, Current.Listen, ":3015")
-	testStr(t, Current.DB, "/tmp/pike")
-	testStr(t, Current.AdminPath, "")
-	testStr(t, Current.AdminToken, "")
-	testInt(t, Current.HitForPass, 0)
-	testInt(t, len(Current.Directors), 0)
-	testInt(t, Current.Concurrency, 0)
+	conf := &Config{}
+	testStr(t, conf.Name, "")
+	testStr(t, conf.Listen, "")
+	testStr(t, conf.DB, "")
+	testStr(t, conf.AdminPath, "")
+	testStr(t, conf.AdminToken, "")
+	testInt(t, conf.HitForPass, 0)
+	testInt(t, len(conf.Directors), 0)
+	testInt(t, conf.Concurrency, 0)
 }

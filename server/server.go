@@ -78,6 +78,7 @@ func doProxy(ctx *fasthttp.RequestCtx, us *proxy.Upstream, conf *Config) (*fasth
 	if err != nil {
 		return nil, nil, nil, err
 	}
+	resp.Header.SetServer(conf.Name)
 	body, err := dispatch.GetResponseBody(resp)
 	if err != nil {
 		return nil, nil, nil, err

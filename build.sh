@@ -1,7 +1,7 @@
 # !/bin/sh
 cd assets && npm i && npm run build && cd ..
 
-go-bindata -pkg server -o server/bindata.go assets/dist
+go-bindata -ignore map -pkg server -o server/bindata.go assets/dist
 
 GOOS=darwin go build -o pike-darwin
 

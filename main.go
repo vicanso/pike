@@ -42,7 +42,15 @@ func main() {
 		flag.StringVar(&configFile, "c", "/etc/pike/config.yml", "the config file")
 		flag.Parse()
 	}
-	conf := config.InitFromFile(configFile)
+	conf, err := config.InitFromFile(configFile)
+	if err != nil {
+		log.Fatalf("get config fail, %v", err)
+	}
+	if contains(os.Args[1:], "test") {
+		fmt.Print(conf)
+		fmt.Println("the config file test done")
+		return
+	}
 	clearInterval := conf.ExpiredClearInterval
 	if clearInterval <= 0 {
 		clearInterval = 300 * time.Second
@@ -70,6 +78,9 @@ func main() {
 			Ping:     d.Ping,
 			Backends: d.Backends,
 		})
+	}
+	if len(conf.Name) == 0 {
+		conf.Name = string(vars.Name)
 	}
 	err = server.Start(&server.Config{
 		Name:                 conf.Name,

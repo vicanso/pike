@@ -20,10 +20,10 @@
   revision = "2de33835d10275975374b37b2dcfd22c9020a1f5"
 
 [[projects]]
-  branch = "master"
   name = "github.com/golang/protobuf"
   packages = ["proto"]
-  revision = "1e59b77b52bf8e4b449a57e6f79f21226d571845"
+  revision = "925541529c1fa6821df4e44ce2723319eb2be768"
+  version = "v1.0.0"
 
 [[projects]]
   name = "github.com/klauspost/compress"
@@ -52,8 +52,8 @@
 [[projects]]
   name = "github.com/tidwall/gjson"
   packages = ["."]
-  revision = "e62d62a3e1e9f324346170bbc04333341f803dfb"
-  version = "v1.0.5"
+  revision = "87033efcaec6215741137e8ca61952c53ef2685d"
+  version = "v1.0.6"
 
 [[projects]]
   branch = "master"
@@ -77,7 +77,7 @@
   branch = "master"
   name = "github.com/vicanso/fresh"
   packages = ["."]
-  revision = "1a315cf0abf3451bffbb48c9141cb002bd83d573"
+  revision = "1eb0ff1831e6eee3240b637b98e558766a3f58db"
 
 [[projects]]
   branch = "master"
@@ -89,13 +89,13 @@
   branch = "master"
   name = "golang.org/x/net"
   packages = ["context","internal/timeseries","trace"]
-  revision = "5ccada7d0a7ba9aeb5d3aca8d3501b4c2a509fec"
+  revision = "b417086c80e91bfa321ef761574721644b8b9f61"
 
 [[projects]]
   branch = "master"
   name = "golang.org/x/sys"
   packages = ["unix"]
-  revision = "2c42eef0765b9837fbdab12011af7830f55f88f0"
+  revision = "8f27ce8a604014414f8dfffc25cbcde83a3f2216"
 
 [[projects]]
   branch = "v2"

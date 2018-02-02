@@ -46,6 +46,7 @@ accessLog: /tmp/pike/access.log
 # 是否启用Server-Timing
 enableServerTiming: true
 # 文本类型（Content-Type包含此类型字符串会被压缩）
+# 若没有配置此参数则使用默认值：text javascript json
 textTypes:
   - text
   - javascript

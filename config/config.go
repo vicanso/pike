@@ -2,7 +2,6 @@ package config
 
 import (
 	"io/ioutil"
-	"log"
 	"time"
 
 	"gopkg.in/yaml.v2"
@@ -54,27 +53,26 @@ type Config struct {
 	LogType              string        `yaml:"logType"`
 	EnableServerTiming   bool          `yaml:"enableServerTiming"`
 	TextTypes            []string      `yaml:"textTypes"`
-	TextTypeBytes        [][]byte
 	Directors            []*Director
 	Favicon              string   `yaml:"favicon"`
 	ResponseHeader       []string `yaml:"responseHeader"`
 }
 
 // InitFromFile 从文件中读取配置初始化
-func InitFromFile(file string) *Config {
+func InitFromFile(file string) (*Config, error) {
 
 	buf, err := ioutil.ReadFile(file)
 	if err != nil {
-		log.Println("get the config file fail,", err)
+		return nil, err
 	}
 	conf := &Config{}
 	err = yaml.Unmarshal(buf, conf)
 	if err != nil {
-		log.Fatalf("error: %v", err)
+		return nil, err
 	}
 	if len(conf.DB) == 0 {
 		conf.DB = defaultDB
 	}
 	Debug("conf: %v", conf)
-	return conf
+	return conf, nil
 }

@@ -42,6 +42,8 @@ export const state = {
   directors: null,
   blockIPList: null,
   setCacheds: null,
+  showFilter: false,
+  filterKeyword: '',
 };
 
 export function getStats() {
@@ -159,6 +161,16 @@ export function removeCache(key) {
 }
 
 export const actions = {
+  toggleFilter: () => state => {
+    return {
+      showFilter: !state.showFilter,
+    };
+  },
+  setFilterKeyword: (v) => () => {
+    return {
+      filterKeyword: v,
+    };
+  },
   resetDirectors: () => () => {
     return {
       directors: null,
@@ -228,6 +240,8 @@ export const actions = {
   resetCacheds: () => () => {
     return {
       cacheds: null,
+      showFilter: false,
+      filterKeyword: '',
     };
   },
 }
