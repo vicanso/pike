@@ -51,6 +51,9 @@ textTypes:
   - text
   - javascript
   - json
+# HTTPS证书相关
+# certFile: /cert/mine.pem
+# keyFile: /cert/mine.key
 directors:
   -
     # 名称

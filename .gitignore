@@ -1,4 +1,5 @@
 vendor
+cert
 node_modules
 assets/dist/app.js
 assets/dist/app.js.map

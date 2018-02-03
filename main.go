@@ -100,6 +100,8 @@ func main() {
 		AdminPath:            conf.AdminPath,
 		AdminToken:           conf.AdminToken,
 		TextTypes:            conf.TextTypes,
+		CertFile:             conf.CertFile,
+		KeyFile:              conf.KeyFile,
 		ResponseHeader:       conf.ResponseHeader,
 		EnableServerTiming:   conf.EnableServerTiming,
 		Favicon:              conf.Favicon,

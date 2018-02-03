@@ -53,6 +53,8 @@ type Config struct {
 	LogType              string        `yaml:"logType"`
 	EnableServerTiming   bool          `yaml:"enableServerTiming"`
 	TextTypes            []string      `yaml:"textTypes"`
+	CertFile             string        `yaml:"certFile"`
+	KeyFile              string        `yaml:"keyFile"`
 	Directors            []*Director
 	Favicon              string   `yaml:"favicon"`
 	ResponseHeader       []string `yaml:"responseHeader"`

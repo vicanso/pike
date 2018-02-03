@@ -60,6 +60,9 @@ type Config struct {
 	LogType   string
 	UDPLog    string
 	AccessLog string
+	// HTTPS证书相关
+	CertFile string
+	KeyFile  string
 }
 
 // Header HTTP response header
@@ -422,5 +425,8 @@ func Start(conf *Config) error {
 		},
 	}
 	log.Printf("the server will listen on " + listen)
+	if len(conf.CertFile) != 0 && len(conf.KeyFile) != 0 {
+		return s.ListenAndServeTLS(listen, conf.CertFile, conf.KeyFile)
+	}
 	return s.ListenAndServe(listen)
 }
