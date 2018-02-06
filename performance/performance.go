@@ -5,6 +5,8 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/vicanso/pike/vars"
+
 	"github.com/vicanso/pike/cache"
 )
 
@@ -44,6 +46,8 @@ type Stats struct {
 	LSM int `json:"lsm"`
 	// vlog大小
 	VLog int `json:"vLog"`
+	// version版本号
+	Version string `json:"version"`
 }
 
 // IncreaseConcurrency concurrency 加一
@@ -93,6 +97,7 @@ func GetStats() *Stats {
 		RequestCount: requestCount,
 		LSM:          lsm,
 		VLog:         vlog,
+		Version:      vars.Version,
 	}
 	return stats
 }

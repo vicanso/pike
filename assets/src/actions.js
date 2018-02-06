@@ -217,6 +217,11 @@ export const actions = {
       uptime: moment(launchedAt).fromNow(),
     };
   },
+  setVersion: version => () => {
+    return {
+      version,
+    };
+  },
   setDirectors: data => () => {
     return {
       directors: data,

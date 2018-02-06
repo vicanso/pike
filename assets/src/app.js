@@ -35,6 +35,7 @@ const refreshStats = () => {
 const init = () => {
   getStats().then((data) => {
     main.setLaunchedAt(data.startedAt);
+    main.setVersion(data.version);
     refreshStats();
     refreshStatsInterval = setInterval(refreshStats, 60 * 1000);
   }).catch((res) => {
@@ -59,7 +60,8 @@ const view = (state, actions) => {
     </a></li> 
   }
   return <div>
-    <nav class="navBar">Pike Dashboard
+    <nav class="navBar">Pike
+      <span class="version">({state.version})</span>
       <ul>
         {getNav(views.default, "Directors")}
         {getNav(views.performance, "Performance")}
