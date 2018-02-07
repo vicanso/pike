@@ -1,4 +1,4 @@
-# HTTP response header 中的 Server，如果未配置，则为fasthttp
+# HTTP response header 中的 Pike 
 name: Pike
 # 程序监听的端口，默认为 :3015
 listen: :3015
