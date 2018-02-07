@@ -49,6 +49,9 @@ var (
 	// Gzip gzip compress
 	Gzip = []byte("gzip")
 
+	// Deflate deflate compress
+	Deflate = []byte("deflate")
+
 	// Br brotli compress
 	Br = []byte("br")
 

@@ -12,6 +12,7 @@ import (
 	"github.com/vicanso/pike/config"
 	"github.com/vicanso/pike/director"
 	"github.com/vicanso/pike/proxy"
+	"github.com/vicanso/pike/util"
 	"github.com/vicanso/pike/vars"
 
 	"github.com/valyala/fasthttp"
@@ -27,6 +28,35 @@ func testPass(t *testing.T, uri, method string, resultExpected bool) {
 	result := isPass(ctx, passList)
 	if result != resultExpected {
 		t.Fatalf("unexpected result in Pass %q %q: %v. Expecting %v", method, uri, result, resultExpected)
+	}
+}
+
+func TestGetResponseHeader(t *testing.T) {
+	ctx := &fasthttp.RequestCtx{}
+	data := []byte("hello world")
+	ctx.Response.SetBody(data)
+	ctx.Response.Header.SetContentLength(len(data))
+	ctx.Response.Header.SetCanonical(vars.CacheControl, []byte("public, max-age=30"))
+
+	header := getResponseHeader(&ctx.Response)
+	if len(header) != 109 {
+		t.Fatalf("get the header from response fail")
+	}
+}
+
+func TestGetResponseBody(t *testing.T) {
+	helloWorld := "hello world"
+	data, _ := util.Gzip([]byte(helloWorld))
+	ctx := &fasthttp.RequestCtx{}
+	ctx.Response.Header.SetCanonical(vars.ContentEncoding, vars.Gzip)
+	ctx.SetBody(data)
+
+	body, err := getResponseBody(&ctx.Response)
+	if err != nil {
+		t.Fatalf("get the response body fail, %v", err)
+	}
+	if string(body) != helloWorld {
+		t.Fatalf("get the response body fail")
 	}
 }
 

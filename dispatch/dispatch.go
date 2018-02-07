@@ -12,25 +12,6 @@ import (
 	"github.com/vicanso/pike/vars"
 )
 
-// GetResponseHeader 获取响应的header
-func GetResponseHeader(resp *fasthttp.Response) []byte {
-	newHeader := &fasthttp.ResponseHeader{}
-	resp.Header.CopyTo(newHeader)
-	newHeader.DelBytes(vars.ContentEncoding)
-	newHeader.DelBytes(vars.ContentLength)
-	return newHeader.Header()
-}
-
-// GetResponseBody 获取响应的数据
-func GetResponseBody(resp *fasthttp.Response) ([]byte, error) {
-	enconding := resp.Header.PeekBytes(vars.ContentEncoding)
-
-	if bytes.Compare(enconding, vars.Gzip) == 0 {
-		return resp.BodyGunzip()
-	}
-	return resp.Body(), nil
-}
-
 // ErrorHandler 出错处理
 func ErrorHandler(ctx *fasthttp.RequestCtx, err error) {
 	switch err {

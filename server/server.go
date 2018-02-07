@@ -71,6 +71,27 @@ type Header struct {
 	Value []byte
 }
 
+// getResponseHeader 获取响应的header
+func getResponseHeader(resp *fasthttp.Response) []byte {
+	newHeader := &fasthttp.ResponseHeader{}
+	resp.Header.CopyTo(newHeader)
+	newHeader.DelBytes(vars.ContentEncoding)
+	newHeader.DelBytes(vars.ContentLength)
+	return newHeader.Header()
+}
+
+// getResponseBody 获取响应的数据
+func getResponseBody(resp *fasthttp.Response) ([]byte, error) {
+	enconding := resp.Header.PeekBytes(vars.ContentEncoding)
+	if bytes.Compare(enconding, vars.Deflate) == 0 {
+		return resp.BodyInflate()
+	}
+	if bytes.Compare(enconding, vars.Gzip) == 0 {
+		return resp.BodyGunzip()
+	}
+	return resp.Body(), nil
+}
+
 // 转发处理，返回响应头与响应数据
 func doProxy(ctx *fasthttp.RequestCtx, us *proxy.Upstream, conf *Config) (*fasthttp.Response, []byte, []byte, error) {
 	proxyConfig := &proxy.Config{
@@ -82,11 +103,11 @@ func doProxy(ctx *fasthttp.RequestCtx, us *proxy.Upstream, conf *Config) (*fasth
 		return nil, nil, nil, err
 	}
 	resp.Header.SetServer(conf.Name)
-	body, err := dispatch.GetResponseBody(resp)
+	body, err := getResponseBody(resp)
 	if err != nil {
 		return nil, nil, nil, err
 	}
-	header := dispatch.GetResponseHeader(resp)
+	header := getResponseHeader(resp)
 	return resp, header, body, nil
 }
 
