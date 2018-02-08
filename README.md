@@ -9,6 +9,14 @@ HTTP缓存服务，提供高效简单的HTTP缓存服务。
 
 [![Build Status](https://img.shields.io/travis/vicanso/pike.svg?label=linux+build)](https://travis-ci.org/vicanso/pike)
 
+## 特性
+
+- 基于yaml的配置，简洁易懂
+- WEB管理后台，提供系统性能、黑名单IP、缓存清理功能
+- 标准化的基于HTTP头Cache-Control缓存控制
+- 压缩保存的响应数据，避免每次响应时重新压缩（如果客户端不支持压缩则解压）
+- 自定义日志格式，支持二十多种placeholder，如：cookie，请求头字段，响应头字段，响应时间等。
+- 访问日志支持以文件（按天分隔）或者UDP的形式输出
 
 ## 配置
 
