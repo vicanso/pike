@@ -81,25 +81,22 @@ func (uh *UpstreamHost) healthCheck(ping string, interval time.Duration) {
 	err := client.DoTimeout(req, resp, 3*time.Second)
 	statusCode := resp.StatusCode()
 	// 每个upstream每次只有一个health check在运行
-	if err != nil || (statusCode >= 400) {
+	if err != nil || (statusCode < 200 && statusCode >= 400) {
 		uh.Fails++
 	} else {
+		uh.Fails = 0
 		uh.Successes++
 	}
 	// 如果检测有3次成功，则backend可用
 	if uh.Successes > 3 {
 		uh.Fails = 0
 		uh.Successes = 0
-		if uh.Healthy == 0 {
-			uh.Healthy = 1
-		}
+		atomic.StoreInt32(&uh.Healthy, 1)
 	} else if uh.Fails > 3 {
-		// 如果检测有3次失败，则backend不可用
+		// 如果检测连续3次失败，则backend不可用
 		uh.Fails = 0
 		uh.Successes = 0
-		if uh.Healthy == 1 {
-			uh.Healthy = 0
-		}
+		atomic.StoreInt32(&uh.Healthy, 0)
 	}
 	use := time.Since(start)
 	delay := interval - use
