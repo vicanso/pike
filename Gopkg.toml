@@ -45,3 +45,7 @@
 [[constraint]]
   branch = "master"
   name = "github.com/visionmedia/go-debug"
+
+[[constraint]]
+  name = "github.com/gobuffalo/packr"
+  version = "1.10.3"

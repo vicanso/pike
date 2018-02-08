@@ -20,10 +20,28 @@
   revision = "2de33835d10275975374b37b2dcfd22c9020a1f5"
 
 [[projects]]
+  name = "github.com/gobuffalo/envy"
+  packages = ["."]
+  revision = "e613c80275b86293880eddeb27417c9a7c670ff3"
+  version = "v1.3.0"
+
+[[projects]]
+  name = "github.com/gobuffalo/packr"
+  packages = ["."]
+  revision = "64c3dd439b5efc5cd9fb69a8fb209a03cd7c5b86"
+  version = "v1.10.3"
+
+[[projects]]
   name = "github.com/golang/protobuf"
   packages = ["proto"]
   revision = "925541529c1fa6821df4e44ce2723319eb2be768"
   version = "v1.0.0"
+
+[[projects]]
+  name = "github.com/joho/godotenv"
+  packages = ["."]
+  revision = "a79fa1e548e2c689c241d10173efd51e5d689d5b"
+  version = "v1.2.0"
 
 [[projects]]
   name = "github.com/klauspost/compress"
@@ -42,6 +60,12 @@
   packages = ["."]
   revision = "cb6bfca970f6908083f26f39a79009d608efd5cd"
   version = "v1.1"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/mitchellh/go-homedir"
+  packages = ["."]
+  revision = "b8bc1bf767474819792c23f32d8286a45736f1c6"
 
 [[projects]]
   name = "github.com/pkg/errors"
@@ -106,6 +130,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "bc33dc8428d5f81c7f7629a291de40575de381b73c3b5cab0c8dd1cb3548f160"
+  inputs-digest = "df108552cb36cd5e96bbcdbe4a7af6dbc2504a187810fbf6df401d08ad03b16f"
   solver-name = "gps-cdcl"
   solver-version = 1

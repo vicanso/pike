@@ -3,6 +3,9 @@ import resolve from 'rollup-plugin-node-resolve';
 import uglify from 'rollup-plugin-uglify';
 import postcss from 'rollup-plugin-postcss';
 import precss from 'precss';
+import rimraf from 'rimraf';
+
+rimraf.sync('./dist/*.map')
 
 const plugins = [
   postcss({

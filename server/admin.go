@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"strings"
 
+	"github.com/gobuffalo/packr"
 	"github.com/tidwall/gjson"
 	"github.com/valyala/fasthttp"
 	"github.com/vicanso/pike/cache"
@@ -74,7 +75,8 @@ func cachedHandler(ctx *fasthttp.RequestCtx) {
 func statisHandler(ctx *fasthttp.RequestCtx, assetPath string) {
 	path := string(ctx.Path())
 	file := path[len(assetPath):]
-	data, err := Asset("assets/dist/" + file)
+	box := packr.NewBox("../assets/dist")
+	data, err := box.MustBytes(file)
 	if err != nil {
 		ctx.NotFound()
 		return
