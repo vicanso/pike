@@ -257,8 +257,8 @@ func Format(ctx *fasthttp.RequestCtx, tags []*Tag, startedAt time.Time) []byte {
 		case latency:
 			return []byte(time.Since(startedAt).String())
 		case latencyMs:
-			offset := (time.Now().UnixNano() - startedAt.UnixNano()) / (1000 * 1000)
-			return []byte(strconv.FormatInt(offset, 10))
+			ms := util.GetTimeConsuming(startedAt)
+			return []byte(strconv.Itoa(ms))
 		default:
 			return tag.data
 		}

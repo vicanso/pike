@@ -2,6 +2,7 @@ package util
 
 import (
 	"testing"
+	"time"
 
 	"github.com/valyala/fasthttp"
 )
@@ -39,4 +40,21 @@ func TestGetDebugVars(t *testing.T) {
 	if len(buf) < 10 {
 		t.Fatalf("get the debug vars fail, %v", string(buf))
 	}
+}
+
+func TestGetTimeConsuming(t *testing.T) {
+	startedAt := time.Now()
+	time.Sleep(2 * time.Millisecond)
+	ms := GetTimeConsuming(startedAt)
+	if ms <= 0 {
+		t.Fatalf("the time consuming should be gt 0")
+	}
+}
+
+func TestTimingConsumingHeader(t *testing.T) {
+	header := &fasthttp.RequestHeader{}
+	startedAt := time.Now()
+	time.Sleep(2 * time.Millisecond)
+	key := []byte("Consuming")
+	SetTimingConsumingHeader(startedAt, header, key)
 }

@@ -7,6 +7,8 @@ import (
 	"expvar"
 	"fmt"
 	"io/ioutil"
+	"strconv"
+	"time"
 
 	"github.com/valyala/fasthttp"
 	"github.com/vicanso/pike/vars"
@@ -64,4 +66,17 @@ func GetDebugVars() []byte {
 	fmt.Fprintf(w, "\n}\n")
 	w.Flush()
 	return b.Bytes()
+}
+
+// GetTimeConsuming 获取使用耗时(ms)
+func GetTimeConsuming(startedAt time.Time) int {
+	v := startedAt.UnixNano()
+	now := time.Now().UnixNano()
+	return int((now - v) / 1000000)
+}
+
+// SetTimingConsumingHeader 设置耗时至http头
+func SetTimingConsumingHeader(startedAt time.Time, header *fasthttp.RequestHeader, key []byte) {
+	ms := GetTimeConsuming(startedAt)
+	header.SetCanonical(key, []byte(strconv.Itoa(ms)))
 }

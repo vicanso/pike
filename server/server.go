@@ -111,23 +111,33 @@ func doProxy(ctx *fasthttp.RequestCtx, us *proxy.Upstream, conf *Config) (*fasth
 	return resp, header, body, nil
 }
 
+func getTimingDesc(ms, name string) []byte {
+	if len(ms) == 0 {
+		return nil
+	}
+	return []byte("0=" + ms + ";" + name)
+}
+
 // 设置响应的 Server-Timing
 func setServerTiming(ctx *fasthttp.RequestCtx, startedAt time.Time) {
-	v := startedAt.UnixNano()
-	now := time.Now().UnixNano()
-	use := int((now - v) / 1000000)
-	desc := []byte("0=" + strconv.Itoa(use) + ";" + string(vars.Name))
 	header := &ctx.Response.Header
+	reqHeader := &ctx.Request.Header
+	ms := util.GetTimeConsuming(startedAt)
+	totalDesc := getTimingDesc(strconv.Itoa(ms), string(vars.Name))
+	fetchDesc := getTimingDesc(string(reqHeader.PeekBytes(vars.TimingFetch)), string(vars.Name)+"-fetch")
+	gzipDesc := getTimingDesc(string(reqHeader.PeekBytes(vars.TimingGzip)), string(vars.Name)+"-gzip")
+
+	timing := [][]byte{
+		totalDesc,
+		fetchDesc,
+		gzipDesc,
+	}
 
 	serverTiming := header.PeekBytes(vars.ServerTiming)
-	if len(serverTiming) == 0 {
-		header.SetCanonical(vars.ServerTiming, desc)
-	} else {
-		header.SetCanonical(vars.ServerTiming, bytes.Join([][]byte{
-			desc,
-			serverTiming,
-		}, []byte(",")))
+	if len(serverTiming) != 0 {
+		timing = append(timing, serverTiming)
 	}
+	header.SetCanonical(vars.ServerTiming, bytes.Join(timing, []byte(",")))
 }
 
 // 增加额外的 Response Header
@@ -288,7 +298,9 @@ func handler(ctx *fasthttp.RequestCtx, conf *Config) {
 		// 不可缓存的数据，`dispatch.Response`函数会根据客户端来决定是否压缩
 		shouldDoCompress := shouldCompress(&resp.Header)
 		if shouldDoCompress && cacheAge > 0 && len(body) > vars.CompressMinLength {
+			gzipStartedAt := time.Now()
 			gzipData, err := util.Gzip(body)
+			util.SetTimingConsumingHeader(gzipStartedAt, &ctx.Request.Header, vars.TimingGzip)
 			if err == nil {
 				body = gzipData
 				compressType = vars.GzipData

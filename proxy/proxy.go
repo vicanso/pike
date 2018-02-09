@@ -5,10 +5,12 @@ import (
 	"crypto/sha1"
 	"encoding/base64"
 	"fmt"
+	"strconv"
 	"sync/atomic"
 	"time"
 
 	"github.com/valyala/fasthttp"
+	"github.com/vicanso/pike/util"
 	"github.com/vicanso/pike/vars"
 )
 
@@ -44,6 +46,12 @@ func RegisterPolicy(name string, policy func(string) Policy) {
 
 // Do 将当前请求转发至upstream
 func Do(ctx *fasthttp.RequestCtx, us *Upstream, config *Config) (*fasthttp.Response, error) {
+	reqHeader := &ctx.Request.Header
+	startedAt := time.Now()
+	defer func() {
+		ms := util.GetTimeConsuming(startedAt)
+		reqHeader.SetCanonical(vars.TimingFetch, []byte(strconv.Itoa(ms)))
+	}()
 	policy := us.Policy
 	uh := policy.Select(us.Hosts, ctx)
 	if uh == nil {
@@ -54,7 +62,6 @@ func Do(ctx *fasthttp.RequestCtx, us *Upstream, config *Config) (*fasthttp.Respo
 
 	// 设置x-forwarded-for
 	xFor := vars.XForwardedFor
-	reqHeader := &ctx.Request.Header
 	orginalXFor := reqHeader.PeekBytes(xFor)
 
 	ip := []byte(ctx.RemoteIP().String())

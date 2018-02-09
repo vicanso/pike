@@ -48,18 +48,21 @@ var (
 
 	// Gzip gzip compress
 	Gzip = []byte("gzip")
-
 	// Deflate deflate compress
 	Deflate = []byte("deflate")
-
 	// Br brotli compress
 	Br = []byte("br")
 
+	// TimingFetch fecth time
+	TimingFetch = []byte("Timing-Fetch")
+	// TimingGzip gzip time
+	TimingGzip = []byte("Timing-Gzip")
+
 	// Get http get method
 	Get = []byte("GET")
-
 	// Head http head method
 	Head = []byte("HEAD")
+
 	// LineBreak 换行符
 	LineBreak = []byte("\r\n")
 	// Colon 冒号
