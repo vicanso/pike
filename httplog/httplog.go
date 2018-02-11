@@ -75,11 +75,31 @@ type FileWriter struct {
 	file     string
 }
 
-// Write 写日志
-func (w *FileWriter) Write(buf []byte) error {
+func (w *FileWriter) checkDate() {
+	time.Sleep(10 * time.Second)
+	now := time.Now()
+	date := now.Format("2006-01-02")
+	// 如果日期有变化
+	if w.date != date {
+		w.m.Lock()
+		w.fd.Close()
+		w.fd = nil
+		w.m.Unlock()
+	} else {
+		w.checkDate()
+	}
+}
+
+func (w *FileWriter) initFd() error {
+	if w.fd != nil {
+		return nil
+	}
 	w.m.Lock()
 	defer w.m.Unlock()
-	// 如果是按日期分割
+	// 如果有并发的处理已生成fd，直接返回
+	if w.fd != nil {
+		return nil
+	}
 	if w.Category == Date {
 		now := time.Now()
 		date := now.Format("2006-01-02")
@@ -96,15 +116,24 @@ func (w *FileWriter) Write(buf []byte) error {
 	} else {
 		w.file = w.Path
 	}
-	// 如果文件未打开，打开文件
-	if w.fd == nil {
-		fd, err := os.OpenFile(w.file, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0666)
-		if err != nil {
-			return err
-		}
-		w.fd = fd
+	fd, err := os.OpenFile(w.file, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0666)
+	if err != nil {
+		return err
 	}
-	_, err := w.fd.Write(append(buf, '\n'))
+	w.fd = fd
+	// 如果是以按天生成日志，增加定时检测
+	if w.Category == Date {
+		go w.checkDate()
+	}
+	return nil
+}
+
+// Write 写日志
+func (w *FileWriter) Write(buf []byte) error {
+	err := w.initFd()
+	if err == nil {
+		w.fd.Write(append(buf, '\n'))
+	}
 	return err
 }
 
