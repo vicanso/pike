@@ -89,6 +89,7 @@ func main() {
 		ReadBufferSize:       conf.ReadBufferSize,
 		WriteBufferSize:      conf.WriteBufferSize,
 		ETag:                 conf.ETag,
+		CompressMinLength:    conf.CompressMinLength,
 		ConnectTimeout:       conf.ConnectTimeout,
 		ReadTimeout:          conf.ReadTimeout,
 		WriteTimeout:         conf.WriteTimeout,

@@ -12,6 +12,8 @@ adminToken: ry3WwvhVG
 hitForPass: 600
 # 是否使用自动生成ETag（对于没有ETag的添加）
 etag: true
+# 设置对于数据压缩的最小文件（大于此值才压缩），如果设置为0，则使用默认值1024
+compressMinLength: 1024
 # 程序并发限制，设置为0表示使用fasthttp默认值 (256 * 1024)
 concurrency: 0
 # 是否禁用 disableKeepalive，默认为 false

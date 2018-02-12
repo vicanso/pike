@@ -36,7 +36,7 @@ func TestResponse(t *testing.T) {
 		Header:     header.Header(),
 		Body:       data,
 	}
-	Response(ctx, respData)
+	Response(ctx, respData, 1024)
 	body := string(ctx.Response.Body())
 	if body != helloWorld {
 		t.Fatalf("the response data expect %q but %q", helloWorld, body)

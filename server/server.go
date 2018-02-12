@@ -33,12 +33,13 @@ var compresssTypes = make([][]byte, 0)
 
 // Config the server config
 type Config struct {
-	Name             string
-	Concurrency      int
-	DisableKeepalive bool
-	ReadBufferSize   int
-	WriteBufferSize  int
-	ETag             bool
+	Name              string
+	Concurrency       int
+	DisableKeepalive  bool
+	ReadBufferSize    int
+	WriteBufferSize   int
+	ETag              bool
+	CompressMinLength int
 	// 各类超时配置
 	ConnectTimeout       time.Duration
 	ReadTimeout          time.Duration
@@ -229,6 +230,10 @@ func handler(ctx *fasthttp.RequestCtx, conf *Config) {
 	host := ctx.Request.Host()
 	uri := ctx.RequestURI()
 	found := director.GetMatch(host, uri)
+	compressMinLength := conf.CompressMinLength
+	if compressMinLength == 0 {
+		compressMinLength = vars.CompressMinLength
+	}
 
 	// 出错处理
 	errorHandler := func(err error) {
@@ -236,7 +241,7 @@ func handler(ctx *fasthttp.RequestCtx, conf *Config) {
 	}
 	// 正常的响应
 	responseHandler := func(data *cache.ResponseData) {
-		dispatch.Response(ctx, data)
+		dispatch.Response(ctx, data, compressMinLength)
 	}
 	if found == nil {
 		// 没有可用的配置（）
@@ -297,7 +302,7 @@ func handler(ctx *fasthttp.RequestCtx, conf *Config) {
 		// 可以缓存的数据，则将数据先压缩
 		// 不可缓存的数据，`dispatch.Response`函数会根据客户端来决定是否压缩
 		shouldDoCompress := shouldCompress(&resp.Header)
-		if shouldDoCompress && cacheAge > 0 && len(body) > vars.CompressMinLength {
+		if shouldDoCompress && cacheAge > 0 && len(body) > compressMinLength {
 			gzipStartedAt := time.Now()
 			gzipData, err := util.Gzip(body)
 			util.SetTimingConsumingHeader(gzipStartedAt, &ctx.Request.Header, vars.TimingGzip)
