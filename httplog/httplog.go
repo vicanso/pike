@@ -70,7 +70,7 @@ type FileWriter struct {
 	Path     string
 	Category int
 	fd       *os.File
-	m        sync.Mutex
+	m        sync.RWMutex
 	date     string
 	file     string
 }
@@ -132,7 +132,9 @@ func (w *FileWriter) initFd() error {
 func (w *FileWriter) Write(buf []byte) error {
 	err := w.initFd()
 	if err == nil {
+		w.m.RLock()
 		w.fd.Write(append(buf, '\n'))
+		w.m.RUnlock()
 	}
 	return err
 }
