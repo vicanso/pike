@@ -183,7 +183,7 @@ func (w *UDPWriter) Close() error {
 
 // Parse 转换日志的输出格式
 func Parse(desc []byte) []*Tag {
-	reg := regexp.MustCompile(`\{[\S]+\}`)
+	reg := regexp.MustCompile(`\{[\S]+?\}`)
 
 	index := 0
 	arr := make([]*Tag, 0)
