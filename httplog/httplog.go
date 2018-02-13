@@ -35,6 +35,7 @@ const (
 	latency        = "latency"
 	latencyMs      = "latency-ms"
 	cookie         = "cookie"
+	payloadSize    = "payload-size"
 	requestHeader  = "requestHeader"
 	responseHeader = "responseHeader"
 )
@@ -283,6 +284,8 @@ func Format(ctx *fasthttp.RequestCtx, tags []*Tag, startedAt time.Time) []byte {
 			return []byte(strconv.FormatInt(time.Now().Unix(), 10))
 		case status:
 			return []byte(strconv.Itoa(ctx.Response.StatusCode()))
+		case payloadSize:
+			return []byte(strconv.Itoa(len(ctx.Request.Body())))
 		case size:
 			return []byte(strconv.Itoa(len(ctx.Response.Body())))
 		case latency:
@@ -294,9 +297,11 @@ func Format(ctx *fasthttp.RequestCtx, tags []*Tag, startedAt time.Time) []byte {
 			return tag.data
 		}
 	}
-	arr := make([][]byte, 0)
+
+	arr := make([][]byte, 0, len(tags))
 	for _, tag := range tags {
 		arr = append(arr, fn(tag))
 	}
+
 	return bytes.Join(arr, []byte(""))
 }
