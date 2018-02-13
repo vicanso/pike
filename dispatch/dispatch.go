@@ -2,6 +2,7 @@ package dispatch
 
 import (
 	"bytes"
+	"log"
 	"strconv"
 	"time"
 
@@ -20,7 +21,7 @@ func ErrorHandler(ctx *fasthttp.RequestCtx, err error) {
 	case vars.ErrGatewayTimeout:
 		ctx.SetStatusCode(fasthttp.StatusGatewayTimeout)
 	default:
-		// TODO 非主动抛出的出错，是否需要输出日志等
+		log.Print("internal server error:", err)
 		ctx.SetStatusCode(fasthttp.StatusInternalServerError)
 	}
 	ctx.Response.Header.SetCanonical(vars.CacheControl, vars.NoCache)
