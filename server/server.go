@@ -130,8 +130,12 @@ func setServerTiming(ctx *fasthttp.RequestCtx, startedAt time.Time) {
 
 	timing := [][]byte{
 		totalDesc,
-		fetchDesc,
-		gzipDesc,
+	}
+	if len(fetchDesc) != 0 {
+		timing = append(timing, fetchDesc)
+	}
+	if len(gzipDesc) != 0 {
+		timing = append(timing, gzipDesc)
 	}
 
 	serverTiming := header.PeekBytes(vars.ServerTiming)
