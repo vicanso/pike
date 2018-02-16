@@ -1,6 +1,7 @@
 package proxy
 
 import (
+	"net"
 	"strings"
 	"sync/atomic"
 	"time"
@@ -54,38 +55,53 @@ func (uh *UpstreamHost) Enable() {
 }
 
 func (uh *UpstreamHost) healthCheck(ping string, interval time.Duration) {
-	if len(ping) == 0 {
-		uh.Healthy = 1
-		return
-	}
-	url := uh.Host + ping
-	if !strings.HasPrefix(url, "http") {
-		url = "http://" + url
-	}
-	if interval <= 0 {
-		interval = time.Second
-	}
-
-	// 如果该upstream为禁止状态，则直接延时做health check
+	// 如果该upstream为禁止状态，则直接延时再做health check
+	// 等待至该节点为enabled为止
 	if uh.Disabled {
 		// 等待时间调整为2倍
 		time.Sleep(2 * interval)
 		go uh.healthCheck(ping, interval)
 		return
 	}
-	req := fasthttp.AcquireRequest()
-	req.SetRequestURI(url)
-	resp := fasthttp.AcquireResponse()
-	client := &fasthttp.Client{}
+
+	pass := false
 	start := time.Now()
-	err := client.DoTimeout(req, resp, 3*time.Second)
-	statusCode := resp.StatusCode()
-	// 每个upstream每次只有一个health check在运行
-	if err != nil || (statusCode < 200 && statusCode >= 400) {
-		uh.Fails++
+	timeout := 3 * time.Second
+	if interval <= 0 {
+		interval = time.Second
+	}
+
+	if len(ping) == 0 {
+		conn, err := net.DialTimeout("tcp", uh.Host, timeout)
+		if err != nil {
+			pass = false
+		} else {
+			pass = true
+			conn.Close()
+		}
 	} else {
+		url := uh.Host + ping
+		if !strings.HasPrefix(url, "http") {
+			url = "http://" + url
+		}
+		req := fasthttp.AcquireRequest()
+		req.SetRequestURI(url)
+		resp := fasthttp.AcquireResponse()
+		client := &fasthttp.Client{}
+		err := client.DoTimeout(req, resp, timeout)
+		statusCode := resp.StatusCode()
+		// 每个upstream每次只有一个health check在运行
+		if err != nil || (statusCode < 200 && statusCode >= 400) {
+			pass = false
+		} else {
+			pass = true
+		}
+	}
+	if pass {
 		uh.Fails = 0
 		uh.Successes++
+	} else {
+		uh.Fails++
 	}
 	// 如果检测有3次成功，则backend可用
 	if uh.Successes > 3 {

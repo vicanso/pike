@@ -65,7 +65,7 @@ directors:
     # 配置url pass的条件，如果url符合(包含此字符串）则直接为pass（更好的性能）
     pass:
       - cache-control=no-cache
-    # backend的健康检测，如果不配置，则不做检测，默认backend都为正常
+    # backend的健康检测，如果不配置，则默认判断该端口是否被监听
     ping: /ping
     # prefix与host是AND的关系
     # 判断请求url的是否包含该前缀，如果是，则是此director
