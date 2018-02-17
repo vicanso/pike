@@ -74,7 +74,7 @@ func TestDo(t *testing.T) {
 			"127.0.0.1:" + strconv.Itoa(port),
 		},
 	})
-	time.Sleep(time.Millisecond)
+	time.Sleep(3 * time.Second)
 	us := GetUpStream(name)
 
 	testDo(t, us, "http://test.com/ping", "pong", 200)
