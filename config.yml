@@ -22,7 +22,7 @@ disableKeepalive: false
 readBufferSize: 0 
 # writeBufferSize 的限制，0表示使用fasthttp默认值 (4096)
 writeBufferSize: 0 
-# 设置upstream的连接超时，默认为0，0表示无限制(time.Duration)，不建议使用默认值
+# 设置upstream的连接超时，默认为0，0表示无限制(time.Duration)，如果没有其它timeout的保障，不建议使用默认值（设置timeout后会有性能损耗）
 connectTimeout: 3s 
 # 设置请求的读取超时，0表示无限制(time.Duration)
 readTimeout: 0 
