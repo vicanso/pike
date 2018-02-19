@@ -4,6 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"log"
+	"net/http"
 	"os"
 	"time"
 
@@ -49,6 +50,21 @@ func main() {
 	if contains(os.Args[1:], "test") {
 		fmt.Print(conf)
 		fmt.Println("the config file test done")
+		return
+	}
+	if contains(os.Args[1:], "check") {
+		url := "http://127.0.0.1" + conf.Listen + "/ping"
+		resp, err := http.Get(url)
+		if err != nil {
+			os.Exit(1)
+			return
+		}
+		statusCode := resp.StatusCode
+		if statusCode < 200 || statusCode >= 400 {
+			os.Exit(1)
+			return
+		}
+		os.Exit(0)
 		return
 	}
 	clearInterval := conf.ExpiredClearInterval
