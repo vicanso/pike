@@ -56,11 +56,13 @@ func main() {
 		url := "http://127.0.0.1" + conf.Listen + "/ping"
 		resp, err := http.Get(url)
 		if err != nil {
+			fmt.Print(err)
 			os.Exit(1)
 			return
 		}
 		statusCode := resp.StatusCode
 		if statusCode < 200 || statusCode >= 400 {
+			fmt.Print(err)
 			os.Exit(1)
 			return
 		}
