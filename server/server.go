@@ -72,13 +72,43 @@ type Header struct {
 	Value []byte
 }
 
+// 需要清除的headers
+var ignoreHeaders = [][]byte{
+	[]byte("Date:"),
+	[]byte("Connection:"),
+	[]byte("Server:"),
+}
+
+// trimHeader 将无用的头属性删除（如Date Connection等）
+func trimHeader(header []byte) []byte {
+	arr := bytes.Split(header, vars.LineBreak)
+	data := make([][]byte, 0, len(arr))
+	for _, item := range arr {
+		index := bytes.IndexByte(item, vars.Colon)
+		if index == -1 {
+			continue
+		}
+		found := false
+		for _, ignore := range ignoreHeaders {
+			if found {
+				break
+			}
+			if bytes.Index(item, ignore) == 0 {
+				found = true
+			}
+		}
+		// 需要忽略的http头
+		if found {
+			continue
+		}
+		data = append(data, item)
+	}
+	return bytes.Join(data, vars.LineBreak)
+}
+
 // getResponseHeader 获取响应的header
 func getResponseHeader(resp *fasthttp.Response) []byte {
-	newHeader := &fasthttp.ResponseHeader{}
-	resp.Header.CopyTo(newHeader)
-	newHeader.DelBytes(vars.ContentEncoding)
-	newHeader.DelBytes(vars.ContentLength)
-	return newHeader.Header()
+	return trimHeader(resp.Header.Header())
 }
 
 // getResponseBody 获取响应的数据
@@ -94,16 +124,11 @@ func getResponseBody(resp *fasthttp.Response) ([]byte, error) {
 }
 
 // 转发处理，返回响应头与响应数据
-func doProxy(ctx *fasthttp.RequestCtx, us *proxy.Upstream, conf *Config) (*fasthttp.Response, []byte, []byte, error) {
-	proxyConfig := &proxy.Config{
-		Timeout: conf.ConnectTimeout,
-		ETag:    conf.ETag,
-	}
+func doProxy(ctx *fasthttp.RequestCtx, us *proxy.Upstream, conf *Config, proxyConfig *proxy.Config) (*fasthttp.Response, []byte, []byte, error) {
 	resp, err := proxy.Do(ctx, us, proxyConfig)
 	if err != nil {
 		return nil, nil, nil, err
 	}
-	resp.Header.SetServer(conf.Name)
 	body, err := getResponseBody(resp)
 	if err != nil {
 		return nil, nil, nil, err
@@ -230,7 +255,7 @@ func shouldCompress(header *fasthttp.ResponseHeader) bool {
 	return found
 }
 
-func handler(ctx *fasthttp.RequestCtx, conf *Config) {
+func handler(ctx *fasthttp.RequestCtx, conf *Config, proxyConfig *proxy.Config) {
 	host := ctx.Request.Host()
 	uri := ctx.RequestURI()
 	found := director.GetMatch(host, uri)
@@ -274,7 +299,7 @@ func handler(ctx *fasthttp.RequestCtx, conf *Config) {
 	case vars.Pass:
 		respHeadr.SetCanonical(vars.XCache, vars.XCacheMiss)
 		// pass的请求直接转发至upstream
-		resp, header, body, err := doProxy(ctx, us, conf)
+		resp, header, body, err := doProxy(ctx, us, conf, proxyConfig)
 		if err != nil {
 			errorHandler(err)
 			return
@@ -294,7 +319,7 @@ func handler(ctx *fasthttp.RequestCtx, conf *Config) {
 		respHeadr.SetCanonical(vars.XCache, vars.XCacheMiss)
 		//feacthing或hitforpass的请求转至upstream
 		// 并根据返回的数据是否可以缓存设置缓存
-		resp, header, body, err := doProxy(ctx, us, conf)
+		resp, header, body, err := doProxy(ctx, us, conf, proxyConfig)
 		if err != nil {
 			cache.HitForPass(key, hitForPassTTL)
 			errorHandler(err)
@@ -414,6 +439,10 @@ func Start(conf *Config) error {
 			extraHeaders = append(extraHeaders, h)
 		}
 	}
+	proxyConfig := &proxy.Config{
+		Timeout: conf.ConnectTimeout,
+		ETag:    conf.ETag,
+	}
 	s := &fasthttp.Server{
 		Name:                 conf.Name,
 		Concurrency:          conf.Concurrency,
@@ -463,7 +492,8 @@ func Start(conf *Config) error {
 					go logWriter.Write(logBuf)
 				}()
 			}
-			handler(ctx, conf)
+			handler(ctx, conf, proxyConfig)
+			ctx.Response.Header.SetServer(conf.Name)
 		},
 	}
 	log.Printf("the server will listen on " + listen)

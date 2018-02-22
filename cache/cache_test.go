@@ -47,21 +47,6 @@ func TestByteToUnit(t *testing.T) {
 	}
 }
 
-func TestTrimHeader(t *testing.T) {
-	ctx := &fasthttp.RequestCtx{}
-	header := &ctx.Request.Header
-	header.SetCanonical([]byte("Content-Type"), []byte("application/json; charset=utf-8"))
-	header.SetCanonical([]byte("X-Response-Id"), []byte("BJJRAyf4f"))
-	header.SetCanonical([]byte("Cache-Control"), []byte("no-cache, max-age=0"))
-	header.SetCanonical([]byte("Connection"), []byte("keep-alive"))
-	header.SetCanonical([]byte("Date"), []byte("Tue, 09 Jan 2018 12:27:02 GMT"))
-	str := "User-Agent: fasthttp\r\nContent-Type: application/json; charset=utf-8\r\nX-Response-Id: BJJRAyf4f\r\nCache-Control: no-cache, max-age=0"
-	data := string(trimHeader(header.Header()))
-	if data != str {
-		t.Fatalf("trim header fail expect %v but %v", str, data)
-	}
-}
-
 func TestDB(t *testing.T) {
 	_, err := InitDB("/tmp/pike")
 	if err != nil {
@@ -109,8 +94,7 @@ func TestDB(t *testing.T) {
 	if respData.TTL != 30 {
 		t.Fatalf("get the ttle fail")
 	}
-	checkHeader := []byte("Server: fasthttp\r\nCache-Control: public, max-age=30")
-	if bytes.Compare(respData.Header, checkHeader) != 0 {
+	if len(bytes.Split(resHeader, []byte("\r\n"))) != 6 {
 		t.Fatalf("the response header fail")
 	}
 	if bytes.Compare(respData.Body, data) != 0 {

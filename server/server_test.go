@@ -31,6 +31,20 @@ func testPass(t *testing.T, uri, method string, resultExpected bool) {
 	}
 }
 
+func TestTrimHeader(t *testing.T) {
+	ctx := &fasthttp.RequestCtx{}
+	header := &ctx.Request.Header
+	header.SetCanonical([]byte("Content-Type"), []byte("application/json; charset=utf-8"))
+	header.SetCanonical([]byte("X-Response-Id"), []byte("BJJRAyf4f"))
+	header.SetCanonical([]byte("Cache-Control"), []byte("no-cache, max-age=0"))
+	header.SetCanonical([]byte("Connection"), []byte("keep-alive"))
+	header.SetCanonical([]byte("Date"), []byte("Tue, 09 Jan 2018 12:27:02 GMT"))
+	str := "User-Agent: fasthttp\r\nContent-Type: application/json; charset=utf-8\r\nX-Response-Id: BJJRAyf4f\r\nCache-Control: no-cache, max-age=0"
+	data := string(trimHeader(header.Header()))
+	if data != str {
+		t.Fatalf("trim header fail expect %v but %v", str, data)
+	}
+}
 func TestGetResponseHeader(t *testing.T) {
 	ctx := &fasthttp.RequestCtx{}
 	data := []byte("hello world")
@@ -39,7 +53,7 @@ func TestGetResponseHeader(t *testing.T) {
 	ctx.Response.Header.SetCanonical(vars.CacheControl, []byte("public, max-age=30"))
 
 	header := getResponseHeader(&ctx.Response)
-	if len(header) != 109 {
+	if len(header) != 94 {
 		t.Fatalf("get the header from response fail")
 	}
 }

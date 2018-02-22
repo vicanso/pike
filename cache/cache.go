@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/binary"
 	"encoding/json"
-	"strings"
 	"sync"
 	"time"
 
@@ -94,39 +93,6 @@ func uint32ToBytes(v uint32) []byte {
 // 将字节转换为uint32
 func bytesToUint32(buf []byte) uint32 {
 	return binary.LittleEndian.Uint32(buf)
-}
-
-// trimHeader 将无用的头属性删除（如Date Connection等）
-func trimHeader(header []byte) []byte {
-	arr := bytes.Split(header, vars.LineBreak)
-	data := make([][]byte, 0, len(arr))
-	// 需要清除的http头
-	ignoreList := []string{
-		"date",
-		"connection",
-	}
-	for _, item := range arr {
-		index := bytes.IndexByte(item, vars.Colon)
-		if index == -1 {
-			continue
-		}
-		k := strings.ToLower(string(item[:index]))
-		found := false
-		for _, ignore := range ignoreList {
-			if found {
-				break
-			}
-			if k == ignore {
-				found = true
-			}
-		}
-		// 需要忽略的http头
-		if found {
-			continue
-		}
-		data = append(data, item)
-	}
-	return bytes.Join(data, vars.LineBreak)
 }
 
 // GetRequestStatus 获取请求的状态
@@ -285,7 +251,7 @@ func SaveResponseData(key []byte, respData *ResponseData) error {
 	if createdAt == 0 {
 		createdAt = uint32(time.Now().Unix())
 	}
-	header := trimHeader(respData.Header)
+	header := respData.Header
 	ttl := respData.TTL
 	var shouldCompressData uint8
 	if respData.ShouldCompress {
