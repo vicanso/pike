@@ -64,4 +64,26 @@ func TestCreateDirector(t *testing.T) {
 	testMatch(t, d, []byte("www.npmtrend.com"), []byte("/albi"), true)
 	testMatch(t, d, []byte("dcharts.com"), []byte("/albi"), false)
 	testMatch(t, d, []byte("aslant.site"), []byte("/abc"), false)
+
+	dList := List()
+	if len(dList) != 1 {
+		t.Fatalf("should be only one director")
+	}
+
+	Append(&Config{
+		Name:   "d.com",
+		Policy: policy,
+		Ping:   ping,
+		Pass: []string{
+			pass,
+		},
+		Backends: []string{
+			"host:5011",
+			"host:5012",
+		},
+	})
+	d = GetMatch([]byte("d.com"), []byte("/"))
+	if d.Name != "d.com" {
+		t.Fatalf("the match director should be d.com")
+	}
 }

@@ -2,6 +2,8 @@ package performance
 
 import (
 	"testing"
+
+	"github.com/vicanso/pike/vars"
 )
 
 func TestConcurrency(t *testing.T) {
@@ -22,5 +24,12 @@ func TestIncreaseRequestCount(t *testing.T) {
 	count := GetRequstCount()
 	if count != 2 {
 		t.Fatalf("the request count expect 2 but %v", count)
+	}
+}
+
+func TestGetStats(t *testing.T) {
+	stats := GetStats()
+	if stats.Version != vars.Version {
+		t.Fatalf("get version fail")
 	}
 }

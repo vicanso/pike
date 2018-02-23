@@ -361,5 +361,9 @@ func Close() error {
 	if client == nil {
 		return vars.ErrDbNotInit
 	}
-	return client.Close()
+	err := client.Close()
+	if err == nil {
+		client = nil
+	}
+	return err
 }

@@ -52,6 +52,12 @@ func TestDB(t *testing.T) {
 	if err != nil {
 		t.Fatalf("open db fail, %v", err)
 	}
+	// 再次初始化直接不会抛错
+	_, err = InitDB("/tmp/pike")
+
+	if err != nil {
+		t.Fatalf("init again fail, %v", err)
+	}
 	key := []byte("/users/me")
 	data := []byte("vicanso")
 	err = Save(key, data, 200)
@@ -74,7 +80,6 @@ func TestDB(t *testing.T) {
 	resHeader := ctx.Response.Header.Header()
 
 	saveRespData := &ResponseData{
-		CreatedAt:      uint32(time.Now().Unix()),
 		StatusCode:     200,
 		Compress:       vars.GzipData,
 		ShouldCompress: true,
@@ -133,6 +138,10 @@ func TestRequestStatus(t *testing.T) {
 		}
 	}(c)
 
+	fetchingCount, waitingCount, _, _ := Stats()
+	if fetchingCount != 1 || waitingCount != 1 {
+		t.Fatalf("the fetching and wainting count should be 1")
+	}
 	HitForPass(key, 100)
 	time.Sleep(time.Second)
 
@@ -214,4 +223,30 @@ func TestResponseCache(t *testing.T) {
 	log.Printf("create %v use %v", count, time.Since(startedAt))
 	ClearExpired()
 	Close()
+}
+
+func TestErrorCase(t *testing.T) {
+	lsm, vLog := DataSize()
+	if lsm != -1 || vLog != -1 {
+		t.Fatalf("when client close, database size should be -1")
+	}
+	_, err := Get([]byte(""))
+	if err != vars.ErrDbNotInit {
+		t.Fatalf("get function should throw error when database is not init")
+	}
+
+	err = Save([]byte(""), []byte(""), 1)
+	if err != vars.ErrDbNotInit {
+		t.Fatalf("save function should throw error when database is not init")
+	}
+
+	err = ClearExpired()
+	if err != vars.ErrDbNotInit {
+		t.Fatalf("clear expired function should throw error when database is not init")
+	}
+
+	err = Close()
+	if err != vars.ErrDbNotInit {
+		t.Fatalf("close function should throw error when database is not init")
+	}
 }

@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/vicanso/pike/cache"
+	"github.com/vicanso/pike/util"
 	"github.com/vicanso/pike/vars"
 
 	"github.com/valyala/fasthttp"
@@ -68,14 +69,15 @@ func TestResponse(t *testing.T) {
 		t.Fatalf("the not modified response fail")
 	}
 
-	// gzip
-	header = &fasthttp.ResponseHeader{}
-	ctx = &fasthttp.RequestCtx{}
-	ctx.Request.Header.SetCanonical(vars.AcceptEncoding, []byte("gzip, deflate"))
 	buf := make([]byte, 4096)
 	for index := 0; index < 4096; index++ {
 		buf[index] = byte('A')
 	}
+
+	// client accept gzip (data not gzip)
+	header = &fasthttp.ResponseHeader{}
+	ctx = &fasthttp.RequestCtx{}
+	ctx.Request.Header.SetCanonical(vars.AcceptEncoding, []byte("gzip, deflate"))
 	respData = &cache.ResponseData{
 		ShouldCompress: true,
 		CreatedAt:      createdAt - 20,
@@ -87,5 +89,41 @@ func TestResponse(t *testing.T) {
 	Response(ctx, respData, 1024)
 	if len(ctx.Response.Body()) != 43 {
 		t.Fatalf("the gzip response fail")
+	}
+
+	// client accept gzip (data gzip)
+	gzipData, _ := util.Gzip(buf)
+	header = &fasthttp.ResponseHeader{}
+	ctx = &fasthttp.RequestCtx{}
+	ctx.Request.Header.SetCanonical(vars.AcceptEncoding, []byte("gzip, deflate"))
+	respData = &cache.ResponseData{
+		ShouldCompress: true,
+		CreatedAt:      createdAt - 20,
+		StatusCode:     200,
+		TTL:            300,
+		Header:         header.Header(),
+		Compress:       vars.GzipData,
+		Body:           gzipData,
+	}
+	Response(ctx, respData, 1024)
+	if len(ctx.Response.Body()) != 43 {
+		t.Fatalf("the gzip response fail")
+	}
+
+	// client not accept gzip (data gzip)
+	header = &fasthttp.ResponseHeader{}
+	ctx = &fasthttp.RequestCtx{}
+	respData = &cache.ResponseData{
+		ShouldCompress: true,
+		CreatedAt:      createdAt - 20,
+		StatusCode:     200,
+		TTL:            300,
+		Header:         header.Header(),
+		Compress:       vars.GzipData,
+		Body:           gzipData,
+	}
+	Response(ctx, respData, 1024)
+	if len(ctx.Response.Body()) != len(buf) {
+		t.Fatalf("the raw response fail")
 	}
 }

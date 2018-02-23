@@ -260,7 +260,8 @@ func TestServerStart(t *testing.T) {
 	}
 
 	go Start(&Config{
-		Listen: conf.Listen,
+		EnableServerTiming: true,
+		Listen:             conf.Listen,
 	})
 	time.Sleep(5 * time.Second)
 	testCachable(t, "http://127.0.0.1:3015/cacheable")
