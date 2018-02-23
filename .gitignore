@@ -6,3 +6,4 @@ assets/dist/app.js.map
 pike
 pike-darwin
 pike-win.exe
+*.out

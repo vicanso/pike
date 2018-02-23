@@ -57,13 +57,13 @@ func (s Directors) Less(i, j int) bool {
 }
 
 // Match 判断该director是否符合
-func (d *Director) Match(host, uri []byte) bool {
+func (d *Director) Match(host, uri []byte) (match bool) {
 	hosts := d.Hosts
 	prefixs := d.Prefixs
+	// 如果未匹配host与prefix，则所有请求都匹配
 	if hosts == nil && prefixs == nil {
 		return true
 	}
-	match := false
 	// 判断host是否符合
 	if hosts != nil {
 		for _, item := range hosts {
@@ -81,7 +81,7 @@ func (d *Director) Match(host, uri []byte) bool {
 		}
 		// 如果host不匹配，直接返回
 		if !match {
-			return match
+			return
 		}
 	}
 	// 判断prefix是否符合
@@ -94,7 +94,7 @@ func (d *Director) Match(host, uri []byte) bool {
 			}
 		}
 	}
-	return match
+	return
 }
 
 // []string 转换为 [][]byte
@@ -125,7 +125,7 @@ func createDirector(conf *Config) *Director {
 		priority -= 2
 		d.Prefixs = strListToByteList(conf.Prefix)
 	}
-	// 如果配置子pass，生成pass列表
+	// 如果有配置pass，生成pass列表
 	if len(conf.Pass) != 0 {
 		d.Passes = strListToByteList(conf.Pass)
 	}
@@ -142,8 +142,7 @@ func Append(conf *Config) {
 }
 
 // GetMatch 获取匹配的director
-func GetMatch(host, uri []byte) *Director {
-	var found *Director
+func GetMatch(host, uri []byte) (found *Director) {
 	// 查找可用的director
 	for _, d := range directorList {
 		if d.Match(host, uri) {
@@ -151,7 +150,7 @@ func GetMatch(host, uri []byte) *Director {
 			break
 		}
 	}
-	return found
+	return
 }
 
 // List 获取所有的director

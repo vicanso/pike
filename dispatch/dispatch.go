@@ -62,7 +62,7 @@ func Response(ctx *fasthttp.RequestCtx, respData *cache.ResponseData, compressMi
 	method := ctx.Method()
 
 	// 只对于GET HEAD请求做304的判断
-	if bytes.Compare(method, vars.Get) == 0 || bytes.Compare(method, vars.Head) == 0 {
+	if bytes.Equal(method, vars.Get) || bytes.Equal(method, vars.Head) {
 		// 响应的状态码需要为20x或304
 		if (statusCode >= 200 && statusCode < 300) || statusCode == 304 {
 			requestHeaderData := &fresh.RequestHeader{
@@ -82,7 +82,6 @@ func Response(ctx *fasthttp.RequestCtx, respData *cache.ResponseData, compressMi
 			}
 		}
 	}
-
 	supportGzip := reqHeader.HasAcceptEncodingBytes(vars.Gzip)
 	// 如果数据是gzip
 	if respData.Compress == vars.GzipData {

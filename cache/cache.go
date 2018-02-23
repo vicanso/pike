@@ -96,13 +96,12 @@ func bytesToUint32(buf []byte) uint32 {
 }
 
 // GetRequestStatus 获取请求的状态
-func GetRequestStatus(key []byte) (int, chan int) {
+func GetRequestStatus(key []byte) (status int, c chan int) {
 	rsMutex.Lock()
 	defer rsMutex.Unlock()
-	var c chan int
 	k := string(key)
 	rs := rsMap[k]
-	status := vars.Fetching
+	status = vars.Fetching
 	// 如果该key对应的状态为空或者已过期
 	if rs == nil || isExpired(rs) {
 		status = vars.Fetching
@@ -118,7 +117,7 @@ func GetRequestStatus(key []byte) (int, chan int) {
 		// hit for pass 或者 cacheable
 		status = rs.status
 	}
-	return status, c
+	return
 }
 
 // Size 获取缓存记录的总数
@@ -127,21 +126,19 @@ func Size() int {
 }
 
 // DataSize 获取数据大小
-func DataSize() (int, int) {
+func DataSize() (lsmSize, vLogSize int) {
 	if client == nil {
 		return -1, -1
 	}
 	lsm, vLog := client.Size()
 	mb := int64(1024 * 1024)
-	return int(lsm / mb), int(vLog / mb)
+	lsmSize = int(lsm / mb)
+	vLogSize = int(vLog / mb)
+	return
 }
 
 // Stats 获取请求状态的统计
-func Stats() (int, int, int, int) {
-	fetchingCount := 0
-	waitingCount := 0
-	cacheableCount := 0
-	hitForPassCount := 0
+func Stats() (fetchingCount, waitingCount, cacheableCount, hitForPassCount int) {
 	rsMutex.Lock()
 	defer rsMutex.Unlock()
 	for _, v := range rsMap {
@@ -155,7 +152,7 @@ func Stats() (int, int, int, int) {
 			cacheableCount++
 		}
 	}
-	return fetchingCount, waitingCount, cacheableCount, hitForPassCount
+	return
 }
 
 // GetCachedList 获取已缓存的请求列表
@@ -170,7 +167,7 @@ func GetCachedList() []byte {
 	cacheDatas := make([]*cacheData, 0)
 	now := uint32(time.Now().Unix())
 	for key, v := range rsMap {
-		// 对于非已缓存的忽略
+		// 对于非可缓存的忽略
 		if v.status != vars.Cacheable || v.createdAt+v.ttl < now {
 			continue
 		}
@@ -273,15 +270,15 @@ func SaveResponseData(key []byte, respData *ResponseData) error {
 }
 
 // GetResponse 获取response
-func GetResponse(key []byte) (*ResponseData, error) {
+func GetResponse(key []byte) (resData *ResponseData, err error) {
 	data, err := Get(key)
 	if err != nil {
-		return nil, err
+		return
 	}
 	// 因为数据的缓存比rs map的更晚删除，因为肯定有数据，无需要对data检测
 	headerLength := bytesToUint16(data[headerLengthIndex:headerIndex])
 	// 将bytes转换为ResponseData
-	resData := &ResponseData{
+	resData = &ResponseData{
 		CreatedAt:  bytesToUint32(data[createIndex:statusCodeIndex]),
 		StatusCode: bytesToUint16(data[statusCodeIndex:compressIndex]),
 		Compress:   data[compressIndex],
@@ -292,8 +289,7 @@ func GetResponse(key []byte) (*ResponseData, error) {
 	if data[shouldCompressIndex] == 1 {
 		resData.ShouldCompress = true
 	}
-
-	return resData, nil
+	return
 }
 
 // Save 保存数据
@@ -307,7 +303,7 @@ func Save(key, buf []byte, ttl uint32) error {
 		return tx.SetEntry(&badger.Entry{
 			Key:   key,
 			Value: buf,
-			// 缓存的数据延期5秒过期
+			// 缓存的数据延期过期
 			ExpiresAt: uint64(time.Now().Unix()) + uint64(ttl) + stale,
 		})
 	})
