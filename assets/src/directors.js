@@ -37,7 +37,15 @@ const Directors = ({ state, actions, toggleCount }) => {
             value = value.map((item) => {
               let found = null;
               director.upstream.hosts.forEach((upstream) => {
-                if (upstream.host === item) {
+                const {
+                  host,
+                  isTLS,
+                } = upstream;
+                const protoHost = isTLS ? `https://${host}` : `http://${host}`
+                if (found) {
+                  return;
+                }
+                if (host === item || protoHost === item) {
                   found = upstream;
                 }
               });

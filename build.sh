@@ -1,5 +1,5 @@
 # !/bin/sh
-cd assets && npm i && npm run build && cd ..
+cd assets && yarn && npm run build && cd ..
 
 packr
 

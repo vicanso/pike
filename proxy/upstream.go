@@ -2,6 +2,7 @@ package proxy
 
 import (
 	"net"
+	"strconv"
 	"strings"
 	"sync/atomic"
 	"time"
@@ -16,7 +17,9 @@ type UpstreamHost struct {
 	// 最大连接数
 	MaxConns int64 `json:"maxConnections"`
 	// 对应的host配置
-	Host string `json:"host"`
+	Host  string `json:"host"`
+	Port  int    `json:"port"`
+	IsTLS bool   `json:"isTLS"`
 	// 失败次数
 	Fails int32 `json:"fails"`
 	// 成功次数
@@ -73,12 +76,8 @@ func (uh *UpstreamHost) healthCheck(ping string, interval time.Duration) {
 
 	if len(ping) == 0 {
 		address := uh.Host
-		httpsPrefix := "https://"
-		httpPrefix := "http://"
-		if strings.HasPrefix(address, httpsPrefix) {
-			address = address[len(httpsPrefix):] + ":443"
-		} else if strings.HasPrefix(address, httpPrefix) {
-			address = address[len(httpPrefix):] + ":80"
+		if strings.Index(address, ":") == -1 {
+			address += (":" + strconv.Itoa(uh.Port))
 		}
 		conn, err := net.DialTimeout("tcp", address, timeout)
 		if err != nil {
@@ -90,7 +89,11 @@ func (uh *UpstreamHost) healthCheck(ping string, interval time.Duration) {
 	} else {
 		url := uh.Host + ping
 		if !strings.HasPrefix(url, "http") {
-			url = "http://" + url
+			if uh.IsTLS {
+				url = "https://" + url
+			} else {
+				url = "http://" + url
+			}
 		}
 		req := fasthttp.AcquireRequest()
 		req.SetRequestURI(url)
@@ -167,9 +170,19 @@ func (us *Upstream) AddBackend(host string) *UpstreamHost {
 	addr := host
 	index := strings.Index(addr, "//")
 	isTLS := false
+	arr := strings.Split(addr, ":")
+	port, _ := strconv.Atoi(arr[len(arr)-1])
 	if index != -1 {
 		if addr[0:index] == "https:" {
 			isTLS = true
+		}
+		host = addr[index+2:]
+		if port == 0 {
+			if isTLS {
+				port = 443
+			} else {
+				port = 80
+			}
 		}
 		addr = addr[index+2:]
 	}
@@ -177,9 +190,11 @@ func (us *Upstream) AddBackend(host string) *UpstreamHost {
 		Conns:     0,
 		MaxConns:  0,
 		Host:      host,
+		Port:      port,
 		Fails:     0,
 		Successes: 0,
 		Healthy:   0,
+		IsTLS:     isTLS,
 		Client: &fasthttp.HostClient{
 			IsTLS: isTLS,
 			Addr:  addr,
