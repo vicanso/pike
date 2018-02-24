@@ -9,7 +9,7 @@ import (
 
 func TestGzip(t *testing.T) {
 	data := []byte("hello world")
-	buf, err := Gzip(data)
+	buf, err := Gzip(data, 0)
 	if err != nil {
 		t.Fatalf("do gzip fail, %v", err)
 	}

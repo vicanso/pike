@@ -29,7 +29,7 @@ func ErrorHandler(ctx *fasthttp.RequestCtx, err error) {
 }
 
 // Response 响应数据
-func Response(ctx *fasthttp.RequestCtx, respData *cache.ResponseData, compressMinLength int) {
+func Response(ctx *fasthttp.RequestCtx, respData *cache.ResponseData, compressMinLength, compressLevel int) {
 	respHeader := &ctx.Response.Header
 	reqHeader := &ctx.Request.Header
 	header := respData.Header
@@ -100,7 +100,7 @@ func Response(ctx *fasthttp.RequestCtx, respData *cache.ResponseData, compressMi
 		}
 	} else if supportGzip && shouldCompress && bodyLength > compressMinLength {
 		// 支持gzip，但是数据未压缩，而且数据大于 CompressMinLength
-		gzipData, err := util.Gzip(body)
+		gzipData, err := util.Gzip(body, compressLevel)
 		// 如果压缩失败，直接返回未压缩数据
 		if err == nil {
 			body = gzipData

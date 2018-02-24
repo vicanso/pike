@@ -40,6 +40,7 @@ type Config struct {
 	WriteBufferSize   int
 	ETag              bool
 	CompressMinLength int
+	CompressLevel     int
 	// 各类超时配置
 	ConnectTimeout       time.Duration
 	ReadTimeout          time.Duration
@@ -259,6 +260,7 @@ func handler(ctx *fasthttp.RequestCtx, conf *Config, proxyConfig *proxy.Config) 
 	host := ctx.Request.Host()
 	uri := ctx.RequestURI()
 	found := director.GetMatch(host, uri)
+	compressLevel := conf.CompressLevel
 	compressMinLength := conf.CompressMinLength
 	if compressMinLength == 0 {
 		compressMinLength = vars.CompressMinLength
@@ -270,7 +272,7 @@ func handler(ctx *fasthttp.RequestCtx, conf *Config, proxyConfig *proxy.Config) 
 	}
 	// 正常的响应
 	responseHandler := func(data *cache.ResponseData) {
-		dispatch.Response(ctx, data, compressMinLength)
+		dispatch.Response(ctx, data, compressMinLength, compressLevel)
 	}
 	if found == nil {
 		// 没有可用的配置（）
@@ -333,7 +335,7 @@ func handler(ctx *fasthttp.RequestCtx, conf *Config, proxyConfig *proxy.Config) 
 		shouldDoCompress := shouldCompress(&resp.Header)
 		if shouldDoCompress && cacheAge > 0 && len(body) > compressMinLength {
 			gzipStartedAt := time.Now()
-			gzipData, err := util.Gzip(body)
+			gzipData, err := util.Gzip(body, compressLevel)
 			util.SetTimingConsumingHeader(gzipStartedAt, &ctx.Request.Header, vars.TimingGzip)
 			if err == nil {
 				body = gzipData

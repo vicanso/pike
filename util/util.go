@@ -19,9 +19,12 @@ import (
 var Debug = debug.Debug(string(vars.Name))
 
 // Gzip 对数据压缩
-func Gzip(buf []byte) ([]byte, error) {
+func Gzip(buf []byte, level int) ([]byte, error) {
 	var b bytes.Buffer
-	w := gzip.NewWriter(&b)
+	if level <= 0 {
+		level = gzip.DefaultCompression
+	}
+	w, _ := gzip.NewWriterLevel(&b, level)
 	_, err := w.Write(buf)
 	if err != nil {
 		return nil, err

@@ -108,6 +108,7 @@ func main() {
 		WriteBufferSize:      conf.WriteBufferSize,
 		ETag:                 conf.ETag,
 		CompressMinLength:    conf.CompressMinLength,
+		CompressLevel:        conf.CompressLevel,
 		ConnectTimeout:       conf.ConnectTimeout,
 		ReadTimeout:          conf.ReadTimeout,
 		WriteTimeout:         conf.WriteTimeout,

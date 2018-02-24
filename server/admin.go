@@ -20,7 +20,7 @@ import (
 func responseJSON(ctx *fasthttp.RequestCtx, data []byte) {
 	ctx.SetContentTypeBytes(vars.JSON)
 	if len(data) > vars.CompressMinLength {
-		rawData, err := util.Gzip(data)
+		rawData, err := util.Gzip(data, 0)
 		if err == nil {
 			data = rawData
 			ctx.Response.Header.SetCanonical(vars.ContentEncoding, vars.Gzip)
@@ -81,7 +81,7 @@ func statisHandler(ctx *fasthttp.RequestCtx, assetPath string) {
 		ctx.NotFound()
 		return
 	}
-	gzipData, err := util.Gzip(data)
+	gzipData, err := util.Gzip(data, 0)
 	if err == nil {
 		ctx.Response.Header.SetCanonical(vars.ContentEncoding, vars.Gzip)
 		data = gzipData

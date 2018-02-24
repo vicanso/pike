@@ -37,7 +37,7 @@ func TestResponse(t *testing.T) {
 		Header:     header.Header(),
 		Body:       data,
 	}
-	Response(ctx, respData, 1024)
+	Response(ctx, respData, 1024, 0)
 	body := string(ctx.Response.Body())
 	if body != helloWorld {
 		t.Fatalf("the response data expect %q but %q", helloWorld, body)
@@ -64,7 +64,7 @@ func TestResponse(t *testing.T) {
 		Header:     header.Header(),
 		Body:       data,
 	}
-	Response(ctx, respData, 1024)
+	Response(ctx, respData, 1024, 0)
 	if ctx.Response.StatusCode() != 304 {
 		t.Fatalf("the not modified response fail")
 	}
@@ -86,13 +86,13 @@ func TestResponse(t *testing.T) {
 		Header:         header.Header(),
 		Body:           buf,
 	}
-	Response(ctx, respData, 1024)
+	Response(ctx, respData, 1024, 0)
 	if len(ctx.Response.Body()) != 43 {
 		t.Fatalf("the gzip response fail")
 	}
 
 	// client accept gzip (data gzip)
-	gzipData, _ := util.Gzip(buf)
+	gzipData, _ := util.Gzip(buf, 0)
 	header = &fasthttp.ResponseHeader{}
 	ctx = &fasthttp.RequestCtx{}
 	ctx.Request.Header.SetCanonical(vars.AcceptEncoding, []byte("gzip, deflate"))
@@ -105,7 +105,7 @@ func TestResponse(t *testing.T) {
 		Compress:       vars.GzipData,
 		Body:           gzipData,
 	}
-	Response(ctx, respData, 1024)
+	Response(ctx, respData, 1024, 0)
 	if len(ctx.Response.Body()) != 43 {
 		t.Fatalf("the gzip response fail")
 	}
@@ -122,7 +122,7 @@ func TestResponse(t *testing.T) {
 		Compress:       vars.GzipData,
 		Body:           gzipData,
 	}
-	Response(ctx, respData, 1024)
+	Response(ctx, respData, 1024, 0)
 	if len(ctx.Response.Body()) != len(buf) {
 		t.Fatalf("the raw response fail")
 	}

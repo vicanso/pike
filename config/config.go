@@ -39,6 +39,7 @@ type Config struct {
 	HitForPass           int           `yaml:"hitForPass"`
 	ETag                 bool          `yaml:"etag"`
 	CompressMinLength    int           `yaml:"compressMinLength"`
+	CompressLevel        int           `yaml:"compressLevel"`
 	ReadBufferSize       int           `yaml:"readBufferSize"`
 	WriteBufferSize      int           `yaml:"writeBufferSize"`
 	ConnectTimeout       time.Duration `yaml:"connectTimeout"`

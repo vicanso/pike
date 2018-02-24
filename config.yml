@@ -14,6 +14,8 @@ hitForPass: 600
 etag: true
 # 设置对于数据压缩的最小文件（大于此值才压缩），如果设置为0，则使用默认值1024
 compressMinLength: 1024
+# 设置对于数据的压缩级别，如果设置为0，则使用golang默认值（建议使用）
+compressLevel: 0
 # 程序并发限制，设置为0表示使用fasthttp默认值 (256 * 1024)
 concurrency: 0
 # 是否禁用 disableKeepalive，默认为 false

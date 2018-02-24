@@ -60,7 +60,7 @@ func TestGetResponseHeader(t *testing.T) {
 
 func TestGetResponseBody(t *testing.T) {
 	helloWorld := "hello world"
-	data, _ := util.Gzip([]byte(helloWorld))
+	data, _ := util.Gzip([]byte(helloWorld), 0)
 	ctx := &fasthttp.RequestCtx{}
 	ctx.Response.Header.SetCanonical(vars.ContentEncoding, vars.Gzip)
 	ctx.SetBody(data)
