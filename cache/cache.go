@@ -111,7 +111,7 @@ func GetRequestStatus(key []byte) (status int, c chan int) {
 	} else if rs.status == vars.Fetching {
 		// 如果该key对应的请求正在处理中，添加chan
 		status = vars.Waiting
-		c = make(chan int, 1)
+		c = make(chan int)
 		rs.waitingChans = append(rs.waitingChans, c)
 	} else {
 		// hit for pass 或者 cacheable
@@ -197,7 +197,6 @@ func triggerWatingRequstAndSetStatus(key []byte, status int, ttl uint32) {
 	// 对所有等待中的请求触发channel
 	for _, c := range waitingChans {
 		c <- status
-		close(c)
 	}
 	rs.waitingChans = nil
 }
