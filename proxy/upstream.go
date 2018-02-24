@@ -72,7 +72,15 @@ func (uh *UpstreamHost) healthCheck(ping string, interval time.Duration) {
 	}
 
 	if len(ping) == 0 {
-		conn, err := net.DialTimeout("tcp", uh.Host, timeout)
+		address := uh.Host
+		httpsPrefix := "https://"
+		httpPrefix := "http://"
+		if strings.HasPrefix(address, httpsPrefix) {
+			address = address[len(httpsPrefix):] + ":443"
+		} else if strings.HasPrefix(address, httpPrefix) {
+			address = address[len(httpPrefix):] + ":80"
+		}
+		conn, err := net.DialTimeout("tcp", address, timeout)
 		if err != nil {
 			pass = false
 		} else {
