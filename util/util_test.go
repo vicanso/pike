@@ -1,6 +1,7 @@
 package util
 
 import (
+	"io/ioutil"
 	"testing"
 	"time"
 
@@ -57,4 +58,12 @@ func TestTimingConsumingHeader(t *testing.T) {
 	time.Sleep(2 * time.Millisecond)
 	key := []byte("Consuming")
 	SetTimingConsumingHeader(startedAt, header, key)
+}
+
+func TestCompressJPEG(t *testing.T) {
+	buf, _ := ioutil.ReadFile("../assets/images/mac.jpg")
+	newBuf, _ := CompressJPEG(buf, 70)
+	if len(newBuf) >= len(buf) {
+		t.Fatalf("compress jpeg fail")
+	}
 }

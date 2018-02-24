@@ -45,7 +45,8 @@ var (
 	JSON = []byte("application/json; charset=utf-8")
 	// NoCache http response cache-control: no-cache
 	NoCache = []byte("no-cache")
-
+	// JPEG http response jpeg content type
+	JPEG = []byte("image/jpeg")
 	// Gzip gzip compress
 	Gzip = []byte("gzip")
 	// Deflate deflate compress

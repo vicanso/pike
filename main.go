@@ -109,6 +109,7 @@ func main() {
 		ETag:                 conf.ETag,
 		CompressMinLength:    conf.CompressMinLength,
 		CompressLevel:        conf.CompressLevel,
+		JpegQuality:          conf.JpegQuality,
 		ConnectTimeout:       conf.ConnectTimeout,
 		ReadTimeout:          conf.ReadTimeout,
 		WriteTimeout:         conf.WriteTimeout,

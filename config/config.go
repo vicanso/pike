@@ -40,6 +40,7 @@ type Config struct {
 	ETag                 bool          `yaml:"etag"`
 	CompressMinLength    int           `yaml:"compressMinLength"`
 	CompressLevel        int           `yaml:"compressLevel"`
+	JpegQuality          int           `yaml:"jpegQuality"`
 	ReadBufferSize       int           `yaml:"readBufferSize"`
 	WriteBufferSize      int           `yaml:"writeBufferSize"`
 	ConnectTimeout       time.Duration `yaml:"connectTimeout"`

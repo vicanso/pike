@@ -33,14 +33,18 @@ var compresssTypes = make([][]byte, 0)
 
 // Config the server config
 type Config struct {
-	Name              string
-	Concurrency       int
-	DisableKeepalive  bool
-	ReadBufferSize    int
-	WriteBufferSize   int
-	ETag              bool
+	Name             string
+	Concurrency      int
+	DisableKeepalive bool
+	ReadBufferSize   int
+	WriteBufferSize  int
+	ETag             bool
+	// 最小压缩字节长度
 	CompressMinLength int
-	CompressLevel     int
+	// 压缩级别
+	CompressLevel int
+	// 设置jpeg的质量
+	JpegQuality int
 	// 各类超时配置
 	ConnectTimeout       time.Duration
 	ReadTimeout          time.Duration
@@ -131,6 +135,17 @@ func doProxy(ctx *fasthttp.RequestCtx, us *proxy.Upstream, conf *Config, proxyCo
 		return nil, nil, nil, err
 	}
 	body, err := getResponseBody(resp)
+	quality := conf.JpegQuality
+
+	contentType := resp.Header.PeekBytes(vars.ContentType)
+
+	if quality > 0 && bytes.Equal(contentType, vars.JPEG) {
+		buf, _ := util.CompressJPEG(body, quality)
+		if len(buf) > 0 {
+			body = buf
+		}
+	}
+
 	if err != nil {
 		return nil, nil, nil, err
 	}

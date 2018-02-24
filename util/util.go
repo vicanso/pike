@@ -6,6 +6,7 @@ import (
 	"compress/gzip"
 	"expvar"
 	"fmt"
+	"image/jpeg"
 	"io/ioutil"
 	"strconv"
 	"time"
@@ -41,6 +42,22 @@ func Gunzip(buf []byte) ([]byte, error) {
 	}
 	defer r.Close()
 	return ioutil.ReadAll(r)
+}
+
+// CompressJPEG 压缩jpeg图片
+func CompressJPEG(buf []byte, quality int) ([]byte, error) {
+	if quality <= 0 {
+		quality = 70
+	}
+	img, err := jpeg.Decode(bytes.NewBuffer(buf))
+	if err != nil {
+		return nil, err
+	}
+	newBuf := bytes.NewBuffer(nil) //开辟一个新的空buff
+	err = jpeg.Encode(newBuf, img, &jpeg.Options{
+		Quality: quality,
+	})
+	return newBuf.Bytes(), err
 }
 
 // GetClientIP 获取客户端IP
