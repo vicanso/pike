@@ -45,6 +45,8 @@ type Config struct {
 	CompressLevel int
 	// 设置jpeg的质量
 	JpegQuality int
+	// 设置png的质量(非0表示做处理)
+	PngQuality int
 	// 各类超时配置
 	ConnectTimeout       time.Duration
 	ReadTimeout          time.Duration
@@ -119,13 +121,28 @@ func getResponseHeader(resp *fasthttp.Response) []byte {
 // getResponseBody 获取响应的数据
 func getResponseBody(resp *fasthttp.Response) ([]byte, error) {
 	enconding := resp.Header.PeekBytes(vars.ContentEncoding)
-	if bytes.Compare(enconding, vars.Deflate) == 0 {
+	if bytes.Equal(enconding, vars.Deflate) {
 		return resp.BodyInflate()
 	}
-	if bytes.Compare(enconding, vars.Gzip) == 0 {
+	if bytes.Equal(enconding, vars.Gzip) {
 		return resp.BodyGunzip()
 	}
 	return resp.Body(), nil
+}
+
+func compressImage(header *fasthttp.ResponseHeader, body []byte, conf *Config) []byte {
+	jpegQuality := conf.JpegQuality
+	pngQuality := conf.PngQuality
+
+	contentType := header.PeekBytes(vars.ContentType)
+	var buf []byte
+	if jpegQuality > 0 && bytes.Equal(contentType, vars.JPEG) {
+		buf, _ = util.CompressJPEG(body, jpegQuality)
+	} else if pngQuality > 0 && bytes.Equal(contentType, vars.PNG) {
+		buf, _ = util.CompressPNG(body)
+	}
+
+	return buf
 }
 
 // 转发处理，返回响应头与响应数据
@@ -135,15 +152,11 @@ func doProxy(ctx *fasthttp.RequestCtx, us *proxy.Upstream, conf *Config, proxyCo
 		return nil, nil, nil, err
 	}
 	body, err := getResponseBody(resp)
-	quality := conf.JpegQuality
 
-	contentType := resp.Header.PeekBytes(vars.ContentType)
-
-	if quality > 0 && bytes.Equal(contentType, vars.JPEG) {
-		buf, _ := util.CompressJPEG(body, quality)
-		if len(buf) > 0 {
-			body = buf
-		}
+	buf := compressImage(&resp.Header, body, conf)
+	newSize := len(buf)
+	if newSize != 0 && newSize < len(body) {
+		body = buf
 	}
 
 	if err != nil {

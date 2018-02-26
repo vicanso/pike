@@ -47,6 +47,8 @@ var (
 	NoCache = []byte("no-cache")
 	// JPEG http response jpeg content type
 	JPEG = []byte("image/jpeg")
+	// PNG http response png content type
+	PNG = []byte("image/png")
 	// Gzip gzip compress
 	Gzip = []byte("gzip")
 	// Deflate deflate compress

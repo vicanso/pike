@@ -110,6 +110,7 @@ func main() {
 		CompressMinLength:    conf.CompressMinLength,
 		CompressLevel:        conf.CompressLevel,
 		JpegQuality:          conf.JpegQuality,
+		PngQuality:           conf.PngQuality,
 		ConnectTimeout:       conf.ConnectTimeout,
 		ReadTimeout:          conf.ReadTimeout,
 		WriteTimeout:         conf.WriteTimeout,

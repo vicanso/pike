@@ -41,6 +41,7 @@ type Config struct {
 	CompressMinLength    int           `yaml:"compressMinLength"`
 	CompressLevel        int           `yaml:"compressLevel"`
 	JpegQuality          int           `yaml:"jpegQuality"`
+	PngQuality           int           `yaml:"pngQuality"`
 	ReadBufferSize       int           `yaml:"readBufferSize"`
 	WriteBufferSize      int           `yaml:"writeBufferSize"`
 	ConnectTimeout       time.Duration `yaml:"connectTimeout"`

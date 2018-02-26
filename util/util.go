@@ -7,6 +7,7 @@ import (
 	"expvar"
 	"fmt"
 	"image/jpeg"
+	"image/png"
 	"io/ioutil"
 	"strconv"
 	"time"
@@ -58,6 +59,20 @@ func CompressJPEG(buf []byte, quality int) ([]byte, error) {
 		Quality: quality,
 	})
 	return newBuf.Bytes(), err
+}
+
+// CompressPNG 压缩png图片
+func CompressPNG(buf []byte) ([]byte, error) {
+	img, err := png.Decode(bytes.NewBuffer(buf))
+	if err != nil {
+		return nil, err
+	}
+	newBuf := bytes.NewBuffer(nil) //开辟一个新的空buff
+	err = png.Encode(newBuf, img)
+	if err != nil {
+		return nil, err
+	}
+	return newBuf.Bytes(), nil
 }
 
 // GetClientIP 获取客户端IP

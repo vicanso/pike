@@ -2,6 +2,7 @@ package util
 
 import (
 	"io/ioutil"
+	"log"
 	"testing"
 	"time"
 
@@ -66,4 +67,14 @@ func TestCompressJPEG(t *testing.T) {
 	if len(newBuf) >= len(buf) {
 		t.Fatalf("compress jpeg fail")
 	}
+	log.Printf("original: %d byte, compress: %d byte", len(buf), len(newBuf))
+}
+
+func TestCompressPNG(t *testing.T) {
+	buf, _ := ioutil.ReadFile("../assets/images/icon.png")
+	newBuf, _ := CompressPNG(buf)
+	if len(newBuf) >= len(buf) {
+		t.Fatalf("compress png fail")
+	}
+	log.Printf("original: %d byte, compress: %d byte", len(buf), len(newBuf))
 }
