@@ -1,3 +1,10 @@
+# 0.1.3
+
+* 未配置`ping`的backend判断是否可用调整为判断配置端口是否监听
+* 增加docker health check
+* 支持压缩级别`compressLevel`的配置
+* 增加`jpeg`压缩质量配置
+
 # 0.1.2
 
 * 日志格式化字符串时，正则调整为非贪婪匹配，修复紧贴的placeholder无法解析
