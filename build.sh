@@ -8,5 +8,3 @@ GOOS=darwin go build -o pike-darwin
 GOOS=windows go build -o pike-win.exe
 
 GOOS=linux go build -o pike
-
-docker build -t vicanso/pike .
