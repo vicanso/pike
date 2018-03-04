@@ -20,16 +20,10 @@
   revision = "2de33835d10275975374b37b2dcfd22c9020a1f5"
 
 [[projects]]
-  name = "github.com/gobuffalo/envy"
-  packages = ["."]
-  revision = "e613c80275b86293880eddeb27417c9a7c670ff3"
-  version = "v1.3.0"
-
-[[projects]]
   name = "github.com/gobuffalo/packr"
   packages = ["."]
-  revision = "64c3dd439b5efc5cd9fb69a8fb209a03cd7c5b86"
-  version = "v1.10.3"
+  revision = "6434a292ac52e6964adebfdce3f9ce6d9f16be01"
+  version = "v1.10.4"
 
 [[projects]]
   name = "github.com/golang/protobuf"
@@ -38,10 +32,10 @@
   version = "v1.0.0"
 
 [[projects]]
-  name = "github.com/joho/godotenv"
-  packages = ["."]
-  revision = "a79fa1e548e2c689c241d10173efd51e5d689d5b"
-  version = "v1.2.0"
+  name = "github.com/google/brotli"
+  packages = ["go/cbrotli"]
+  revision = "533843e3546cd24c8344eaa899c6b0b681c8d222"
+  version = "v1.0.3"
 
 [[projects]]
   name = "github.com/klauspost/compress"
@@ -62,12 +56,6 @@
   version = "v1.1"
 
 [[projects]]
-  branch = "master"
-  name = "github.com/mitchellh/go-homedir"
-  packages = ["."]
-  revision = "b8bc1bf767474819792c23f32d8286a45736f1c6"
-
-[[projects]]
   name = "github.com/pkg/errors"
   packages = ["."]
   revision = "645ef00459ed84a119197bfb8d8205042c6df63d"
@@ -76,8 +64,8 @@
 [[projects]]
   name = "github.com/tidwall/gjson"
   packages = ["."]
-  revision = "87033efcaec6215741137e8ca61952c53ef2685d"
-  version = "v1.0.6"
+  revision = "01f00f129617a6fe98941fb920d6c760241b54d2"
+  version = "v1.1.0"
 
 [[projects]]
   branch = "master"
@@ -98,10 +86,10 @@
   revision = "e5f51c11919d4f66400334047b897ef0a94c6f3c"
 
 [[projects]]
-  branch = "master"
   name = "github.com/vicanso/fresh"
   packages = ["."]
   revision = "1eb0ff1831e6eee3240b637b98e558766a3f58db"
+  version = "0.0.1"
 
 [[projects]]
   branch = "master"
@@ -113,23 +101,23 @@
   branch = "master"
   name = "golang.org/x/net"
   packages = ["context","internal/timeseries","trace"]
-  revision = "b417086c80e91bfa321ef761574721644b8b9f61"
+  revision = "22ae77b79946ea320088417e4d50825671d82d57"
 
 [[projects]]
   branch = "master"
   name = "golang.org/x/sys"
   packages = ["unix"]
-  revision = "8f27ce8a604014414f8dfffc25cbcde83a3f2216"
+  revision = "dd2ff4accc098aceecb86b36eaa7829b2a17b1c9"
 
 [[projects]]
-  branch = "v2"
   name = "gopkg.in/yaml.v2"
   packages = ["."]
-  revision = "d670f9405373e636a5a2765eea47fac0c9bc91a4"
+  revision = "7f97868eec74b32b0982dd158a51a446d1da7eb5"
+  version = "v2.1.1"
 
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "df108552cb36cd5e96bbcdbe4a7af6dbc2504a187810fbf6df401d08ad03b16f"
+  inputs-digest = "fc0404980965c096ebdc780e84ce5979f58edd2b44c159f015f0e6c87e862fd2"
   solver-name = "gps-cdcl"
   solver-version = 1

@@ -7,6 +7,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/vicanso/pike/util"
 	"github.com/vicanso/pike/vars"
 
 	"github.com/valyala/fasthttp"
@@ -79,13 +80,22 @@ func TestDB(t *testing.T) {
 	resBody := ctx.Response.Body()
 	resHeader := ctx.Response.Header.Header()
 
+	gzipData, err := util.Gzip(data, 0)
+	if err != nil {
+		t.Fatalf("gzip data fail, %v", err)
+	}
+	brData, err := util.Brotli(data, 0)
+	if err != nil {
+		t.Fatalf("brotli data fail, %v", err)
+	}
+
 	saveRespData := &ResponseData{
-		StatusCode:     200,
-		Compress:       vars.GzipData,
-		ShouldCompress: true,
-		TTL:            30,
-		Header:         resHeader,
-		Body:           resBody,
+		StatusCode: 200,
+		TTL:        30,
+		Header:     resHeader,
+		Body:       resBody,
+		GzipBody:   gzipData,
+		BrBody:     brData,
 	}
 
 	SaveResponseData(key, saveRespData)
@@ -99,17 +109,17 @@ func TestDB(t *testing.T) {
 	if respData.TTL != 30 {
 		t.Fatalf("get the ttle fail")
 	}
-	if len(bytes.Split(resHeader, []byte("\r\n"))) != 6 {
+	if len(bytes.Split(respData.Header, []byte("\r\n"))) != 6 {
 		t.Fatalf("the response header fail")
 	}
-	if bytes.Compare(respData.Body, data) != 0 {
+	if !bytes.Equal(respData.Body, data) {
 		t.Fatalf("the response body fail")
 	}
-	if respData.Compress != vars.GzipData {
-		t.Fatalf("the data should be gzip compress")
+	if !bytes.Equal(respData.GzipBody, gzipData) {
+		t.Fatalf("the gzip response body fail")
 	}
-	if !respData.ShouldCompress {
-		t.Fatalf("the data should be compress")
+	if !bytes.Equal(respData.BrBody, brData) {
+		t.Fatalf("the brotli response body fail")
 	}
 }
 
@@ -214,7 +224,6 @@ func TestResponseCache(t *testing.T) {
 		SaveResponseData(key, &ResponseData{
 			CreatedAt:  uint32(time.Now().Unix()),
 			StatusCode: 200,
-			Compress:   vars.RawData,
 			TTL:        10,
 			Header:     make([]byte, 3*1024),
 			Body:       make([]byte, 50*1024),

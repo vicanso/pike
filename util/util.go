@@ -12,6 +12,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/google/brotli/go/cbrotli"
 	"github.com/valyala/fasthttp"
 	"github.com/vicanso/pike/vars"
 	"github.com/visionmedia/go-debug"
@@ -33,6 +34,17 @@ func Gzip(buf []byte, level int) ([]byte, error) {
 	}
 	w.Close()
 	return b.Bytes(), nil
+}
+
+// Brotli brotli压缩
+func Brotli(buf []byte, quality int) ([]byte, error) {
+	if quality == 0 {
+		quality = 9
+	}
+	return cbrotli.Encode(buf, cbrotli.WriterOptions{
+		Quality: quality,
+		LGWin:   0,
+	})
 }
 
 // Gunzip 解压数据

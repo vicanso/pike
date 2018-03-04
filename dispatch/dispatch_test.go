@@ -37,7 +37,7 @@ func TestResponse(t *testing.T) {
 		Header:     header.Header(),
 		Body:       data,
 	}
-	Response(ctx, respData, 1024, 0)
+	Response(ctx, respData)
 	body := string(ctx.Response.Body())
 	if body != helloWorld {
 		t.Fatalf("the response data expect %q but %q", helloWorld, body)
@@ -64,7 +64,7 @@ func TestResponse(t *testing.T) {
 		Header:     header.Header(),
 		Body:       data,
 	}
-	Response(ctx, respData, 1024, 0)
+	Response(ctx, respData)
 	if ctx.Response.StatusCode() != 304 {
 		t.Fatalf("the not modified response fail")
 	}
@@ -74,38 +74,19 @@ func TestResponse(t *testing.T) {
 		buf[index] = byte('A')
 	}
 
-	// client accept gzip (data not gzip)
-	header = &fasthttp.ResponseHeader{}
-	ctx = &fasthttp.RequestCtx{}
-	ctx.Request.Header.SetCanonical(vars.AcceptEncoding, []byte("gzip, deflate"))
-	respData = &cache.ResponseData{
-		ShouldCompress: true,
-		CreatedAt:      createdAt - 20,
-		StatusCode:     200,
-		TTL:            300,
-		Header:         header.Header(),
-		Body:           buf,
-	}
-	Response(ctx, respData, 1024, 0)
-	if len(ctx.Response.Body()) != 43 {
-		t.Fatalf("the gzip response fail")
-	}
-
 	// client accept gzip (data gzip)
 	gzipData, _ := util.Gzip(buf, 0)
 	header = &fasthttp.ResponseHeader{}
 	ctx = &fasthttp.RequestCtx{}
 	ctx.Request.Header.SetCanonical(vars.AcceptEncoding, []byte("gzip, deflate"))
 	respData = &cache.ResponseData{
-		ShouldCompress: true,
-		CreatedAt:      createdAt - 20,
-		StatusCode:     200,
-		TTL:            300,
-		Header:         header.Header(),
-		Compress:       vars.GzipData,
-		Body:           gzipData,
+		CreatedAt:  createdAt - 20,
+		StatusCode: 200,
+		TTL:        300,
+		Header:     header.Header(),
+		GzipBody:   gzipData,
 	}
-	Response(ctx, respData, 1024, 0)
+	Response(ctx, respData)
 	if len(ctx.Response.Body()) != 43 {
 		t.Fatalf("the gzip response fail")
 	}
@@ -114,15 +95,13 @@ func TestResponse(t *testing.T) {
 	header = &fasthttp.ResponseHeader{}
 	ctx = &fasthttp.RequestCtx{}
 	respData = &cache.ResponseData{
-		ShouldCompress: true,
-		CreatedAt:      createdAt - 20,
-		StatusCode:     200,
-		TTL:            300,
-		Header:         header.Header(),
-		Compress:       vars.GzipData,
-		Body:           gzipData,
+		CreatedAt:  createdAt - 20,
+		StatusCode: 200,
+		TTL:        300,
+		Header:     header.Header(),
+		GzipBody:   gzipData,
 	}
-	Response(ctx, respData, 1024, 0)
+	Response(ctx, respData)
 	if len(ctx.Response.Body()) != len(buf) {
 		t.Fatalf("the raw response fail")
 	}

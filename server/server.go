@@ -29,7 +29,7 @@ var defaultTextTypes = [][]byte{
 	[]byte("javascript"),
 	[]byte("json"),
 }
-var compresssTypes = make([][]byte, 0)
+var compressTypes = make([][]byte, 0)
 
 // Config the server config
 type Config struct {
@@ -224,7 +224,7 @@ func isPass(ctx *fasthttp.RequestCtx, passList [][]byte) bool {
 }
 
 // 根据Cache-Control的信息，获取s-maxage或者max-age的值
-func getCacheAge(header *fasthttp.ResponseHeader) uint32 {
+func getCacheAge(header *fasthttp.ResponseHeader) int {
 	cacheControl := header.PeekBytes(vars.CacheControl)
 	if len(cacheControl) == 0 {
 		return 0
@@ -241,7 +241,7 @@ func getCacheAge(header *fasthttp.ResponseHeader) uint32 {
 	result := reg.FindSubmatch(cacheControl)
 	if len(result) == 2 {
 		maxAge, _ := strconv.Atoi(string(result[1]))
-		return uint32(maxAge)
+		return maxAge
 	}
 
 	// 从max-age中获取缓存时间
@@ -251,7 +251,7 @@ func getCacheAge(header *fasthttp.ResponseHeader) uint32 {
 		return 0
 	}
 	maxAge, _ := strconv.Atoi(string(result[1]))
-	return uint32(maxAge)
+	return maxAge
 }
 
 // genRequestKey 生成请求的key: Method + host + request uri
@@ -267,8 +267,8 @@ func genRequestKey(ctx *fasthttp.RequestCtx) []byte {
 
 // shouldCompress 判断该响应数据是否应该压缩(针对文本类压缩)
 func shouldCompress(header *fasthttp.ResponseHeader) bool {
-	types := compresssTypes
-	if len(compresssTypes) == 0 {
+	types := compressTypes
+	if len(compressTypes) == 0 {
 		types = defaultTextTypes
 	}
 	contentType := header.PeekBytes(vars.ContentType)
@@ -282,6 +282,40 @@ func shouldCompress(header *fasthttp.ResponseHeader) bool {
 		}
 	}
 	return found
+}
+
+func getResponseData(data, header []byte, statusCode, ttl int, compressType int, compressLevel int) *cache.ResponseData {
+	respData := &cache.ResponseData{
+		CreatedAt: uint32(time.Now().Unix()),
+		TTL:       uint32(ttl),
+		Header:    header,
+	}
+	switch compressType {
+	case 1:
+		gzipData, _ := util.Gzip(data, compressLevel)
+		if len(gzipData) != 0 {
+			respData.GzipBody = gzipData
+		}
+	case 2:
+		brData, _ := util.Brotli(data, compressLevel)
+		// 如果做br压缩成功，则保存
+		if len(brData) != 0 {
+			respData.BrBody = brData
+		}
+	case 3:
+		gzipData, _ := util.Gzip(data, compressLevel)
+		if len(gzipData) != 0 {
+			respData.GzipBody = gzipData
+		}
+		brData, _ := util.Brotli(data, compressLevel)
+		// 如果做br压缩成功，则保存
+		if len(brData) != 0 {
+			respData.BrBody = brData
+		}
+	default:
+		respData.Body = data
+	}
+	return respData
 }
 
 func handler(ctx *fasthttp.RequestCtx, conf *Config, proxyConfig *proxy.Config) {
@@ -300,7 +334,7 @@ func handler(ctx *fasthttp.RequestCtx, conf *Config, proxyConfig *proxy.Config) 
 	}
 	// 正常的响应
 	responseHandler := func(data *cache.ResponseData) {
-		dispatch.Response(ctx, data, compressMinLength, compressLevel)
+		dispatch.Response(ctx, data)
 	}
 	if found == nil {
 		// 没有可用的配置（）
@@ -325,6 +359,7 @@ func handler(ctx *fasthttp.RequestCtx, conf *Config, proxyConfig *proxy.Config) 
 		}
 	}
 	respHeadr := &ctx.Response.Header
+	compressType := 0
 	switch status {
 	case vars.Pass:
 		respHeadr.SetCanonical(vars.XCache, vars.XCacheMiss)
@@ -334,16 +369,14 @@ func handler(ctx *fasthttp.RequestCtx, conf *Config, proxyConfig *proxy.Config) 
 			errorHandler(err)
 			return
 		}
-
-		respData := &cache.ResponseData{
-			CreatedAt:      uint32(time.Now().Unix()),
-			StatusCode:     uint16(resp.StatusCode()),
-			Compress:       vars.RawData,
-			ShouldCompress: shouldCompress(&resp.Header),
-			TTL:            0,
-			Header:         header,
-			Body:           body,
+		shouldDoCompress := shouldCompress(&resp.Header) && len(body) > compressMinLength
+		// 对于pass的请求，只生成gzip压缩，性能较高
+		if shouldDoCompress {
+			compressType = 1
 		}
+
+		respData := getResponseData(body, header, resp.StatusCode(), 0, compressType, 0)
+
 		responseHandler(respData)
 	case vars.Fetching, vars.HitForPass:
 		respHeadr.SetCanonical(vars.XCache, vars.XCacheMiss)
@@ -355,30 +388,21 @@ func handler(ctx *fasthttp.RequestCtx, conf *Config, proxyConfig *proxy.Config) 
 			errorHandler(err)
 			return
 		}
-		statusCode := uint16(resp.StatusCode())
+		statusCode := resp.StatusCode()
 		cacheAge := getCacheAge(&resp.Header)
-		compressType := vars.RawData
+		// compressType := vars.RawData
 		// 可以缓存的数据，则将数据先压缩
-		// 不可缓存的数据，`dispatch.Response`函数会根据客户端来决定是否压缩
-		shouldDoCompress := shouldCompress(&resp.Header)
-		if shouldDoCompress && cacheAge > 0 && len(body) > compressMinLength {
-			gzipStartedAt := time.Now()
-			gzipData, err := util.Gzip(body, compressLevel)
-			util.SetTimingConsumingHeader(gzipStartedAt, &ctx.Request.Header, vars.TimingGzip)
-			if err == nil {
-				body = gzipData
-				compressType = vars.GzipData
+		shouldDoCompress := shouldCompress(&resp.Header) && len(body) > compressMinLength
+		if shouldDoCompress {
+			// 如果是可缓存请求，则两份压缩
+			if cacheAge > 0 {
+				compressType = 3
+			} else {
+				// 不可缓存的，只做gzip压缩
+				compressType = 1
 			}
 		}
-		respData := &cache.ResponseData{
-			CreatedAt:      uint32(time.Now().Unix()),
-			StatusCode:     statusCode,
-			Compress:       uint8(compressType),
-			ShouldCompress: shouldDoCompress,
-			TTL:            cacheAge,
-			Header:         header,
-			Body:           body,
-		}
+		respData := getResponseData(body, header, statusCode, cacheAge, compressType, compressLevel)
 		responseHandler(respData)
 
 		if cacheAge <= 0 {
@@ -393,7 +417,7 @@ func handler(ctx *fasthttp.RequestCtx, conf *Config, proxyConfig *proxy.Config) 
 				cache.HitForPass(key, hitForPassTTL)
 			} else {
 				// 如果保存数据成功，则设置为cacheable
-				cache.Cacheable(key, cacheAge)
+				cache.Cacheable(key, uint32(cacheAge))
 			}
 		}
 	case vars.Cacheable:
@@ -453,7 +477,7 @@ func Start(conf *Config) error {
 	enableAccessLog := len(tags) != 0 && logWriter != nil
 	adminPath := []byte(conf.AdminPath)
 	for _, str := range conf.TextTypes {
-		compresssTypes = append(compresssTypes, []byte(str))
+		compressTypes = append(compressTypes, []byte(str))
 	}
 	extraHeaders := make([]*Header, 0)
 	if len(conf.ResponseHeader) != 0 {

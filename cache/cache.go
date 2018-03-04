@@ -16,32 +16,40 @@ var rsMutex = sync.Mutex{}
 
 var client *badger.DB
 
+/*
+|createdAt(4 byte)|
+|statusCode(4 byte)|
+|ttl(4 byte)|
+|headerLength(4 byte)|
+|bodyLength(4 byte)|
+|gzipBodyLength(4 byte)|
+|brotliBodyLength(4 byte)|
+|header(n byte)|
+|body(n byte)|
+|gzipBody(n byte)|
+|brotliBody(n byte)|
+*/
+
 // ResponseData 记录响应数据
 type ResponseData struct {
 	CreatedAt uint32
 	// HTTP状态码
-	StatusCode uint16
+	StatusCode uint32
 	// 数据是否压缩
-	Compress uint8
+	// Compress uint8
 	// 数据是否应该压缩
-	ShouldCompress bool
+	// ShouldCompress bool
 	// 缓存有效时间
 	TTL uint32
 	// HTTP响应头
 	Header []byte
-	// HTTP响应数据
+	// HTTP响应数据（非压缩）
 	Body []byte
+	// HTTP响应数据（gzip）
+	GzipBody []byte
+	// HTTP响应数据（brotli）
+	BrBody []byte
 }
-
-const (
-	createIndex         = 0
-	statusCodeIndex     = 4
-	compressIndex       = 6
-	shouldCompressIndex = 7
-	ttlIndex            = 8
-	headerLengthIndex   = 12
-	headerIndex         = 14
-)
 
 // RequestStatus 请求状态
 type RequestStatus struct {
@@ -249,20 +257,22 @@ func SaveResponseData(key []byte, respData *ResponseData) error {
 	}
 	header := respData.Header
 	ttl := respData.TTL
-	var shouldCompressData uint8
-	if respData.ShouldCompress {
-		shouldCompressData = 1
-	}
 	// 将要保存的数据转换为bytes
+	body := respData.Body
+	gzipBody := respData.GzipBody
+	brBody := respData.BrBody
 	s := [][]byte{
 		uint32ToBytes(createdAt),
-		uint16ToBytes(respData.StatusCode),
-		[]byte{respData.Compress},
-		[]byte{shouldCompressData},
+		uint32ToBytes(respData.StatusCode),
 		uint32ToBytes(respData.TTL),
-		uint16ToBytes(uint16(len(header))),
+		uint32ToBytes(uint32(len(header))),
+		uint32ToBytes(uint32(len(body))),
+		uint32ToBytes(uint32(len(gzipBody))),
+		uint32ToBytes(uint32(len(brBody))),
 		header,
-		respData.Body,
+		body,
+		gzipBody,
+		brBody,
 	}
 	data := bytes.Join(s, []byte(""))
 	return Save(key, data, ttl)
@@ -275,19 +285,49 @@ func GetResponse(key []byte) (resData *ResponseData, err error) {
 		return
 	}
 	// 因为数据的缓存比rs map的更晚删除，因为肯定有数据，无需要对data检测
-	headerLength := bytesToUint16(data[headerLengthIndex:headerIndex])
-	// 将bytes转换为ResponseData
-	resData = &ResponseData{
-		CreatedAt:  bytesToUint32(data[createIndex:statusCodeIndex]),
-		StatusCode: bytesToUint16(data[statusCodeIndex:compressIndex]),
-		Compress:   data[compressIndex],
-		TTL:        bytesToUint32(data[ttlIndex:headerLengthIndex]),
-		Header:     data[headerIndex : headerIndex+headerLength],
-		Body:       data[headerIndex+headerLength:],
+	resData = &ResponseData{}
+	size := 4
+	var headerLen, bodyLen, gzipBodyLen, brBodyLen, offset uint32
+
+	for index := 0; index < 7; index++ {
+		start := index * size
+		end := start + size
+		offset = uint32(end)
+		v := bytesToUint32(data[start:end])
+		switch index {
+		case 0:
+			resData.CreatedAt = v
+		case 1:
+			resData.StatusCode = v
+		case 2:
+			resData.TTL = v
+		case 3:
+			headerLen = v
+		case 4:
+			bodyLen = v
+		case 5:
+			gzipBodyLen = v
+		case 6:
+			brBodyLen = v
+		}
 	}
-	if data[shouldCompressIndex] == 1 {
-		resData.ShouldCompress = true
+	if headerLen != 0 {
+		resData.Header = data[offset : offset+headerLen]
+		offset += headerLen
 	}
+	if bodyLen != 0 {
+		resData.Body = data[offset : offset+bodyLen]
+		offset += bodyLen
+	}
+	if gzipBodyLen != 0 {
+		resData.GzipBody = data[offset : offset+gzipBodyLen]
+		offset += gzipBodyLen
+	}
+	if brBodyLen != 0 {
+		resData.BrBody = data[offset : offset+brBodyLen]
+		offset += brBodyLen
+	}
+
 	return
 }
 

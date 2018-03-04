@@ -28,14 +28,31 @@ func ErrorHandler(ctx *fasthttp.RequestCtx, err error) {
 	ctx.SetBodyString(err.Error())
 }
 
+func getResponseData(header *fasthttp.RequestHeader, respData *cache.ResponseData) ([]byte, []byte, error) {
+	gzipData := respData.GzipBody
+	brData := respData.BrBody
+	if header.HasAcceptEncodingBytes(vars.Br) && len(brData) != 0 {
+		return brData, vars.Br, nil
+	}
+	if header.HasAcceptEncodingBytes(vars.Gzip) && len(gzipData) != 0 {
+		return gzipData, vars.Gzip, nil
+	}
+	body := respData.Body
+	if len(body) == 0 {
+		data, err := util.Gunzip(gzipData)
+		if err != nil {
+			return nil, nil, err
+		}
+		body = data
+	}
+	return body, nil, nil
+}
+
 // Response 响应数据
-func Response(ctx *fasthttp.RequestCtx, respData *cache.ResponseData, compressMinLength, compressLevel int) {
+func Response(ctx *fasthttp.RequestCtx, respData *cache.ResponseData) {
 	respHeader := &ctx.Response.Header
 	reqHeader := &ctx.Request.Header
 	header := respData.Header
-	shouldCompress := respData.ShouldCompress
-	body := respData.Body
-	bodyLength := len(body)
 	arr := bytes.Split(header, vars.LineBreak)
 	// 设置响应头
 	for _, item := range arr {
@@ -82,33 +99,15 @@ func Response(ctx *fasthttp.RequestCtx, respData *cache.ResponseData, compressMi
 			}
 		}
 	}
-	supportGzip := reqHeader.HasAcceptEncodingBytes(vars.Gzip)
-	// 如果数据是gzip
-	if respData.Compress == vars.GzipData {
-		// 如果客户端不支持gzip，则解压
-		if !supportGzip {
-			rawData, err := util.Gunzip(body)
-			if err != nil {
-				ErrorHandler(ctx, err)
-				return
-			}
-			body = rawData
-			bodyLength = len(body)
-		} else {
-			// 客户端支持则设置gzip encoding
-			respHeader.SetCanonical(vars.ContentEncoding, vars.Gzip)
-		}
-	} else if supportGzip && shouldCompress && bodyLength > compressMinLength {
-		// 支持gzip，但是数据未压缩，而且数据大于 CompressMinLength
-		gzipData, err := util.Gzip(body, compressLevel)
-		// 如果压缩失败，直接返回未压缩数据
-		if err == nil {
-			body = gzipData
-			bodyLength = len(body)
-			respHeader.SetCanonical(vars.ContentEncoding, vars.Gzip)
-		}
+	body, encoding, err := getResponseData(reqHeader, respData)
+	if err != nil {
+		ErrorHandler(ctx, err)
+		return
+	}
+	if len(encoding) != 0 {
+		respHeader.SetCanonical(vars.ContentEncoding, encoding)
 	}
 	ctx.Response.SetStatusCode(statusCode)
-	respHeader.SetContentLength(bodyLength)
+	respHeader.SetContentLength(len(body))
 	ctx.SetBody(body)
 }

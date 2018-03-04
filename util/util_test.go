@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/google/brotli/go/cbrotli"
 	"github.com/valyala/fasthttp"
 )
 
@@ -21,6 +22,21 @@ func TestGzip(t *testing.T) {
 	}
 	if string(buf) != string(data) {
 		t.Fatalf("do gunzip fail")
+	}
+}
+
+func TestBrotli(t *testing.T) {
+	data := []byte("hello world")
+	buf, err := Brotli(data, 0)
+	if err != nil {
+		t.Fatalf("do brotli fail, %v", err)
+	}
+	buf, err = cbrotli.Decode(buf)
+	if err != nil {
+		t.Fatalf("do brotli decode fail, %v", err)
+	}
+	if string(buf) != string(data) {
+		t.Fatalf("do brotli fail")
 	}
 }
 

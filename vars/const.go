@@ -109,13 +109,6 @@ const (
 )
 
 const (
-	// RawData 原始数据
-	RawData = iota
-	// GzipData gzip压缩数据
-	GzipData
-)
-
-const (
 	// CompressMinLength the min length to gzip
 	CompressMinLength = 1024
 	// Random random policy
