@@ -58,8 +58,8 @@ var (
 
 	// TimingFetch fecth time
 	TimingFetch = []byte("Timing-Fetch")
-	// TimingGzip gzip time
-	TimingGzip = []byte("Timing-Gzip")
+	// TimingCompress compress time
+	TimingCompress = []byte("Timing-Compress")
 
 	// Get http get method
 	Get = []byte("GET")

@@ -180,7 +180,7 @@ func setServerTiming(ctx *fasthttp.RequestCtx, startedAt time.Time) {
 	ms := util.GetTimeConsuming(startedAt)
 	totalDesc := getTimingDesc(strconv.Itoa(ms), string(vars.Name))
 	fetchDesc := getTimingDesc(string(reqHeader.PeekBytes(vars.TimingFetch)), string(vars.Name)+"-fetch")
-	gzipDesc := getTimingDesc(string(reqHeader.PeekBytes(vars.TimingGzip)), string(vars.Name)+"-gzip")
+	compressDesc := getTimingDesc(string(reqHeader.PeekBytes(vars.TimingCompress)), string(vars.Name)+"-compress")
 
 	timing := [][]byte{
 		totalDesc,
@@ -188,8 +188,8 @@ func setServerTiming(ctx *fasthttp.RequestCtx, startedAt time.Time) {
 	if len(fetchDesc) != 0 {
 		timing = append(timing, fetchDesc)
 	}
-	if len(gzipDesc) != 0 {
-		timing = append(timing, gzipDesc)
+	if len(compressDesc) != 0 {
+		timing = append(timing, compressDesc)
 	}
 
 	serverTiming := header.PeekBytes(vars.ServerTiming)
@@ -286,9 +286,10 @@ func shouldCompress(header *fasthttp.ResponseHeader) bool {
 
 func getResponseData(data, header []byte, statusCode, ttl int, compressType int, compressLevel int) *cache.ResponseData {
 	respData := &cache.ResponseData{
-		CreatedAt: uint32(time.Now().Unix()),
-		TTL:       uint32(ttl),
-		Header:    header,
+		CreatedAt:  uint32(time.Now().Unix()),
+		TTL:        uint32(ttl),
+		Header:     header,
+		StatusCode: uint32(statusCode),
 	}
 	switch compressType {
 	case 1:
@@ -374,8 +375,11 @@ func handler(ctx *fasthttp.RequestCtx, conf *Config, proxyConfig *proxy.Config) 
 		if shouldDoCompress {
 			compressType = 1
 		}
-
+		compressStartedAt := time.Now()
 		respData := getResponseData(body, header, resp.StatusCode(), 0, compressType, 0)
+		if shouldDoCompress {
+			util.SetTimingConsumingHeader(compressStartedAt, &ctx.Request.Header, vars.TimingCompress)
+		}
 
 		responseHandler(respData)
 	case vars.Fetching, vars.HitForPass:
@@ -402,7 +406,12 @@ func handler(ctx *fasthttp.RequestCtx, conf *Config, proxyConfig *proxy.Config) 
 				compressType = 1
 			}
 		}
+
+		compressStartedAt := time.Now()
 		respData := getResponseData(body, header, statusCode, cacheAge, compressType, compressLevel)
+		if shouldDoCompress {
+			util.SetTimingConsumingHeader(compressStartedAt, &ctx.Request.Header, vars.TimingCompress)
+		}
 		responseHandler(respData)
 
 		if cacheAge <= 0 {
