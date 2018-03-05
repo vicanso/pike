@@ -1,18 +1,26 @@
 FROM golang:alpine as builder
 
 RUN apk update \
-  && apk add git \
+  && apk add git make g++ bash cmake \
   && git clone --depth=1 https://github.com/vicanso/pike.git /go/src/github.com/vicanso/pike \
   && go get -u github.com/golang/dep/cmd/dep \
-  && cd /go/src/github.com/vicanso/pike\
+  && cd /go/src/github.com/vicanso/pike \
   && dep ensure \
+  && cd /go/src/github.com/vicanso/pike/vendor/github.com/google/brotli/ \
+  && ./configure-cmake \
+  && make && make install \
+  && cd /go/src/github.com/vicanso/pike \
   && GOOS=linux go build -o pike
 
 FROM alpine
 
 RUN apk add --no-cache ca-certificates
 
+COPY --from=builder /usr/local/lib/libbrotlicommon.so.1 /usr/lib/
+COPY --from=builder /usr/local/lib/libbrotlienc.so.1 /usr/lib/
+COPY --from=builder /usr/local/lib/libbrotlidec.so.1 /usr/lib/
 COPY --from=builder /go/src/github.com/vicanso/pike/pike /
+
 
 ADD ./config.yml /etc/pike/config.yml
 
