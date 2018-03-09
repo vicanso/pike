@@ -291,6 +291,10 @@ func getResponseData(data, header []byte, statusCode, ttl int, compressType int,
 		Header:     header,
 		StatusCode: uint32(statusCode),
 	}
+	if len(data) == 0 {
+		respData.Body = data
+		return respData
+	}
 	switch compressType {
 	case 1:
 		gzipData, _ := util.Gzip(data, compressLevel)

@@ -205,6 +205,8 @@ func TestServerStart(t *testing.T) {
 				case "/error":
 					ctx.SetStatusCode(500)
 					ctx.SetBodyString("fail")
+				case "/no-content":
+					ctx.SetStatusCode(204)
 				case "/ping":
 					ctx.SetBodyString("pong")
 				case "/hit-for-pass":
@@ -223,7 +225,7 @@ func TestServerStart(t *testing.T) {
 	}()
 
 	conf := &config.Config{
-		Listen: ":3015",
+		Listen: ":2314",
 		DB:     "/tmp/pike.db",
 		Directors: []*config.Director{
 			&config.Director{
@@ -264,6 +266,10 @@ func TestServerStart(t *testing.T) {
 		Listen:             conf.Listen,
 	})
 	time.Sleep(5 * time.Second)
-	testCachable(t, "http://127.0.0.1:3015/cacheable")
-	testHitForPass(t, "http://127.0.0.1:3015/hit-for-pass")
+	testCachable(t, "http://127.0.0.1:2314/cacheable")
+	testHitForPass(t, "http://127.0.0.1:2314/hit-for-pass")
+	resp, err := get("http://127.0.0.1:2314/no-content")
+	if resp.StatusCode() != 204 {
+		t.Fatalf("the no content response fail")
+	}
 }

@@ -38,7 +38,9 @@ func getResponseData(header *fasthttp.RequestHeader, respData *cache.ResponseDat
 		return gzipData, vars.Gzip, nil
 	}
 	body := respData.Body
-	if len(body) == 0 {
+	// 如果没有body数据，而且有gzipData
+	// 如果body gzipData都没有（为204的情况，正常）
+	if len(body) == 0 && len(gzipData) != 0 {
 		data, err := util.Gunzip(gzipData)
 		if err != nil {
 			return nil, nil, err
@@ -99,6 +101,10 @@ func Response(ctx *fasthttp.RequestCtx, respData *cache.ResponseData) {
 			}
 		}
 	}
+	ctx.Response.SetStatusCode(statusCode)
+	if statusCode == fasthttp.StatusNoContent {
+		return
+	}
 	body, encoding, err := getResponseData(reqHeader, respData)
 	if err != nil {
 		ErrorHandler(ctx, err)
@@ -107,7 +113,6 @@ func Response(ctx *fasthttp.RequestCtx, respData *cache.ResponseData) {
 	if len(encoding) != 0 {
 		respHeader.SetCanonical(vars.ContentEncoding, encoding)
 	}
-	ctx.Response.SetStatusCode(statusCode)
 	respHeader.SetContentLength(len(body))
 	ctx.SetBody(body)
 }
