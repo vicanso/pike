@@ -9,6 +9,7 @@ import (
 	"image/jpeg"
 	"image/png"
 	"io/ioutil"
+	"net"
 	"strconv"
 	"time"
 
@@ -90,11 +91,19 @@ func CompressPNG(buf []byte) ([]byte, error) {
 // GetClientIP 获取客户端IP
 func GetClientIP(ctx *fasthttp.RequestCtx) string {
 	xFor := ctx.Request.Header.PeekBytes(vars.XForwardedFor)
-	if len(xFor) == 0 {
-		return ctx.RemoteIP().String()
+	ip := ctx.RemoteIP()
+	if len(xFor) != 0 {
+		arr := bytes.Split(xFor, []byte(","))
+		address := net.ParseIP(string(arr[0]))
+		xIP := address.To4()
+		if xIP == nil {
+			xIP = address.To16()
+		}
+		if xIP != nil {
+			ip = xIP
+		}
 	}
-	arr := bytes.Split(xFor, []byte(","))
-	return string(arr[0])
+	return ip.String()
 }
 
 // GetDebugVars 获取 debug vars
