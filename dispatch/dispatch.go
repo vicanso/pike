@@ -20,6 +20,8 @@ func ErrorHandler(ctx *fasthttp.RequestCtx, err error) {
 		ctx.SetStatusCode(fasthttp.StatusServiceUnavailable)
 	case vars.ErrGatewayTimeout:
 		ctx.SetStatusCode(fasthttp.StatusGatewayTimeout)
+	case vars.ErrAccessIsNotAlloed:
+		ctx.SetStatusCode(fasthttp.StatusForbidden)
 	default:
 		log.Print("internal server error:", err)
 		ctx.SetStatusCode(fasthttp.StatusInternalServerError)
