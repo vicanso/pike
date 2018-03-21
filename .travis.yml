@@ -1,4 +1,5 @@
 language: go
+sudo: true
 
 go:
   - 1.x
@@ -10,10 +11,9 @@ install:
 script:
   - dep ensure
   - cd vendor/github.com/google/brotli
-  - ./configure-cmake --prefix=.
+  - ./configure-cmake
   - make && make install
   - cd ../../../..
-  - export LD_LIBRARY_PATH=./vendor/github.com/google/brotli/lib:$LD_LIBRARY_PATH
   - go-bindata -pkg server -o server/bindata.go assets/dist
   - go test ./cache
   - go test ./config
