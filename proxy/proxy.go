@@ -85,7 +85,7 @@ func Do(ctx *fasthttp.RequestCtx, us *Upstream, config *Config) (*fasthttp.Respo
 	}
 	client := uh.Client
 	req := &ctx.Request
-	resp := &ctx.Response
+	resp := &fasthttp.Response{}
 	var err error
 	timeout := config.Timeout
 	// TODO 等待fasthttp修复
