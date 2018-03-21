@@ -9,6 +9,7 @@ install:
 
 script:
   - dep ensure
+  - cd vendor/github.com/google/brotli && ./configure-cmake && make && make install
   - go-bindata -pkg server -o server/bindata.go assets/dist
   - go test ./cache
   - go test ./config
