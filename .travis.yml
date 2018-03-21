@@ -13,6 +13,7 @@ script:
   - ./configure-cmake --prefix=.
   - make && make install
   - cd ../../../..
+  - export LD_LIBRARY_PATH=./vendor/github.com/google/brotli/lib:$LD_LIBRARY_PATH
   - go-bindata -pkg server -o server/bindata.go assets/dist
   - go test ./cache
   - go test ./config
