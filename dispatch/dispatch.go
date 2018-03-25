@@ -16,7 +16,9 @@ import (
 // ErrorHandler 出错处理
 func ErrorHandler(ctx *fasthttp.RequestCtx, err error) {
 	switch err {
-	case vars.ErrDirectorUnavailable, vars.ErrServiceUnavailable:
+	case vars.ErrDirectorUnavailable:
+		ctx.SetStatusCode(fasthttp.StatusBadGateway)
+	case vars.ErrServiceUnavailable:
 		ctx.SetStatusCode(fasthttp.StatusServiceUnavailable)
 	case vars.ErrGatewayTimeout:
 		ctx.SetStatusCode(fasthttp.StatusGatewayTimeout)
