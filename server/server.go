@@ -170,7 +170,7 @@ func getTimingDesc(ms, name string) []byte {
 	if len(ms) == 0 {
 		return nil
 	}
-	return []byte("0=" + ms + ";" + name)
+	return []byte("0;dur=" + ms + ";desc=" + name)
 }
 
 // 设置响应的 Server-Timing
