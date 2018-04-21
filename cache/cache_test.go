@@ -190,6 +190,13 @@ func TestRequestStatus(t *testing.T) {
 
 	t.Run("expire", func(t *testing.T) {
 		key := []byte("test expire")
+		expired := isExpired(&RequestStatus{
+			createdAt: 1,
+			ttl:       10,
+		})
+		if !expired {
+			t.Fatalf("the status should be expired")
+		}
 		c.GetRequestStatus(key)
 		c.Cacheable(key, 1)
 		status, _ := c.GetRequestStatus(key)
