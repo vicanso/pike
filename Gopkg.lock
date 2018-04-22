@@ -7,9 +7,87 @@
   revision = "cb90dff291acdbf4743b4cfdb15add5928d4242a"
   version = "v0.6"
 
+[[projects]]
+  name = "github.com/dgrijalva/jwt-go"
+  packages = ["."]
+  revision = "06ea1031745cb8b3dab3f6a236daf2b0aa468b7e"
+  version = "v3.2.0"
+
+[[projects]]
+  name = "github.com/fatih/structs"
+  packages = ["."]
+  revision = "a720dfa8df582c51dee1b36feabb906bde1588bd"
+  version = "v1.0"
+
+[[projects]]
+  name = "github.com/go-yaml/yaml"
+  packages = ["."]
+  revision = "5420a8b6744d3b0345ab293f6fcba19c978f1183"
+  version = "v2.2.1"
+
+[[projects]]
+  name = "github.com/h2non/gock"
+  packages = ["."]
+  revision = "550b7ca3aa563b9974e2391274ea55a940d05ca9"
+  version = "v1.0.8"
+
+[[projects]]
+  name = "github.com/labstack/echo"
+  packages = [".","middleware"]
+  revision = "6d227dfea4d2e52cb76856120b3c17f758139b4e"
+  version = "3.3.5"
+
+[[projects]]
+  name = "github.com/labstack/gommon"
+  packages = ["bytes","color","log","random"]
+  revision = "6fe1405d73ec4bd4cd8a4ac8e2a2b2bf95d03954"
+  version = "0.2.4"
+
+[[projects]]
+  name = "github.com/mattn/go-colorable"
+  packages = ["."]
+  revision = "167de6bfdfba052fa6b2d3664c8f5272e23c9072"
+  version = "v0.0.9"
+
+[[projects]]
+  name = "github.com/mattn/go-isatty"
+  packages = ["."]
+  revision = "0360b2af4f38e8d38c7fce2a9f4e702702d73a39"
+  version = "v0.0.3"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/valyala/bytebufferpool"
+  packages = ["."]
+  revision = "e746df99fe4a3986f4d4f79e13c1e0117ce9c2f7"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/valyala/fasttemplate"
+  packages = ["."]
+  revision = "dcecefd839c4193db0d35b88ec65b4c12d360ab0"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/vicanso/dash"
+  packages = ["."]
+  revision = "71184616c8f664577c29e97224db4a40a8b01d4b"
+
+[[projects]]
+  branch = "master"
+  name = "golang.org/x/crypto"
+  packages = ["acme","acme/autocert"]
+  revision = "e73bf333ef8920dbb52ad18d4bd38ad9d9bc76d7"
+
+[[projects]]
+  branch = "master"
+  name = "golang.org/x/sys"
+  packages = ["unix"]
+  revision = "79b0c6888797020a994db17c8510466c72fe75d9"
+
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "0cd539e22d82f3e7d5d6c815a177d8024ec55191d05b533b776d5759b5a9e688"
+  inputs-digest = "bf583c1b3a80b3b9222976e55a9cf0c37b39ea43a42f32bb4cfd0641619d2b9b"
   solver-name = "gps-cdcl"
   solver-version = 1

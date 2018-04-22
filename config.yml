@@ -1,0 +1,102 @@
+# HTTP response header 中的 Pike 
+name: Pike
+# 程序监听的端口，默认为 :3015
+listen: :3015
+# 数据缓存的db目录，默认为 /tmp/pike
+db: /tmp/pike
+# 后台管理员页面路径，如果不配置，无法使用管理员功能
+adminPath: /pike
+# 管理员验证token
+adminToken: ry3WwvhVG
+# hit for pass 的缓存有效期，默认为 300
+hitForPass: 600
+# 是否使用自动生成ETag（对于没有ETag的添加）
+etag: true
+# 设置对于数据压缩的最小文件（大于此值才压缩），如果设置为0，则使用默认值1024
+compressMinLength: 1024
+# 设置对于数据的压缩级别，如果设置为0，则使用golang默认值（建议使用）
+compressLevel: 0
+# 设置对JPEG的压缩质量，如果设置为0表示不做处理
+jpegQuality: 70
+# 设置是否对PNG做压缩处理（非0表示压缩），由于go的png压缩没有使用工具压缩的效果好，一般不需要使用此配置
+pngQuality: 0
+# 程序并发限制，设置为0表示使用fasthttp默认值 (256 * 1024)
+concurrency: 0
+# 是否禁用 disableKeepalive，默认为 false
+disableKeepalive: false 
+# readBufferSize 的限制，0表示使用fasthttp默认值 (4096)
+readBufferSize: 0 
+# writeBufferSize 的限制，0表示使用fasthttp默认值 (4096)
+writeBufferSize: 0 
+# 设置upstream的连接超时，默认为0，0表示无限制(time.Duration)，如果没有其它timeout的保障，不建议使用默认值（设置timeout后会有性能损耗）
+connectTimeout: 3s 
+# 设置请求的读取超时，0表示无限制(time.Duration)
+readTimeout: 0 
+# 设置响应的写超时，0表示无限制(time.Duration)
+writeTimeout: 0 
+# 限制每个IP的最大请求，0表示无限制
+maxConnsPerIP: 0
+# 设置keep-alive的保持时间，0表示无限制(time.Duration)
+maxKeepaliveDuration: 0 
+# 设置最大的请求数据大小，0表示使用fasthttp默认值 (4 * 1024 * 1024)
+maxRequestBodySize: 0
+# 过期缓存的清除时间间隔，如果设置为小于等于0 ，则使用默认值 300s
+expiredClearInterval: 300s
+# 访问日志的格式化，如果对于性能有更高的要求，而且也不需要访问日志，则不需要此配置
+logFormat: "pike\t{when-iso-ms} - {client-ip} - \"{method} {uri}\" {status} {size} {latency-ms}ms"
+# 访问日志保存路径
+accessLog: /tmp/pike/access.log
+# accessLog: /tmp/pike
+# 日志类型，如果为"date"表示按天分割日志，accessLog则应该配置为一个目录
+# logType: date
+# UDP日志，如果有配置，优先使用UDP形式
+# udpLog: 127.0.0.1:7349
+# 是否启用Server-Timing
+enableServerTiming: true
+# 文本类型（Content-Type包含此类型字符串会被压缩）
+# 若没有配置此参数则使用默认值：text javascript json
+textTypes:
+  - text
+  - javascript
+  - json
+# HTTPS证书相关
+# certFile: /cert/mine.pem
+# keyFile: /cert/mine.key
+directors:
+  -
+    # 名称
+    name: tiny 
+    # backend的选择策略，支持 random roundRobin leastConn ipHash uriHash first
+    type: first 
+    # 配置url pass的条件，如果url符合(包含此字符串）则直接为pass（更好的性能）
+    pass:
+      - cache-control=no-cache
+    # backend的健康检测，如果不配置，则默认判断该端口是否被监听
+    ping: /ping
+    # prefix与host是AND的关系
+    # 判断请求url的是否包含该前缀，如果是，则是此director
+    prefix:
+      - /api
+    # 判断请求的host是否符合，如果符合，则是此director
+    host:
+      - mac:3015
+    # backend列表
+    backends:
+      - 127.0.0.1:5018
+      - 192.168.31.3:3001
+      - 192.168.31.3:3002
+  -
+    name: npmtrend
+    type: roundRobin
+    ping: /ping
+    host:
+      - npmtrend.com
+    backends:
+      - 192.168.31.3:3200
+      - 192.168.31.3:3300
+# favicon的base64字符串
+favicon: base64-string
+# 需要添加的自定义的响应头
+responseHeader:
+  - "X-Server:My-Pike"
+  - "X-Location:GZ"

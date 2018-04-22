@@ -24,3 +24,11 @@
 [[constraint]]
   name = "github.com/akrylysov/pogreb"
   version = "0.6.0"
+
+[[constraint]]
+  name = "github.com/go-yaml/yaml"
+  version = "2.2.1"
+
+[[constraint]]
+  branch = "master"
+  name = "github.com/vicanso/dash"
