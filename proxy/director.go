@@ -44,6 +44,13 @@ type (
 	SelectFunc func(echo.Context, *Director) uint32
 )
 
+const (
+	first      = "first"
+	random     = "random"
+	roundRobin = "roundRobin"
+	ipHash     = "ipHash"
+)
+
 var selectFuncMap = make(map[string]SelectFunc)
 
 // 保证director列表
@@ -61,17 +68,26 @@ func AddSelect(name string, fn SelectFunc) {
 	selectFuncMap[name] = fn
 }
 
+// AddSelectByHeader 根据http header的字段来选择
+func AddSelectByHeader(name, headerField string) {
+	fn := func(c echo.Context, d *Director) uint32 {
+		s := c.Request().Header.Get(headerField)
+		return hash(s)
+	}
+	AddSelect(name, fn)
+}
+
 func init() {
-	AddSelect("first", func(c echo.Context, d *Director) uint32 {
+	AddSelect(first, func(c echo.Context, d *Director) uint32 {
 		return 0
 	})
-	AddSelect("random", func(c echo.Context, d *Director) uint32 {
+	AddSelect(random, func(c echo.Context, d *Director) uint32 {
 		return rand.Uint32()
 	})
-	AddSelect("roundRobin", func(c echo.Context, d *Director) uint32 {
+	AddSelect(roundRobin, func(c echo.Context, d *Director) uint32 {
 		return atomic.AddUint32(&d.roubin, 1)
 	})
-	AddSelect("ipHash", func(c echo.Context, d *Director) uint32 {
+	AddSelect(ipHash, func(c echo.Context, d *Director) uint32 {
 		return hash(c.RealIP())
 	})
 }
@@ -264,17 +280,23 @@ func doCheck(url string) (healthy bool) {
 
 // Select 根据Policy选择一个backend
 func (d *Director) Select(c echo.Context) string {
-	fn := selectFuncMap[d.Policy]
+	policy := d.Policy
+	if len(policy) == 0 {
+		policy = roundRobin
+	}
+	fn := selectFuncMap[policy]
 	if fn == nil {
 		return ""
 	}
 	availableBackends := d.GetAvailableBackends()
 	count := uint32(len(availableBackends))
+	if count == 0 {
+		return ""
+	}
 
 	index := fn(c, d)
 
 	return availableBackends[index%count]
-
 }
 
 // HealthCheck 对director下的服务器做健康检测
@@ -282,7 +304,11 @@ func (d *Director) HealthCheck() {
 	backends := d.Backends
 	for _, item := range backends {
 		go func(backend string) {
-			url := backend + d.Ping
+			ping := d.Ping
+			if len(ping) == 0 {
+				ping = "/ping"
+			}
+			url := backend + ping
 			healthy := doCheck(url)
 			if healthy {
 				d.AddAvailableBackend(backend)
@@ -303,7 +329,7 @@ func (d *Director) StartHealthCheck(interval time.Duration) {
 			d.StartHealthCheck(interval)
 		}
 	}()
-
+	d.HealthCheck()
 	ticker := time.NewTicker(interval)
 	for _ = range ticker.C {
 		d.HealthCheck()

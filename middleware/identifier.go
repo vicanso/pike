@@ -1,8 +1,6 @@
 package customMiddleware
 
 import (
-	"fmt"
-
 	"github.com/labstack/echo"
 
 	"github.com/vicanso/pike/cache"
@@ -14,19 +12,34 @@ import (
 - 判断请求状态，生成status
 - 对于状态非Pass的请求，根据request url 生成identity
 */
-func Identifier() echo.MiddlewareFunc {
+func Identifier(client *cache.Client) echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
 			req := c.Request()
 			method := req.Method
 			// 只有get与head请求可缓存
-			if method != "GET" && method != "HEAD" {
+			if method != echo.GET && method != echo.HEAD {
 				c.Set(vars.Status, cache.Pass)
 				return next(c)
 			}
 			key := []byte(method + " " + req.Host + " " + req.RequestURI)
+			status, ch := client.GetRequestStatus(key)
+			if ch != nil {
+				// TODO 是否需要增加超时处理
+				status = <-ch
+			}
+			c.Set(vars.Status, status)
+			c.Set(vars.Identity, key)
+			err := next(c)
+			if err != nil {
+				return err
+			}
+			// TODO 如果是fetching，需要设置为hit for pass or cacheable
+			// 如果接口出错的处理
+			// if status == cache.Fetching {
+			// 	client.HitForPass(key, 600)
+			// }
 
-			fmt.Println(string(key))
 			return nil
 		}
 	}

@@ -1,7 +1,6 @@
 package proxy
 
 import (
-	"hash/fnv"
 	"net/http/httptest"
 	"sort"
 	"testing"
@@ -60,6 +59,7 @@ func TestDirector(t *testing.T) {
 			t.Fatalf("match result should be false")
 		}
 
+		d.AddHost(aslant)
 		d.AddPrefix("/api")
 		d.RefreshPriority()
 		if d.Priority != 2 {
@@ -165,12 +165,22 @@ func TestSelect(t *testing.T) {
 			t.Fatalf("first policy fail")
 		}
 	}
+
 	d.Policy = "roundRobin"
 	e = echo.New()
 	for i := 0; i < 10; i++ {
 		backend := d.Select(e.NewContext(nil, nil))
 		if backend != backends[(i+1)%2] {
 			t.Fatalf("roundRobin policy fail")
+		}
+	}
+
+	d.Policy = "random"
+	e = echo.New()
+	for i := 0; i < 10; i++ {
+		backend := d.Select(e.NewContext(nil, nil))
+		if backend == "" {
+			t.Fatalf("random policy fail")
 		}
 	}
 
@@ -186,12 +196,7 @@ func TestSelect(t *testing.T) {
 
 	// custom select function
 	cusPolicy := "header:token"
-	AddSelect(cusPolicy, func(c echo.Context, d *Director) uint32 {
-		s := c.Request().Header.Get("token")
-		h := fnv.New32a()
-		h.Write([]byte(s))
-		return h.Sum32()
-	})
+	AddSelectByHeader(cusPolicy, "token")
 	d.Policy = cusPolicy
 	e = echo.New()
 	req = httptest.NewRequest("GET", "/", nil)

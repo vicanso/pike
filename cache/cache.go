@@ -3,6 +3,7 @@ package cache
 import (
 	"bytes"
 	"encoding/binary"
+	"os"
 	"sync"
 	"time"
 
@@ -101,6 +102,7 @@ func isExpired(rs *RequestStatus) bool {
 
 // Init 初始化缓存
 func (c *Client) Init() error {
+	os.Remove(c.Path + ".lock")
 	db, err := pogreb.Open(c.Path, nil)
 	c.db = db
 	c.rsMap = make(map[string]*RequestStatus)
