@@ -15,11 +15,16 @@ func DirectorPicker(directors proxy.Directors) echo.MiddlewareFunc {
 			req := c.Request()
 			host := req.Host
 			uri := req.RequestURI
+			found := false
 			for _, d := range directors {
 				if d.Match(host, uri) {
 					c.Set(vars.Director, d)
+					found = true
 					break
 				}
+			}
+			if !found {
+				return vars.ErrDirectorNotFound
 			}
 			return next(c)
 		}

@@ -3,6 +3,8 @@ package cache
 import (
 	"bytes"
 	"encoding/binary"
+	"encoding/json"
+	"net/http"
 	"os"
 	"sync"
 	"time"
@@ -12,7 +14,7 @@ import (
 
 const (
 	// Pass request status: pass
-	Pass = iota
+	Pass = iota + 1
 	// Fetching request status: fetching
 	Fetching
 	// Waiting request status: wating
@@ -41,7 +43,7 @@ type (
 		// 缓存有效时间(最大65535)
 		TTL uint16
 		// HTTP响应头
-		Header []byte
+		Header http.Header
 		// HTTP响应数据
 		Body []byte
 		// HTTP响应数据(gzip)
@@ -122,7 +124,10 @@ func (c *Client) SaveResponse(key []byte, resp *Response) error {
 	if createdAt == 0 {
 		createdAt = uint32(time.Now().Unix())
 	}
-	header := resp.Header
+	header, err := json.Marshal(resp.Header)
+	if err != nil {
+		return err
+	}
 	// 将要保存的数据转换为bytes
 	body := resp.Body
 	gzipBody := resp.GzipBody
@@ -162,8 +167,13 @@ func (c *Client) GetResponse(key []byte) (resp *Response, err error) {
 	gzipLength := bytesToUint32(data[16:20])
 	brLength := bytesToUint32(data[20:24])
 	var offset uint32 = 24
-	resp.Header = data[offset : offset+headerLength]
+	header := make(http.Header)
+	err = json.Unmarshal(data[offset:offset+headerLength], &header)
 	offset += headerLength
+	if err != nil {
+		return
+	}
+	resp.Header = header
 
 	resp.Body = data[offset : offset+bodyLength]
 	offset += bodyLength

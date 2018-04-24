@@ -30,17 +30,8 @@ func Identifier(client *cache.Client) echo.MiddlewareFunc {
 			}
 			c.Set(vars.Status, status)
 			c.Set(vars.Identity, key)
-			err := next(c)
-			if err != nil {
-				return err
-			}
-			// TODO 如果是fetching，需要设置为hit for pass or cacheable
-			// 如果接口出错的处理
-			// if status == cache.Fetching {
-			// 	client.HitForPass(key, 600)
-			// }
-
-			return nil
+			c.Logger().Debug(req.RequestURI, " status:", status)
+			return next(c)
 		}
 	}
 }

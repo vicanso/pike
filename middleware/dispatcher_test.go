@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 
 	"github.com/vicanso/pike/vars"
 
@@ -58,13 +59,18 @@ func TestDispatcher(t *testing.T) {
 		c := e.NewContext(req, resp)
 		c.Set(vars.Identity, []byte("abc"))
 		c.Set(vars.Status, cache.Fetching)
-		c.Set(vars.Code, 200)
-		c.Set(vars.Body, []byte("ABCD"))
-		c.Set(vars.Header, http.Header{
-			"Token": []string{
-				"A",
+		cr := &cache.Response{
+			CreatedAt:  uint32(time.Now().Unix()),
+			TTL:        300,
+			StatusCode: 200,
+			Body:       []byte("ABCD"),
+			Header: http.Header{
+				"Token": []string{
+					"A",
+				},
 			},
-		})
+		}
+		c.Set(vars.Response, cr)
 		fn(c)
 		if resp.Code != 200 {
 			t.Fatalf("the response code should be 200")
@@ -75,5 +81,7 @@ func TestDispatcher(t *testing.T) {
 		if string(resp.Body.Bytes()) != "ABCD" {
 			t.Fatalf("the response body should be ABCD")
 		}
+		// 由于缓存的数据需要写数据库，因此需要延时关闭client
+		time.Sleep(100 * time.Millisecond)
 	})
 }

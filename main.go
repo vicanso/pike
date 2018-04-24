@@ -1,12 +1,15 @@
 package main
 
 import (
+	"os"
+	"strconv"
 	"time"
 
 	"github.com/vicanso/pike/vars"
 
 	"github.com/labstack/echo"
 	"github.com/labstack/echo/middleware"
+	"github.com/labstack/gommon/log"
 
 	"github.com/vicanso/pike/cache"
 	"github.com/vicanso/pike/middleware"
@@ -16,6 +19,11 @@ import (
 func main() {
 	// Echo instance
 	e := echo.New()
+
+	level, _ := strconv.Atoi(os.Getenv("LVL"))
+	if level != 0 {
+		e.Logger.SetLevel(log.Lvl(level))
+	}
 	client := &cache.Client{
 		Path: "/tmp/test.cache",
 	}
@@ -25,6 +33,8 @@ func main() {
 		panic(err)
 	}
 	defer client.Close()
+	e.HTTPErrorHandler = customMiddleware.CreateErrorHandler(e, client)
+
 	directors := make(proxy.Directors, 0)
 	d := &proxy.Director{
 		Name: "aslant",
@@ -40,6 +50,7 @@ func main() {
 	e.Use(middleware.Logger())
 	e.Use(middleware.Recover())
 
+	// 对于websocke的直接不支持
 	e.Use(func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) (err error) {
 			if c.IsWebSocket() {
@@ -53,22 +64,13 @@ func main() {
 
 	e.Use(customMiddleware.DirectorPicker(directors))
 
+	e.Use(customMiddleware.CacheFetcher(client))
+
 	// e.Use(middleware.Gzip())
 
 	e.Use(customMiddleware.ProxyWithConfig(customMiddleware.ProxyConfig{}))
 
 	e.Use(customMiddleware.Dispatcher(client))
-
-	// e.Use(func(c echo.Context) (err error) {
-	// 	body := c.Get(vars.Body)
-	// 	if body == nil {
-	// 		// TODO ERROR
-	// 		return errors.New("Get the response fail")
-	// 	}
-
-	// })
-
-	// Routes
 
 	// Start server
 	e.Logger.Fatal(e.Start(":3015"))

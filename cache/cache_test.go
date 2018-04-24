@@ -2,6 +2,8 @@ package cache
 
 import (
 	"encoding/binary"
+	"encoding/json"
+	"net/http"
 	"sync/atomic"
 	"testing"
 	"time"
@@ -37,7 +39,10 @@ func TestResponse(t *testing.T) {
 	}
 	defer c.Close()
 	key := []byte("pike.aslant.site /users/me")
-	header := "http header"
+	header := make(http.Header)
+	header["token"] = []string{
+		"A",
+	}
 	body := "raw body"
 	gzipBody := "gzip body"
 	brBody := "br body"
@@ -48,7 +53,7 @@ func TestResponse(t *testing.T) {
 			CreatedAt:  now,
 			StatusCode: 200,
 			TTL:        600,
-			Header:     []byte(header),
+			Header:     header,
 			Body:       []byte(body),
 			GzipBody:   []byte(gzipBody),
 			BrBody:     []byte(brBody),
@@ -85,7 +90,13 @@ func TestResponse(t *testing.T) {
 			t.Fatalf("response ttl is wrong")
 		}
 
-		if string(resp.Header) != header {
+		buf1, err := json.Marshal(resp.Header)
+		if err != nil {
+			t.Fatalf("respose header marshal fail")
+		}
+		buf2, _ := json.Marshal(header)
+
+		if string(buf1) != string(buf2) {
 			t.Fatalf("response header is wrong")
 		}
 

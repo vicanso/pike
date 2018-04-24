@@ -8,7 +8,9 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"time"
 
+	"github.com/vicanso/pike/cache"
 	"github.com/vicanso/pike/proxy"
 	"github.com/vicanso/pike/vars"
 
@@ -68,6 +70,37 @@ func proxyHTTP(t *ProxyTarget) http.Handler {
 	return httputil.NewSingleHostReverseProxy(t.URL)
 }
 
+// 根据Cache-Control的信息，获取s-maxage或者max-age的值
+func getCacheAge(cacheControl []byte) uint16 {
+	// cacheControl := header.PeekBytes(vars.CacheControl)
+	if len(cacheControl) == 0 {
+		return 0
+	}
+	// 如果设置不可缓存，返回0
+	reg, _ := regexp.Compile(`no-cache|no-store|private`)
+	match := reg.Match(cacheControl)
+	if match {
+		return 0
+	}
+
+	// 优先从s-maxage中获取
+	reg, _ = regexp.Compile(`s-maxage=(\d+)`)
+	result := reg.FindSubmatch(cacheControl)
+	if len(result) == 2 {
+		maxAge, _ := strconv.Atoi(string(result[1]))
+		return uint16(maxAge)
+	}
+
+	// 从max-age中获取缓存时间
+	reg, _ = regexp.Compile(`max-age=(\d+)`)
+	result = reg.FindSubmatch(cacheControl)
+	if len(result) != 2 {
+		return 0
+	}
+	maxAge, _ := strconv.Atoi(string(result[1]))
+	return uint16(maxAge)
+}
+
 // ProxyWithConfig returns a Proxy middleware with config.
 // See: `Proxy()`
 func ProxyWithConfig(config ProxyConfig) echo.MiddlewareFunc {
@@ -86,6 +119,11 @@ func ProxyWithConfig(config ProxyConfig) echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) (err error) {
 			if config.Skipper(c) {
+				return next(c)
+			}
+
+			// 如果已获取到数据，则不需要proxy(从cache中获取)
+			if c.Get(vars.Response) != nil {
 				return next(c)
 			}
 			// 选择director
@@ -129,9 +167,20 @@ func ProxyWithConfig(config ProxyConfig) echo.MiddlewareFunc {
 				headers: make(http.Header),
 			}
 			proxyHTTP(tgt).ServeHTTP(writer, req)
-			c.Set(vars.Body, writer.body.Bytes())
-			c.Set(vars.Code, writer.code)
-			c.Set(vars.Header, writer.headers)
+			cacheControl := writer.headers[vars.CacheControl]
+			var ttl uint16
+			if len(cacheControl) != 0 {
+				// cache control 只会有一个http header
+				ttl = getCacheAge([]byte(cacheControl[0]))
+			}
+			cr := &cache.Response{
+				CreatedAt:  uint32(time.Now().Unix()),
+				TTL:        ttl,
+				StatusCode: uint16(writer.code),
+				Header:     writer.headers,
+				Body:       writer.body.Bytes(),
+			}
+			c.Set(vars.Response, cr)
 			return next(c)
 		}
 	}
