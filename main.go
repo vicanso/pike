@@ -47,7 +47,7 @@ func main() {
 	directors = append(directors, d)
 
 	// Middleware
-	e.Use(middleware.Logger())
+	// e.Use(middleware.Logger())
 	e.Use(middleware.Recover())
 
 	// 对于websocke的直接不支持
@@ -65,8 +65,6 @@ func main() {
 	e.Use(customMiddleware.DirectorPicker(directors))
 
 	e.Use(customMiddleware.CacheFetcher(client))
-
-	// e.Use(middleware.Gzip())
 
 	e.Use(customMiddleware.ProxyWithConfig(customMiddleware.ProxyConfig{}))
 

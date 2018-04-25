@@ -4,10 +4,15 @@ import (
 	"bytes"
 	"encoding/binary"
 	"encoding/json"
+	"errors"
 	"net/http"
 	"os"
+	"strings"
 	"sync"
 	"time"
+
+	"github.com/vicanso/pike/util"
+	"github.com/vicanso/pike/vars"
 
 	"github.com/akrylysov/pogreb"
 )
@@ -37,19 +42,23 @@ type (
 	// Response 响应数据
 	Response struct {
 		// 创建时间
-		CreatedAt uint32
+		CreatedAt uint32 `json:"createdAt"`
 		// HTTP状态码
-		StatusCode uint16
+		StatusCode uint16 `json:"statusCode"`
 		// 缓存有效时间(最大65535)
-		TTL uint16
+		TTL uint16 `json:"ttl"`
 		// HTTP响应头
-		Header http.Header
+		Header http.Header `json:"header"`
 		// HTTP响应数据
-		Body []byte
+		Body []byte `json:"body"`
 		// HTTP响应数据(gzip)
-		GzipBody []byte
+		GzipBody []byte `json:"gzip"`
 		// HTTP响应数据(br)
-		BrBody []byte
+		BrBody []byte `json:"br"`
+		// 压缩数据级别
+		CompressLevel int `json:"compressLevel"`
+		// 最小压缩数据
+		CompressMinLength int `json:"compressMinLength"`
 	}
 	// RequestStatus 获取请求状态
 	RequestStatus struct {
@@ -100,6 +109,82 @@ func isExpired(rs *RequestStatus) bool {
 		return true
 	}
 	return false
+}
+
+func (r *Response) getRawBody() ([]byte, error) {
+	if len(r.Body) != 0 {
+		return r.Body, nil
+	}
+	if len(r.GzipBody) != 0 {
+		return util.Gunzip(r.GzipBody)
+	}
+	return nil, errors.New("can not get raw body")
+}
+
+// GetBody 根据accept encondings 获取数据
+func (r *Response) GetBody(acceptEncoding string) (body []byte, encoding string) {
+	// 如果是204,直接返回
+	if r.StatusCode == http.StatusNoContent {
+		return
+	}
+	compressMinLength := r.CompressMinLength
+	if compressMinLength == 0 {
+		compressMinLength = vars.CompressMinLength
+	}
+	rawBodySize := len(r.Body)
+	// 如果原始数据小于最低压缩限制，则直接返回
+	if rawBodySize != 0 && rawBodySize < compressMinLength {
+		body = r.Body
+		return
+	}
+	level := r.CompressLevel
+	supportEncondings := []string{
+		vars.BrEncoding,
+		vars.GzipEncoding,
+	}
+	for _, enc := range supportEncondings {
+		if !strings.Contains(acceptEncoding, enc) {
+			continue
+		}
+		if enc == vars.BrEncoding {
+			if len(r.BrBody) != 0 {
+				body = r.BrBody
+				encoding = enc
+				return
+			}
+			// 获取原始未压缩数据
+			raw, err := r.getRawBody()
+			if err != nil {
+				continue
+			}
+			// 做br压缩
+			brBody, err := util.Brotli(raw, level)
+			// 如果压缩出错，使用下一个encoding
+			if err != nil {
+				continue
+			}
+			body = brBody
+			encoding = enc
+			return
+		} else if enc == vars.GzipEncoding {
+			if len(r.GzipBody) != 0 {
+				body = r.GzipBody
+				encoding = enc
+				return
+			}
+			// gzip压缩
+			gzipBody, err := util.Gzip(r.Body, level)
+			if err != nil {
+				continue
+			}
+			body = gzipBody
+			encoding = enc
+			return
+		}
+	}
+
+	body = r.Body
+	return
 }
 
 // Init 初始化缓存

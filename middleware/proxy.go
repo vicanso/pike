@@ -139,6 +139,7 @@ func ProxyWithConfig(config ProxyConfig) echo.MiddlewareFunc {
 			}
 
 			req := c.Request()
+			reqHeader := req.Header
 			targetURL, _ := url.Parse(backend)
 			tgt := &ProxyTarget{
 				Name: director.Name,
@@ -154,11 +155,11 @@ func ProxyWithConfig(config ProxyConfig) echo.MiddlewareFunc {
 			}
 
 			// Fix header
-			if req.Header.Get(echo.HeaderXRealIP) == "" {
-				req.Header.Set(echo.HeaderXRealIP, c.RealIP())
+			if reqHeader.Get(echo.HeaderXRealIP) == "" {
+				reqHeader.Set(echo.HeaderXRealIP, c.RealIP())
 			}
-			if req.Header.Get(echo.HeaderXForwardedProto) == "" {
-				req.Header.Set(echo.HeaderXForwardedProto, c.Scheme())
+			if reqHeader.Get(echo.HeaderXForwardedProto) == "" {
+				reqHeader.Set(echo.HeaderXForwardedProto, c.Scheme())
 			}
 
 			// Proxy
@@ -166,19 +167,44 @@ func ProxyWithConfig(config ProxyConfig) echo.MiddlewareFunc {
 				body:    new(bytes.Buffer),
 				headers: make(http.Header),
 			}
+			// proxy时为了避免304的出现，因此调用时临时删除header
+			ifModifiedSince := reqHeader.Get(echo.HeaderIfModifiedSince)
+			ifNoneMatch := reqHeader.Get(vars.IfNoneMatch)
+			if len(ifModifiedSince) != 0 {
+				reqHeader.Del(echo.HeaderIfModifiedSince)
+			}
+			if len(ifNoneMatch) != 0 {
+				reqHeader.Del(vars.IfNoneMatch)
+			}
 			proxyHTTP(tgt).ServeHTTP(writer, req)
-			cacheControl := writer.headers[vars.CacheControl]
+			if len(ifModifiedSince) != 0 {
+				reqHeader.Set(echo.HeaderIfModifiedSince, ifModifiedSince)
+			}
+			if len(ifNoneMatch) != 0 {
+				reqHeader.Set(vars.IfNoneMatch, ifNoneMatch)
+			}
+			headers := writer.headers
+			cacheControl := headers[vars.CacheControl]
 			var ttl uint16
 			if len(cacheControl) != 0 {
 				// cache control 只会有一个http header
 				ttl = getCacheAge([]byte(cacheControl[0]))
 			}
+			body := writer.body.Bytes()
 			cr := &cache.Response{
 				CreatedAt:  uint32(time.Now().Unix()),
 				TTL:        ttl,
 				StatusCode: uint16(writer.code),
-				Header:     writer.headers,
-				Body:       writer.body.Bytes(),
+				Header:     headers,
+				Body:       body,
+			}
+			contentEncoding := headers[echo.HeaderContentEncoding]
+			if len(contentEncoding) == 0 {
+				cr.Body = body
+			} else if contentEncoding[0] == vars.GzipEncoding {
+				cr.GzipBody = body
+			} else {
+				return vars.ErrContentEncodingNotSupport
 			}
 			c.Set(vars.Response, cr)
 			return next(c)

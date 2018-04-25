@@ -26,6 +26,12 @@
   version = "v2.2.1"
 
 [[projects]]
+  name = "github.com/google/brotli"
+  packages = ["go/cbrotli"]
+  revision = "c6333e1e79fb62ea088443f192293f964409b04e"
+  version = "v1.0.4"
+
+[[projects]]
   name = "github.com/h2non/gock"
   packages = ["."]
   revision = "550b7ca3aa563b9974e2391274ea55a940d05ca9"
@@ -88,6 +94,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "bf583c1b3a80b3b9222976e55a9cf0c37b39ea43a42f32bb4cfd0641619d2b9b"
+  inputs-digest = "a3805346bb9b60af769bfd4a18ef79d8a3711d1fcacbc826b91b1038489d872f"
   solver-name = "gps-cdcl"
   solver-version = 1

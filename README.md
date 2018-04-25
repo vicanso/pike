@@ -38,3 +38,11 @@
 - 生成响应数据，并设置至Context中
 
 ## Dispatcher
+
+- 从Context中获取Response
+- 将Response.Header中的数据设置至响应头
+- 判断该请求是否非(cacheable与pass)，根据TTL生成hitForPass或者Cacheable状态写入缓存数据库
+- 如果该请求状态为cacheable，设置HTTP Response Header:Age
+- 设置HTTP Response Header:X-Status 
+- 根据请求头与响应头，判断该请求是否304，如果是则直接返回NotModified
+- 设置HTTP状态码，根据AcceptEncoding生成响应数据并返回
