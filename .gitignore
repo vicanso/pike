@@ -1,3 +1,4 @@
 vendor
+_vendor*
 *.out
 pike

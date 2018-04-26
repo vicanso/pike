@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/binary"
 	"encoding/json"
-	"errors"
 	"net/http"
 	"os"
 	"strings"
@@ -118,7 +117,7 @@ func (r *Response) getRawBody() ([]byte, error) {
 	if len(r.GzipBody) != 0 {
 		return util.Gunzip(r.GzipBody)
 	}
-	return nil, errors.New("can not get raw body")
+	return nil, vars.ErrBodyCotentNotFound
 }
 
 // GetBody 根据accept encondings 获取数据
@@ -330,15 +329,18 @@ func (c *Client) Cacheable(key []byte, ttl uint16) {
 }
 
 // ClearExpired 清除过期数据
-func (c *Client) ClearExpired() {
+func (c *Client) ClearExpired(delay int) {
 	c.mutex.Lock()
 	defer c.mutex.Unlock()
 	now := uint32(time.Now().Unix())
+	// 为了避免删除数据之后，如果并发在请求rsmap为cacheable之后有可能导致获取数据失败，需要设置delay
+	if delay < 0 {
+		delay = 60
+	}
 	for k, v := range c.rsMap {
 		ttl := v.ttl
-		if ttl != 0 && now-v.createdAt > uint32(ttl) {
+		if ttl != 0 && now-v.createdAt > uint32(ttl)+uint32(delay) {
 			delete(c.rsMap, k)
-			// 删除数据之后，如果并发在请求rsmap为cacheable之后有可能导致获取数据失败
 			c.db.Delete([]byte(k))
 		}
 	}

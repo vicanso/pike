@@ -30,5 +30,25 @@
   version = "2.2.1"
 
 [[constraint]]
+  name = "github.com/google/brotli"
+  version = "1.0.4"
+
+[[constraint]]
+  name = "github.com/h2non/gock"
+  version = "1.0.8"
+
+[[constraint]]
+  name = "github.com/labstack/echo"
+  version = "3.3.5"
+
+[[constraint]]
+  name = "github.com/labstack/gommon"
+  version = "0.2.4"
+
+[[constraint]]
   branch = "master"
   name = "github.com/vicanso/dash"
+
+[[constraint]]
+  name = "github.com/vicanso/fresh"
+  version = "0.0.1"

@@ -62,4 +62,21 @@ func TestUpstreamPicker(t *testing.T) {
 		fn(c)
 	})
 
+	t.Run("no director match", func(t *testing.T) {
+		fn := DirectorPicker(directors)(func(c echo.Context) error {
+			d := c.Get(vars.Director).(*proxy.Director)
+			if d.Name != tiny {
+				t.Fatalf("get director match url prefix fail")
+			}
+			return nil
+		})
+		e := echo.New()
+		req := httptest.NewRequest(echo.GET, "/test", nil)
+		c := e.NewContext(req, nil)
+		err := fn(c)
+		if err != vars.ErrDirectorNotFound {
+			t.Fatalf("no director match should return error")
+		}
+	})
+
 }

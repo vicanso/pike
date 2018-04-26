@@ -50,8 +50,14 @@ var (
 	ErrDirectorNotFound = echo.NewHTTPError(http.StatusNotImplemented, "director not found")
 	// ErrRequestStatusNotSet 未设置请求的status
 	ErrRequestStatusNotSet = echo.NewHTTPError(http.StatusNotImplemented, "request status not set")
+	// ErrIdentityStatusNotSet 未设置Identity
+	ErrIdentityStatusNotSet = echo.NewHTTPError(http.StatusNotImplemented, "identity not set")
+	// ErrResponseStatusNotSet 未设置response
+	ErrResponseStatusNotSet = echo.NewHTTPError(http.StatusNotImplemented, "response not set")
 	// ErrContentEncodingNotSupport 未支持此content encoding
 	ErrContentEncodingNotSupport = echo.NewHTTPError(http.StatusNotImplemented, "content enconding not support")
+	// ErrBodyCotentNotFound 未找到content
+	ErrBodyCotentNotFound = echo.NewHTTPError(http.StatusInternalServerError, "body content not found")
 	// ErrNoBackendAvaliable 没有可用的backend
 	ErrNoBackendAvaliable = echo.NewHTTPError(http.StatusServiceUnavailable, "no backend avaliable")
 )

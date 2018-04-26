@@ -7,6 +7,10 @@ import (
 	"sync/atomic"
 	"testing"
 	"time"
+
+	"github.com/vicanso/pike/vars"
+
+	"github.com/vicanso/pike/util"
 )
 
 const (
@@ -110,6 +114,83 @@ func TestResponse(t *testing.T) {
 
 		if string(resp.BrBody) != brBody {
 			t.Fatalf("response br body is wrong")
+		}
+	})
+
+	t.Run("get raw body", func(t *testing.T) {
+		content := "test content"
+		resp := &Response{
+			Body: []byte(content),
+		}
+		raw, err := resp.getRawBody()
+		if err != nil || string(raw) != content {
+			t.Fatalf("get raw body from body fail")
+		}
+		gzipBody, _ := util.Gzip([]byte(content), 0)
+		resp = &Response{
+			GzipBody: gzipBody,
+		}
+		raw, err = resp.getRawBody()
+		if err != nil || string(raw) != content {
+			t.Fatalf("get raw body from gzip body fail")
+		}
+		resp = &Response{}
+		_, err = resp.getRawBody()
+		if err != vars.ErrBodyCotentNotFound {
+			t.Fatalf("should return err(body content not found)")
+		}
+	})
+
+	t.Run("get body", func(t *testing.T) {
+		contentStr := "需要一个长字符串，要大于1KB啊！！需要一个长字符串，要大于1KB啊！！需要一个长字符串，要大于1KB啊！！需要一个长字符串，要大于1KB啊！！需要一个长字符串，要大于1KB啊！！需要一个长字符串，要大于1KB啊！！需要一个长字符串，要大于1KB啊！！需要一个长字符串，要大于1KB啊！！需要一个长字符串，要大于1KB啊！！需要一个长字符串，要大于1KB啊！！需要一个长字符串，要大于1KB啊！！需要一个长字符串，要大于1KB啊！！需要一个长字符串，要大于1KB啊！！需要一个长字符串，要大于1KB啊！！需要一个长字符串，要大于1KB啊！！需要一个长字符串，要大于1KB啊！！需要一个长字符串，要大于1KB啊！！需要一个长字符串，要大于1KB啊！！需要一个长字符串，要大于1KB啊！！需要一个长字符串，要大于1KB啊！！需要一个长字符串，要大于1KB啊！！需要一个长字符串，要大于1KB啊！！需要一个长字符串，要大于1KB啊！！需要一个长字符串，要大于1KB啊！！需要一个长字符串，要大于1KB啊！！需要一个长字符串，要大于1KB啊！！需要一个长字符串，要大于1KB啊！！需要一个长字符串，要大于1KB啊！！需要一个长字符串，要大于1KB啊！！需要一个长字符串，要大于1KB啊！！需要一个长字符串，要大于1KB啊！！"
+		resp := &Response{
+			StatusCode: http.StatusNoContent,
+		}
+		body, enc := resp.GetBody("gzip, deflate, br")
+		if len(body) != 0 && enc != "" {
+			t.Fatalf("no content response body should be nil and enc should be empty")
+		}
+
+		resp = &Response{
+			Body: []byte("abcd"),
+		}
+		body, enc = resp.GetBody("gzip, deflate, br")
+		if string(body) != "abcd" {
+			t.Fatalf("the body less than compressMinLenght should be raw")
+		}
+
+		resp = &Response{
+			BrBody: []byte("abcd"),
+		}
+		body, enc = resp.GetBody("gzip, deflate, br")
+		if string(body) != "abcd" || enc != vars.BrEncoding {
+			t.Fatalf("get the body of br fail")
+		}
+
+		resp = &Response{
+			Body: []byte(contentStr),
+		}
+		body, enc = resp.GetBody("gzip, deflate, br")
+		rawBody, err := util.BrotliDecode(body)
+		if err != nil || string(rawBody) != contentStr || enc != vars.BrEncoding {
+			t.Fatalf("get the body of brotli(raw) fail")
+		}
+
+		resp = &Response{
+			GzipBody: []byte("abcd"),
+		}
+		body, enc = resp.GetBody("gzip, deflate")
+		if string(body) != "abcd" || enc != vars.GzipEncoding {
+			t.Fatalf("get the body of gzip fail")
+		}
+
+		resp = &Response{
+			Body: []byte(contentStr),
+		}
+		body, enc = resp.GetBody("gzip, deflate")
+		rawBody, err = util.Gunzip(body)
+		if err != nil || string(rawBody) != contentStr || enc != vars.GzipEncoding {
+			t.Fatalf("get the body of gzip(raw) fail")
 		}
 	})
 }
@@ -246,7 +327,7 @@ func TestClearExpired(t *testing.T) {
 	}
 
 	time.Sleep(2 * time.Second)
-	c.ClearExpired()
+	c.ClearExpired(0)
 
 	size := c.Size()
 	if size != 0 {

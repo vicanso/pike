@@ -80,20 +80,26 @@
   revision = "71184616c8f664577c29e97224db4a40a8b01d4b"
 
 [[projects]]
+  name = "github.com/vicanso/fresh"
+  packages = ["."]
+  revision = "1eb0ff1831e6eee3240b637b98e558766a3f58db"
+  version = "0.0.1"
+
+[[projects]]
   branch = "master"
   name = "golang.org/x/crypto"
   packages = ["acme","acme/autocert"]
-  revision = "e73bf333ef8920dbb52ad18d4bd38ad9d9bc76d7"
+  revision = "b0697eccbea9adec5b7ba8008f4c33d98d733388"
 
 [[projects]]
   branch = "master"
   name = "golang.org/x/sys"
   packages = ["unix"]
-  revision = "79b0c6888797020a994db17c8510466c72fe75d9"
+  revision = "bb9c189858d91f42db229b04d45a4c3d23a7662a"
 
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "a3805346bb9b60af769bfd4a18ef79d8a3711d1fcacbc826b91b1038489d872f"
+  inputs-digest = "53ef88963f5193e550a60cead6f3134998f47f2ab50e8510a827b974a8ea0aa6"
   solver-name = "gps-cdcl"
   solver-version = 1

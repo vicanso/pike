@@ -1,5 +1,8 @@
 # pike
 
+## 测试命令
+
+go test -race -coverprofile=test.out ./... && go tool cover --html=test.out
 
 ## 中间件
 

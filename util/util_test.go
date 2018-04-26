@@ -1,11 +1,7 @@
 package util
 
 import (
-	"io/ioutil"
-	"log"
 	"testing"
-
-	"github.com/google/brotli/go/cbrotli"
 )
 
 func TestGzip(t *testing.T) {
@@ -29,20 +25,11 @@ func TestBrotli(t *testing.T) {
 	if err != nil {
 		t.Fatalf("do brotli fail, %v", err)
 	}
-	buf, err = cbrotli.Decode(buf)
+	originalBuf, err := BrotliDecode(buf)
 	if err != nil {
 		t.Fatalf("do brotli decode fail, %v", err)
 	}
-	if string(buf) != string(data) {
-		t.Fatalf("do brotli fail")
+	if string(originalBuf) != string(data) {
+		t.Fatalf("do brotli decode fail")
 	}
-}
-
-func TestCompressJPEG(t *testing.T) {
-	buf, _ := ioutil.ReadFile("../assets/images/mac.jpg")
-	newBuf, _ := CompressJPEG(buf, 70)
-	if len(newBuf) >= len(buf) {
-		t.Fatalf("compress jpeg fail")
-	}
-	log.Printf("original: %d byte, compress: %d byte", len(buf), len(newBuf))
 }

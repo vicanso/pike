@@ -15,11 +15,13 @@ import (
 // CreateErrorHandler  创建异常处理函数
 func CreateErrorHandler(e *echo.Echo, client *cache.Client) echo.HTTPErrorHandler {
 	return func(err error, c echo.Context) {
-		status := c.Get(vars.Status)
+		iStatus := c.Get(vars.Status)
 		// 如果status状态为fetching，则设置此请求为hit for pass
-		if status != nil && status.(int) == cache.Fetching {
-			identity := c.Get(vars.Identity).([]byte)
-			client.HitForPass(identity, vars.HitForPassTTL)
+		if iStatus != nil && iStatus.(int) == cache.Fetching {
+			iIdentity := c.Get(vars.Identity)
+			if iIdentity != nil {
+				client.HitForPass(iIdentity.([]byte), vars.HitForPassTTL)
+			}
 		}
 		var (
 			code = http.StatusInternalServerError

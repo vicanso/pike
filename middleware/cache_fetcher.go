@@ -10,16 +10,19 @@ import (
 func CacheFetcher(client *cache.Client) echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
-			status := c.Get(vars.Status)
-			if status == nil {
+			iStatus := c.Get(vars.Status)
+			if iStatus == nil {
 				return vars.ErrRequestStatusNotSet
 			}
 			// 如果非cache的
-			if status.(int) != cache.Cacheable {
+			if iStatus.(int) != cache.Cacheable {
 				return next(c)
 			}
-			identity := c.Get(vars.Identity)
-			resp, err := client.GetResponse(identity.([]byte))
+			iIdentity := c.Get(vars.Identity)
+			if iIdentity == nil {
+				return vars.ErrIdentityStatusNotSet
+			}
+			resp, err := client.GetResponse(iIdentity.([]byte))
 			if err != nil {
 				return err
 			}

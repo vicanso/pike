@@ -75,8 +75,17 @@ func save(client *cache.Client, identity []byte, resp *cache.Response) {
 func Dispatcher(client *cache.Client) echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
-			status := c.Get(vars.Status).(int)
-			cr := c.Get(vars.Response).(*cache.Response)
+			iStatus := c.Get(vars.Status)
+			if iStatus == nil {
+				return vars.ErrRequestStatusNotSet
+			}
+			iResponse := c.Get(vars.Response)
+			if iResponse == nil {
+				return vars.ErrResponseStatusNotSet
+			}
+
+			status := iStatus.(int)
+			cr := iResponse.(*cache.Response)
 			resp := c.Response()
 			reqHeader := c.Request().Header
 
@@ -94,13 +103,15 @@ func Dispatcher(client *cache.Client) echo.MiddlewareFunc {
 			// pass的都是不可能缓存
 			if status != cache.Cacheable && status != cache.Pass {
 				go func() {
-					identity := c.Get(vars.Identity).([]byte)
+					iIdentity := c.Get(vars.Identity)
+					if iIdentity == nil {
+						return
+					}
+					identity := iIdentity.([]byte)
 					if cr.TTL == 0 {
 						client.HitForPass(identity, vars.HitForPassTTL)
 					} else {
 						save(client, identity, cr)
-						// client.SaveResponse(identity, cr)
-						// client.Cacheable(identity, cr.TTL)
 					}
 				}()
 			} else if status == cache.Cacheable {

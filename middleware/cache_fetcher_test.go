@@ -37,4 +37,30 @@ func TestCacheFetcher(t *testing.T) {
 		c.Set(vars.Identity, identity)
 		fn(c)
 	})
+
+	t.Run("fectch with no status", func(t *testing.T) {
+		fn := CacheFetcher(client)(func(c echo.Context) error {
+			return nil
+		})
+		e := echo.New()
+		c := e.NewContext(nil, nil)
+		err := fn(c)
+		if err != vars.ErrRequestStatusNotSet {
+			t.Fatalf("fetch with no status should return error")
+		}
+	})
+
+	t.Run("fetch is not cacheable", func(t *testing.T) {
+		fn := CacheFetcher(client)(func(c echo.Context) error {
+			resp := c.Get(vars.Response)
+			if resp != nil {
+				t.Fatalf("fetch is not cacheable fail")
+			}
+			return nil
+		})
+		e := echo.New()
+		c := e.NewContext(nil, nil)
+		c.Set(vars.Status, cache.Pass)
+		fn(c)
+	})
 }

@@ -127,11 +127,11 @@ func ProxyWithConfig(config ProxyConfig) echo.MiddlewareFunc {
 				return next(c)
 			}
 			// 选择director
-			d := c.Get(vars.Director)
-			if d == nil {
+			iDirector := c.Get(vars.Director)
+			if iDirector == nil {
 				return vars.ErrDirectorNotFound
 			}
-			director := d.(*proxy.Director)
+			director := iDirector.(*proxy.Director)
 			// 从director中选择可用的backend
 			backend := director.Select(c)
 			if len(backend) == 0 {
