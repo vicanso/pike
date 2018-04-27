@@ -1,4 +1,4 @@
-package customMiddleware
+package custommiddleware
 
 import (
 	"testing"
@@ -62,5 +62,18 @@ func TestCacheFetcher(t *testing.T) {
 		c := e.NewContext(nil, nil)
 		c.Set(vars.Status, cache.Pass)
 		fn(c)
+	})
+
+	t.Run("fetch cacheable but no identity", func(t *testing.T) {
+		fn := CacheFetcher(client)(func(c echo.Context) error {
+			return nil
+		})
+		e := echo.New()
+		c := e.NewContext(nil, nil)
+		c.Set(vars.Status, cache.Cacheable)
+		err := fn(c)
+		if err != vars.ErrIdentityStatusNotSet {
+			t.Fatalf("fetch cacheable but not identity should return error")
+		}
 	})
 }

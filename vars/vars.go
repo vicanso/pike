@@ -15,6 +15,10 @@ const (
 	Director = "director"
 	// Response 响应数据
 	Response = "response"
+	// Timing timing
+	Timing = "timing"
+	// PikeMetric pike总体的处理时间
+	PikeMetric = "pikeMetric"
 	// HitForPassTTL hit for pass的有效期
 	HitForPassTTL = 600
 	// CompressMinLength the min length to gzip
@@ -41,6 +45,8 @@ const (
 	IfNoneMatch = "If-None-Match"
 	// ETag http response etag
 	ETag = "ETag"
+	// ServerTiming http response server timing
+	ServerTiming = "Server-Timing"
 )
 
 var (
@@ -60,4 +66,6 @@ var (
 	ErrBodyCotentNotFound = echo.NewHTTPError(http.StatusInternalServerError, "body content not found")
 	// ErrNoBackendAvaliable 没有可用的backend
 	ErrNoBackendAvaliable = echo.NewHTTPError(http.StatusServiceUnavailable, "no backend avaliable")
+	// ErrGatewayTimeout 网关超时
+	ErrGatewayTimeout = echo.NewHTTPError(http.StatusGatewayTimeout, "gateway timeout")
 )

@@ -1,4 +1,4 @@
-package customMiddleware
+package custommiddleware
 
 import (
 	"fmt"
@@ -15,12 +15,12 @@ import (
 // CreateErrorHandler  创建异常处理函数
 func CreateErrorHandler(e *echo.Echo, client *cache.Client) echo.HTTPErrorHandler {
 	return func(err error, c echo.Context) {
-		iStatus := c.Get(vars.Status)
+		status, ok := c.Get(vars.Status).(int)
 		// 如果status状态为fetching，则设置此请求为hit for pass
-		if iStatus != nil && iStatus.(int) == cache.Fetching {
-			iIdentity := c.Get(vars.Identity)
-			if iIdentity != nil {
-				client.HitForPass(iIdentity.([]byte), vars.HitForPassTTL)
+		if !ok || status == cache.Fetching {
+			identity, ok := c.Get(vars.Identity).([]byte)
+			if ok {
+				client.HitForPass(identity, vars.HitForPassTTL)
 			}
 		}
 		var (

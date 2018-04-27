@@ -1,7 +1,8 @@
-package customMiddleware
+package custommiddleware
 
 import (
 	"github.com/labstack/echo"
+	"github.com/mitchellh/go-server-timing"
 
 	"github.com/vicanso/pike/cache"
 	"github.com/vicanso/pike/vars"
@@ -15,6 +16,11 @@ import (
 func Identifier(client *cache.Client) echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
+			timing := &servertiming.Header{}
+			pikeMetric := timing.NewMetric("0PIKE")
+			pikeMetric.WithDesc("pike handle time").Start()
+			c.Set(vars.PikeMetric, pikeMetric)
+			c.Set(vars.Timing, timing)
 			req := c.Request()
 			method := req.Method
 			// 只有get与head请求可缓存
@@ -25,8 +31,11 @@ func Identifier(client *cache.Client) echo.MiddlewareFunc {
 			key := []byte(method + " " + req.Host + " " + req.RequestURI)
 			status, ch := client.GetRequestStatus(key)
 			if ch != nil {
+				m := timing.NewMetric("0WFRS")
+				m.WithDesc("wait for request status").Start()
 				// TODO 是否需要增加超时处理
 				status = <-ch
+				m.Stop()
 			}
 			c.Set(vars.Status, status)
 			c.Set(vars.Identity, key)

@@ -1,7 +1,8 @@
-package customMiddleware
+package custommiddleware
 
 import (
 	"github.com/labstack/echo"
+	"github.com/mitchellh/go-server-timing"
 	"github.com/vicanso/pike/cache"
 	"github.com/vicanso/pike/vars"
 )
@@ -10,19 +11,28 @@ import (
 func CacheFetcher(client *cache.Client) echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
-			iStatus := c.Get(vars.Status)
-			if iStatus == nil {
+			status, ok := c.Get(vars.Status).(int)
+			if !ok {
 				return vars.ErrRequestStatusNotSet
 			}
 			// 如果非cache的
-			if iStatus.(int) != cache.Cacheable {
+			if status != cache.Cacheable {
 				return next(c)
 			}
-			iIdentity := c.Get(vars.Identity)
-			if iIdentity == nil {
+			identity, ok := c.Get(vars.Identity).([]byte)
+			if !ok {
 				return vars.ErrIdentityStatusNotSet
 			}
-			resp, err := client.GetResponse(iIdentity.([]byte))
+			timing, _ := c.Get(vars.Timing).(*servertiming.Header)
+			var m *servertiming.Metric
+			if timing != nil {
+				m = timing.NewMetric("0GRFC")
+				m.WithDesc("get response from cache").Start()
+			}
+			resp, err := client.GetResponse(identity)
+			if m != nil {
+				m.Stop()
+			}
 			if err != nil {
 				return err
 			}

@@ -1,4 +1,4 @@
-package customMiddleware
+package custommiddleware
 
 import (
 	"bytes"

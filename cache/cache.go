@@ -36,7 +36,7 @@ type (
 		Path  string
 		db    *pogreb.DB
 		rsMap map[string]*RequestStatus
-		mutex *sync.Mutex
+		sync.Mutex
 	}
 	// Response 响应数据
 	Response struct {
@@ -117,6 +117,9 @@ func (r *Response) getRawBody() ([]byte, error) {
 	if len(r.GzipBody) != 0 {
 		return util.Gunzip(r.GzipBody)
 	}
+	if len(r.BrBody) != 0 {
+		return util.BrotliDecode(r.BrBody)
+	}
 	return nil, vars.ErrBodyCotentNotFound
 }
 
@@ -192,7 +195,6 @@ func (c *Client) Init() error {
 	db, err := pogreb.Open(c.Path, nil)
 	c.db = db
 	c.rsMap = make(map[string]*RequestStatus)
-	c.mutex = &sync.Mutex{}
 	return err
 }
 
@@ -272,8 +274,8 @@ func (c *Client) GetResponse(key []byte) (resp *Response, err error) {
 
 // GetRequestStatus 获取key对应的请求status
 func (c *Client) GetRequestStatus(key []byte) (status int, ch chan int) {
-	c.mutex.Lock()
-	defer c.mutex.Unlock()
+	c.Lock()
+	defer c.Unlock()
 	k := string(key)
 	rs := c.rsMap[k]
 	// 如果该key对应的状态为空或者已过期
@@ -301,8 +303,8 @@ func (c *Client) GetRequestStatus(key []byte) (status int, ch chan int) {
 // UpdateRequestStatus 更新状态，获取等待中的请求，并设置状态和有效期
 func (c *Client) UpdateRequestStatus(key []byte, status int, ttl uint16) {
 
-	c.mutex.Lock()
-	defer c.mutex.Unlock()
+	c.Lock()
+	defer c.Unlock()
 	k := string(key)
 	rs := c.rsMap[k]
 	if rs == nil {
@@ -330,8 +332,8 @@ func (c *Client) Cacheable(key []byte, ttl uint16) {
 
 // ClearExpired 清除过期数据
 func (c *Client) ClearExpired(delay int) {
-	c.mutex.Lock()
-	defer c.mutex.Unlock()
+	c.Lock()
+	defer c.Unlock()
 	now := uint32(time.Now().Unix())
 	// 为了避免删除数据之后，如果并发在请求rsmap为cacheable之后有可能导致获取数据失败，需要设置delay
 	if delay < 0 {
@@ -353,8 +355,8 @@ func (c *Client) Size() int {
 
 // GetStats 获取缓存状态统计
 func (c *Client) GetStats() (stats *Stats) {
-	c.mutex.Lock()
-	defer c.mutex.Unlock()
+	c.Lock()
+	defer c.Unlock()
 	stats = &Stats{}
 	for _, v := range c.rsMap {
 		switch v.status {

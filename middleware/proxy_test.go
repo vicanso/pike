@@ -1,4 +1,4 @@
-package customMiddleware
+package custommiddleware
 
 import (
 	"net/http/httptest"
@@ -50,6 +50,8 @@ func TestProxyWithConfig(t *testing.T) {
 		})
 		e := echo.New()
 		req := httptest.NewRequest(echo.GET, "http://aslant.site/api/users/me", nil)
+		req.Header.Set(echo.HeaderIfModifiedSince, "Mon, 07 Nov 2016 07:51:11 GMT")
+		req.Header.Set(vars.IfNoneMatch, `"16e36-540b1498e39c0"`)
 		res := newCloseNotifyRecorder()
 		c := e.NewContext(req, res)
 		aslant := "aslant"

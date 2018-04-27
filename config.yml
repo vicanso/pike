@@ -3,7 +3,7 @@ name: Pike
 # 程序监听的端口，默认为 :3015
 listen: :3015
 # 数据缓存的db目录，默认为 /tmp/pike
-db: /tmp/pike
+db: /tmp/pike.cache
 # 后台管理员页面路径，如果不配置，无法使用管理员功能
 adminPath: /pike
 # 管理员验证token
@@ -67,10 +67,10 @@ directors:
     # 名称
     name: tiny 
     # backend的选择策略，支持 random roundRobin leastConn ipHash uriHash first
-    type: first 
+    policy: first 
     # 配置url pass的条件，如果url符合(包含此字符串）则直接为pass（更好的性能）
-    pass:
-      - cache-control=no-cache
+    # pass:
+    #   - cache-control=no-cache
     # backend的健康检测，如果不配置，则默认判断该端口是否被监听
     ping: /ping
     # prefix与host是AND的关系
@@ -81,19 +81,19 @@ directors:
     host:
       - mac:3015
     # backend列表
-    backends:
-      - 127.0.0.1:5018
-      - 192.168.31.3:3001
-      - 192.168.31.3:3002
+    backend:
+      - http://127.0.0.1:5018
+      - http://192.168.31.3:3001
+      - http://192.168.31.3:3002
   -
     name: npmtrend
     type: roundRobin
     ping: /ping
     host:
       - npmtrend.com
-    backends:
-      - 192.168.31.3:3200
-      - 192.168.31.3:3300
+    backend:
+      - http://192.168.31.3:3200
+      - http://192.168.31.3:3300
 # favicon的base64字符串
 favicon: base64-string
 # 需要添加的自定义的响应头

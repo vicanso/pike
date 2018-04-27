@@ -1,7 +1,8 @@
-package customMiddleware
+package custommiddleware
 
 import (
 	"bytes"
+	"context"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
@@ -10,6 +11,7 @@ import (
 	"strings"
 	"time"
 
+	servertiming "github.com/mitchellh/go-server-timing"
 	"github.com/vicanso/pike/cache"
 	"github.com/vicanso/pike/proxy"
 	"github.com/vicanso/pike/vars"
@@ -35,6 +37,9 @@ type (
 		// "/users/*/orders/*": "/user/$1/order/$2",
 		Rewrite map[string]string
 
+		// Timeout 超时间隔
+		Timeout time.Duration
+
 		rewriteRegex map[*regexp.Regexp]string
 	}
 
@@ -49,6 +54,10 @@ type (
 		code    int
 		http.ResponseWriter
 	}
+)
+
+const (
+	defaultTimeout = 10 * time.Second
 )
 
 func captureTokens(pattern *regexp.Regexp, input string) *strings.Replacer {
@@ -109,6 +118,10 @@ func ProxyWithConfig(config ProxyConfig) echo.MiddlewareFunc {
 		config.Skipper = middleware.DefaultSkipper
 	}
 	config.rewriteRegex = map[*regexp.Regexp]string{}
+	timeout := config.Timeout
+	if timeout <= 0 {
+		timeout = defaultTimeout
+	}
 
 	// Initialize
 	for k, v := range config.Rewrite {
@@ -127,15 +140,21 @@ func ProxyWithConfig(config ProxyConfig) echo.MiddlewareFunc {
 				return next(c)
 			}
 			// 选择director
-			iDirector := c.Get(vars.Director)
-			if iDirector == nil {
+			director, ok := c.Get(vars.Director).(*proxy.Director)
+			if !ok {
 				return vars.ErrDirectorNotFound
 			}
-			director := iDirector.(*proxy.Director)
 			// 从director中选择可用的backend
 			backend := director.Select(c)
 			if len(backend) == 0 {
 				return vars.ErrNoBackendAvaliable
+			}
+
+			timing, _ := c.Get(vars.Timing).(*servertiming.Header)
+			var m *servertiming.Metric
+			if timing != nil {
+				m = timing.NewMetric("0GRFP")
+				m.WithDesc("get response from proxy").Start()
 			}
 
 			req := c.Request()
@@ -161,7 +180,6 @@ func ProxyWithConfig(config ProxyConfig) echo.MiddlewareFunc {
 			if reqHeader.Get(echo.HeaderXForwardedProto) == "" {
 				reqHeader.Set(echo.HeaderXForwardedProto, c.Scheme())
 			}
-
 			// Proxy
 			writer := &bodyDumpResponseWriter{
 				body:    new(bytes.Buffer),
@@ -176,7 +194,18 @@ func ProxyWithConfig(config ProxyConfig) echo.MiddlewareFunc {
 			if len(ifNoneMatch) != 0 {
 				reqHeader.Del(vars.IfNoneMatch)
 			}
-			proxyHTTP(tgt).ServeHTTP(writer, req)
+			ctx, cancel := context.WithTimeout(context.Background(), timeout)
+			defer cancel()
+			done := make(chan bool)
+			go func() {
+				proxyHTTP(tgt).ServeHTTP(writer, req)
+				done <- true
+			}()
+			select {
+			case <-done:
+			case <-ctx.Done():
+				return vars.ErrGatewayTimeout
+			}
 			if len(ifModifiedSince) != 0 {
 				reqHeader.Set(echo.HeaderIfModifiedSince, ifModifiedSince)
 			}
@@ -207,6 +236,9 @@ func ProxyWithConfig(config ProxyConfig) echo.MiddlewareFunc {
 				return vars.ErrContentEncodingNotSupport
 			}
 			c.Set(vars.Response, cr)
+			if m != nil {
+				m.Stop()
+			}
 			return next(c)
 		}
 	}

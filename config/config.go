@@ -14,13 +14,13 @@ type Director struct {
 	Ping    string
 	Prefix  []string
 	Host    []string
-	Pass    []string
 	Backend []string
 }
 
 // Config 应用配置
 type Config struct {
 	Name      string
+	DB        string
 	Directors []*Director
 }
 
@@ -28,7 +28,7 @@ var defaultConfig = &Config{}
 
 func init() {
 	var file string
-	flag.StringVar(&file, "c", "/etc/pike/config.yml", "the config file")
+	flag.StringVar(&file, "c", "./config.yml", "the config file")
 
 	buf, err := ioutil.ReadFile(file)
 	if err != nil {

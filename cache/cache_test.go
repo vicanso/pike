@@ -1,6 +1,7 @@
 package cache
 
 import (
+	"bytes"
 	"encoding/binary"
 	"encoding/json"
 	"net/http"
@@ -32,6 +33,39 @@ func TestCacheClient(t *testing.T) {
 		c.Close()
 	})
 }
+func TestTypeConvert(t *testing.T) {
+	t.Run("covert between uint16 and bytes", func(t *testing.T) {
+		i := uint16(time.Now().Unix())
+		buf := uint16ToBytes(i)
+		if bytesToUint16(buf) != i {
+			t.Fatalf("covert between uint16 and bytes fail")
+		}
+	})
+
+	t.Run("covert between uint32 and bytes", func(t *testing.T) {
+		i := uint32(time.Now().Unix())
+		buf := uint32ToBytes(i)
+		if bytesToUint32(buf) != i {
+			t.Fatalf("covert between uint32 and bytes fail")
+		}
+	})
+}
+
+func TestIsExpired(t *testing.T) {
+	now := uint32(time.Now().Unix())
+	ttl := uint16(30)
+	rs := &RequestStatus{
+		ttl:       ttl,
+		createdAt: now,
+	}
+	if isExpired(rs) {
+		t.Fatalf("is expired function fail, it should not expired")
+	}
+	rs.createdAt = now - uint32(ttl) - 1
+	if !isExpired(rs) {
+		t.Fatalf("is expired function fail, it should expired")
+	}
+}
 
 func TestResponse(t *testing.T) {
 	c := Client{
@@ -47,10 +81,97 @@ func TestResponse(t *testing.T) {
 	header["token"] = []string{
 		"A",
 	}
-	body := "raw body"
-	gzipBody := "gzip body"
-	brBody := "br body"
+	body := []byte("raw body")
+	gzipBody, _ := util.Gzip(body, 0)
+	brBody, _ := util.Brotli(body, 0)
+
 	now := uint32(time.Now().Unix())
+
+	t.Run("get raw body", func(t *testing.T) {
+		r := &Response{
+			Body: body,
+		}
+		rawBody, _ := r.getRawBody()
+		if !bytes.Equal(body, rawBody) {
+			t.Fatalf("get raw body from body fail")
+		}
+		r.Body = nil
+		r.GzipBody = gzipBody
+		rawBody, _ = r.getRawBody()
+		if !bytes.Equal(body, rawBody) {
+			t.Fatalf("get raw body from gzip body fail")
+		}
+
+		r.GzipBody = nil
+		r.BrBody = brBody
+		rawBody, _ = r.getRawBody()
+		if !bytes.Equal(body, rawBody) {
+			t.Fatalf("get raw body from br body fail")
+		}
+
+		r.BrBody = nil
+		_, err = r.getRawBody()
+		if err != vars.ErrBodyCotentNotFound {
+			t.Fatalf("not found body should return error")
+		}
+	})
+
+	t.Run("get body", func(t *testing.T) {
+		r := &Response{
+			StatusCode: http.StatusNoContent,
+		}
+		// 204的处理
+		b, e := r.GetBody("gzip")
+		if len(b) != 0 || e != "" {
+			t.Fatalf("get no content fail")
+		}
+
+		// 200 但是数据比最小压缩长度要小
+		r.Body = body
+		r.StatusCode = http.StatusOK
+		b, e = r.GetBody("gzip")
+		if !bytes.Equal(b, body) || e != "" {
+			t.Fatalf("get body less then compress min length fail")
+		}
+
+		// 数据比最小压缩长度要大，但是客户端不支持压缩
+		r.CompressMinLength = 1
+		b, e = r.GetBody("")
+		if !bytes.Equal(b, body) || e != "" {
+			t.Fatalf("get body less then compress min length fail")
+		}
+
+		// 数据比最小压缩长度要大，客户端支持gzip，直接读取gzip数据
+		r.CompressMinLength = 1
+		r.GzipBody = gzipBody
+		b, e = r.GetBody("gzip")
+		if !bytes.Equal(b, gzipBody) || e != "gzip" {
+			t.Fatalf("get gzip body fail")
+		}
+
+		// 数据比最小压缩长度要大，客户端支持gzip，
+		// 没办法直接读取gzip数据，需要将原数据压缩
+		r.GzipBody = nil
+		b, e = r.GetBody("gzip")
+		if !bytes.Equal(b, gzipBody) || e != "gzip" {
+			t.Fatalf("get gzip body fail")
+		}
+
+		// 数据比最小压缩长度要大，客户端支持br，直接读取br数据
+		r.CompressMinLength = 1
+		r.BrBody = brBody
+		b, e = r.GetBody("br")
+		if !bytes.Equal(b, brBody) || e != "br" {
+			t.Fatalf("get br body fail")
+		}
+		// 数据比最小压缩长度要大，客户端支持br
+		// 没办法直接读取br数据，需要将原数据压缩
+		r.BrBody = nil
+		b, e = r.GetBody("br")
+		if !bytes.Equal(b, brBody) || e != "br" {
+			t.Fatalf("get br body fail")
+		}
+	})
 
 	t.Run("save response", func(t *testing.T) {
 		resp := &Response{
@@ -58,22 +179,22 @@ func TestResponse(t *testing.T) {
 			StatusCode: 200,
 			TTL:        600,
 			Header:     header,
-			Body:       []byte(body),
-			GzipBody:   []byte(gzipBody),
-			BrBody:     []byte(brBody),
+			Body:       body,
+			GzipBody:   gzipBody,
+			BrBody:     brBody,
 		}
 		err := c.SaveResponse(key, resp)
 		if err != nil {
 			t.Fatalf("save response fail, %v", err)
 		}
 
+		// 如果没有createdAt，则自动创建
 		tmpKey := []byte("tmp")
 		c.SaveResponse(tmpKey, &Response{})
 		resp, _ = c.GetResponse(tmpKey)
 		if resp == nil || resp.CreatedAt == 0 {
 			t.Fatalf("the response created at should be fill auto")
 		}
-
 	})
 
 	t.Run("get response", func(t *testing.T) {
@@ -81,7 +202,6 @@ func TestResponse(t *testing.T) {
 		if err != nil {
 			t.Fatalf("get response fail, %v", err)
 		}
-
 		if resp.CreatedAt != now {
 			t.Fatalf("response createat is wrong")
 		}
@@ -104,93 +224,16 @@ func TestResponse(t *testing.T) {
 			t.Fatalf("response header is wrong")
 		}
 
-		if string(resp.Body) != body {
+		if !bytes.Equal(resp.Body, body) {
 			t.Fatalf("response body is wrong")
 		}
 
-		if string(resp.GzipBody) != gzipBody {
+		if !bytes.Equal(resp.GzipBody, gzipBody) {
 			t.Fatalf("response gzip body is wrong")
 		}
 
-		if string(resp.BrBody) != brBody {
+		if !bytes.Equal(resp.BrBody, brBody) {
 			t.Fatalf("response br body is wrong")
-		}
-	})
-
-	t.Run("get raw body", func(t *testing.T) {
-		content := "test content"
-		resp := &Response{
-			Body: []byte(content),
-		}
-		raw, err := resp.getRawBody()
-		if err != nil || string(raw) != content {
-			t.Fatalf("get raw body from body fail")
-		}
-		gzipBody, _ := util.Gzip([]byte(content), 0)
-		resp = &Response{
-			GzipBody: gzipBody,
-		}
-		raw, err = resp.getRawBody()
-		if err != nil || string(raw) != content {
-			t.Fatalf("get raw body from gzip body fail")
-		}
-		resp = &Response{}
-		_, err = resp.getRawBody()
-		if err != vars.ErrBodyCotentNotFound {
-			t.Fatalf("should return err(body content not found)")
-		}
-	})
-
-	t.Run("get body", func(t *testing.T) {
-		contentStr := "需要一个长字符串，要大于1KB啊！！需要一个长字符串，要大于1KB啊！！需要一个长字符串，要大于1KB啊！！需要一个长字符串，要大于1KB啊！！需要一个长字符串，要大于1KB啊！！需要一个长字符串，要大于1KB啊！！需要一个长字符串，要大于1KB啊！！需要一个长字符串，要大于1KB啊！！需要一个长字符串，要大于1KB啊！！需要一个长字符串，要大于1KB啊！！需要一个长字符串，要大于1KB啊！！需要一个长字符串，要大于1KB啊！！需要一个长字符串，要大于1KB啊！！需要一个长字符串，要大于1KB啊！！需要一个长字符串，要大于1KB啊！！需要一个长字符串，要大于1KB啊！！需要一个长字符串，要大于1KB啊！！需要一个长字符串，要大于1KB啊！！需要一个长字符串，要大于1KB啊！！需要一个长字符串，要大于1KB啊！！需要一个长字符串，要大于1KB啊！！需要一个长字符串，要大于1KB啊！！需要一个长字符串，要大于1KB啊！！需要一个长字符串，要大于1KB啊！！需要一个长字符串，要大于1KB啊！！需要一个长字符串，要大于1KB啊！！需要一个长字符串，要大于1KB啊！！需要一个长字符串，要大于1KB啊！！需要一个长字符串，要大于1KB啊！！需要一个长字符串，要大于1KB啊！！需要一个长字符串，要大于1KB啊！！"
-		resp := &Response{
-			StatusCode: http.StatusNoContent,
-		}
-		body, enc := resp.GetBody("gzip, deflate, br")
-		if len(body) != 0 && enc != "" {
-			t.Fatalf("no content response body should be nil and enc should be empty")
-		}
-
-		resp = &Response{
-			Body: []byte("abcd"),
-		}
-		body, enc = resp.GetBody("gzip, deflate, br")
-		if string(body) != "abcd" {
-			t.Fatalf("the body less than compressMinLenght should be raw")
-		}
-
-		resp = &Response{
-			BrBody: []byte("abcd"),
-		}
-		body, enc = resp.GetBody("gzip, deflate, br")
-		if string(body) != "abcd" || enc != vars.BrEncoding {
-			t.Fatalf("get the body of br fail")
-		}
-
-		resp = &Response{
-			Body: []byte(contentStr),
-		}
-		body, enc = resp.GetBody("gzip, deflate, br")
-		rawBody, err := util.BrotliDecode(body)
-		if err != nil || string(rawBody) != contentStr || enc != vars.BrEncoding {
-			t.Fatalf("get the body of brotli(raw) fail")
-		}
-
-		resp = &Response{
-			GzipBody: []byte("abcd"),
-		}
-		body, enc = resp.GetBody("gzip, deflate")
-		if string(body) != "abcd" || enc != vars.GzipEncoding {
-			t.Fatalf("get the body of gzip fail")
-		}
-
-		resp = &Response{
-			Body: []byte(contentStr),
-		}
-		body, enc = resp.GetBody("gzip, deflate")
-		rawBody, err = util.Gunzip(body)
-		if err != nil || string(rawBody) != contentStr || enc != vars.GzipEncoding {
-			t.Fatalf("get the body of gzip(raw) fail")
 		}
 	})
 }
@@ -211,6 +254,7 @@ func TestRequestStatus(t *testing.T) {
 		max := 20
 		var count uint32
 		for index := 0; index < max; index++ {
+			// 启用多个goroutine去获取（将是waiting状态）
 			go func() {
 				s1, c1 := c.GetRequestStatus(key)
 				if s1 != Waiting {
@@ -219,6 +263,7 @@ func TestRequestStatus(t *testing.T) {
 				if c1 == nil {
 					t.Fatalf("the chan of next request should be chan int")
 				}
+				// 并没有等待 chan
 				n := atomic.AddUint32(&count, 1)
 				if int(n) == max {
 					done <- 0
@@ -261,6 +306,7 @@ func TestRequestStatus(t *testing.T) {
 				if int(n) == max {
 					done <- 0
 				}
+				// 等待 chan 状态
 				v := <-c1
 				if v != HitForPass {
 					t.Fatalf("the chan should be hitforpass")
@@ -295,6 +341,7 @@ func TestRequestStatus(t *testing.T) {
 		if status != Cacheable {
 			t.Fatalf("the reqeust status should be cacheable")
 		}
+		// 等待两秒后缓存过期
 		time.Sleep(2 * time.Second)
 		status, _ = c.GetRequestStatus(key)
 		if status != Fetching {
