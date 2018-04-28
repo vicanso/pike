@@ -3,6 +3,7 @@ package config
 import (
 	"flag"
 	"io/ioutil"
+	"time"
 
 	"github.com/go-yaml/yaml"
 )
@@ -19,9 +20,16 @@ type Director struct {
 
 // Config 应用配置
 type Config struct {
-	Name      string
-	DB        string
-	Directors []*Director
+	Name                 string        `yaml:"name"`
+	Listen               string        `yaml:"listen"`
+	DB                   string        `yaml:"db"`
+	ETag                 bool          `yaml:"etag"`
+	CompressMinLength    int           `yaml:"compressMinLength"`
+	CompressLevel        int           `yaml:"compressLevel"`
+	Directors            []*Director   `yaml:"directors"`
+	TextTypes            []string      `yaml:"textTypes"`
+	ExpiredClearInterval time.Duration `yaml:"expiredClearInterval"`
+	ConnectTimeout       time.Duration `yaml:"connectTimeout"`
 }
 
 var defaultConfig = &Config{}

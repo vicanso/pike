@@ -3,6 +3,8 @@ package custommiddleware
 import (
 	"testing"
 
+	"github.com/mitchellh/go-server-timing"
+
 	"github.com/vicanso/pike/vars"
 
 	"github.com/labstack/echo"
@@ -33,8 +35,10 @@ func TestCacheFetcher(t *testing.T) {
 		})
 		e := echo.New()
 		c := e.NewContext(nil, nil)
+		timing := &servertiming.Header{}
 		c.Set(vars.Status, cache.Cacheable)
 		c.Set(vars.Identity, identity)
+		c.Set(vars.Timing, timing)
 		fn(c)
 	})
 

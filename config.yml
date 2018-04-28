@@ -4,12 +4,10 @@ name: Pike
 listen: :3015
 # 数据缓存的db目录，默认为 /tmp/pike
 db: /tmp/pike.cache
-# 后台管理员页面路径，如果不配置，无法使用管理员功能
-adminPath: /pike
-# 管理员验证token
-adminToken: ry3WwvhVG
-# hit for pass 的缓存有效期，默认为 300
-hitForPass: 600
+# # 后台管理员页面路径，如果不配置，无法使用管理员功能
+# adminPath: /pike
+# # 管理员验证token
+# adminToken: ry3WwvhVG
 # 是否使用自动生成ETag（对于没有ETag的添加）
 etag: true
 # 设置对于数据压缩的最小文件（大于此值才压缩），如果设置为0，则使用默认值1024
@@ -28,8 +26,8 @@ disableKeepalive: false
 readBufferSize: 0 
 # writeBufferSize 的限制，0表示使用fasthttp默认值 (4096)
 writeBufferSize: 0 
-# 设置upstream的连接超时，默认为0，0表示无限制(time.Duration)，如果没有其它timeout的保障，不建议使用默认值（设置timeout后会有性能损耗）
-connectTimeout: 3s 
+# 设置upstream的连接超时，默认为10s
+connectTimeout: 10s 
 # 设置请求的读取超时，0表示无限制(time.Duration)
 readTimeout: 0 
 # 设置响应的写超时，0表示无限制(time.Duration)
@@ -51,8 +49,6 @@ accessLog: /tmp/pike/access.log
 # logType: date
 # UDP日志，如果有配置，优先使用UDP形式
 # udpLog: 127.0.0.1:7349
-# 是否启用Server-Timing
-enableServerTiming: true
 # 文本类型（Content-Type包含此类型字符串会被压缩）
 # 若没有配置此参数则使用默认值：text javascript json
 textTypes:

@@ -17,8 +17,20 @@ const (
 	Response = "response"
 	// Timing timing
 	Timing = "timing"
+	// Fresh request fresh flag
+	Fresh = "fresh"
+
 	// PikeMetric pike总体的处理时间
-	PikeMetric = "pikeMetric"
+	PikeMetric = "0PIKE"
+	// WaitForRequestStatusMetric 等待请求状态的时间
+	WaitForRequestStatusMetric = "0WRFS"
+	// GetResponseFromCacheMetric 从缓存数据库中取数据的时间
+	GetResponseFromCacheMetric = "0GRFC"
+	// GetResponseFromProxyMetric 从proxy中获取数据的时间
+	GetResponseFromProxyMetric = "0GRFP"
+	// DispatchResponseMetric 响应数据的处理时间
+	DispatchResponseMetric = "0DR"
+
 	// HitForPassTTL hit for pass的有效期
 	HitForPassTTL = 600
 	// CompressMinLength the min length to gzip
@@ -58,8 +70,8 @@ var (
 	ErrRequestStatusNotSet = echo.NewHTTPError(http.StatusNotImplemented, "request status not set")
 	// ErrIdentityStatusNotSet 未设置Identity
 	ErrIdentityStatusNotSet = echo.NewHTTPError(http.StatusNotImplemented, "identity not set")
-	// ErrResponseStatusNotSet 未设置response
-	ErrResponseStatusNotSet = echo.NewHTTPError(http.StatusNotImplemented, "response not set")
+	// ErrResponseNotSet 未设置response
+	ErrResponseNotSet = echo.NewHTTPError(http.StatusNotImplemented, "response not set")
 	// ErrContentEncodingNotSupport 未支持此content encoding
 	ErrContentEncodingNotSupport = echo.NewHTTPError(http.StatusNotImplemented, "content enconding not support")
 	// ErrBodyCotentNotFound 未找到content

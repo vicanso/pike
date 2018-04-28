@@ -104,6 +104,21 @@ func TestDirector(t *testing.T) {
 			t.Fatalf("the directors sort fail")
 		}
 	})
+
+	t.Run("select", func(t *testing.T) {
+		e := echo.New()
+		c := e.NewContext(nil, nil)
+		d := &Director{}
+		backend := d.Select(c)
+		if backend != "" {
+			t.Fatalf("should return no backend")
+		}
+		d.Policy = "AC"
+		backend = d.Select(c)
+		if backend != "" {
+			t.Fatalf("not support policy should return no backend")
+		}
+	})
 }
 
 func TestHealthCheck(t *testing.T) {

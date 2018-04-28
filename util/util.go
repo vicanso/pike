@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"compress/gzip"
 	"io/ioutil"
+	"net/http"
+	"strings"
 
 	"github.com/google/brotli/go/cbrotli"
 )
@@ -23,8 +25,8 @@ func Gzip(buf []byte, level int) ([]byte, error) {
 	return b.Bytes(), nil
 }
 
-// Brotli brotli压缩
-func Brotli(buf []byte, quality int) ([]byte, error) {
+// BrotliEncode brotli压缩
+func BrotliEncode(buf []byte, quality int) ([]byte, error) {
 	if quality == 0 {
 		quality = 9
 	}
@@ -47,4 +49,16 @@ func Gunzip(buf []byte) ([]byte, error) {
 	}
 	defer r.Close()
 	return ioutil.ReadAll(r)
+}
+
+// GetHeaderValue 获取 http header的值
+func GetHeaderValue(header http.Header, name string) (value []string) {
+	n := strings.ToLower(name)
+	for k, v := range header {
+		if strings.ToLower(k) == n {
+			value = v
+			return
+		}
+	}
+	return
 }

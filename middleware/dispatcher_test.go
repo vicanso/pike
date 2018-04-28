@@ -7,12 +7,30 @@ import (
 	"testing"
 	"time"
 
+	"github.com/mitchellh/go-server-timing"
+
 	"github.com/vicanso/pike/util"
 	"github.com/vicanso/pike/vars"
 
 	"github.com/labstack/echo"
 	"github.com/vicanso/pike/cache"
 )
+
+func TestShouldCompress(t *testing.T) {
+	compressTypes := []string{
+		"text",
+		"javascript",
+		"json",
+	}
+	t.Run("should compress", func(t *testing.T) {
+		if !shouldCompress(compressTypes, "json") {
+			t.Fatalf("json should be compress")
+		}
+		if shouldCompress(compressTypes, "image/png") {
+			t.Fatalf("image png should not be compress")
+		}
+	})
+}
 
 func TestSave(t *testing.T) {
 	client := &cache.Client{
@@ -29,7 +47,7 @@ func TestSave(t *testing.T) {
 			TTL:        30,
 			StatusCode: http.StatusNoContent,
 		}
-		save(client, identity, resp)
+		save(client, identity, resp, true)
 		result, err := client.GetResponse(identity)
 		if err != nil || result.TTL != resp.TTL || result.StatusCode != resp.StatusCode {
 			t.Fatalf("save no content fail")
@@ -45,7 +63,7 @@ func TestSave(t *testing.T) {
 			GzipBody:          gzipData,
 			CompressMinLength: 1,
 		}
-		save(client, identity, resp)
+		save(client, identity, resp, true)
 		result, err := client.GetResponse(identity)
 		if err != nil || result.TTL != resp.TTL || result.StatusCode != resp.StatusCode {
 			t.Fatalf("save gzip content fail")
@@ -61,7 +79,27 @@ func TestSave(t *testing.T) {
 		}
 	})
 
-	t.Run("save content bigger the compress min length", func(t *testing.T) {
+	t.Run("save content smaller than compress min length", func(t *testing.T) {
+		data := []byte("需要一个很大的数据，如果没有，那就设置小的compressMinLength")
+		resp := &cache.Response{
+			TTL:        30,
+			StatusCode: http.StatusOK,
+			Body:       data,
+		}
+		save(client, identity, resp, true)
+		result, err := client.GetResponse(identity)
+		if err != nil {
+			t.Fatalf("save samll content fail, %v", err)
+		}
+		if len(result.Body) == 0 {
+			t.Fatalf("the body of small content response shoul not be nil")
+		}
+		if len(result.GzipBody) != 0 {
+			t.Fatalf("the gzip body of small content response shoul be nil")
+		}
+	})
+
+	t.Run("save content bigger than compress min length", func(t *testing.T) {
 		data := []byte("需要一个很大的数据，如果没有，那就设置小的compressMinLength")
 		resp := &cache.Response{
 			TTL:               30,
@@ -69,7 +107,7 @@ func TestSave(t *testing.T) {
 			Body:              data,
 			CompressMinLength: 1,
 		}
-		save(client, identity, resp)
+		save(client, identity, resp, true)
 		result, err := client.GetResponse(identity)
 		if err != nil || result.TTL != resp.TTL || result.StatusCode != resp.StatusCode {
 			t.Fatalf("save big content fail")
@@ -104,6 +142,7 @@ func TestDispatcher(t *testing.T) {
 		t.Fatalf("cache init fail, %v", err)
 	}
 	defer client.Close()
+	conf := DispatcherConfig{}
 	t.Run("get cache age", func(t *testing.T) {
 		if getCacheAge([]byte("")) != 0 {
 			t.Fatalf("no cache-control header should be 0")
@@ -130,7 +169,7 @@ func TestDispatcher(t *testing.T) {
 		}
 	})
 	t.Run("dispatch response", func(t *testing.T) {
-		fn := Dispatcher(client)(func(c echo.Context) error {
+		fn := Dispatcher(conf, client)(func(c echo.Context) error {
 			return nil
 		})
 		e := echo.New()
@@ -139,6 +178,9 @@ func TestDispatcher(t *testing.T) {
 			Body: new(bytes.Buffer),
 		}
 		c := e.NewContext(req, resp)
+		timing := &servertiming.Header{}
+		timing.NewMetric(vars.PikeMetric)
+		c.Set(vars.Timing, timing)
 		c.Set(vars.Identity, []byte("abc"))
 		c.Set(vars.Status, cache.Fetching)
 		cr := &cache.Response{
@@ -146,19 +188,11 @@ func TestDispatcher(t *testing.T) {
 			TTL:        300,
 			StatusCode: 200,
 			Body:       []byte("ABCD"),
-			Header: http.Header{
-				"Token": []string{
-					"A",
-				},
-			},
 		}
 		c.Set(vars.Response, cr)
 		fn(c)
 		if resp.Code != 200 {
 			t.Fatalf("the response code should be 200")
-		}
-		if resp.Header().Get("Token") != "A" {
-			t.Fatalf("the response header of token should be A")
 		}
 		if string(resp.Body.Bytes()) != "ABCD" {
 			t.Fatalf("the response body should be ABCD")
@@ -174,13 +208,8 @@ func TestDispatcher(t *testing.T) {
 			TTL:        300,
 			StatusCode: 200,
 			Body:       []byte("ABCD"),
-			Header: http.Header{
-				"Token": []string{
-					"A",
-				},
-			},
 		}
-		fn := Dispatcher(client)(func(c echo.Context) error {
+		fn := Dispatcher(conf, client)(func(c echo.Context) error {
 			return nil
 		})
 		req := httptest.NewRequest(echo.POST, "/users/me", nil)
@@ -205,22 +234,17 @@ func TestDispatcher(t *testing.T) {
 			TTL:        300,
 			StatusCode: 200,
 			Body:       []byte("ABCD"),
-			Header: http.Header{
-				"ETag": []string{
-					"A",
-				},
-			},
 		}
-		fn := Dispatcher(client)(func(c echo.Context) error {
+		fn := Dispatcher(conf, client)(func(c echo.Context) error {
 			return nil
 		})
 		req := httptest.NewRequest(echo.GET, "/users/me", nil)
-		req.Header.Set(vars.IfNoneMatch, "A")
 		resp := &httptest.ResponseRecorder{
 			Body: new(bytes.Buffer),
 		}
 		e := echo.New()
 		c := e.NewContext(req, resp)
+		c.Set(vars.Fresh, true)
 		c.Set(vars.Identity, identity)
 		c.Set(vars.Status, cache.Cacheable)
 		c.Set(vars.Response, cr)

@@ -26,7 +26,7 @@ func CacheFetcher(client *cache.Client) echo.MiddlewareFunc {
 			timing, _ := c.Get(vars.Timing).(*servertiming.Header)
 			var m *servertiming.Metric
 			if timing != nil {
-				m = timing.NewMetric("0GRFC")
+				m = timing.NewMetric(vars.GetResponseFromCacheMetric)
 				m.WithDesc("get response from cache").Start()
 			}
 			resp, err := client.GetResponse(identity)

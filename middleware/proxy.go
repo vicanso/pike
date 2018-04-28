@@ -3,6 +3,9 @@ package custommiddleware
 import (
 	"bytes"
 	"context"
+	"crypto/sha1"
+	"encoding/base64"
+	"fmt"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
@@ -14,6 +17,7 @@ import (
 	servertiming "github.com/mitchellh/go-server-timing"
 	"github.com/vicanso/pike/cache"
 	"github.com/vicanso/pike/proxy"
+	"github.com/vicanso/pike/util"
 	"github.com/vicanso/pike/vars"
 
 	"github.com/labstack/echo"
@@ -39,6 +43,8 @@ type (
 
 		// Timeout 超时间隔
 		Timeout time.Duration
+		// ETag 是否生成ETag
+		ETag bool
 
 		rewriteRegex map[*regexp.Regexp]string
 	}
@@ -59,6 +65,18 @@ type (
 const (
 	defaultTimeout = 10 * time.Second
 )
+
+// genETag 获取数据对应的ETag
+func genETag(buf []byte) string {
+	size := len(buf)
+	if size == 0 {
+		return "\"0-2jmj7l5rSw0yVb_vlWAYkK_YBwk=\""
+	}
+	h := sha1.New()
+	h.Write(buf)
+	hash := base64.URLEncoding.EncodeToString(h.Sum(nil))
+	return fmt.Sprintf("\"%x-%s\"", size, hash)
+}
 
 func captureTokens(pattern *regexp.Regexp, input string) *strings.Replacer {
 	groups := pattern.FindAllStringSubmatch(input, -1)
@@ -110,9 +128,8 @@ func getCacheAge(cacheControl []byte) uint16 {
 	return uint16(maxAge)
 }
 
-// ProxyWithConfig returns a Proxy middleware with config.
-// See: `Proxy()`
-func ProxyWithConfig(config ProxyConfig) echo.MiddlewareFunc {
+// Proxy returns a Proxy middleware with config.
+func Proxy(config ProxyConfig) echo.MiddlewareFunc {
 	// Defaults
 	if config.Skipper == nil {
 		config.Skipper = middleware.DefaultSkipper
@@ -122,7 +139,6 @@ func ProxyWithConfig(config ProxyConfig) echo.MiddlewareFunc {
 	if timeout <= 0 {
 		timeout = defaultTimeout
 	}
-
 	// Initialize
 	for k, v := range config.Rewrite {
 		k = strings.Replace(k, "*", "(\\S*)", -1)
@@ -153,7 +169,7 @@ func ProxyWithConfig(config ProxyConfig) echo.MiddlewareFunc {
 			timing, _ := c.Get(vars.Timing).(*servertiming.Header)
 			var m *servertiming.Metric
 			if timing != nil {
-				m = timing.NewMetric("0GRFP")
+				m = timing.NewMetric(vars.GetResponseFromProxyMetric)
 				m.WithDesc("get response from proxy").Start()
 			}
 
@@ -220,20 +236,32 @@ func ProxyWithConfig(config ProxyConfig) echo.MiddlewareFunc {
 				ttl = getCacheAge([]byte(cacheControl[0]))
 			}
 			body := writer.body.Bytes()
+			if config.ETag {
+				eTagValue := util.GetHeaderValue(headers, vars.ETag)
+				if len(eTagValue) == 0 {
+					headers[vars.ETag] = []string{
+						genETag(body),
+					}
+				}
+			}
 			cr := &cache.Response{
 				CreatedAt:  uint32(time.Now().Unix()),
 				TTL:        ttl,
 				StatusCode: uint16(writer.code),
 				Header:     headers,
-				Body:       body,
 			}
 			contentEncoding := headers[echo.HeaderContentEncoding]
 			if len(contentEncoding) == 0 {
 				cr.Body = body
-			} else if contentEncoding[0] == vars.GzipEncoding {
-				cr.GzipBody = body
 			} else {
-				return vars.ErrContentEncodingNotSupport
+				switch contentEncoding[0] {
+				case vars.GzipEncoding:
+					cr.GzipBody = body
+				case vars.BrEncoding:
+					cr.BrBody = body
+				default:
+					return vars.ErrContentEncodingNotSupport
+				}
 			}
 			c.Set(vars.Response, cr)
 			if m != nil {

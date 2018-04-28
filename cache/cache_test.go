@@ -83,7 +83,7 @@ func TestResponse(t *testing.T) {
 	}
 	body := []byte("raw body")
 	gzipBody, _ := util.Gzip(body, 0)
-	brBody, _ := util.Brotli(body, 0)
+	brBody, _ := util.BrotliEncode(body, 0)
 
 	now := uint32(time.Now().Unix())
 

@@ -160,7 +160,7 @@ func (r *Response) GetBody(acceptEncoding string) (body []byte, encoding string)
 				continue
 			}
 			// 做br压缩
-			brBody, err := util.Brotli(raw, level)
+			brBody, err := util.BrotliEncode(raw, level)
 			// 如果压缩出错，使用下一个encoding
 			if err != nil {
 				continue
