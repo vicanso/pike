@@ -5,6 +5,8 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/vicanso/pike/cache"
+
 	"github.com/vicanso/pike/vars"
 )
 
@@ -40,12 +42,10 @@ type Stats struct {
 	HitForPass int `json:"hitForPass"`
 	// 总的处理请求量
 	RequestCount uint64 `json:"requestCount"`
-	// lsm大小
-	LSM int `json:"lsm"`
-	// vlog大小
-	VLog int `json:"vLog"`
 	// version版本号
 	Version string `json:"version"`
+	// FileSize db数据文件的大小
+	FileSize int `json:"fileSize"`
 }
 
 // IncreaseConcurrency concurrency 加一
@@ -74,10 +74,12 @@ func GetConcurrency() uint32 {
 }
 
 // GetStats 获取系统的使用
-func GetStats() *Stats {
+func GetStats(client *cache.Client) *Stats {
 	var mb uint64 = 1024 * 1024
 	m := &runtime.MemStats{}
 	runtime.ReadMemStats(m)
+
+	result := client.GetStats()
 
 	stats := &Stats{
 		Concurrency:  GetConcurrency(),
@@ -86,15 +88,14 @@ func GetStats() *Stats {
 		HeapInuse:    int(m.HeapInuse / mb),
 		StartedAt:    startedAt,
 		RoutineCount: runtime.NumGoroutine(),
-		// CacheCount:   cache.Size(),
-		// Fetching:     fetching,
-		// Waiting:      waiting,
-		// Cacheable:    cacheable,
-		// HitForPass:   hitForPass,
+		CacheCount:   client.Size(),
+		Fetching:     result.Fetching,
+		Waiting:      result.Waiting,
+		Cacheable:    result.Cacheable,
+		HitForPass:   result.HitForPass,
 		RequestCount: requestCount,
-		// LSM:          lsm,
-		// VLog:         vlog,
-		Version: vars.Version,
+		Version:      vars.Version,
+		FileSize:     result.FileSize,
 	}
 	return stats
 }

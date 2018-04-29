@@ -58,8 +58,8 @@
 [[projects]]
   name = "github.com/labstack/gommon"
   packages = ["bytes","color","log","random"]
-  revision = "6fe1405d73ec4bd4cd8a4ac8e2a2b2bf95d03954"
-  version = "0.2.4"
+  revision = "588f4e8bddc6cb45c27b448e925c7fd6a5545434"
+  version = "0.2.5"
 
 [[projects]]
   name = "github.com/mattn/go-colorable"
@@ -95,7 +95,7 @@
   branch = "master"
   name = "github.com/vicanso/dash"
   packages = ["."]
-  revision = "71184616c8f664577c29e97224db4a40a8b01d4b"
+  revision = "27598718d48a88acd9217698363cbc5867f7b745"
 
 [[projects]]
   name = "github.com/vicanso/fresh"
@@ -107,17 +107,17 @@
   branch = "master"
   name = "golang.org/x/crypto"
   packages = ["acme","acme/autocert"]
-  revision = "b0697eccbea9adec5b7ba8008f4c33d98d733388"
+  revision = "b49d69b5da943f7ef3c9cf91c8777c1f78a0cc3c"
 
 [[projects]]
   branch = "master"
   name = "golang.org/x/sys"
   packages = ["unix"]
-  revision = "bb9c189858d91f42db229b04d45a4c3d23a7662a"
+  revision = "cbbc999da32df943dac6cd71eb3ee39e1d7838b9"
 
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "1ab3317a4b85bdba304d7a65b5d563fd83af92e39be8981c9b97b235390de0e3"
+  inputs-digest = "9377519dc0c8809a737f9d1cfb228bdaced7d167115b31fb6e568d8d47ded1ed"
   solver-name = "gps-cdcl"
   solver-version = 1

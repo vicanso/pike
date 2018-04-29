@@ -49,4 +49,9 @@ func TestGetHeaderValue(t *testing.T) {
 		t.Fatalf("get header value fail")
 	}
 
+	value = GetHeaderValue(header, "Token")
+	if len(value) != 0 {
+		t.Fatalf("get the not exists header should return empty string")
+	}
+
 }

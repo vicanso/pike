@@ -74,6 +74,7 @@ type (
 		Fetching   int `json:"fetching"`
 		HitForPass int `json:"hitForPass"`
 		Cacheable  int `json:"cacheable"`
+		FileSize   int `json:"fileSize"`
 	}
 )
 
@@ -357,7 +358,11 @@ func (c *Client) Size() int {
 func (c *Client) GetStats() (stats *Stats) {
 	c.Lock()
 	defer c.Unlock()
-	stats = &Stats{}
+	fileSize, _ := c.db.FileSize()
+	var mb int64 = 1024 * 1024
+	stats = &Stats{
+		FileSize: int(fileSize / mb),
+	}
 	for _, v := range c.rsMap {
 		switch v.status {
 		case Fetching:
