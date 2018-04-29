@@ -18,7 +18,7 @@ compressLevel: 0
 # jpegQuality: 70
 # # 设置是否对PNG做压缩处理（非0表示压缩），由于go的png压缩没有使用工具压缩的效果好，一般不需要使用此配置
 # pngQuality: 0
-# 程序并发限制，设置为0表示使用fasthttp默认值 (256 * 1024)
+# 程序并发限制，设置为0表示使用默认值 (256 * 1024)
 concurrency: 0
 # # 是否禁用 disableKeepalive，默认为 false
 # disableKeepalive: false 
@@ -94,5 +94,3 @@ directors:
     backend:
       - http://192.168.31.3:3200
       - http://192.168.31.3:3300
-# favicon的base64字符串
-favicon: base64-string

@@ -27,6 +27,7 @@ type Config struct {
 	Header               []string      `yaml:"header"`
 	CompressMinLength    int           `yaml:"compressMinLength"`
 	CompressLevel        int           `yaml:"compressLevel"`
+	Concurrency          int           `yaml:"concurrency"`
 	Directors            []*Director   `yaml:"directors"`
 	TextTypes            []string      `yaml:"textTypes"`
 	ExpiredClearInterval time.Duration `yaml:"expiredClearInterval"`

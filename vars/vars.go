@@ -82,4 +82,6 @@ var (
 	ErrNoBackendAvaliable = echo.NewHTTPError(http.StatusServiceUnavailable, "no backend avaliable")
 	// ErrGatewayTimeout 网关超时
 	ErrGatewayTimeout = echo.NewHTTPError(http.StatusGatewayTimeout, "gateway timeout")
+	// ErrTooManyRequst 太多的请求正在处理中
+	ErrTooManyRequst = echo.NewHTTPError(http.StatusTooManyRequests, "too many request is handling")
 )
