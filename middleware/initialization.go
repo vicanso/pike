@@ -31,7 +31,7 @@ func Initialization(config InitializationConfig) echo.MiddlewareFunc {
 			defer performance.DecreaseConcurrency()
 			resHeader := c.Response().Header()
 			for k, v := range customHeader {
-				resHeader.Set(k, v)
+				resHeader.Add(k, v)
 			}
 			return next(c)
 		}
