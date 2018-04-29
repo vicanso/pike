@@ -7,6 +7,8 @@ import (
 )
 
 const (
+	// Version 版本号
+	Version = "1.0.0"
 	// Status 请求状态（waiting fecthing等）
 	Status = "status"
 	// Identity 根据url生成的标识

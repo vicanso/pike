@@ -24,6 +24,7 @@ type Config struct {
 	Listen               string        `yaml:"listen"`
 	DB                   string        `yaml:"db"`
 	ETag                 bool          `yaml:"etag"`
+	Header               []string      `yaml:"header"`
 	CompressMinLength    int           `yaml:"compressMinLength"`
 	CompressLevel        int           `yaml:"compressLevel"`
 	Directors            []*Director   `yaml:"directors"`

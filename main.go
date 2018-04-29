@@ -84,6 +84,10 @@ func main() {
 		}
 	})
 
+	e.Use(custommiddleware.Initialization(custommiddleware.InitializationConfig{
+		Header: dc.Header,
+	}))
+
 	e.Use(custommiddleware.Identifier(client))
 
 	e.Use(custommiddleware.DirectorPicker(directors))
