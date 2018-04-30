@@ -3,6 +3,7 @@ package util
 import (
 	"net/http"
 	"testing"
+	"time"
 )
 
 func TestGzip(t *testing.T) {
@@ -53,5 +54,13 @@ func TestGetHeaderValue(t *testing.T) {
 	if len(value) != 0 {
 		t.Fatalf("get the not exists header should return empty string")
 	}
+}
 
+func TestGetTimeConsuming(t *testing.T) {
+	start := time.Now()
+	time.Sleep(10 * time.Millisecond)
+	ms := GetTimeConsuming(start)
+	if ms == 0 {
+		t.Fatalf("get time consuming fail")
+	}
 }

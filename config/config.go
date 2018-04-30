@@ -32,6 +32,9 @@ type Config struct {
 	TextTypes            []string      `yaml:"textTypes"`
 	ExpiredClearInterval time.Duration `yaml:"expiredClearInterval"`
 	ConnectTimeout       time.Duration `yaml:"connectTimeout"`
+	LogFormat            string        `yaml:"logFormat"`
+	AccessLog            string        `yaml:"accessLog"`
+	LogType              string        `yaml:"logType"`
 }
 
 var defaultConfig = &Config{}

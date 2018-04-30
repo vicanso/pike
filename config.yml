@@ -43,10 +43,11 @@ expiredClearInterval: 300s
 # 访问日志的格式化，如果对于性能有更高的要求，而且也不需要访问日志，则不需要此配置
 logFormat: "pike\t{when-iso-ms} - {client-ip} - \"{method} {uri}\" {status} {size} {latency-ms}ms"
 # 访问日志保存路径
-accessLog: /tmp/pike/access.log
-# accessLog: /tmp/pike
+# accessLog: /tmp/pike/access.log
+# accessLog: udp://127.0.0.1:7349
+accessLog: /tmp/pike
 # 日志类型，如果为"date"表示按天分割日志，accessLog则应该配置为一个目录
-# logType: date
+logType: date
 # UDP日志，如果有配置，优先使用UDP形式
 # udpLog: 127.0.0.1:7349
 # 文本类型（Content-Type包含此类型字符串会被压缩）

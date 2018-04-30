@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/google/brotli/go/cbrotli"
 )
@@ -61,4 +62,11 @@ func GetHeaderValue(header http.Header, name string) (value []string) {
 		}
 	}
 	return
+}
+
+// GetTimeConsuming 获取使用耗时(ms)
+func GetTimeConsuming(startedAt time.Time) int {
+	v := startedAt.UnixNano()
+	now := time.Now().UnixNano()
+	return int((now - v) / 1000000)
 }

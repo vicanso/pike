@@ -3,9 +3,11 @@ package main
 import (
 	"os"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/vicanso/pike/config"
+	"github.com/vicanso/pike/httplog"
 
 	"github.com/vicanso/pike/vars"
 
@@ -73,6 +75,35 @@ func main() {
 	// Middleware
 	// e.Use(middleware.Logger())
 	e.Use(middleware.Recover())
+
+	// 配置logger中间件
+	if len(dc.AccessLog) != 0 {
+
+		writeCategory := httplog.Normal
+		if dc.LogType == "date" {
+			writeCategory = httplog.Date
+		}
+		var logWriter httplog.Writer
+		udpPrefix := "udp://"
+		if strings.HasPrefix(dc.AccessLog, udpPrefix) {
+			logWriter = &httplog.UDPWriter{
+				URI: dc.AccessLog[len(udpPrefix):],
+			}
+		} else {
+			logWriter = &httplog.FileWriter{
+				Path:     dc.AccessLog,
+				Category: writeCategory,
+			}
+		}
+		if logWriter != nil {
+			defer logWriter.Close()
+		}
+
+		e.Use(custommiddleware.Logger(custommiddleware.LoggerConfig{
+			LogFormat: dc.LogFormat,
+			Writer:    logWriter,
+		}))
+	}
 
 	// 对于websocke的直接不支持
 	e.Use(func(next echo.HandlerFunc) echo.HandlerFunc {
