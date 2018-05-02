@@ -2,10 +2,18 @@ package custommiddleware
 
 import (
 	"github.com/labstack/echo"
+	"github.com/labstack/echo/middleware"
 	"github.com/mitchellh/go-server-timing"
 
 	"github.com/vicanso/pike/cache"
 	"github.com/vicanso/pike/vars"
+)
+
+type (
+	// IdentifierConfig 定义配置
+	IdentifierConfig struct {
+		Skipper middleware.Skipper
+	}
 )
 
 // Identifier 对请求的参数校验，生成各类状态值
@@ -13,9 +21,16 @@ import (
 - 判断请求状态，生成status
 - 对于状态非Pass的请求，根据request url 生成identity
 */
-func Identifier(client *cache.Client) echo.MiddlewareFunc {
+func Identifier(config IdentifierConfig, client *cache.Client) echo.MiddlewareFunc {
+	// Defaults
+	if config.Skipper == nil {
+		config.Skipper = middleware.DefaultSkipper
+	}
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
+			if config.Skipper(c) {
+				return next(c)
+			}
 			timing := &servertiming.Header{}
 			pikeMetric := timing.NewMetric(vars.PikeMetric)
 			pikeMetric.WithDesc("pike handle time").Start()

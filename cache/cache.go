@@ -76,6 +76,12 @@ type (
 		Cacheable  int `json:"cacheable"`
 		FileSize   int `json:"fileSize"`
 	}
+	// CachedResponse  缓存的请求
+	CachedResponse struct {
+		Key       string `json:"key"`
+		TTL       uint16 `json:"ttl"`
+		CreatedAt uint32 `json:"createdAt"`
+	}
 )
 
 // 将uint16转换为字节
@@ -378,4 +384,25 @@ func (c *Client) GetStats() (stats *Stats) {
 		}
 	}
 	return
+}
+
+// GetCachedList 获取缓存列表
+func (c *Client) GetCachedList() []*CachedResponse {
+	c.Lock()
+	defer c.Unlock()
+	cacheDatas := make([]*CachedResponse, 0)
+	now := uint32(time.Now().Unix())
+	for key, v := range c.rsMap {
+		// 对于非可缓存的忽略
+		if v.status != Cacheable || v.createdAt+uint32(v.ttl) < now {
+			continue
+		}
+		// 保存缓存的记录
+		cacheDatas = append(cacheDatas, &CachedResponse{
+			Key:       key,
+			TTL:       v.ttl,
+			CreatedAt: v.createdAt,
+		})
+	}
+	return cacheDatas
 }

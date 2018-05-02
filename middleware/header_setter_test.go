@@ -13,8 +13,9 @@ import (
 )
 
 func TestHeaderSetter(t *testing.T) {
+	headerSetterConfig := HeaderSetterConfig{}
 	t.Run("set header(response not set)", func(t *testing.T) {
-		fn := HeaderSetter()(func(c echo.Context) error {
+		fn := HeaderSetter(headerSetterConfig)(func(c echo.Context) error {
 			return nil
 		})
 		e := echo.New()
@@ -26,7 +27,7 @@ func TestHeaderSetter(t *testing.T) {
 	})
 
 	t.Run("set header", func(t *testing.T) {
-		fn := HeaderSetter()(func(c echo.Context) error {
+		fn := HeaderSetter(headerSetterConfig)(func(c echo.Context) error {
 
 			if (c.Response().Header().Get("Token")) != "ABCD" {
 				t.Fatalf("set header fail")

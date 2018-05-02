@@ -21,6 +21,10 @@ const (
 	Timing = "timing"
 	// Fresh request fresh flag
 	Fresh = "fresh"
+	// CacheClient cache client
+	CacheClient = "cacheClient"
+	// Directors the director list
+	Directors = "directors"
 
 	// PikeMetric pike总体的处理时间
 	PikeMetric = "0PIKE"
@@ -61,6 +65,8 @@ const (
 	ETag = "ETag"
 	// ServerTiming http response server timing
 	ServerTiming = "Server-Timing"
+	// PingURL health check ping url
+	PingURL = "/ping"
 )
 
 var (

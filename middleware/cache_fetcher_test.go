@@ -20,13 +20,14 @@ func TestCacheFetcher(t *testing.T) {
 		t.Fatalf("cache init fail, %v", err)
 	}
 	defer client.Close()
+	config := CacheFetcherConfig{}
 	t.Run("cache fetch", func(t *testing.T) {
 		identity := []byte("ABCD")
 		client.SaveResponse(identity, &cache.Response{
 			TTL: 300,
 		})
 
-		fn := CacheFetcher(client)(func(c echo.Context) error {
+		fn := CacheFetcher(config, client)(func(c echo.Context) error {
 			resp := c.Get(vars.Response).(*cache.Response)
 			if resp.TTL != 300 {
 				t.Fatalf("fetch cache fail")
@@ -43,7 +44,7 @@ func TestCacheFetcher(t *testing.T) {
 	})
 
 	t.Run("fectch with no status", func(t *testing.T) {
-		fn := CacheFetcher(client)(func(c echo.Context) error {
+		fn := CacheFetcher(config, client)(func(c echo.Context) error {
 			return nil
 		})
 		e := echo.New()
@@ -55,7 +56,7 @@ func TestCacheFetcher(t *testing.T) {
 	})
 
 	t.Run("fetch is not cacheable", func(t *testing.T) {
-		fn := CacheFetcher(client)(func(c echo.Context) error {
+		fn := CacheFetcher(config, client)(func(c echo.Context) error {
 			resp := c.Get(vars.Response)
 			if resp != nil {
 				t.Fatalf("fetch is not cacheable fail")
@@ -69,7 +70,7 @@ func TestCacheFetcher(t *testing.T) {
 	})
 
 	t.Run("fetch cacheable but no identity", func(t *testing.T) {
-		fn := CacheFetcher(client)(func(c echo.Context) error {
+		fn := CacheFetcher(config, client)(func(c echo.Context) error {
 			return nil
 		})
 		e := echo.New()

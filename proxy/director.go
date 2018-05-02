@@ -18,21 +18,21 @@ type (
 	// Director 服务器列表
 	Director struct {
 		// 名称
-		Name string
+		Name string `json:"name"`
 		// backend的选择策略
-		Policy string
+		Policy string `json:"policy"`
 		// ping设置（检测backend是否要用）
-		Ping string
+		Ping string `json:"ping"`
 		// backend列表
-		Backends []string
+		Backends []string `json:"backends"`
 		// 可用的backend列表（通过ping检测）
-		availableBackends []string
+		AvailableBackends []string `json:"availableBackends"`
 		// host列表
-		Hosts []string
+		Hosts []string `json:"hosts"`
 		// url前缀
-		Prefixs []string
+		Prefixs []string `json:"prefixs"`
 		// 优先级
-		Priority int
+		Priority int `json:"priority"`
 		// 读写锁
 		mutex sync.RWMutex
 		// roubin 的次数
@@ -141,9 +141,9 @@ func (d *Director) RemoveBackend(backend string) {
 func (d *Director) AddAvailableBackend(backend string) {
 	d.mutex.Lock()
 	defer d.mutex.Unlock()
-	backends := d.availableBackends
+	backends := d.AvailableBackends
 	if !dash.IncludesString(backends, backend) {
-		d.availableBackends = append(backends, backend)
+		d.AvailableBackends = append(backends, backend)
 	}
 }
 
@@ -151,10 +151,10 @@ func (d *Director) AddAvailableBackend(backend string) {
 func (d *Director) RemoveAvailableBackend(backend string) {
 	d.mutex.Lock()
 	defer d.mutex.Unlock()
-	backends := d.availableBackends
+	backends := d.AvailableBackends
 	index := dash.FindStringIndex(backends, backend)
 	if index != -1 {
-		d.availableBackends = append(backends[0:index], backends[index+1:]...)
+		d.AvailableBackends = append(backends[0:index], backends[index+1:]...)
 	}
 }
 
@@ -162,7 +162,7 @@ func (d *Director) RemoveAvailableBackend(backend string) {
 func (d *Director) GetAvailableBackends() []string {
 	d.mutex.RLock()
 	defer d.mutex.RUnlock()
-	return d.availableBackends
+	return d.AvailableBackends
 }
 
 // AddHost 添加host

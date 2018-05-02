@@ -5,7 +5,7 @@ listen: :3015
 # 数据缓存的db目录，默认为 /tmp/pike
 db: /tmp/pike.cache
 # # 后台管理员页面路径，如果不配置，无法使用管理员功能
-# adminPath: /pike
+adminPath: /pike
 # # 管理员验证token
 # adminToken: ry3WwvhVG
 # 是否使用自动生成ETag（对于没有ETag的添加）
@@ -48,8 +48,6 @@ logFormat: "pike\t{when-iso-ms} - {client-ip} - \"{method} {uri}\" {status} {siz
 accessLog: /tmp/pike
 # 日志类型，如果为"date"表示按天分割日志，accessLog则应该配置为一个目录
 logType: date
-# UDP日志，如果有配置，优先使用UDP形式
-# udpLog: 127.0.0.1:7349
 # 文本类型（Content-Type包含此类型字符串会被压缩）
 # 若没有配置此参数则使用默认值：text javascript json
 textTypes:
@@ -60,9 +58,6 @@ textTypes:
 header:
   - "X-Server:My-Pike"
   - "X-Location:GZ"
-# HTTPS证书相关
-# certFile: /cert/mine.pem
-# keyFile: /cert/mine.key
 directors:
   -
     # 名称

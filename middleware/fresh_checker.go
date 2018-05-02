@@ -4,15 +4,30 @@ import (
 	"net/http"
 
 	"github.com/labstack/echo"
+	"github.com/labstack/echo/middleware"
 	"github.com/vicanso/fresh"
 	"github.com/vicanso/pike/cache"
 	"github.com/vicanso/pike/vars"
 )
 
+type (
+	// FreshCheckerConfig freshChecker配置
+	FreshCheckerConfig struct {
+		Skipper middleware.Skipper
+	}
+)
+
 // FreshChecker 判断请求是否fresh(304)
-func FreshChecker() echo.MiddlewareFunc {
+func FreshChecker(config FreshCheckerConfig) echo.MiddlewareFunc {
+	// Defaults
+	if config.Skipper == nil {
+		config.Skipper = middleware.DefaultSkipper
+	}
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
+			if config.Skipper(c) {
+				return next(c)
+			}
 			cr, ok := c.Get(vars.Response).(*cache.Response)
 			if !ok {
 				return vars.ErrResponseNotSet

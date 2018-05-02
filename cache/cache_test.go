@@ -416,4 +416,11 @@ func TestGetStats(t *testing.T) {
 			t.Fatalf("cacheable count fail")
 		}
 	})
+
+	t.Run("get cached list", func(t *testing.T) {
+		list := c.GetCachedList()
+		if len(list) != 1 || list[0].Key != "3" {
+			t.Fatalf("get cached list fail")
+		}
+	})
 }

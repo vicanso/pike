@@ -1,12 +1,15 @@
 package main
 
 import (
+	"net/http"
 	"os"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
 
 	"github.com/vicanso/pike/config"
+	"github.com/vicanso/pike/controller"
 	"github.com/vicanso/pike/httplog"
 
 	"github.com/vicanso/pike/vars"
@@ -37,6 +40,26 @@ func startExpiredClearTask(client *cache.Client, interval time.Duration) {
 	}
 }
 
+func getLogger(dc *config.Config) httplog.Writer {
+	writeCategory := httplog.Normal
+	if dc.LogType == "date" {
+		writeCategory = httplog.Date
+	}
+	var logWriter httplog.Writer
+	udpPrefix := "udp://"
+	if strings.HasPrefix(dc.AccessLog, udpPrefix) {
+		logWriter = &httplog.UDPWriter{
+			URI: dc.AccessLog[len(udpPrefix):],
+		}
+	} else {
+		logWriter = &httplog.FileWriter{
+			Path:     dc.AccessLog,
+			Category: writeCategory,
+		}
+	}
+	return logWriter
+}
+
 func main() {
 	// Echo instance
 	e := echo.New()
@@ -46,6 +69,8 @@ func main() {
 	if level != 0 {
 		e.Logger.SetLevel(log.Lvl(level))
 	}
+
+	// 初始化缓存
 	client := &cache.Client{
 		Path: dc.DB,
 	}
@@ -54,10 +79,13 @@ func main() {
 		panic(err)
 	}
 	defer client.Close()
-
+	// 定时任务清除过期缓存
 	go startExpiredClearTask(client, dc.ExpiredClearInterval)
+
+	// 自定义出错处理
 	e.HTTPErrorHandler = custommiddleware.CreateErrorHandler(e, client)
 
+	// 生成director列表
 	directors := make(proxy.Directors, 0)
 	for _, item := range dc.Directors {
 		d := &proxy.Director{
@@ -68,9 +96,12 @@ func main() {
 			Hosts:    item.Host,
 			Prefixs:  item.Prefix,
 		}
+		d.RefreshPriority()
+		// 定时检测director是否可用
 		go d.StartHealthCheck(5 * time.Second)
 		directors = append(directors, d)
 	}
+	sort.Sort(directors)
 
 	// Middleware
 	// e.Use(middleware.Logger())
@@ -78,36 +109,30 @@ func main() {
 
 	// 配置logger中间件
 	if len(dc.AccessLog) != 0 {
-
-		writeCategory := httplog.Normal
-		if dc.LogType == "date" {
-			writeCategory = httplog.Date
-		}
-		var logWriter httplog.Writer
-		udpPrefix := "udp://"
-		if strings.HasPrefix(dc.AccessLog, udpPrefix) {
-			logWriter = &httplog.UDPWriter{
-				URI: dc.AccessLog[len(udpPrefix):],
-			}
-		} else {
-			logWriter = &httplog.FileWriter{
-				Path:     dc.AccessLog,
-				Category: writeCategory,
-			}
-		}
-		if logWriter != nil {
-			defer logWriter.Close()
-		}
-
+		logWriter := getLogger(dc)
+		defer logWriter.Close()
 		e.Use(custommiddleware.Logger(custommiddleware.LoggerConfig{
 			LogFormat: dc.LogFormat,
 			Writer:    logWriter,
 		}))
 	}
 
+	defaultSkipper := middleware.DefaultSkipper
+	if len(dc.AdminPath) != 0 {
+		defaultSkipper = func(c echo.Context) bool {
+			requestURI := c.Request().RequestURI
+			// 对于ping检测 skip
+			if requestURI == vars.PingURL {
+				return true
+			}
+			// 对于管理后台请求 skip
+			return strings.HasPrefix(requestURI, dc.AdminPath)
+		}
+	}
+
 	// 对于websocke的直接不支持
 	e.Use(func(next echo.HandlerFunc) echo.HandlerFunc {
-		return func(c echo.Context) (err error) {
+		return func(c echo.Context) error {
 			if c.IsWebSocket() {
 				return vars.ErrNotSupportWebSocket
 			}
@@ -115,32 +140,79 @@ func main() {
 		}
 	})
 
-	e.Use(custommiddleware.Initialization(custommiddleware.InitializationConfig{
-		Header: dc.Header,
-	}))
+	// 初始化中间件的参数
+	initConfig := custommiddleware.InitializationConfig{
+		Header:  dc.Header,
+		Skipper: defaultSkipper,
+	}
+	e.Use(custommiddleware.Initialization(initConfig))
 
-	e.Use(custommiddleware.Identifier(client))
+	// 生成请求唯一标识与状态中间件
+	idConfig := custommiddleware.IdentifierConfig{
+		Skipper: defaultSkipper,
+	}
+	e.Use(custommiddleware.Identifier(idConfig, client))
 
-	e.Use(custommiddleware.DirectorPicker(directors))
+	// 获取director的中间件
+	directorConfig := custommiddleware.DirectorPickerConfig{
+		Skipper: defaultSkipper,
+	}
+	e.Use(custommiddleware.DirectorPicker(directorConfig, directors))
 
-	e.Use(custommiddleware.CacheFetcher(client))
+	// 缓存读取中间件
+	cacheFetcherConfig := custommiddleware.CacheFetcherConfig{
+		Skipper: defaultSkipper,
+	}
+	e.Use(custommiddleware.CacheFetcher(cacheFetcherConfig, client))
 
-	e.Use(custommiddleware.Proxy(custommiddleware.ProxyConfig{
+	// 代理转发中间件
+	proxyConfig := custommiddleware.ProxyConfig{
 		Timeout: dc.ConnectTimeout,
 		ETag:    dc.ETag,
-	}))
+		Skipper: defaultSkipper,
+	}
+	e.Use(custommiddleware.Proxy(proxyConfig))
 
-	e.Use(custommiddleware.HeaderSetter())
+	// http响应头设置中间件
+	headerSetterConfig := custommiddleware.HeaderSetterConfig{
+		Skipper: defaultSkipper,
+	}
+	e.Use(custommiddleware.HeaderSetter(headerSetterConfig))
 
-	e.Use(custommiddleware.FreshChecker())
+	// 判断客户端缓存请求是否fresh的中间件
+	freshCheckerConfig := custommiddleware.FreshCheckerConfig{
+		Skipper: defaultSkipper,
+	}
+	e.Use(custommiddleware.FreshChecker(freshCheckerConfig))
 
-	e.Use(custommiddleware.Dispatcher(custommiddleware.DispatcherConfig{
+	// 响应数据处理中间件
+	dispatcherConfig := custommiddleware.DispatcherConfig{
 		CompressTypes:     dc.TextTypes,
 		CompressMinLength: dc.CompressMinLength,
 		CompressLevel:     dc.CompressLevel,
-	}, client))
+		Skipper:           defaultSkipper,
+	}
+	e.Use(custommiddleware.Dispatcher(dispatcherConfig, client))
+
+	// ping检测
+	e.GET(vars.PingURL, func(c echo.Context) error {
+		return c.String(http.StatusOK, "pong")
+	})
+
+	// stats
+	adminGroup := e.Group(dc.AdminPath, func(next echo.HandlerFunc) echo.HandlerFunc {
+		return func(c echo.Context) error {
+			c.Set(vars.Directors, directors)
+			c.Set(vars.CacheClient, client)
+			return next(c)
+		}
+	})
+
+	adminGroup.GET("/stats", controller.GetStats)
+
+	adminGroup.GET("/directors", controller.GetDirectors)
+	adminGroup.GET("/cacheds", controller.GetCachedList)
 
 	// Start server
 	e.Logger.Fatal(e.Start(dc.Listen))
-
 }

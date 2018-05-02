@@ -13,8 +13,9 @@ import (
 )
 
 func TestFreshChecker(t *testing.T) {
+	freshCheckerConfig := FreshCheckerConfig{}
 	t.Run("no response", func(t *testing.T) {
-		fn := FreshChecker()(func(c echo.Context) error {
+		fn := FreshChecker(freshCheckerConfig)(func(c echo.Context) error {
 			return nil
 		})
 		e := echo.New()
@@ -26,7 +27,7 @@ func TestFreshChecker(t *testing.T) {
 	})
 
 	t.Run("post request", func(t *testing.T) {
-		fn := FreshChecker()(func(c echo.Context) error {
+		fn := FreshChecker(freshCheckerConfig)(func(c echo.Context) error {
 			fresh := c.Get(vars.Fresh).(bool)
 			if fresh {
 				t.Fatalf("post request will not be fresh")
@@ -46,7 +47,7 @@ func TestFreshChecker(t *testing.T) {
 	})
 
 	t.Run("get request(502)", func(t *testing.T) {
-		fn := FreshChecker()(func(c echo.Context) error {
+		fn := FreshChecker(freshCheckerConfig)(func(c echo.Context) error {
 			fresh := c.Get(vars.Fresh).(bool)
 			if fresh {
 				t.Fatalf("get request(502) will not be fresh")
@@ -66,7 +67,7 @@ func TestFreshChecker(t *testing.T) {
 	})
 
 	t.Run("get reqeust(fresh)", func(t *testing.T) {
-		fn := FreshChecker()(func(c echo.Context) error {
+		fn := FreshChecker(freshCheckerConfig)(func(c echo.Context) error {
 			fresh := c.Get(vars.Fresh).(bool)
 			if !fresh {
 				t.Fatalf("get reqeust(fresh) should be fresh")

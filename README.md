@@ -1,5 +1,9 @@
 # pike
 
+HTTP缓存服务，提供高效简单的HTTP缓存服务。
+
+一直以来都使用`varnish`来做HTTP缓存，喜欢它的性能高效与vcl配置的强大。在规范化缓存的配置之后，强大的vcl对于我也没有太多的作用了，此时我更希望易上手，更简洁的配置，`Pike`则由此诞生。
+
 ## 测试命令
 
 go test -race -coverprofile=test.out ./... && go tool cover --html=test.out
@@ -15,6 +19,12 @@ go test -race -coverprofile=test.out ./... && go tool cover --html=test.out
 - `timing`: 记录处理时长，生成Server-Timing
 - `fresh`: 根据HTTP请求头与响应头判断数据是否为fresh
 
+### Initialization
+
+- 设置公共响应头
+- 处理请求数+1，当前处理并发数+1
+- 如果当前处理并发数大于最大值（默认为256 * 1000），则返回出错
+- 将请求交至下一中间件（在所有中间件处理完成时，当前处理并发数-1）
 
 ### Identifier
 
@@ -47,12 +57,18 @@ go test -race -coverprofile=test.out ./... && go tool cover --html=test.out
 
 - 从响应数据中获取响应数据，设置至Responser.Header中
 
+## FreshChecker
+
+- 判断请求是否GET或者HEAD，如果否，则跳至下一中间件
+- 判断响应状态码是否 < 200 或者 >= 400，如果是，则跳至下一中间件
+- 根据请求头与响应头，判断客户端缓存的数据是否为`fresh`
+- 设置`fresh`状态至Context中
+
 ## Dispatcher
 
 - 从Context中获取Response
-- 将Response.Header中的数据设置至响应头
-- 判断该请求是否非(cacheable与pass)，根据TTL生成hitForPass或者Cacheable状态写入缓存数据库
 - 如果该请求状态为cacheable，设置HTTP Response Header:Age
 - 设置HTTP Response Header:X-Status 
-- 根据请求头与响应头，判断该请求是否304，如果是则直接返回NotModified
+- 判断该请求是否非(cacheable与pass)，根据TTL生成hitForPass或者Cacheable状态写入缓存数据库（新的goroutine）
+- 判断`fresh`状态，如果是则直接返回NotModified
 - 设置HTTP状态码，根据AcceptEncoding生成响应数据并返回

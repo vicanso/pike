@@ -108,8 +108,15 @@ func Dispatcher(config DispatcherConfig, client *cache.Client) echo.MiddlewareFu
 	}
 	compressMinLength := config.CompressMinLength
 	compressLevel := config.CompressLevel
+	// Defaults
+	if config.Skipper == nil {
+		config.Skipper = middleware.DefaultSkipper
+	}
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
+			if config.Skipper(c) {
+				return next(c)
+			}
 			status, ok := c.Get(vars.Status).(int)
 			if !ok {
 				return vars.ErrRequestStatusNotSet

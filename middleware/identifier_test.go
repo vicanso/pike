@@ -21,8 +21,10 @@ func TestIdentifier(t *testing.T) {
 	}
 	defer client.Close()
 
+	conf := IdentifierConfig{}
+
 	t.Run("pass", func(t *testing.T) {
-		fn := Identifier(client)(func(c echo.Context) error {
+		fn := Identifier(conf, client)(func(c echo.Context) error {
 			status := c.Get(vars.Status).(int)
 			if status != cache.Pass {
 				t.Fatalf("the status of post request should be pass")
@@ -36,7 +38,7 @@ func TestIdentifier(t *testing.T) {
 	})
 
 	t.Run("fetching", func(t *testing.T) {
-		fn := Identifier(client)(func(c echo.Context) error {
+		fn := Identifier(conf, client)(func(c echo.Context) error {
 			status := c.Get(vars.Status).(int)
 			if status != cache.Fetching {
 				t.Fatalf("the status of the first get request should be fetching")
@@ -51,7 +53,7 @@ func TestIdentifier(t *testing.T) {
 	})
 
 	t.Run("hit for pass", func(t *testing.T) {
-		fn := Identifier(client)(func(c echo.Context) error {
+		fn := Identifier(conf, client)(func(c echo.Context) error {
 			status := c.Get(vars.Status).(int)
 			if status != cache.HitForPass {
 				t.Fatalf("the status of the request should be hit for pass")

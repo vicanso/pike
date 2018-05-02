@@ -39,11 +39,12 @@ func CreateErrorHandler(e *echo.Echo, client *cache.Client) echo.HTTPErrorHandle
 		} else {
 			msg = http.StatusText(code)
 		}
+
 		if _, ok := msg.(string); ok {
 			msg = map[string]interface{}{"message": msg}
 		}
 
-		e.Logger.Error(err)
+		e.Logger.Error(err, " uri:", c.Request().RequestURI)
 		// Send response
 		if !c.Response().Committed {
 			if c.Request().Method == echo.HEAD { // Issue #608

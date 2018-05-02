@@ -34,8 +34,9 @@ func TestUpstreamPicker(t *testing.T) {
 		d.RefreshPriority()
 	}
 	sort.Sort(directors)
+	config := DirectorPickerConfig{}
 	t.Run("get director match host", func(t *testing.T) {
-		fn := DirectorPicker(directors)(func(c echo.Context) error {
+		fn := DirectorPicker(config, directors)(func(c echo.Context) error {
 			d := c.Get(vars.Director).(*proxy.Director)
 			if d.Name != aslant {
 				t.Fatalf("get director match host fail")
@@ -49,7 +50,7 @@ func TestUpstreamPicker(t *testing.T) {
 	})
 
 	t.Run("get director match url prefix", func(t *testing.T) {
-		fn := DirectorPicker(directors)(func(c echo.Context) error {
+		fn := DirectorPicker(config, directors)(func(c echo.Context) error {
 			d := c.Get(vars.Director).(*proxy.Director)
 			if d.Name != tiny {
 				t.Fatalf("get director match url prefix fail")
@@ -63,7 +64,7 @@ func TestUpstreamPicker(t *testing.T) {
 	})
 
 	t.Run("no director match", func(t *testing.T) {
-		fn := DirectorPicker(directors)(func(c echo.Context) error {
+		fn := DirectorPicker(config, directors)(func(c echo.Context) error {
 			d := c.Get(vars.Director).(*proxy.Director)
 			if d.Name != tiny {
 				t.Fatalf("get director match url prefix fail")

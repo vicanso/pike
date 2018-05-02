@@ -6,6 +6,7 @@ import (
 	"github.com/vicanso/pike/vars"
 
 	"github.com/labstack/echo"
+	"github.com/labstack/echo/middleware"
 	"github.com/vicanso/pike/performance"
 )
 
@@ -16,6 +17,7 @@ const (
 type (
 	// InitializationConfig 初始化配置
 	InitializationConfig struct {
+		Skipper     middleware.Skipper
 		Header      []string
 		Concurrency int
 	}
@@ -23,7 +25,12 @@ type (
 
 // Initialization 相关一些初始化的操作
 func Initialization(config InitializationConfig) echo.MiddlewareFunc {
+	// Defaults
+	if config.Skipper == nil {
+		config.Skipper = middleware.DefaultSkipper
+	}
 	customHeader := make(map[string]string)
+	// 将自定义的http response header格式化
 	for _, v := range config.Header {
 		arr := strings.Split(v, ":")
 		if len(arr) != 2 {
@@ -31,21 +38,26 @@ func Initialization(config InitializationConfig) echo.MiddlewareFunc {
 		}
 		customHeader[arr[0]] = arr[1]
 	}
+
+	// 获取限制并发请求数
 	concurrency := uint32(defaultConcurrency)
 	if config.Concurrency != 0 {
 		concurrency = uint32(config.Concurrency)
 	}
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) (err error) {
+			if config.Skipper(c) {
+				return next(c)
+			}
 			defer performance.DecreaseConcurrency()
+			resHeader := c.Response().Header()
+			for k, v := range customHeader {
+				resHeader.Add(k, v)
+			}
 			performance.IncreaseRequestCount()
 			v := performance.IncreaseConcurrency()
 			if v > concurrency {
 				return vars.ErrTooManyRequst
-			}
-			resHeader := c.Response().Header()
-			for k, v := range customHeader {
-				resHeader.Add(k, v)
 			}
 			return next(c)
 		}

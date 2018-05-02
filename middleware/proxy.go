@@ -14,7 +14,7 @@ import (
 	"strings"
 	"time"
 
-	servertiming "github.com/mitchellh/go-server-timing"
+	"github.com/mitchellh/go-server-timing"
 	"github.com/vicanso/pike/cache"
 	"github.com/vicanso/pike/proxy"
 	"github.com/vicanso/pike/util"
@@ -151,11 +151,11 @@ func Proxy(config ProxyConfig) echo.MiddlewareFunc {
 				return next(c)
 			}
 
-			// 如果已获取到数据，则不需要proxy(从cache中获取)
+			// 如果已获取到数据，则不需要proxy获取(已从cache中获取)
 			if c.Get(vars.Response) != nil {
 				return next(c)
 			}
-			// 选择director
+			// 获取director
 			director, ok := c.Get(vars.Director).(*proxy.Director)
 			if !ok {
 				return vars.ErrDirectorNotFound
