@@ -423,4 +423,15 @@ func TestGetStats(t *testing.T) {
 			t.Fatalf("get cached list fail")
 		}
 	})
+
+	t.Run("remove cached", func(t *testing.T) {
+		err := c.Remove([]byte("3"))
+		if err != nil {
+			t.Fatalf("remove cached fail, %v", err)
+		}
+		list := c.GetCachedList()
+		if len(list) != 0 {
+			t.Fatalf("remove cached fail")
+		}
+	})
 }

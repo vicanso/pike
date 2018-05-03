@@ -36,6 +36,7 @@ type Config struct {
 	AccessLog            string        `yaml:"accessLog"`
 	LogType              string        `yaml:"logType"`
 	AdminPath            string        `yaml:"adminPath"`
+	AdminToken           string        `yaml:"adminToken"`
 }
 
 var defaultConfig = &Config{}

@@ -1,6 +1,8 @@
 package controller
 
 import (
+	"encoding/json"
+	"io/ioutil"
 	"net/http"
 
 	"github.com/vicanso/pike/performance"
@@ -33,4 +35,20 @@ func GetCachedList(c echo.Context) error {
 	m := make(map[string]interface{})
 	m["cacheds"] = cachedList
 	return c.JSON(http.StatusOK, m)
+}
+
+// RemoveCached 删除缓存
+func RemoveCached(c echo.Context) error {
+	buf, err := ioutil.ReadAll(c.Request().Body)
+	if err != nil {
+		return err
+	}
+	m := make(map[string]string)
+	err = json.Unmarshal(buf, &m)
+	if err != nil {
+		return err
+	}
+	client := c.Get(vars.CacheClient).(*cache.Client)
+	key := []byte(m["key"])
+	return client.Remove(key)
 }

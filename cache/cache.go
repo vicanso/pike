@@ -355,6 +355,14 @@ func (c *Client) ClearExpired(delay int) {
 	}
 }
 
+// Remove 删除缓存
+func (c *Client) Remove(key []byte) error {
+	c.Lock()
+	defer c.Unlock()
+	delete(c.rsMap, string(key))
+	return c.db.Delete(key)
+}
+
 // Size 获取缓存数量
 func (c *Client) Size() int {
 	return len(c.rsMap)

@@ -65,6 +65,8 @@ const (
 	ETag = "ETag"
 	// ServerTiming http response server timing
 	ServerTiming = "Server-Timing"
+	// AdminToken admin token
+	AdminToken = "X-Admin-Token"
 	// PingURL health check ping url
 	PingURL = "/ping"
 )
@@ -90,4 +92,6 @@ var (
 	ErrGatewayTimeout = echo.NewHTTPError(http.StatusGatewayTimeout, "gateway timeout")
 	// ErrTooManyRequst 太多的请求正在处理中
 	ErrTooManyRequst = echo.NewHTTPError(http.StatusTooManyRequests, "too many request is handling")
+	// ErrTokenInvalid token校验失败
+	ErrTokenInvalid = echo.NewHTTPError(http.StatusUnauthorized, "token is invalid")
 )

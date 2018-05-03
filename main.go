@@ -206,12 +206,21 @@ func main() {
 			c.Set(vars.CacheClient, client)
 			return next(c)
 		}
+	}, func(next echo.HandlerFunc) echo.HandlerFunc {
+		return func(c echo.Context) error {
+			token := c.Request().Header.Get(vars.AdminToken)
+			if token != dc.AdminToken {
+				return vars.ErrTokenInvalid
+			}
+			return next(c)
+		}
 	})
 
 	adminGroup.GET("/stats", controller.GetStats)
 
 	adminGroup.GET("/directors", controller.GetDirectors)
 	adminGroup.GET("/cacheds", controller.GetCachedList)
+	adminGroup.DELETE("/cacheds", controller.RemoveCached)
 
 	// Start server
 	e.Logger.Fatal(e.Start(dc.Listen))

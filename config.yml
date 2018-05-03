@@ -4,10 +4,10 @@ name: Pike
 listen: :3015
 # 数据缓存的db目录，默认为 /tmp/pike
 db: /tmp/pike.cache
-# # 后台管理员页面路径，如果不配置，无法使用管理员功能
+# 后台管理员页面路径，如果不配置，无法使用管理员功能
 adminPath: /pike
-# # 管理员验证token
-# adminToken: ry3WwvhVG
+# 管理员验证token
+adminToken: ry3WwvhVG
 # 是否使用自动生成ETag（对于没有ETag的添加）
 etag: true
 # 设置对于数据压缩的最小文件（大于此值才压缩），如果设置为0，则使用默认值1024

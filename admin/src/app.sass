@@ -1,0 +1,43 @@
+@import "./variables"
+*
+  box-sizing: border-box
+  &:before, &:after
+    box-sizing: border-box
+
+.clearfix:before, .clearfix:after
+  display: table
+  content: " "
+.clearfix:after
+  clear: both
+
+.tac
+  text-align: center
+.pullRight
+  float: right
+.pullLeft
+  float: left
+.mright10
+  margin-right: 10px
+.mtop10
+  margin-top: 10px
+.mleft5
+  margin-left: 5px
+
+.form
+  border: 1px solid $COLOR_LIGHT_GRAY
+  border-radius: 3px
+  transition: .2s
+  background-color: $COLOR_WHITE
+  &.hover
+    box-shadow: 0 0 8px 0 rgba(272, 237, 250, .6), 0 2px 4px 0 rgba(232, 237, 250, .5)
+
+
+body, html
+  margin: 0
+  font-family: "Open Sans", "Helvetica Neue", Arial, Verdana, sans-serif
+  color: $COLOR_LIGHT_BLACK
+  background-color: $COLOR_DARY_WHITE
+
+.contentWrapper
+  margin: $MAIN_HEADER_HEIGHT 0 0 
+  
