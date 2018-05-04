@@ -1,5 +1,6 @@
 import Token from '../views/token';
 import Director from '../views/director';
+import Cached from '../views/cached';
 
 export default [
   {
@@ -11,5 +12,10 @@ export default [
     name: 'director',
     path: '/director',
     component: Director,
+  },
+  {
+    name: 'cached',
+    path: '/cached',
+    component: Cached,
   },
 ];

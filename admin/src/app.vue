@@ -16,12 +16,17 @@ export default {
   },
   methods: {
     ...mapActions(['getStats']),
+    intervalGetStats() {
+      setInterval(() => {
+        this.getStats();
+      }, 60 * 1000);
+    },
   },
   async beforeMount() {
     const close = this.$loading();
     try {
       await this.getStats();
-      this.$router.push('director');
+      this.intervalGetStats();
     } catch (err) {
       if (_.get(err, 'response.status') === 401) {
         this.$router.push('token');

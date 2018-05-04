@@ -1,8 +1,7 @@
 package controller
 
 import (
-	"encoding/json"
-	"io/ioutil"
+	"encoding/base64"
 	"net/http"
 
 	"github.com/vicanso/pike/performance"
@@ -39,16 +38,10 @@ func GetCachedList(c echo.Context) error {
 
 // RemoveCached 删除缓存
 func RemoveCached(c echo.Context) error {
-	buf, err := ioutil.ReadAll(c.Request().Body)
-	if err != nil {
-		return err
-	}
-	m := make(map[string]string)
-	err = json.Unmarshal(buf, &m)
+	key, err := base64.StdEncoding.DecodeString(c.Param("key"))
 	if err != nil {
 		return err
 	}
 	client := c.Get(vars.CacheClient).(*cache.Client)
-	key := []byte(m["key"])
 	return client.Remove(key)
 }

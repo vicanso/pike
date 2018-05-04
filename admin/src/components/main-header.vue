@@ -17,7 +17,11 @@
         active: currentRoute == item.route
       }`
       v-for='item in functions'
-    ) {{item.name}}
+    )
+      a(
+        href='javascript:;'
+        @click='goTo(item)'
+      ) {{item.name}}
 </template>
 <style lang="sass" scoped>
 @import "../variables";
@@ -52,9 +56,12 @@
   list-style: none
   li
     float: left
-    color: rgba($COLOR_WHITE, 0.5)
     margin: 0 15px
-    &.active
+    a
+      color: rgba($COLOR_WHITE, 0.5)
+      text-decoration: none
+      display: block
+    &.active a
       color: $COLOR_WHITE
 .startedAt
   color: rgba($COLOR_WHITE, 0.5)
@@ -79,10 +86,15 @@ export default {
         },
         {
           name: 'Cached List',
-          route: 'cachedList',
+          route: 'cached',
         },
       ],
     };
+  },
+  methods: {
+    goTo(item) {
+      this.$router.push(item.route);
+    },
   },
   computed: {
     ...mapState({

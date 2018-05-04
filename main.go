@@ -220,7 +220,7 @@ func main() {
 
 	adminGroup.GET("/directors", controller.GetDirectors)
 	adminGroup.GET("/cacheds", controller.GetCachedList)
-	adminGroup.DELETE("/cacheds", controller.RemoveCached)
+	adminGroup.DELETE("/cacheds/:key", controller.RemoveCached)
 
 	// Start server
 	e.Logger.Fatal(e.Start(dc.Listen))
