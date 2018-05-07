@@ -58,15 +58,20 @@ textTypes:
 header:
   - "X-Server:My-Pike"
   - "X-Location:GZ"
+# 需要做rewrite的url列表
+# /old:/new
+# /api/*:/$1
+# /js/*":"/public/javascripts/$1
+# /users/*/orders/*:/user/$1/order/$2
+rewrites:
+  -
+    "/api/*:/$1"
 directors:
   -
     # 名称
     name: tiny 
     # backend的选择策略，支持 random roundRobin leastConn ipHash uriHash first
     policy: first 
-    # 配置url pass的条件，如果url符合(包含此字符串）则直接为pass（更好的性能）
-    # pass:
-    #   - cache-control=no-cache
     # backend的健康检测，如果不配置，则默认判断该端口是否被监听
     ping: /ping
     # prefix与host是AND的关系
@@ -74,8 +79,8 @@ directors:
     prefix:
       - /api
     # 判断请求的host是否符合，如果符合，则是此director
-    host:
-      - mac:3015
+    # host:
+    #   - mac:3015
     # backend列表
     backend:
       - http://127.0.0.1:5018

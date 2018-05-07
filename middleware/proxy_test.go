@@ -69,8 +69,8 @@ func TestProxy(t *testing.T) {
 
 	t.Run("proxy", func(t *testing.T) {
 		fn := Proxy(ProxyConfig{
-			Rewrite: map[string]string{
-				"/api/*": "/$1",
+			Rewrites: []string{
+				"/api/*:/$1",
 			},
 		})(func(c echo.Context) error {
 			resp := c.Get(vars.Response).(*cache.Response)

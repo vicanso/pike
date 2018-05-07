@@ -1,0 +1,20 @@
+language: go
+sudo: required
+
+go:
+  - 1.x
+
+install:
+  - go get -u github.com/golang/dep/cmd/dep
+
+script:
+  - dep ensure
+  - cd vendor/github.com/google/brotli
+  - ./configure-cmake
+  - make && sudo make install
+  - cd ../../../..
+  - export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/lib
+  - go test -race -cover ./...
+
+after_success:
+  - docker build -t vicanso/pike .

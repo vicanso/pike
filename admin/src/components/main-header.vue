@@ -33,7 +33,6 @@
   padding-left: 30px
   height: $MAIN_HEADER_HEIGHT
   background-color: $COLOR_BLACK
-  border-bottom: $GRAY_BORDER
   z-index: 9
   line-height: $MAIN_HEADER_HEIGHT
   .logo

@@ -4,3 +4,4 @@ _vendor*
 pike
 node_modules
 dist
+test/test

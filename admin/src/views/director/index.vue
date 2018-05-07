@@ -48,32 +48,7 @@
 
 </template>
 
-<script>
-import {mapActions, mapState} from 'vuex';
-export default {
-  data() {
-    return {};
-  },
-  methods: {
-    ...mapActions(['getDirectors']),
-  },
-  computed: {
-    ...mapState({
-      directors: ({pike}) => pike.directors,
-    }),
-  },
-  async beforeMount() {
-    const close = this.$loading();
-    try {
-      await this.getDirectors()
-    } catch (err) {
-      this.$error(err)
-    } finally {
-      close();
-    }
-  },
-}
-</script>
+<script src="./director.js"></script>
 
 <style lang="sass" scoped>
 @import '../../variables'
@@ -84,6 +59,7 @@ export default {
   padding-top: 20px
   .director
     margin-bottom: 20px
+    background-color: $COLOR_DARY_WHITE
     h4
       margin: 0
       padding: 0
@@ -97,7 +73,8 @@ export default {
     h5
       margin: 0
       padding: 10px
-      background-color: $COLOR_DARY_WHITE
+      background-color: $COLOR_DARK_BLUE
+      color: $COLOR_WHITE
     ul
       margin: 20px 0
       padding: 0

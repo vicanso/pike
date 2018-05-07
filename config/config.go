@@ -1,7 +1,6 @@
 package config
 
 import (
-	"flag"
 	"io/ioutil"
 	"time"
 
@@ -30,6 +29,7 @@ type Config struct {
 	Concurrency          int           `yaml:"concurrency"`
 	Directors            []*Director   `yaml:"directors"`
 	TextTypes            []string      `yaml:"textTypes"`
+	Rewrites             []string      `yaml:"rewrites"`
 	ExpiredClearInterval time.Duration `yaml:"expiredClearInterval"`
 	ConnectTimeout       time.Duration `yaml:"connectTimeout"`
 	LogFormat            string        `yaml:"logFormat"`
@@ -39,23 +39,13 @@ type Config struct {
 	AdminToken           string        `yaml:"adminToken"`
 }
 
-var defaultConfig = &Config{}
-
-func init() {
-	var file string
-	flag.StringVar(&file, "c", "./config.yml", "the config file")
-
+// InitFromFile 获取默认的配置
+func InitFromFile(file string) (c *Config, err error) {
 	buf, err := ioutil.ReadFile(file)
 	if err != nil {
-		panic(err)
+		return
 	}
-	err = yaml.Unmarshal(buf, defaultConfig)
-	if err != nil {
-		panic(err)
-	}
-}
-
-// GetDefault 获取默认的配置
-func GetDefault() *Config {
-	return defaultConfig
+	c = &Config{}
+	err = yaml.Unmarshal(buf, c)
+	return
 }

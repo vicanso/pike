@@ -1,12 +1,17 @@
 package main
 
 import (
+	"encoding/json"
+	"flag"
+	"fmt"
 	"net/http"
 	"os"
 	"sort"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/vicanso/dash"
 
 	"github.com/vicanso/pike/config"
 	"github.com/vicanso/pike/controller"
@@ -60,10 +65,52 @@ func getLogger(dc *config.Config) httplog.Writer {
 	return logWriter
 }
 
+func check(conf *config.Config) {
+	url := "http://127.0.0.1" + conf.Listen + "/ping"
+	resp, err := http.Get(url)
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+		return
+	}
+	statusCode := resp.StatusCode
+	if statusCode < 200 || statusCode >= 400 {
+		fmt.Println(err)
+		os.Exit(1)
+		return
+	}
+	os.Exit(0)
+}
+
 func main() {
+	args := os.Args[1:]
+	if dash.IncludesString(args, "version") {
+		fmt.Println("Pike version " + vars.Version)
+		return
+	}
+	var configFile string
+	flag.StringVar(&configFile, "c", "./config.yml", "the config file")
+	flag.Parse()
 	// Echo instance
 	e := echo.New()
-	dc := config.GetDefault()
+	dc, err := config.InitFromFile(configFile)
+	if err != nil {
+		panic(err)
+	}
+	if dash.IncludesString(args, "test") {
+		configJSON, err := json.Marshal(dc)
+		if err != nil {
+			panic(err)
+		}
+		fmt.Println(string(configJSON))
+		fmt.Println("the config file test done")
+		return
+	}
+	fmt.Println("pike config file: " + configFile)
+	if dash.IncludesString(args, "check") {
+		check(dc)
+		return
+	}
 
 	level, _ := strconv.Atoi(os.Getenv("LVL"))
 	if level != 0 {
@@ -74,7 +121,7 @@ func main() {
 	client := &cache.Client{
 		Path: dc.DB,
 	}
-	err := client.Init()
+	err = client.Init()
 	if err != nil {
 		panic(err)
 	}
@@ -167,9 +214,10 @@ func main() {
 
 	// 代理转发中间件
 	proxyConfig := custommiddleware.ProxyConfig{
-		Timeout: dc.ConnectTimeout,
-		ETag:    dc.ETag,
-		Skipper: defaultSkipper,
+		Timeout:  dc.ConnectTimeout,
+		ETag:     dc.ETag,
+		Skipper:  defaultSkipper,
+		Rewrites: dc.Rewrites,
 	}
 	e.Use(custommiddleware.Proxy(proxyConfig))
 

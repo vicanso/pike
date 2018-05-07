@@ -18,6 +18,7 @@ import {
 const state = {
   stats: null,
   directors: null,
+  performances: null,
   cacheds: null,
 };
 const minute = 60;
@@ -37,9 +38,29 @@ function getExpiredDesc(seconds) {
   return `${seconds} s`;
 }
 
+let requestCount = 0;
+const performanceMaxCount = 60;
 const mutations = {
   [PIKE_STATS](state, data) {
     data.startedAt = dayjs(data.startedAt).format('YYYY-MM-DD HH:mm');
+    const performances = (state.performances || []).slice(0);
+    const performance = _.omit(data, [
+      'startedAt',
+      'requestCount',
+      'version',
+    ]);
+    performance.createdAt = Date.now();
+    if (requestCount === 0 ) {
+      performance.requestCount = 0;
+    } else {
+      performance.requestCount = data.requestCount - requestCount;
+    }
+    requestCount = data.requestCount;
+    performances.push(performance);
+    if (performances.length > performanceMaxCount) {
+      performances.shift();
+    }
+    state.performances = performances;
     state.stats = data;
   },
   [PIKE_DIRECTORS](state, data) {
@@ -78,7 +99,7 @@ const mutations = {
   [PIKE_CACHED_CLEAR](state, key) {
     const cacheds = _.filter(state.cacheds, item => item.key != key);
     state.cacheds = cacheds;
-  }
+  },
 };
 
 // 获取系统性能统计相关信息
@@ -104,7 +125,7 @@ async function clearCached({commit}, key) {
     throw new Error('the browser is support btoa function, please upgrade')
   }
   const url = `${CACHEDS}/${window.btoa(key)}`
-  const res = await request.delete(url)
+  await request.delete(url)
   commit(PIKE_CACHED_CLEAR, key);
 }
 

@@ -27,8 +27,8 @@ func Logger(config LoggerConfig) echo.MiddlewareFunc {
 			}
 			startedAt := time.Now()
 			err = next(c)
+			str := httplog.Format(c, tags, startedAt)
 			go func() {
-				str := httplog.Format(c, tags, startedAt)
 				writer.Write([]byte(str))
 			}()
 			return

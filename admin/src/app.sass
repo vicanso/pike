@@ -31,12 +31,51 @@
   &.hover
     box-shadow: 0 0 8px 0 rgba(272, 237, 250, .6), 0 2px 4px 0 rgba(232, 237, 250, .5)
 
+.bkz
+  position: relative
+  font-size: 12px
+  line-height: 20px
+  text-align: center
+  text-transform: uppercase
+  &:before
+    position: absolute
+    top: 50%
+    display: block
+    content: ""
+    width: 100%
+    height: 1px
+    background-color: $COLOR_GRAY
+
+.bla
+  position: relative
+  z-index: 2
+  display: inline-block
+  padding-left: 1em
+  padding-right: 1em
+  vertical-align: middle
+  background-color: $COLOR_DARK_BLUE
+  color: $COLOR_WHITE
+
+.blb
+  margin-top: 0
+  margin-bottom: 0
+  font-size: 100%
+
+.green
+  background-color: #5dcb8e
+.red
+  background-color: #e74759
+.purple
+  background-color: #9f85fc
+.yellow
+  background-color: #e4d836
+
 
 body, html
   margin: 0
   font-family: "Open Sans", "Helvetica Neue", Arial, Verdana, sans-serif
   color: $COLOR_LIGHT_BLACK
-  background-color: $COLOR_DARY_WHITE
+  background-color: $COLOR_DARK_BLUE
 
 .contentWrapper
   margin: $MAIN_HEADER_HEIGHT 0 0 

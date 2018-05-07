@@ -34,7 +34,7 @@ type (
 		// 优先级
 		Priority int `json:"priority"`
 		// 读写锁
-		mutex sync.RWMutex
+		sync.RWMutex
 		// roubin 的次数
 		roubin uint32
 	}
@@ -139,8 +139,8 @@ func (d *Director) RemoveBackend(backend string) {
 
 // AddAvailableBackend 增加可用backend列表
 func (d *Director) AddAvailableBackend(backend string) {
-	d.mutex.Lock()
-	defer d.mutex.Unlock()
+	d.Lock()
+	defer d.Unlock()
 	backends := d.AvailableBackends
 	if !dash.IncludesString(backends, backend) {
 		d.AvailableBackends = append(backends, backend)
@@ -149,8 +149,8 @@ func (d *Director) AddAvailableBackend(backend string) {
 
 // RemoveAvailableBackend 删除可用的backend
 func (d *Director) RemoveAvailableBackend(backend string) {
-	d.mutex.Lock()
-	defer d.mutex.Unlock()
+	d.Lock()
+	defer d.Unlock()
 	backends := d.AvailableBackends
 	index := dash.FindStringIndex(backends, backend)
 	if index != -1 {
@@ -160,8 +160,8 @@ func (d *Director) RemoveAvailableBackend(backend string) {
 
 // GetAvailableBackends 获取可用的backend
 func (d *Director) GetAvailableBackends() []string {
-	d.mutex.RLock()
-	defer d.mutex.RUnlock()
+	d.RLock()
+	defer d.RUnlock()
 	return d.AvailableBackends
 }
 
@@ -205,8 +205,8 @@ func (d *Director) RemovePrefix(prefix string) {
 
 // Match 判断是否符合
 func (d *Director) Match(host, uri string) (match bool) {
-	d.mutex.RLock()
-	defer d.mutex.RUnlock()
+	d.RLock()
+	defer d.RUnlock()
 	hosts := d.Hosts
 	prefixs := d.Prefixs
 	// 如果未配置host与prefix，则所有请求都匹配

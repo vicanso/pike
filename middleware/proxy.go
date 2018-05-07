@@ -32,14 +32,14 @@ type (
 		// Skipper defines a function to skip middleware.
 		Skipper middleware.Skipper
 
-		// Rewrite defines URL path rewrite rules. The values captured in asterisk can be
+		// Rewrites defines URL path rewrite rules. The values captured in asterisk can be
 		// retrieved by index e.g. $1, $2 and so on.
 		// Examples:
 		// "/old":              "/new",
 		// "/api/*":            "/$1",
 		// "/js/*":             "/public/javascripts/$1",
 		// "/users/*/orders/*": "/user/$1/order/$2",
-		Rewrite map[string]string
+		Rewrites []string
 
 		// Timeout 超时间隔
 		Timeout time.Duration
@@ -140,7 +140,13 @@ func Proxy(config ProxyConfig) echo.MiddlewareFunc {
 		timeout = defaultTimeout
 	}
 	// Initialize
-	for k, v := range config.Rewrite {
+	for _, value := range config.Rewrites {
+		arr := strings.Split(value, ":")
+		if len(arr) != 2 {
+			continue
+		}
+		k := arr[0]
+		v := arr[1]
 		k = strings.Replace(k, "*", "(\\S*)", -1)
 		config.rewriteRegex[regexp.MustCompile(k)] = v
 	}
