@@ -17,4 +17,8 @@ script:
   - go test -race -cover ./...
 
 after_success:
-  - docker build -t vicanso/pike .
+  - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
+  - docker build -t pike .
+  - docker images
+  - docker tag pike $DOCKER_USERNAME/pike
+  - docker push $DOCKER_USERNAME/pike
