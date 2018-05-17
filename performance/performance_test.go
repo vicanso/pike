@@ -3,7 +3,8 @@ package performance
 import (
 	"testing"
 
-	"github.com/vicanso/dash"
+	funk "github.com/thoas/go-funk"
+
 	"github.com/vicanso/pike/cache"
 )
 
@@ -49,11 +50,7 @@ func TestPerformance(t *testing.T) {
 		}
 		c.Close()
 		stats := GetStats(c)
-		m := dash.ToMap(stats)
-		keys := []string{}
-		for k := range m {
-			keys = append(keys, k)
-		}
+		keys := funk.Keys(stats).([]string)
 		if len(keys) != 14 {
 			t.Fatalf("get stats fail")
 		}

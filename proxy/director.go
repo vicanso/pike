@@ -11,7 +11,7 @@ import (
 	"time"
 
 	"github.com/labstack/echo"
-	"github.com/vicanso/dash"
+	funk "github.com/thoas/go-funk"
 )
 
 type (
@@ -123,7 +123,7 @@ func (d *Director) RefreshPriority() {
 // AddBackend 增加backend
 func (d *Director) AddBackend(backend string) {
 	backends := d.Backends
-	if !dash.IncludesString(backends, backend) {
+	if !funk.ContainsString(backends, backend) {
 		d.Backends = append(backends, backend)
 	}
 }
@@ -131,7 +131,8 @@ func (d *Director) AddBackend(backend string) {
 // RemoveBackend 删除backend
 func (d *Director) RemoveBackend(backend string) {
 	backends := d.Backends
-	index := dash.FindStringIndex(backends, backend)
+
+	index := funk.IndexOfString(backends, backend)
 	if index != -1 {
 		d.Backends = append(backends[0:index], backends[index+1:]...)
 	}
@@ -142,7 +143,7 @@ func (d *Director) AddAvailableBackend(backend string) {
 	d.Lock()
 	defer d.Unlock()
 	backends := d.AvailableBackends
-	if !dash.IncludesString(backends, backend) {
+	if !funk.ContainsString(backends, backend) {
 		d.AvailableBackends = append(backends, backend)
 	}
 }
@@ -152,7 +153,7 @@ func (d *Director) RemoveAvailableBackend(backend string) {
 	d.Lock()
 	defer d.Unlock()
 	backends := d.AvailableBackends
-	index := dash.FindStringIndex(backends, backend)
+	index := funk.IndexOfString(backends, backend)
 	if index != -1 {
 		d.AvailableBackends = append(backends[0:index], backends[index+1:]...)
 	}
@@ -168,7 +169,7 @@ func (d *Director) GetAvailableBackends() []string {
 // AddHost 添加host
 func (d *Director) AddHost(host string) {
 	hosts := d.Hosts
-	if !dash.IncludesString(hosts, host) {
+	if !funk.ContainsString(hosts, host) {
 		d.Hosts = append(hosts, host)
 		d.RefreshPriority()
 	}
@@ -177,7 +178,7 @@ func (d *Director) AddHost(host string) {
 // RemoveHost 删除host
 func (d *Director) RemoveHost(host string) {
 	hosts := d.Hosts
-	index := dash.FindStringIndex(hosts, host)
+	index := funk.IndexOfString(hosts, host)
 	if index != -1 {
 		d.Hosts = append(hosts[0:index], hosts[index+1:]...)
 		d.RefreshPriority()
@@ -187,7 +188,7 @@ func (d *Director) RemoveHost(host string) {
 // AddPrefix 增加前缀
 func (d *Director) AddPrefix(prefix string) {
 	prefixs := d.Prefixs
-	if !dash.IncludesString(prefixs, prefix) {
+	if !funk.ContainsString(prefixs, prefix) {
 		d.Prefixs = append(prefixs, prefix)
 		d.RefreshPriority()
 	}
@@ -196,7 +197,7 @@ func (d *Director) AddPrefix(prefix string) {
 // RemovePrefix 删除前缀
 func (d *Director) RemovePrefix(prefix string) {
 	prefixs := d.Prefixs
-	index := dash.FindStringIndex(prefixs, prefix)
+	index := funk.IndexOfString(prefixs, prefix)
 	if index != -1 {
 		d.Prefixs = append(prefixs[0:index], prefixs[index+1:]...)
 		d.RefreshPriority()

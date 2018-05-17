@@ -3,7 +3,7 @@ package custommiddleware
 import (
 	"github.com/labstack/echo"
 	"github.com/labstack/echo/middleware"
-	"github.com/vicanso/dash"
+	funk "github.com/thoas/go-funk"
 	"github.com/vicanso/pike/cache"
 	"github.com/vicanso/pike/vars"
 )
@@ -40,7 +40,7 @@ func HeaderSetter(config HeaderSetterConfig) echo.MiddlewareFunc {
 			}
 			h := c.Response().Header()
 			for k, values := range cr.Header {
-				if dash.IncludesString(ignoreHeaderKeys, k) {
+				if funk.ContainsString(ignoreHeaderKeys, k) {
 					continue
 				}
 				for _, v := range values {

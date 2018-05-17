@@ -11,7 +11,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/vicanso/dash"
+	funk "github.com/thoas/go-funk"
 
 	"github.com/vicanso/pike/config"
 	"github.com/vicanso/pike/controller"
@@ -84,7 +84,7 @@ func check(conf *config.Config) {
 
 func main() {
 	args := os.Args[1:]
-	if dash.IncludesString(args, "version") {
+	if funk.ContainsString(args, "version") {
 		fmt.Println("Pike version " + vars.Version)
 		return
 	}
@@ -97,8 +97,8 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	if dash.IncludesString(args, "test") {
-		configJSON, err := json.Marshal(dc)
+	if funk.ContainsString(args, "test") {
+		configJSON, err := json.MarshalIndent(dc, "", "  ")
 		if err != nil {
 			panic(err)
 		}
@@ -107,7 +107,7 @@ func main() {
 		return
 	}
 	fmt.Println("pike config file: " + configFile)
-	if dash.IncludesString(args, "check") {
+	if funk.ContainsString(args, "check") {
 		check(dc)
 		return
 	}

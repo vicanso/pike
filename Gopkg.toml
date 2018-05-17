@@ -46,13 +46,13 @@
   version = "0.2.4"
 
 [[constraint]]
-  branch = "master"
-  name = "github.com/vicanso/dash"
-
-[[constraint]]
   name = "github.com/vicanso/fresh"
   version = "0.0.1"
 
 [[constraint]]
   branch = "master"
   name = "github.com/mitchellh/go-server-timing"
+
+[[constraint]]
+  branch = "master"
+  name = "github.com/thoas/go-funk"

@@ -7,9 +7,9 @@ import (
 	"time"
 
 	"github.com/labstack/echo"
+	funk "github.com/thoas/go-funk"
 
 	"github.com/h2non/gock"
-	"github.com/vicanso/dash"
 )
 
 func TestDirector(t *testing.T) {
@@ -24,11 +24,11 @@ func TestDirector(t *testing.T) {
 		}
 		backend := "http://127.0.0.1:5002"
 		d.AddBackend(backend)
-		if !dash.IncludesString(d.Backends, backend) {
+		if !funk.ContainsString(d.Backends, backend) {
 			t.Fatalf("add backend fail")
 		}
 		d.RemoveBackend(backend)
-		if dash.IncludesString(d.Backends, backend) {
+		if funk.ContainsString(d.Backends, backend) {
 			t.Fatalf("remove backend fail")
 		}
 
