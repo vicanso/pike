@@ -55,6 +55,8 @@ const (
 	Cacheable = "cacheable"
 	// CacheControl http response cache control header
 	CacheControl = "Cache-Control"
+	// SetCookie http set cookie header
+	SetCookie = "Set-Cookie"
 	// GzipEncoding gzip encoding
 	GzipEncoding = "gzip"
 	// BrEncoding br encoding

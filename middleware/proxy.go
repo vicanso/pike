@@ -237,7 +237,8 @@ func Proxy(config ProxyConfig) echo.MiddlewareFunc {
 			headers := writer.headers
 			cacheControl := headers[vars.CacheControl]
 			var ttl uint16
-			if len(cacheControl) != 0 {
+			// 如果有set-cookie，则该请求不可缓存
+			if len(headers[vars.SetCookie]) == 0 && len(cacheControl) != 0 {
 				// cache control 只会有一个http header
 				ttl = getCacheAge([]byte(cacheControl[0]))
 			}
