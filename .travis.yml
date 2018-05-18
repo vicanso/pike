@@ -7,6 +7,14 @@ go:
 install:
   - go get -u github.com/golang/dep/cmd/dep
 
+before_script:
+  - cd test
+  - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
+  - docker build -t pike-test-server .
+  - docker tag pike $DOCKER_USERNAME/pike-test-server
+  - docker push $DOCKER_USERNAME/pike-test-server
+  - cd ..
+
 script:
   - dep ensure
   - cd vendor/github.com/google/brotli
