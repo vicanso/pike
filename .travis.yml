@@ -9,10 +9,8 @@ install:
 
 before_script:
   - cd test
-  - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
+  - dep ensure
   - docker build -t pike-test-server .
-  - docker tag pike $DOCKER_USERNAME/pike-test-server
-  - docker push $DOCKER_USERNAME/pike-test-server
   - cd ..
 
 script:
