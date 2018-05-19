@@ -1,13 +1,13 @@
 <template lang="pug">
 .mainHeader
-  //- .logo.clearfix.pullLeft
-  //-   img.pullLeft(
-  //-     :src='logo'
-  //-   )
-  //-   | Pike 
-  //-   span(
-  //-     v-if='statsInfo'
-  //-   ) ({{statsInfo.version}})
+  .logo.clearfix.pullLeft
+    img.pullLeft(
+      :src='logo'
+    )
+    | Pike 
+    span(
+      v-if='statsInfo'
+    ) ({{statsInfo.version}})
   .pullRight.startedAt(
     v-if='statsInfo'
   ) {{statsInfo.startedAt}}

@@ -143,31 +143,6 @@ func TestDispatcher(t *testing.T) {
 	}
 	defer client.Close()
 	conf := DispatcherConfig{}
-	t.Run("get cache age", func(t *testing.T) {
-		if getCacheAge([]byte("")) != 0 {
-			t.Fatalf("no cache-control header should be 0")
-		}
-
-		if getCacheAge([]byte("no-cache")) != 0 {
-			t.Fatalf("no cache should be 0")
-		}
-
-		if getCacheAge([]byte("no-store")) != 0 {
-			t.Fatalf("no store should be 0")
-		}
-
-		if getCacheAge([]byte("private")) != 0 {
-			t.Fatalf("private cache should be 0")
-		}
-
-		if getCacheAge([]byte("max-age=10")) != 10 {
-			t.Fatalf("get cache age from max-age fail")
-		}
-
-		if getCacheAge([]byte("max-age=10,s-maxage=1")) != 1 {
-			t.Fatalf("get cache age from s-maxage fail")
-		}
-	})
 	t.Run("dispatch response", func(t *testing.T) {
 		fn := Dispatcher(conf, client)(func(c echo.Context) error {
 			return nil

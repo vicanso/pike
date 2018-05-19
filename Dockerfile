@@ -10,7 +10,7 @@ RUN apk update \
   && ./configure-cmake \
   && make && make install \
   && cd /go/src/github.com/vicanso/pike \
-  && GOOS=linux go build -o pike
+  && GOOS=linux GOARCH=amd64 go build -tags netgo -o pike
 
 FROM alpine
 
@@ -24,7 +24,7 @@ COPY --from=builder /go/src/github.com/vicanso/pike/pike /
 
 ADD ./config.yml /etc/pike/config.yml
 
-CMD ./pike -c /etc/pike/config.yml
+CMD ["/pike", "-c", "/etc/pike/config.yml"]
 
 HEALTHCHECK --interval=10s --timeout=3s \
   CMD ./pike -c /etc/pike/config.yml check || exit 1

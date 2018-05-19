@@ -98,8 +98,18 @@ func proxyHTTP(t *ProxyTarget) http.Handler {
 }
 
 // 根据Cache-Control的信息，获取s-maxage或者max-age的值
-func getCacheAge(cacheControl []byte) uint16 {
-	// cacheControl := header.PeekBytes(vars.CacheControl)
+func getCacheAge(header http.Header) uint16 {
+	// 如果有设置cookie，则为不可缓存
+	if len(header[vars.SetCookie]) != 0 {
+		return 0
+	}
+	// 如果没有设置cache-control，则不可缓存
+	if len(header[vars.CacheControl]) == 0 {
+		return 0
+	}
+
+	cacheControl := []byte(header[vars.CacheControl][0])
+	// 如果为空，则不可缓存
 	if len(cacheControl) == 0 {
 		return 0
 	}
@@ -235,13 +245,7 @@ func Proxy(config ProxyConfig) echo.MiddlewareFunc {
 				reqHeader.Set(vars.IfNoneMatch, ifNoneMatch)
 			}
 			headers := writer.headers
-			cacheControl := headers[vars.CacheControl]
-			var ttl uint16
-			// 如果有set-cookie，则该请求不可缓存
-			if len(headers[vars.SetCookie]) == 0 && len(cacheControl) != 0 {
-				// cache control 只会有一个http header
-				ttl = getCacheAge([]byte(cacheControl[0]))
-			}
+			ttl := getCacheAge(headers)
 			body := writer.body.Bytes()
 			if config.ETag {
 				eTagValue := util.GetHeaderValue(headers, vars.ETag)

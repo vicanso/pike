@@ -1,6 +1,7 @@
 package custommiddleware
 
 import (
+	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
@@ -37,6 +38,74 @@ func (c *closeNotifyRecorder) close() {
 
 func (c *closeNotifyRecorder) CloseNotify() <-chan bool {
 	return c.closed
+}
+
+func TestGetCacheAge(t *testing.T) {
+	t.Run("set cookie", func(t *testing.T) {
+		header := make(http.Header)
+		header["Cache-Control"] = []string{
+			"public, max-age=60",
+		}
+		header["Set-Cookie"] = []string{
+			"jt=abcd",
+		}
+		if getCacheAge(header) != 0 {
+			t.Fatalf("max age of set cookie response should be 0")
+		}
+	})
+	t.Run("no cache control", func(t *testing.T) {
+		header := make(http.Header)
+		if getCacheAge(header) != 0 {
+			t.Fatalf("max age of no cache control response should be 0")
+		}
+	})
+	t.Run("no cache", func(t *testing.T) {
+		header := make(http.Header)
+		header["Cache-Control"] = []string{
+			"no-cache",
+		}
+		if getCacheAge(header) != 0 {
+			t.Fatalf("max age of no cache response should be 0")
+		}
+	})
+	t.Run("no store", func(t *testing.T) {
+		header := make(http.Header)
+		header["Cache-Control"] = []string{
+			"no-store",
+		}
+		if getCacheAge(header) != 0 {
+			t.Fatalf("max age of no store response should be 0")
+		}
+	})
+	t.Run("private", func(t *testing.T) {
+		header := make(http.Header)
+		header["Cache-Control"] = []string{
+			"private, max-age=60",
+		}
+		if getCacheAge(header) != 0 {
+			t.Fatalf("max age of private response should be 0")
+		}
+	})
+	t.Run("s-maxage", func(t *testing.T) {
+		header := make(http.Header)
+		header["Cache-Control"] = []string{
+			"s-maxage=60, max-age=10",
+		}
+		if getCacheAge(header) != 60 {
+			t.Fatalf("response cache should get from s-maxage")
+		}
+	})
+
+	t.Run("max-age", func(t *testing.T) {
+		header := make(http.Header)
+		header["Cache-Control"] = []string{
+			"max-age=10",
+		}
+		if getCacheAge(header) != 10 {
+			t.Fatalf("response cache should get from max-age")
+		}
+	})
+
 }
 
 func TestGenETag(t *testing.T) {
