@@ -1,4 +1,5 @@
-# pike
+# pike [![Build Status](https://img.shields.io/travis/vicanso/pike.svg?label=linux+build)](https://travis-ci.org/vicanso/pike)
+
 
 HTTP缓存服务，提供高效简单的HTTP缓存服务。
 
