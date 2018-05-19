@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"path"
 	"sort"
 	"strconv"
 	"strings"
@@ -247,15 +248,26 @@ func main() {
 		return c.String(http.StatusOK, "pong")
 	})
 
-	// stats
+	// admin group
 	adminGroup := e.Group(dc.AdminPath, func(next echo.HandlerFunc) echo.HandlerFunc {
+		// 添加相应字段
 		return func(c echo.Context) error {
 			c.Set(vars.Directors, directors)
 			c.Set(vars.CacheClient, client)
 			return next(c)
 		}
 	}, func(next echo.HandlerFunc) echo.HandlerFunc {
+		// 校验 token
 		return func(c echo.Context) error {
+			uri := c.Request().RequestURI
+			ext := path.Ext(uri)
+			// 静态文件不校验token
+			if len(ext) != 0 {
+				file := uri[len(dc.AdminPath)+1:]
+				c.Set(vars.StaticFile, file)
+				return next(c)
+			}
+
 			token := c.Request().Header.Get(vars.AdminToken)
 			if token != dc.AdminToken {
 				return vars.ErrTokenInvalid
@@ -263,6 +275,8 @@ func main() {
 			return next(c)
 		}
 	})
+
+	adminGroup.GET("/*.html", controller.Serve)
 
 	adminGroup.GET("/stats", controller.GetStats)
 

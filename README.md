@@ -8,6 +8,18 @@ HTTP缓存服务，提供高效简单的HTTP缓存服务。
 
 go test -race -coverprofile=test.out ./... && go tool cover --html=test.out
 
+## 构建命令
+
+生成后台管理文件
+
+```bash
+cd admin \
+  && yarn \
+  && yarn build \
+  && rm ./dist/js/*.map \
+  && cd .. \
+  && packr -z
+```
 ## 中间件
 
 中间件设置的Cotenxt参数有：

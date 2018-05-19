@@ -2,15 +2,58 @@ package controller
 
 import (
 	"encoding/base64"
+	"fmt"
 	"net/http"
+	"path"
+	"strconv"
 
+	"github.com/gobuffalo/packr"
 	"github.com/vicanso/pike/performance"
 	"github.com/vicanso/pike/proxy"
+	"github.com/vicanso/pike/util"
 
 	"github.com/labstack/echo"
 	"github.com/vicanso/pike/cache"
 	"github.com/vicanso/pike/vars"
 )
+
+// Serve 静态文件处理
+func Serve(c echo.Context) error {
+	box := packr.NewBox("../admin/dist")
+	file, _ := c.Get(vars.StaticFile).(string)
+	buf, err := box.MustBytes(file)
+	if err != nil {
+		return err
+	}
+	ext := path.Ext(file)
+	header := c.Response().Header()
+	contentType := ""
+	doGzip := func() {
+		gzip, err := util.Gzip(buf, 0)
+		if err == nil {
+			buf = gzip
+			header.Set(echo.HeaderContentEncoding, vars.GzipEncoding)
+		}
+	}
+	setMaxAge := func(age int) {
+		header.Set(vars.CacheControl, fmt.Sprintf("public, max-age=%d", age))
+	}
+	oneYear := 365 * 24 * 3600
+	switch ext {
+	case ".js":
+		contentType = "application/javascript; charset=UTF-8"
+		doGzip()
+		setMaxAge(oneYear)
+	case ".css":
+		contentType = "text/css; charset=UTF-8"
+		doGzip()
+		setMaxAge(oneYear)
+	case ".ttf":
+		contentType = "application/octet-stream"
+	}
+	header.Set(echo.HeaderContentLength, strconv.Itoa(len(buf)))
+	return c.Blob(http.StatusOK, contentType, buf)
+}
 
 // GetStats 获取系统性能统计
 func GetStats(c echo.Context) error {

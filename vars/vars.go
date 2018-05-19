@@ -25,6 +25,8 @@ const (
 	CacheClient = "cacheClient"
 	// Directors the director list
 	Directors = "directors"
+	// StaticFile static file name
+	StaticFile = "static-file"
 
 	// PikeMetric pike总体的处理时间
 	PikeMetric = "0PIKE"

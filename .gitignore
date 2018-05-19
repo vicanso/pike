@@ -5,3 +5,4 @@ pike
 node_modules
 dist
 test/test
+tmp
