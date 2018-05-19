@@ -5,8 +5,8 @@ ADD . /go/src/pike-test
 RUN apk update \
   && apk add git \
   && go get -u github.com/golang/dep/cmd/dep \
-  && dep ensure \
   && cd /go/src/pike-test \
+  && dep ensure \
   && GOOS=linux go build -o server
 
 FROM alpine

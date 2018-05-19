@@ -9,7 +9,6 @@ install:
 
 before_script:
   - cd test
-  - dep ensure
   - docker build -t pike-test-server .
   - cd ..
 
