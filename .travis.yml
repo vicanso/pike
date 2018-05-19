@@ -7,11 +7,6 @@ go:
 install:
   - go get -u github.com/golang/dep/cmd/dep
 
-before_script:
-  - cd test
-  - docker build -t pike-test-server .
-  - cd ..
-
 script:
   - dep ensure
   - cd vendor/github.com/google/brotli
