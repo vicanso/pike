@@ -290,7 +290,7 @@ func Format(c echo.Context, tags []*Tag, startedAt time.Time) string {
 		case size:
 			return strconv.FormatInt(c.Response().Size, 10)
 		case sizeHuman:
-			return util.GetHumanReadableSize(float64(c.Response().Size))
+			return util.GetHumanReadableSize(c.Response().Size)
 		case latency:
 			return time.Since(startedAt).String()
 		case latencyMs:

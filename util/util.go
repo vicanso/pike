@@ -91,16 +91,17 @@ func cut(str string) string {
 }
 
 // GetHumanReadableSize 获取便于阅读的数据大小
-func GetHumanReadableSize(size float64) string {
-	if size >= mbytes {
-		s := cut(fmt.Sprintf("%.2f", (size / mbytes)))
-		return s + "MB"
+func GetHumanReadableSize(size int64) string {
+	if size < kbytes {
+		return fmt.Sprintf("%dB", size)
 	}
-	if size >= kbytes {
-		s := cut(fmt.Sprintf("%.2f", (size / kbytes)))
+	fSize := float64(size)
+	if size < mbytes {
+		s := cut(fmt.Sprintf("%.2f", (fSize / kbytes)))
 		return s + "KB"
 	}
-	return fmt.Sprintf("%dB", int(size))
+	s := cut(fmt.Sprintf("%.2f", (fSize / mbytes)))
+	return s + "MB"
 }
 
 // GetRewriteRegex 获取rewrite的正式匹配表
