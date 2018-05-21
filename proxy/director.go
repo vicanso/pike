@@ -12,6 +12,7 @@ import (
 
 	"github.com/labstack/echo"
 	funk "github.com/thoas/go-funk"
+	"github.com/vicanso/pike/util"
 )
 
 type (
@@ -31,6 +32,10 @@ type (
 		Hosts []string `json:"hosts"`
 		// url前缀
 		Prefixs []string `json:"prefixs"`
+		// Rewrites 需要重写的url配置
+		Rewrites []string `json:"rewrites"`
+		// RewriteRegex 需要重写的正则匹配
+		RewriteRegex map[*regexp.Regexp]string
 		// 优先级
 		Priority int `json:"priority"`
 		// 读写锁
@@ -335,4 +340,9 @@ func (d *Director) StartHealthCheck(interval time.Duration) {
 	for _ = range ticker.C {
 		d.HealthCheck()
 	}
+}
+
+// GenRewriteRegex 生成重写url的正则
+func (d *Director) GenRewriteRegex() {
+	d.RewriteRegex = util.GetRewriteRegex(d.Rewrites)
 }

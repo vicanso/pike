@@ -184,7 +184,64 @@ func TestProxy(t *testing.T) {
 				"name": "tree.xie",
 			})
 		d.AddAvailableBackend(backend)
-		fn(c)
+		err = fn(c)
+		if err != nil {
+			t.Fatalf("proxy fail")
+		}
+	})
+
+	t.Run("director with rewrites", func(t *testing.T) {
+		fn := Proxy(ProxyConfig{})(func(c echo.Context) error {
+			resp := c.Get(vars.Response).(*cache.Response)
+			if strings.TrimSpace(string(resp.Body)) != `{"name":"tree.xie"}` {
+				t.Fatalf("get response from director with rewrites fail")
+			}
+			return nil
+		})
+		e := echo.New()
+		req := httptest.NewRequest(echo.GET, "http://aslant.site/api/users/me", nil)
+		req.Header.Set(echo.HeaderIfModifiedSince, "Mon, 07 Nov 2016 07:51:11 GMT")
+		req.Header.Set(vars.IfNoneMatch, `"16e36-540b1498e39c0"`)
+		res := newCloseNotifyRecorder()
+		c := e.NewContext(req, res)
+		timing := &servertiming.Header{}
+		c.Set(vars.Timing, timing)
+		aslant := "aslant"
+		backend := "http://127.0.0.1:5001"
+		d := &proxy.Director{
+			Name: aslant,
+			Rewrites: []string{
+				"/api/*:/_api/$1",
+			},
+		}
+		d.GenRewriteRegex()
+		err := fn(c)
+		if err != vars.ErrDirectorNotFound {
+			t.Fatalf("should return director not found")
+		}
+
+		c.Set(vars.Director, d)
+		d.Hosts = []string{
+			"(www.)?aslant.site",
+		}
+
+		err = fn(c)
+		if err != vars.ErrNoBackendAvaliable {
+			t.Fatalf("should return no backend avaliable")
+		}
+
+		gock.New(backend).
+			Get("/_api/users/me").
+			Reply(200).
+			SetHeader("Cache-Control", "max-age=10").
+			JSON(map[string]string{
+				"name": "tree.xie",
+			})
+		d.AddAvailableBackend(backend)
+		err = fn(c)
+		if err != nil {
+			t.Fatalf("director with rewrites fail")
+		}
 	})
 
 	t.Run("proxy response gzip", func(t *testing.T) {

@@ -65,7 +65,7 @@ header:
 # /users/*/orders/*:/user/$1/order/$2
 rewrites:
   -
-    "/api/*:/$1"
+    "/js/*:/public/javascripts/$1"
 directors:
   -
     # 名称
@@ -78,6 +78,8 @@ directors:
     # 判断请求url的是否包含该前缀，如果是，则是此director
     prefix:
       - /api
+    rewrites:
+      - "/api/*:/$1"
     # 判断请求的host是否符合，如果符合，则是此director
     # host:
     #   - mac:3015

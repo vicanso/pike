@@ -143,8 +143,10 @@ func main() {
 			Backends: item.Backend,
 			Hosts:    item.Host,
 			Prefixs:  item.Prefix,
+			Rewrites: item.Rewrites,
 		}
 		d.RefreshPriority()
+		d.GenRewriteRegex()
 		// 定时检测director是否可用
 		go d.StartHealthCheck(5 * time.Second)
 		directors = append(directors, d)
@@ -276,13 +278,13 @@ func main() {
 		}
 	})
 
-	adminGroup.GET("/*.html", controller.Serve)
-
 	adminGroup.GET("/stats", controller.GetStats)
 
 	adminGroup.GET("/directors", controller.GetDirectors)
 	adminGroup.GET("/cacheds", controller.GetCachedList)
 	adminGroup.DELETE("/cacheds/:key", controller.RemoveCached)
+
+	adminGroup.GET("/*", controller.Serve)
 
 	// Start server
 	e.Logger.Fatal(e.Start(dc.Listen))

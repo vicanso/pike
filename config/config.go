@@ -9,12 +9,13 @@ import (
 
 // Director 服务器配置列表
 type Director struct {
-	Name    string
-	Policy  string
-	Ping    string
-	Prefix  []string
-	Host    []string
-	Backend []string
+	Name     string
+	Policy   string
+	Ping     string
+	Prefix   []string
+	Host     []string
+	Backend  []string
+	Rewrites []string
 }
 
 // Config 应用配置

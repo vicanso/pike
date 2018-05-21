@@ -93,6 +93,15 @@ func captureTokens(pattern *regexp.Regexp, input string) *strings.Replacer {
 	return strings.NewReplacer(replace...)
 }
 
+func rewrite(rewriteRegex map[*regexp.Regexp]string, req *http.Request) {
+	for k, v := range rewriteRegex {
+		replacer := captureTokens(k, req.URL.Path)
+		if replacer != nil {
+			req.URL.Path = replacer.Replace(v)
+		}
+	}
+}
+
 func proxyHTTP(t *ProxyTarget) http.Handler {
 	return httputil.NewSingleHostReverseProxy(t.URL)
 }
@@ -144,22 +153,11 @@ func Proxy(config ProxyConfig) echo.MiddlewareFunc {
 	if config.Skipper == nil {
 		config.Skipper = middleware.DefaultSkipper
 	}
-	config.rewriteRegex = map[*regexp.Regexp]string{}
 	timeout := config.Timeout
 	if timeout <= 0 {
 		timeout = defaultTimeout
 	}
-	// Initialize
-	for _, value := range config.Rewrites {
-		arr := strings.Split(value, ":")
-		if len(arr) != 2 {
-			continue
-		}
-		k := arr[0]
-		v := arr[1]
-		k = strings.Replace(k, "*", "(\\S*)", -1)
-		config.rewriteRegex[regexp.MustCompile(k)] = v
-	}
+	config.rewriteRegex = util.GetRewriteRegex(config.Rewrites)
 
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) (err error) {
@@ -198,11 +196,9 @@ func Proxy(config ProxyConfig) echo.MiddlewareFunc {
 			}
 
 			// Rewrite
-			for k, v := range config.rewriteRegex {
-				replacer := captureTokens(k, req.URL.Path)
-				if replacer != nil {
-					req.URL.Path = replacer.Replace(v)
-				}
+			rewrite(config.rewriteRegex, req)
+			if director.RewriteRegex != nil {
+				rewrite(director.RewriteRegex, req)
 			}
 
 			// Fix header

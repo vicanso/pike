@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"regexp"
 	"strings"
 	"time"
 
@@ -100,4 +101,20 @@ func GetHumanReadableSize(size float64) string {
 		return s + "KB"
 	}
 	return fmt.Sprintf("%dB", int(size))
+}
+
+// GetRewriteRegex 获取rewrite的正式匹配表
+func GetRewriteRegex(rewrites []string) map[*regexp.Regexp]string {
+	rewriteRegex := make(map[*regexp.Regexp]string)
+	for _, value := range rewrites {
+		arr := strings.Split(value, ":")
+		if len(arr) != 2 {
+			continue
+		}
+		k := arr[0]
+		v := arr[1]
+		k = strings.Replace(k, "*", "(\\S*)", -1)
+		rewriteRegex[regexp.MustCompile(k)] = v
+	}
+	return rewriteRegex
 }
