@@ -31,6 +31,7 @@ const (
 	whenUnix       = "when-unix"
 	whenISOMs      = "when-iso-ms"
 	size           = "size"
+	sizeHuman      = "size-human"
 	status         = "status"
 	latency        = "latency"
 	latencyMs      = "latency-ms"
@@ -288,6 +289,8 @@ func Format(c echo.Context, tags []*Tag, startedAt time.Time) string {
 		// 	return []byte(strconv.Itoa(len(ctx.Request.Body())))
 		case size:
 			return strconv.FormatInt(c.Response().Size, 10)
+		case sizeHuman:
+			return util.GetHumanReadableSize(float64(c.Response().Size))
 		case latency:
 			return time.Since(startedAt).String()
 		case latencyMs:

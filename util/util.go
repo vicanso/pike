@@ -3,12 +3,18 @@ package util
 import (
 	"bytes"
 	"compress/gzip"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 	"strings"
 	"time"
 
 	"github.com/google/brotli/go/cbrotli"
+)
+
+const (
+	kbytes = 1024
+	mbytes = 1024 * 1024
 )
 
 // Gzip 对数据压缩
@@ -69,4 +75,29 @@ func GetTimeConsuming(startedAt time.Time) int {
 	v := startedAt.UnixNano()
 	now := time.Now().UnixNano()
 	return int((now - v) / 1000000)
+}
+
+func cut(str string) string {
+	l := len(str)
+	if l == 0 {
+		return str
+	}
+	ch := str[l-1]
+	if ch == '0' || ch == '.' {
+		return cut(str[0 : l-1])
+	}
+	return str
+}
+
+// GetHumanReadableSize 获取便于阅读的数据大小
+func GetHumanReadableSize(size float64) string {
+	if size >= mbytes {
+		s := cut(fmt.Sprintf("%.2f", (size / mbytes)))
+		return s + "MB"
+	}
+	if size >= kbytes {
+		s := cut(fmt.Sprintf("%.2f", (size / kbytes)))
+		return s + "KB"
+	}
+	return fmt.Sprintf("%dB", int(size))
 }

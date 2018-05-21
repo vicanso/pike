@@ -64,3 +64,22 @@ func TestGetTimeConsuming(t *testing.T) {
 		t.Fatalf("get time consuming fail")
 	}
 }
+
+func TestGetHumanReadableSize(t *testing.T) {
+	if GetHumanReadableSize(1024*1024) != "1MB" {
+		t.Fatalf("1024 * 1024 should be 1MB")
+	}
+	if GetHumanReadableSize(1024*1024+500*1024) != "1.49MB" {
+		t.Fatalf("1024*1024+500*1024 should be 1.49MB")
+	}
+
+	if GetHumanReadableSize(1024) != "1KB" {
+		t.Fatalf("1024 should be 1KB")
+	}
+	if GetHumanReadableSize(1024+500) != "1.49KB" {
+		t.Fatalf("1024+500 should be 1.49KB")
+	}
+	if GetHumanReadableSize(500) != "500B" {
+		t.Fatalf("500 should be 500B")
+	}
+}
