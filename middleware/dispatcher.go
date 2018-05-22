@@ -62,7 +62,7 @@ func save(client *cache.Client, identity []byte, resp *cache.Response, compressi
 		body = unzipBody
 	}
 	bodyLength := len(body)
-	// 204没有内容的情况已处理，不应该出现 body为空的现象
+	// 204没有内容的情况已处理，不应该出现 body为空的现象（因为程序不支持304的处理，所以在proxy时已删除相应头，也不会出现304）
 	// 如果原始数据还是为空，则直接设置为hit for pass
 	if bodyLength == 0 {
 		client.HitForPass(identity, vars.HitForPassTTL)
@@ -72,7 +72,6 @@ func save(client *cache.Client, identity []byte, resp *cache.Response, compressi
 	if bodyLength < compressMinLength {
 		doSave()
 		return
-
 	}
 	if len(resp.GzipBody) == 0 {
 		gzipBody, _ := util.Gzip(body, level)

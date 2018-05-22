@@ -192,6 +192,12 @@ func (r *Response) GetBody(acceptEncoding string) (body []byte, encoding string)
 		}
 	}
 
+	// 如果客户端没有获取到匹配的encoding数据，则返回未的的数据
+	if len(r.Body) == 0 && len(r.GzipBody) != 0 {
+		body, _ = util.Gunzip(r.GzipBody)
+		return
+	}
+
 	body = r.Body
 	return
 }
