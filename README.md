@@ -85,3 +85,105 @@ cd admin \
 - 判断该请求是否非(cacheable与pass)，根据TTL生成hitForPass或者Cacheable状态写入缓存数据库（新的goroutine）
 - 判断`fresh`状态，如果是则直接返回NotModified
 - 设置HTTP状态码，根据AcceptEncoding生成响应数据并返回
+
+
+## 性能测试
+
+### Ping测试
+
+Pike的health check，无其它处理逻辑，返回200
+
+```bash
+wrk -H 'Accept-Encoding: gzip, deflate' -t10 -c200 \
+-d1m 'http://127.0.0.1:3015/ping' --latency
+```
+
+```bash
+10 threads and 200 connections
+Thread Stats   Avg      Stdev     Max   +/- Stdev
+  Latency     3.54ms    2.02ms  32.63ms   74.82%
+  Req/Sec     5.78k   630.05    33.10k    78.33%
+Latency Distribution
+    50%    3.20ms
+    75%    4.43ms
+    90%    6.00ms
+    99%   10.38ms
+3450900 requests in 1.00m, 394.92MB read
+Requests/sec:  57421.72
+Transfer/sec:      6.57MB
+```
+
+### 获取可缓存请求
+
+对于可缓存请求的压测，主要三种情况，客户端不支持压缩、支持gzip压缩、支持br压缩（在我自己的HP gen8 做的压力测试）
+
+#### 客户端不支持压缩
+
+由于默认缓存的数据只有gzip与br两份数据（现在的客户端都支持两种压缩之一），因此如果客户端不支持，需要将gzip解压返回，性能有所损耗，平均每个请求的数据量为：75KB。
+
+```bash
+wrk -t10 -c200 -d1m 'http://127.0.0.1:3015/css/app.f81943d4.css' --latency
+```
+
+```bash
+10 threads and 200 connections
+Thread Stats   Avg      Stdev     Max   +/- Stdev
+  Latency    66.49ms   69.82ms   1.03s    97.56%
+  Req/Sec   337.83     46.65   666.00     74.90%
+Latency Distribution
+    50%   62.98ms
+    75%   76.56ms
+    90%   96.10ms
+    99%  344.35ms
+199258 requests in 1.00m, 14.41GB read
+Requests/sec:   3318.15
+Transfer/sec:    245.70MB
+```
+
+### 客户端支持gzip压缩
+
+缓存数据中有gzip与br数据，因此无需要重新做压缩，性能较高，平均每个请求的数据量为：23KB。
+
+```bash
+wrk -H 'Accept-Encoding: gzip, deflate' -t10 -c200 \
+-d1m 'http://127.0.0.1:3015/css/app.f81943d4.css' --latency
+```
+
+```bash
+10 threads and 200 connections
+Thread Stats   Avg      Stdev     Max   +/- Stdev
+  Latency    19.54ms    8.67ms  74.71ms   77.84%
+  Req/Sec     1.03k    95.60     1.56k    72.60%
+Latency Distribution
+    50%   21.60ms
+    75%   23.47ms
+    90%   26.54ms
+    99%   37.29ms
+615208 requests in 1.00m, 13.59GB read
+Requests/sec:  10245.77
+Transfer/sec:    231.70MB
+```
+
+### 客户端支持br压缩
+
+缓存数据中有gzip与br数据，因此无需要重新做压缩，性能较高，平均每个请求的数据量为：21KB。
+
+```bash
+wrk -H 'Accept-Encoding: br, gzip, deflate' -t10 -c200 \
+-d1m 'http://127.0.0.1:3015/css/app.f81943d4.css' --latency
+```
+
+```bash
+10 threads and 200 connections
+Thread Stats   Avg      Stdev     Max   +/- Stdev
+  Latency    19.54ms    8.65ms  69.72ms   77.90%
+  Req/Sec     1.03k    93.44     1.54k    73.88%
+Latency Distribution
+    50%   21.59ms
+    75%   23.36ms
+    90%   26.47ms
+    99%   37.22ms
+615076 requests in 1.00m, 12.40GB read
+Requests/sec:  10243.72
+Transfer/sec:    211.52MB
+```
