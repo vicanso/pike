@@ -21,6 +21,7 @@ cd admin \
   && cd .. \
   && packr -z
 ```
+
 ## 中间件
 
 中间件设置的Cotenxt参数有：
@@ -187,3 +188,7 @@ Latency Distribution
 Requests/sec:  10243.72
 Transfer/sec:    211.52MB
 ```
+
+## 流程图
+
+![](./process.png)
