@@ -146,7 +146,7 @@ func main() {
 			Rewrites: item.Rewrites,
 		}
 		d.RefreshPriority()
-		d.GenRewriteRegex()
+		d.GenRewriteRegexp()
 		// 定时检测director是否可用
 		go d.StartHealthCheck(5 * time.Second)
 		directors = append(directors, d)

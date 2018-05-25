@@ -214,7 +214,7 @@ func TestProxy(t *testing.T) {
 				"/api/*:/_api/$1",
 			},
 		}
-		d.GenRewriteRegex()
+		d.GenRewriteRegexp()
 		err := fn(c)
 		if err != vars.ErrDirectorNotFound {
 			t.Fatalf("should return director not found")

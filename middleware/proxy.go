@@ -46,7 +46,7 @@ type (
 		// ETag 是否生成ETag
 		ETag bool
 
-		rewriteRegex map[*regexp.Regexp]string
+		rewriteRegexp map[*regexp.Regexp]string
 	}
 
 	// ProxyTarget defines the upstream target.
@@ -93,8 +93,8 @@ func captureTokens(pattern *regexp.Regexp, input string) *strings.Replacer {
 	return strings.NewReplacer(replace...)
 }
 
-func rewrite(rewriteRegex map[*regexp.Regexp]string, req *http.Request) {
-	for k, v := range rewriteRegex {
+func rewrite(rewriteRegexp map[*regexp.Regexp]string, req *http.Request) {
+	for k, v := range rewriteRegexp {
 		replacer := captureTokens(k, req.URL.Path)
 		if replacer != nil {
 			req.URL.Path = replacer.Replace(v)
@@ -157,7 +157,7 @@ func Proxy(config ProxyConfig) echo.MiddlewareFunc {
 	if timeout <= 0 {
 		timeout = defaultTimeout
 	}
-	config.rewriteRegex = util.GetRewriteRegex(config.Rewrites)
+	config.rewriteRegexp = util.GetRewriteRegexp(config.Rewrites)
 
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) (err error) {
@@ -196,9 +196,9 @@ func Proxy(config ProxyConfig) echo.MiddlewareFunc {
 			}
 
 			// Rewrite
-			rewrite(config.rewriteRegex, req)
-			if director.RewriteRegex != nil {
-				rewrite(director.RewriteRegex, req)
+			rewrite(config.rewriteRegexp, req)
+			if director.RewriteRegexp != nil {
+				rewrite(director.RewriteRegexp, req)
 			}
 
 			// Fix header

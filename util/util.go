@@ -104,9 +104,9 @@ func GetHumanReadableSize(size int64) string {
 	return s + "MB"
 }
 
-// GetRewriteRegex 获取rewrite的正式匹配表
-func GetRewriteRegex(rewrites []string) map[*regexp.Regexp]string {
-	rewriteRegex := make(map[*regexp.Regexp]string)
+// GetRewriteRegexp 获取rewrite的正式匹配表
+func GetRewriteRegexp(rewrites []string) map[*regexp.Regexp]string {
+	rewriteRegexp := make(map[*regexp.Regexp]string)
 	for _, value := range rewrites {
 		arr := strings.Split(value, ":")
 		if len(arr) != 2 {
@@ -115,7 +115,7 @@ func GetRewriteRegex(rewrites []string) map[*regexp.Regexp]string {
 		k := arr[0]
 		v := arr[1]
 		k = strings.Replace(k, "*", "(\\S*)", -1)
-		rewriteRegex[regexp.MustCompile(k)] = v
+		rewriteRegexp[regexp.MustCompile(k)] = v
 	}
-	return rewriteRegex
+	return rewriteRegexp
 }

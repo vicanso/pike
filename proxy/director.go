@@ -34,8 +34,8 @@ type (
 		Prefixs []string `json:"prefixs"`
 		// Rewrites 需要重写的url配置
 		Rewrites []string `json:"rewrites"`
-		// RewriteRegex 需要重写的正则匹配
-		RewriteRegex map[*regexp.Regexp]string
+		// RewriteRegexp 需要重写的正则匹配
+		RewriteRegexp map[*regexp.Regexp]string `json:"-"`
 		// 优先级
 		Priority int `json:"priority"`
 		// 读写锁
@@ -342,7 +342,7 @@ func (d *Director) StartHealthCheck(interval time.Duration) {
 	}
 }
 
-// GenRewriteRegex 生成重写url的正则
-func (d *Director) GenRewriteRegex() {
-	d.RewriteRegex = util.GetRewriteRegex(d.Rewrites)
+// GenRewriteRegexp 生成重写url的正则
+func (d *Director) GenRewriteRegexp() {
+	d.RewriteRegexp = util.GetRewriteRegexp(d.Rewrites)
 }
