@@ -51,15 +51,27 @@ func save(client *cache.Client, identity []byte, resp *cache.Response, compressi
 		return
 	}
 	body := resp.Body
-	// 如果body为空，但是gzipBody不为空，表示从backend取回来的数据已压缩
-	if len(body) == 0 && len(resp.GzipBody) != 0 {
-		// 解压gzip数据，用于生成br
-		unzipBody, err := util.Gunzip(resp.GzipBody)
-		if err != nil {
-			doSave()
-			return
+	// 如果body为空，表示从backend取回来的数据已压缩
+	if len(body) == 0 {
+		// 如果body为空，但是gzipBody不为空，表示从backend取回来的数据已压缩
+		if len(resp.GzipBody) != 0 {
+			// 解压gzip数据，用于生成br
+			unzipBody, err := util.Gunzip(resp.GzipBody)
+			if err != nil {
+				doSave()
+				return
+			}
+			body = unzipBody
+		} else if len(resp.BrBody) != 0 {
+			// 如果gzip数据为0，br数据不为0，则表示backend返回的数据为br
+			// 解压br数据，用于生成br
+			unzipBody, err := util.BrotliDecode(resp.BrBody)
+			if err != nil {
+				doSave()
+				return
+			}
+			body = unzipBody
 		}
-		body = unzipBody
 	}
 	bodyLength := len(body)
 	// 204没有内容的情况已处理，不应该出现 body为空的现象（因为程序不支持304的处理，所以在proxy时已删除相应头，也不会出现304）

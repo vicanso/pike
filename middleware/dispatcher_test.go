@@ -78,6 +78,30 @@ func TestSave(t *testing.T) {
 			t.Fatalf("should save br data")
 		}
 	})
+	t.Run("save br content", func(t *testing.T) {
+		data := []byte("data")
+		brData, _ := util.BrotliEncode(data, 0)
+		resp := &cache.Response{
+			TTL:               30,
+			StatusCode:        http.StatusOK,
+			BrBody:            brData,
+			CompressMinLength: 1,
+		}
+		save(client, identity, resp, true)
+		result, err := client.GetResponse(identity)
+		if err != nil || result.TTL != resp.TTL || result.StatusCode != resp.StatusCode {
+			t.Fatalf("save br content fail")
+		}
+		if len(result.Body) != 0 {
+			t.Fatalf("raw content should be nil")
+		}
+		if !bytes.Equal(result.BrBody, brData) {
+			t.Fatalf("save br content is not equal original data")
+		}
+		if len(result.GzipBody) == 0 {
+			t.Fatalf("should save gzip data")
+		}
+	})
 
 	t.Run("save content smaller than compress min length", func(t *testing.T) {
 		data := []byte("需要一个很大的数据，如果没有，那就设置小的compressMinLength")
