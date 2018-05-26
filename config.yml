@@ -14,18 +14,8 @@ etag: true
 compressMinLength: 1024
 # 设置对于数据的压缩级别，如果设置为0，则使用golang默认值（建议使用）
 compressLevel: 0
-# # 设置对JPEG的压缩质量，如果设置为0表示不做处理
-# jpegQuality: 70
-# # 设置是否对PNG做压缩处理（非0表示压缩），由于go的png压缩没有使用工具压缩的效果好，一般不需要使用此配置
-# pngQuality: 0
 # 程序并发限制，设置为0表示使用默认值 (256 * 1024)
 concurrency: 0
-# # 是否禁用 disableKeepalive，默认为 false
-# disableKeepalive: false 
-# # readBufferSize 的限制，0表示使用fasthttp默认值 (4096)
-# readBufferSize: 0 
-# # writeBufferSize 的限制，0表示使用fasthttp默认值 (4096)
-# writeBufferSize: 0 
 # 设置upstream的连接超时，默认为10s
 connectTimeout: 10s 
 # 过期缓存的清除时间间隔，如果设置为小于等于0 ，则使用默认值 300s
