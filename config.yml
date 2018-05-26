@@ -27,17 +27,7 @@ concurrency: 0
 # # writeBufferSize 的限制，0表示使用fasthttp默认值 (4096)
 # writeBufferSize: 0 
 # 设置upstream的连接超时，默认为10s
-# connectTimeout: 10s 
-# # 设置请求的读取超时，0表示无限制(time.Duration)
-# readTimeout: 0 
-# # 设置响应的写超时，0表示无限制(time.Duration)
-# writeTimeout: 0 
-# # 限制每个IP的最大请求，0表示无限制
-# maxConnsPerIP: 0
-# # 设置keep-alive的保持时间，0表示无限制(time.Duration)
-# maxKeepaliveDuration: 0 
-# # 设置最大的请求数据大小，0表示使用fasthttp默认值 (4 * 1024 * 1024)
-# maxRequestBodySize: 0
+connectTimeout: 10s 
 # 过期缓存的清除时间间隔，如果设置为小于等于0 ，则使用默认值 300s
 expiredClearInterval: 300s
 # 访问日志的格式化，如果对于性能有更高的要求，而且也不需要访问日志，则不需要此配置

@@ -29,6 +29,10 @@ import (
 	"github.com/vicanso/pike/proxy"
 )
 
+const (
+	defaultExpiredClearInterval = 300 * time.Second
+)
+
 func startExpiredClearTask(client *cache.Client, interval time.Duration) {
 	defer func() {
 		if err := recover(); err != nil {
@@ -38,7 +42,7 @@ func startExpiredClearTask(client *cache.Client, interval time.Duration) {
 	}()
 
 	if interval == 0 {
-		interval = 300 * time.Second
+		interval = defaultExpiredClearInterval
 	}
 	ticker := time.NewTicker(interval)
 	for _ = range ticker.C {
@@ -192,8 +196,9 @@ func main() {
 
 	// 初始化中间件的参数
 	initConfig := custommiddleware.InitializationConfig{
-		Header:  dc.Header,
-		Skipper: defaultSkipper,
+		Header:      dc.Header,
+		Skipper:     defaultSkipper,
+		Concurrency: dc.Concurrency,
 	}
 	e.Use(custommiddleware.Initialization(initConfig))
 
