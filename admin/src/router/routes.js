@@ -11,7 +11,7 @@ export default [
   },
   {
     name: 'director',
-    path: '/director',
+    path: '/',
     component: Director,
   },
   {

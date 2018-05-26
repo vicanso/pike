@@ -92,7 +92,9 @@ export default {
   },
   methods: {
     goTo(item) {
-      this.$router.push(item.route);
+      this.$router.push({
+        name: item.route,
+      });
     },
   },
   computed: {

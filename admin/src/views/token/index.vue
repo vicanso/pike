@@ -11,6 +11,7 @@
       el-input(
         v-model='form.token'
         placeholder="please input admin token"
+        autofocus
       )
     el-form-item
       el-button(
@@ -42,7 +43,10 @@ export default {
           throw new Error('token can not be null')
         }
         saveAdminToken(token)
-        this.$router.back()
+        this.$router.back();
+        setTimeout(() => {
+          location.reload();
+        }, 30)
       } catch (err) {
         this.$error(err)
       }
