@@ -81,7 +81,7 @@ export default {
       const labels = [];
       const values = [];
       _.forEach(data, item => {
-        labels.push(dayjs(item.createdAt).format('mm:ss'));
+        labels.push(dayjs(item.createdAt).format('hh:mm'));
         values.push(item[name] || 0);
       });
       configData.labels = labels;
