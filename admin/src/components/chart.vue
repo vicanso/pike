@@ -10,6 +10,15 @@ import _ from 'lodash';
 import dayjs from 'dayjs';
 
 Chart.defaults.global.defaultFontColor = '#fff';
+const colors = [
+  'rgba(255, 255, 255, 1)',
+  'rgba(255,99,132,1)',
+  'rgba(54, 162, 235, 1)',
+  'rgba(255, 206, 86, 1)',
+  'rgba(75, 192, 192, 1)',
+  'rgba(153, 102, 255, 1)',
+  'rgba(255, 159, 64, 1)',
+];
 
 export default {
   name: 'performance-chart',
@@ -27,15 +36,7 @@ export default {
         type: 'line',
         data: {
           labels: [],
-          datasets: [
-            {
-              label: '',
-              backgroundColor: '#fff',
-              borderColor: '#fff',
-              data: [],
-              fill: false,
-            },
-          ],
+          datasets: [],
         },
         options: {
           gridLines: {
@@ -80,12 +81,34 @@ export default {
       const configData = chart.config.data;
       const labels = [];
       const values = [];
+      const getDefaultValue = (label, colorIndex = 0) => ({
+        backgroundColor: colors[colorIndex],
+        borderColor: colors[colorIndex],
+        fill: false,
+        label,
+        data: [],
+      });
       _.forEach(data, item => {
         labels.push(dayjs(item.createdAt).format('hh:mm'));
-        values.push(item[name] || 0);
+        let value = item[name] || 0;
+        if (_.isNumber(value)) {
+          if (!values[0]) {
+            values[0] = getDefaultValue(name, 0);
+          }
+          values[0].data.push(value);
+          return;
+        }
+        let index = 0;
+        _.forEach(value, (v, k) => {
+          if (!values[index]) {
+            values[index] = getDefaultValue(`${name}-${k}`, index);
+          }
+          values[index].data.push(v);
+          index += 1;
+        });
       });
       configData.labels = labels;
-      configData.datasets[0].data = values;
+      configData.datasets = values;
       chart.update();
     },
   },

@@ -83,3 +83,18 @@ func TestGetHumanReadableSize(t *testing.T) {
 		t.Fatalf("500 should be 500B")
 	}
 }
+
+func TestGetRewriteRegexp(t *testing.T) {
+	result := GetRewriteRegexp([]string{
+		"/api",
+		"/api/*:/$1",
+	})
+	if len(result) != 1 {
+		t.Fatalf("rewrite exgexp fail")
+	}
+	for reg := range result {
+		groups := reg.FindAllStringSubmatch("/api/users/me", -1)
+		if groups[0][1] != "users/me" {
+		}
+	}
+}

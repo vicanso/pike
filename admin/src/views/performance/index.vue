@@ -52,9 +52,12 @@
     color: rgba(255, 255, 255, 0.65)
   .chartView
     width: 100%
-    height: 130px
+    height: 180px
   p
     margin: 0
     padding: 5px 0
     color: $COLOR_WHITE
+    white-space: nowrap
+    text-overflow: ellipsis
+    overflow: hidden
 </style>

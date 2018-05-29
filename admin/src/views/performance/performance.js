@@ -8,6 +8,14 @@ const performanceItems = {
     name: 'concurrency',
     desc: 'the concurrency of pike',
   },
+  status: {
+    name: 'status',
+    desc: 'the response status code',
+  },
+  spdy: {
+    name: 'spdy',
+    desc: 'the request handle time',
+  },
   requestCount: {
     name: 'requestCount',
     desc: 'the request count of pike',
@@ -83,6 +91,9 @@ export default {
       const value = _.last(this.performances);
       if (!value) {
         return 0;
+      }
+      if (!_.isNumber(value[name])) {
+        return '--';
       }
       return (value[name] || 0).toLocaleString();
     },

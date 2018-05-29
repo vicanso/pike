@@ -24,6 +24,20 @@ const state = {
 const minute = 60;
 const hour = 60 * minute;
 const day = 24 * hour;
+const defaultStatus = {
+  '1': 0,
+  '2': 0,
+  '3': 0,
+  '4': 0,
+  '5': 0,
+};
+const defaultSpdy = {
+  '0': 0,
+  '1': 0,
+  '2': 0,
+  '3': 0,
+  '4': 0,
+};
 
 function getExpiredDesc(seconds) {
   if (seconds >= day) {
@@ -39,6 +53,8 @@ function getExpiredDesc(seconds) {
 }
 
 let requestCount = 0;
+let prevStatus = null;
+let prevSpdy = null;
 const performanceMaxCount = 60;
 const mutations = {
   [PIKE_STATS](state, data) {
@@ -55,7 +71,27 @@ const mutations = {
     } else {
       performance.requestCount = data.requestCount - requestCount;
     }
+    if (!prevStatus) {
+      performance.status = defaultStatus;
+    } else {
+      const status = {};
+      _.forEach(data.status, (v, k) => {
+        status[k] = v - prevStatus[k];
+      });
+      performance.status = status;
+    }
+    if (!prevSpdy) {
+      performance.spdy = defaultSpdy;
+    } else {
+      const spdy = {};
+      _.forEach(data.spdy, (v, k) => {
+        spdy[k] = v - prevSpdy[k];
+      });
+      performance.spdy = spdy;
+    }
     requestCount = data.requestCount;
+    prevStatus = data.status;
+    prevSpdy = data.spdy;
     performances.push(performance);
     if (performances.length > performanceMaxCount) {
       performances.shift();

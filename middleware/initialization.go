@@ -2,7 +2,9 @@ package custommiddleware
 
 import (
 	"strings"
+	"time"
 
+	"github.com/vicanso/pike/util"
 	"github.com/vicanso/pike/vars"
 
 	"github.com/labstack/echo"
@@ -50,6 +52,13 @@ func Initialization(config InitializationConfig) echo.MiddlewareFunc {
 				return next(c)
 			}
 			defer performance.DecreaseConcurrency()
+			startedAt := time.Now()
+			defer func() {
+				resp := c.Response()
+				status := resp.Status
+				use := util.GetTimeConsuming(startedAt)
+				performance.AddRequestStats(status, use)
+			}()
 			resHeader := c.Response().Header()
 			for k, v := range customHeader {
 				resHeader.Add(k, v)
