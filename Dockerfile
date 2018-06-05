@@ -10,7 +10,7 @@ RUN apk update \
   && ./configure-cmake \
   && make && make install \
   && cd /go/src/github.com/vicanso/pike \
-  && GOOS=linux GOARCH=amd64 go build -tags netgo -o pike
+  && GOOS=linux GOARCH=amd64 go build -tags netgo -ldflags "-X main.buildAt=`date -u +%Y%m%d.%H%M%S`" -o pike
 
 FROM alpine
 

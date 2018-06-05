@@ -29,6 +29,9 @@ import (
 	"github.com/vicanso/pike/proxy"
 )
 
+// buildAt 构建时间
+var buildAt string
+
 const (
 	defaultExpiredClearInterval = 300 * time.Second
 )
@@ -90,7 +93,7 @@ func check(conf *config.Config) {
 func main() {
 	args := os.Args[1:]
 	if funk.ContainsString(args, "version") {
-		fmt.Println("Pike version " + vars.Version)
+		fmt.Println("Pike version " + vars.Version + ", build at " + buildAt)
 		return
 	}
 	var configFile string
