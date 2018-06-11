@@ -2,7 +2,7 @@
 name: Pike
 # 程序监听的端口，默认为 :3015
 listen: :3015
-# 数据缓存的db目录，默认为 /tmp/pike
+# 数据缓存的db文件（必须指定）
 db: /tmp/pike.cache
 # 后台管理员页面路径，如果不配置，无法使用管理员功能
 adminPath: /pike
@@ -24,8 +24,8 @@ expiredClearInterval: 300s
 logFormat: "pike\t{when-iso-ms} - {client-ip} - \"{method} {uri}\" {status} {size} {latency-ms}ms"
 # 访问日志保存路径
 # accessLog: /tmp/pike/access.log
-# accessLog: udp://127.0.0.1:7349
-accessLog: /tmp/pike
+accessLog: udp://mac:7349
+# accessLog: /tmp/pike
 # 日志类型，如果为"date"表示按天分割日志，accessLog则应该配置为一个目录
 logType: date
 # 文本类型（Content-Type包含此类型字符串会被压缩）
