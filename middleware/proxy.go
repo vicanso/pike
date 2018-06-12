@@ -6,6 +6,7 @@ import (
 	"crypto/sha1"
 	"encoding/base64"
 	"fmt"
+	"net"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
@@ -55,17 +56,28 @@ type (
 		URL  *url.URL
 	}
 	bodyDumpResponseWriter struct {
-		body          *bytes.Buffer
-		headers       http.Header
-		code          int
-		closeNotifyCh chan bool
-		http.CloseNotifier
+		body    *bytes.Buffer
+		headers http.Header
+		code    int
 	}
 )
 
 const (
 	defaultTimeout = 10 * time.Second
 )
+
+var defaultTransport = &http.Transport{
+	Proxy: http.ProxyFromEnvironment,
+	DialContext: (&net.Dialer{
+		Timeout:   30 * time.Second,
+		KeepAlive: 30 * time.Second,
+		DualStack: true,
+	}).DialContext,
+	MaxIdleConns:          1000,
+	IdleConnTimeout:       10 * time.Second,
+	TLSHandshakeTimeout:   10 * time.Second,
+	ExpectContinueTimeout: 1 * time.Second,
+}
 
 // genETag 获取数据对应的ETag
 func genETag(buf []byte) string {
@@ -104,7 +116,9 @@ func rewrite(rewriteRegexp map[*regexp.Regexp]string, req *http.Request) {
 }
 
 func proxyHTTP(t *ProxyTarget) http.Handler {
-	return httputil.NewSingleHostReverseProxy(t.URL)
+	p := httputil.NewSingleHostReverseProxy(t.URL)
+	p.Transport = defaultTransport
+	return p
 }
 
 // 根据Cache-Control的信息，获取s-maxage或者max-age的值
@@ -215,9 +229,8 @@ func Proxy(config ProxyConfig) echo.MiddlewareFunc {
 			}
 			// Proxy
 			writer := &bodyDumpResponseWriter{
-				body:          new(bytes.Buffer),
-				headers:       make(http.Header),
-				closeNotifyCh: make(chan bool, 1),
+				body:    new(bytes.Buffer),
+				headers: make(http.Header),
 			}
 			// proxy时为了避免304的出现，因此调用时临时删除header
 			ifModifiedSince := reqHeader.Get(echo.HeaderIfModifiedSince)
@@ -299,8 +312,4 @@ func (w *bodyDumpResponseWriter) Header() http.Header {
 
 func (w *bodyDumpResponseWriter) Write(b []byte) (int, error) {
 	return w.body.Write(b)
-}
-
-func (w *bodyDumpResponseWriter) CloseNotify() <-chan bool {
-	return w.closeNotifyCh
 }
