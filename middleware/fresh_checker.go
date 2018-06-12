@@ -28,17 +28,22 @@ func FreshChecker(config FreshCheckerConfig) echo.MiddlewareFunc {
 			if config.Skipper(c) {
 				return next(c)
 			}
+			rid := c.Get(vars.RID).(string)
+			debug := c.Logger().Debug
 			cr, ok := c.Get(vars.Response).(*cache.Response)
 			if !ok {
+				debug(rid, " response not set")
 				return vars.ErrResponseNotSet
 			}
 			statusCode := int(cr.StatusCode)
 			method := c.Request().Method
 			c.Set(vars.Fresh, false)
 			if method != echo.GET && method != echo.HEAD {
+				debug(rid, " method no need to check fresh")
 				return next(c)
 			}
 			if statusCode < http.StatusOK || statusCode >= http.StatusBadRequest {
+				debug(rid, " status no need to check fresh")
 				return next(c)
 			}
 			reqHeader := c.Request().Header
@@ -61,8 +66,10 @@ func FreshChecker(config FreshCheckerConfig) echo.MiddlewareFunc {
 
 			// 如果请求还是fresh，则后续处理可返回304
 			if fresh.Fresh(reqHeaderData, resHeaderData) {
+				debug(rid, " is fresh")
 				c.Set(vars.Fresh, true)
 			}
+			debug(rid, " isn't fresh")
 			return next(c)
 		}
 	}

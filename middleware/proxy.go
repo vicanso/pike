@@ -169,14 +169,18 @@ func Proxy(config ProxyConfig) echo.MiddlewareFunc {
 			if c.Get(vars.Response) != nil {
 				return next(c)
 			}
+			rid := c.Get(vars.RID).(string)
+			debug := c.Logger().Debug
 			// 获取director
 			director, ok := c.Get(vars.Director).(*proxy.Director)
 			if !ok {
+				debug(rid, " director not found")
 				return vars.ErrDirectorNotFound
 			}
 			// 从director中选择可用的backend
 			backend := director.Select(c)
 			if len(backend) == 0 {
+				debug(rid, " no backend avaliable")
 				return vars.ErrNoBackendAvaliable
 			}
 
@@ -232,6 +236,7 @@ func Proxy(config ProxyConfig) echo.MiddlewareFunc {
 			select {
 			case <-done:
 			case <-ctx.Done():
+				debug(rid, " gateway timeout")
 				return vars.ErrGatewayTimeout
 			}
 			if len(ifModifiedSince) != 0 {
@@ -267,6 +272,7 @@ func Proxy(config ProxyConfig) echo.MiddlewareFunc {
 				case vars.BrEncoding:
 					cr.BrBody = body
 				default:
+					debug(rid, " content encoding not support")
 					return vars.ErrContentEncodingNotSupport
 				}
 			}
@@ -274,6 +280,7 @@ func Proxy(config ProxyConfig) echo.MiddlewareFunc {
 			if m != nil {
 				m.Stop()
 			}
+			debug(rid, " fetch from proxy done")
 			return next(c)
 		}
 	}

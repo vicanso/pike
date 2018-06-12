@@ -12,6 +12,8 @@ import (
 	"strings"
 	"time"
 
+	// _ "net/http/pprof"
+
 	funk "github.com/thoas/go-funk"
 
 	"github.com/vicanso/pike/config"
@@ -91,6 +93,9 @@ func check(conf *config.Config) {
 }
 
 func main() {
+	// go func() {
+	// 	fmt.Println(http.ListenAndServe("localhost:6060", nil))
+	// }()
 	args := os.Args[1:]
 	if funk.ContainsString(args, "version") {
 		fmt.Println("Pike version " + vars.Version + ", build at " + buildAt)

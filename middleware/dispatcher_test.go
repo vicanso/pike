@@ -182,6 +182,7 @@ func TestDispatcher(t *testing.T) {
 		c.Set(vars.Timing, timing)
 		c.Set(vars.Identity, []byte("abc"))
 		c.Set(vars.Status, cache.Fetching)
+		c.Set(vars.RID, "a")
 		cr := &cache.Response{
 			CreatedAt:  uint32(time.Now().Unix()),
 			TTL:        300,
@@ -220,6 +221,7 @@ func TestDispatcher(t *testing.T) {
 		c.Set(vars.Identity, identity)
 		c.Set(vars.Status, cache.Cacheable)
 		c.Set(vars.Response, cr)
+		c.Set(vars.RID, "a")
 		fn(c)
 		if !bytes.Equal(resp.Body.Bytes(), cr.Body) {
 			t.Fatalf("dispatch cacheable data fail")
@@ -247,6 +249,7 @@ func TestDispatcher(t *testing.T) {
 		c.Set(vars.Identity, identity)
 		c.Set(vars.Status, cache.Cacheable)
 		c.Set(vars.Response, cr)
+		c.Set(vars.RID, "a")
 		fn(c)
 		if resp.Code != http.StatusNotModified {
 			t.Fatalf("dispatch not modified fail")

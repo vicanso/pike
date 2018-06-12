@@ -40,6 +40,7 @@ func TestCacheFetcher(t *testing.T) {
 		c.Set(vars.Status, cache.Cacheable)
 		c.Set(vars.Identity, identity)
 		c.Set(vars.Timing, timing)
+		c.Set(vars.RID, "a")
 		fn(c)
 	})
 
@@ -66,6 +67,7 @@ func TestCacheFetcher(t *testing.T) {
 		e := echo.New()
 		c := e.NewContext(nil, nil)
 		c.Set(vars.Status, cache.Pass)
+		c.Set(vars.RID, "a")
 		fn(c)
 	})
 
@@ -76,6 +78,7 @@ func TestCacheFetcher(t *testing.T) {
 		e := echo.New()
 		c := e.NewContext(nil, nil)
 		c.Set(vars.Status, cache.Cacheable)
+		c.Set(vars.RID, "a")
 		err := fn(c)
 		if err != vars.ErrIdentityStatusNotSet {
 			t.Fatalf("fetch cacheable but not identity should return error")

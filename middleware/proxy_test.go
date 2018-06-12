@@ -133,6 +133,7 @@ func TestProxy(t *testing.T) {
 		e := echo.New()
 		c := e.NewContext(nil, nil)
 		c.Set(vars.Response, resp)
+		c.Set(vars.RID, "a")
 		fn(c)
 	})
 
@@ -154,6 +155,7 @@ func TestProxy(t *testing.T) {
 		req.Header.Set(vars.IfNoneMatch, `"16e36-540b1498e39c0"`)
 		res := newCloseNotifyRecorder()
 		c := e.NewContext(req, res)
+		c.Set(vars.RID, "a")
 		timing := &servertiming.Header{}
 		c.Set(vars.Timing, timing)
 		aslant := "aslant"
@@ -204,6 +206,7 @@ func TestProxy(t *testing.T) {
 		req.Header.Set(vars.IfNoneMatch, `"16e36-540b1498e39c0"`)
 		res := newCloseNotifyRecorder()
 		c := e.NewContext(req, res)
+		c.Set(vars.RID, "a")
 		timing := &servertiming.Header{}
 		c.Set(vars.Timing, timing)
 		aslant := "aslant"
@@ -256,6 +259,7 @@ func TestProxy(t *testing.T) {
 		req := httptest.NewRequest(echo.GET, "http://aslant.site/api/users/me", nil)
 		res := newCloseNotifyRecorder()
 		c := e.NewContext(req, res)
+		c.Set(vars.RID, "a")
 		aslant := "aslant"
 		backend := "http://127.0.0.1:5001"
 		d := &proxy.Director{
@@ -288,6 +292,7 @@ func TestProxy(t *testing.T) {
 		req := httptest.NewRequest(echo.GET, "http://aslant.site/api/users/me", nil)
 		res := newCloseNotifyRecorder()
 		c := e.NewContext(req, res)
+		c.Set(vars.RID, "a")
 		aslant := "aslant"
 		backend := "http://127.0.0.1:5001"
 		d := &proxy.Director{
@@ -316,6 +321,7 @@ func TestProxy(t *testing.T) {
 		req := httptest.NewRequest(echo.GET, "http://aslant.site/api/users/me", nil)
 		res := newCloseNotifyRecorder()
 		c := e.NewContext(req, res)
+		c.Set(vars.RID, "a")
 		aslant := "aslant"
 		backend := "http://127.0.0.1:5001"
 		d := &proxy.Director{

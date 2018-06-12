@@ -40,10 +40,13 @@ func DirectorPicker(config DirectorPickerConfig, directors proxy.Directors) echo
 					break
 				}
 			}
+			rid := c.Get(vars.RID).(string)
+			debug := c.Logger().Debug
 			if !found {
+				debug(rid, " the director is not found")
 				return vars.ErrDirectorNotFound
 			}
-			c.Logger().Debug("the director is %s", director.Name)
+			debug(rid, " the director is ", director.Name)
 			return next(c)
 		}
 	}

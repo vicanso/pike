@@ -20,6 +20,7 @@ func TestHeaderSetter(t *testing.T) {
 		})
 		e := echo.New()
 		c := e.NewContext(nil, nil)
+		c.Set(vars.RID, "a")
 		err := fn(c)
 		if err != vars.ErrResponseNotSet {
 			t.Fatalf("response not set should return error")
@@ -48,6 +49,7 @@ func TestHeaderSetter(t *testing.T) {
 			},
 		}
 		c.Set(vars.Response, resp)
+		c.Set(vars.RID, "a")
 		fn(c)
 	})
 }

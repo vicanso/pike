@@ -30,8 +30,11 @@ func CacheFetcher(config CacheFetcherConfig, client *cache.Client) echo.Middlewa
 			if !ok {
 				return vars.ErrRequestStatusNotSet
 			}
+			rid := c.Get(vars.RID).(string)
+			debug := c.Logger().Debug
 			// 如果非cache的
 			if status != cache.Cacheable {
+				debug(rid, " pass cache fetcher")
 				return next(c)
 			}
 			identity, ok := c.Get(vars.Identity).([]byte)
@@ -49,9 +52,11 @@ func CacheFetcher(config CacheFetcherConfig, client *cache.Client) echo.Middlewa
 				m.Stop()
 			}
 			if err != nil {
+				debug(rid, " get cache response fail")
 				return err
 			}
 			c.Set(vars.Response, resp)
+			debug(rid, " get from cache")
 			return next(c)
 		}
 	}

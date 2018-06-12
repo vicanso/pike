@@ -1,9 +1,11 @@
 package custommiddleware
 
 import (
+	"math/rand"
 	"strings"
 	"time"
 
+	"github.com/oklog/ulid"
 	"github.com/vicanso/pike/util"
 	"github.com/vicanso/pike/vars"
 
@@ -46,18 +48,23 @@ func Initialization(config InitializationConfig) echo.MiddlewareFunc {
 	if config.Concurrency != 0 {
 		concurrency = uint32(config.Concurrency)
 	}
+	seed := time.Now()
+	entropy := rand.New(rand.NewSource(seed.UnixNano()))
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) (err error) {
 			if config.Skipper(c) {
 				return next(c)
 			}
-			defer performance.DecreaseConcurrency()
+			rid := ulid.MustNew(ulid.Timestamp(seed), entropy).String()
+			c.Set(vars.RID, rid)
 			startedAt := time.Now()
 			defer func() {
+				performance.DecreaseConcurrency()
 				resp := c.Response()
 				status := resp.Status
 				use := util.GetTimeConsuming(startedAt)
 				performance.AddRequestStats(status, use)
+				c.Logger().Debug(rid, " request done")
 			}()
 			resHeader := c.Response().Header()
 			for k, v := range customHeader {

@@ -31,20 +31,24 @@ func Identifier(config IdentifierConfig, client *cache.Client) echo.MiddlewareFu
 			if config.Skipper(c) {
 				return next(c)
 			}
+			rid := c.Get(vars.RID).(string)
 			timing := &servertiming.Header{}
 			pikeMetric := timing.NewMetric(vars.PikeMetric)
 			pikeMetric.WithDesc("pike handle time").Start()
 			c.Set(vars.Timing, timing)
 			req := c.Request()
 			method := req.Method
+			debug := c.Logger().Debug
 			// 只有get与head请求可缓存
 			if method != echo.GET && method != echo.HEAD {
 				c.Set(vars.Status, cache.Pass)
+				debug(rid, " is pass")
 				return next(c)
 			}
 			key := []byte(method + " " + req.Host + " " + req.RequestURI)
 			status, ch := client.GetRequestStatus(key)
 			if ch != nil {
+				debug(rid, " is waitting")
 				m := timing.NewMetric(vars.WaitForRequestStatusMetric)
 				m.WithDesc("wait for request status").Start()
 				// TODO 是否需要增加超时处理
@@ -53,7 +57,7 @@ func Identifier(config IdentifierConfig, client *cache.Client) echo.MiddlewareFu
 			}
 			c.Set(vars.Status, status)
 			c.Set(vars.Identity, key)
-			c.Logger().Debug(req.RequestURI, " status:", status)
+			debug(rid, " status:", status)
 			return next(c)
 		}
 	}

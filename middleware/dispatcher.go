@@ -128,12 +128,16 @@ func Dispatcher(config DispatcherConfig, client *cache.Client) echo.MiddlewareFu
 			if config.Skipper(c) {
 				return next(c)
 			}
+			rid := c.Get(vars.RID).(string)
+			debug := c.Logger().Debug
 			status, ok := c.Get(vars.Status).(int)
 			if !ok {
+				debug(rid, " request status not set")
 				return vars.ErrRequestStatusNotSet
 			}
 			cr, ok := c.Get(vars.Response).(*cache.Response)
 			if !ok {
+				debug(rid, " response not set")
 				return vars.ErrResponseNotSet
 			}
 			cr.CompressMinLength = compressMinLength
@@ -185,14 +189,17 @@ func Dispatcher(config DispatcherConfig, client *cache.Client) echo.MiddlewareFu
 			// pass的都是不可能缓存
 			// 可缓存的处理继续后续缓存流程
 			if status != cache.Cacheable && status != cache.Pass {
+				debug(rid, " should check for cache")
+				identity, ok := c.Get(vars.Identity).([]byte)
 				go func() {
-					identity, ok := c.Get(vars.Identity).([]byte)
 					if !ok {
 						return
 					}
 					if cr.TTL == 0 {
+						debug(rid, " hit for pass")
 						client.HitForPass(identity, vars.HitForPassTTL)
 					} else {
+						debug(rid, " save response for cache")
 						save(client, identity, cr, compressible)
 					}
 				}()
@@ -203,6 +210,7 @@ func Dispatcher(config DispatcherConfig, client *cache.Client) echo.MiddlewareFu
 			if fresh {
 				setSeverTiming()
 				resp.WriteHeader(http.StatusNotModified)
+				debug(rid, " 304")
 				return nil
 			}
 
@@ -220,6 +228,7 @@ func Dispatcher(config DispatcherConfig, client *cache.Client) echo.MiddlewareFu
 			respHeader.Set(echo.HeaderContentLength, strconv.Itoa(len(body)))
 			resp.WriteHeader(statusCode)
 			_, err := resp.Write(body)
+			debug(rid, " response write done, err:", err)
 			return err
 		}
 	}

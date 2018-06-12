@@ -20,6 +20,7 @@ func TestFreshChecker(t *testing.T) {
 		})
 		e := echo.New()
 		c := e.NewContext(nil, nil)
+		c.Set(vars.RID, "a")
 		err := fn(c)
 		if err != vars.ErrResponseNotSet {
 			t.Fatalf("no response should return error")
@@ -40,6 +41,7 @@ func TestFreshChecker(t *testing.T) {
 		c.Set(vars.Response, &cache.Response{
 			StatusCode: http.StatusOK,
 		})
+		c.Set(vars.RID, "a")
 		err := fn(c)
 		if err != nil {
 			t.Fatalf("check post request fail, %v", err)
@@ -60,6 +62,7 @@ func TestFreshChecker(t *testing.T) {
 		c.Set(vars.Response, &cache.Response{
 			StatusCode: http.StatusBadGateway,
 		})
+		c.Set(vars.RID, "a")
 		err := fn(c)
 		if err != nil {
 			t.Fatalf("check get request(502) fail, %v", err)
@@ -81,6 +84,7 @@ func TestFreshChecker(t *testing.T) {
 		c.Set(vars.Response, &cache.Response{
 			StatusCode: http.StatusOK,
 		})
+		c.Set(vars.RID, "a")
 		c.Request().Header.Set(vars.IfNoneMatch, "ABCD")
 		c.Response().Header().Set(vars.ETag, "ABCD")
 		err := fn(c)

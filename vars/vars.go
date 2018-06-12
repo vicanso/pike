@@ -11,6 +11,8 @@ const (
 	Version = "1.0.0"
 	// Status 请求状态（waiting fecthing等）
 	Status = "status"
+	// RID the request uid
+	RID = "rid"
 	// Identity 根据url生成的标识
 	Identity = "identity"
 	// Director 保存匹配的director

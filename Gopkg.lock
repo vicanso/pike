@@ -26,6 +26,12 @@
   version = "v2.2.1"
 
 [[projects]]
+  name = "github.com/gobuffalo/packr"
+  packages = ["."]
+  revision = "bd47f2894846e32edcf9aa37290fef76c327883f"
+  version = "v1.11.1"
+
+[[projects]]
   branch = "master"
   name = "github.com/golang/gddo"
   packages = ["httputil/header"]
@@ -42,6 +48,12 @@
   packages = ["."]
   revision = "550b7ca3aa563b9974e2391274ea55a940d05ca9"
   version = "v1.0.8"
+
+[[projects]]
+  name = "github.com/json-iterator/go"
+  packages = ["."]
+  revision = "ca39e5af3ece67bbcda3d0f4f56a8e24d9f2dad4"
+  version = "1.1.3"
 
 [[projects]]
   name = "github.com/labstack/echo"
@@ -74,10 +86,40 @@
   revision = "d145200e1f903b0ea9e6fd99eea2fb9621e0feaa"
 
 [[projects]]
+  name = "github.com/modern-go/concurrent"
+  packages = ["."]
+  revision = "bacd9c7ef1dd9b15be4a9909b8ac7a4e313eec94"
+  version = "1.0.3"
+
+[[projects]]
+  name = "github.com/modern-go/reflect2"
+  packages = ["."]
+  revision = "1df9eeb2bb81f327b96228865c5687bc2194af3f"
+  version = "1.0.0"
+
+[[projects]]
+  name = "github.com/oklog/ulid"
+  packages = ["."]
+  revision = "d311cb43c92434ec4072dfbbda3400741d0a6337"
+  version = "v0.3.0"
+
+[[projects]]
+  name = "github.com/pkg/errors"
+  packages = ["."]
+  revision = "645ef00459ed84a119197bfb8d8205042c6df63d"
+  version = "v0.8.0"
+
+[[projects]]
+  name = "github.com/teris-io/shortid"
+  packages = ["."]
+  revision = "6c56cef5189ca1b3d5ef01dc07f4d611dfc0bb33"
+  version = "v1.0"
+
+[[projects]]
+  branch = "master"
   name = "github.com/thoas/go-funk"
   packages = ["."]
-  revision = "14304e8530de7dbb909c8305591b3a8370dd9dbb"
-  version = "0.2"
+  revision = "f6e311f8b85db1db6b9c305e38791d0863c1d843"
 
 [[projects]]
   branch = "master"
@@ -112,6 +154,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "a690d14d3e5bab999cf40af507fd9b6060b594e2a43866c9917c1314aa8185c0"
+  inputs-digest = "261b3fab2a8891b328d2f2e7a5dd7e4a9398c3ec3d5405113e75d14821a23406"
   solver-name = "gps-cdcl"
   solver-version = 1

@@ -46,6 +46,7 @@ func TestUpstreamPicker(t *testing.T) {
 		e := echo.New()
 		req := httptest.NewRequest(echo.GET, "http://aslant.site/api/users/me", nil)
 		c := e.NewContext(req, nil)
+		c.Set(vars.RID, "a")
 		fn(c)
 	})
 
@@ -60,6 +61,7 @@ func TestUpstreamPicker(t *testing.T) {
 		e := echo.New()
 		req := httptest.NewRequest(echo.GET, "/api/users/me", nil)
 		c := e.NewContext(req, nil)
+		c.Set(vars.RID, "a")
 		fn(c)
 	})
 
@@ -74,6 +76,7 @@ func TestUpstreamPicker(t *testing.T) {
 		e := echo.New()
 		req := httptest.NewRequest(echo.GET, "/test", nil)
 		c := e.NewContext(req, nil)
+		c.Set(vars.RID, "a")
 		err := fn(c)
 		if err != vars.ErrDirectorNotFound {
 			t.Fatalf("no director match should return error")

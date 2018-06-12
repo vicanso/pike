@@ -34,8 +34,11 @@ func HeaderSetter(config HeaderSetterConfig) echo.MiddlewareFunc {
 			if config.Skipper(c) {
 				return next(c)
 			}
+			rid := c.Get(vars.RID).(string)
+			debug := c.Logger().Debug
 			cr, ok := c.Get(vars.Response).(*cache.Response)
 			if !ok {
+				debug(rid, " response not set")
 				return vars.ErrResponseNotSet
 			}
 			h := c.Response().Header()
@@ -47,6 +50,7 @@ func HeaderSetter(config HeaderSetterConfig) echo.MiddlewareFunc {
 					h.Add(k, v)
 				}
 			}
+			debug(rid, " set header done")
 			return next(c)
 		}
 	}

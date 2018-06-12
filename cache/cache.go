@@ -3,18 +3,20 @@ package cache
 import (
 	"bytes"
 	"encoding/binary"
-	"encoding/json"
 	"net/http"
 	"os"
 	"strings"
 	"sync"
 	"time"
 
+	jsoniter "github.com/json-iterator/go"
 	"github.com/vicanso/pike/util"
 	"github.com/vicanso/pike/vars"
 
 	"github.com/akrylysov/pogreb"
 )
+
+var json = jsoniter.ConfigCompatibleWithStandardLibrary
 
 const (
 	// Pass request status: pass

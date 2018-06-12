@@ -34,6 +34,7 @@ func TestIdentifier(t *testing.T) {
 		e := echo.New()
 		req := httptest.NewRequest(echo.POST, "/users/me", nil)
 		c := e.NewContext(req, nil)
+		c.Set(vars.RID, "a")
 		fn(c)
 	})
 
@@ -48,6 +49,7 @@ func TestIdentifier(t *testing.T) {
 		e := echo.New()
 		req := httptest.NewRequest(echo.GET, "/users/me", nil)
 		c := e.NewContext(req, nil)
+		c.Set(vars.RID, "a")
 		fn(c)
 
 	})
@@ -63,6 +65,7 @@ func TestIdentifier(t *testing.T) {
 		e := echo.New()
 		req := httptest.NewRequest(echo.GET, "/users/me", nil)
 		c := e.NewContext(req, nil)
+		c.Set(vars.RID, "a")
 		go func() {
 			// 延时执行
 			time.Sleep(10 * time.Millisecond)

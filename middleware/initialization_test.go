@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/labstack/echo"
+	"github.com/vicanso/pike/vars"
 )
 
 func TestInitialization(t *testing.T) {
@@ -22,6 +23,7 @@ func TestInitialization(t *testing.T) {
 	resp := &httptest.ResponseRecorder{}
 	e := echo.New()
 	c := e.NewContext(nil, resp)
+	c.Set(vars.RID, "a")
 	err := fn(c)
 	if err != nil {
 		t.Fatalf("initialization fail")

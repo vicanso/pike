@@ -3,7 +3,6 @@ package cache
 import (
 	"bytes"
 	"encoding/binary"
-	"encoding/json"
 	"net/http"
 	"sync/atomic"
 	"testing"
