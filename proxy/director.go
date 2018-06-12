@@ -252,32 +252,26 @@ func (d *Director) Match(host, uri string) (match bool) {
 
 // 检测url，如果5次有3次通过则认为是healthy
 func doCheck(url string) (healthy bool) {
-	c := make(chan int)
-
-	go func() {
-		for i := 0; i < 5; i++ {
+	var wg sync.WaitGroup
+	var successCount int32
+	p := &successCount
+	for i := 0; i < 5; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
 			client := http.Client{
 				Timeout: time.Duration(3 * time.Second),
 			}
-			resp, err := client.Get(url)
-			// chan 0表示不通过，1表示通过
-			if err != nil {
-				c <- 0
-			} else {
+			resp, _ := client.Get(url)
+			if resp != nil {
 				statusCode := resp.StatusCode
 				if statusCode >= 200 && statusCode < 400 {
-					c <- 1
-				} else {
-					c <- 0
+					atomic.AddInt32(p, 1)
 				}
 			}
-		}
-		close(c)
-	}()
-	successCount := 0
-	for i := range c {
-		successCount += i
+		}()
 	}
+	wg.Wait()
 	if successCount >= 3 {
 		healthy = true
 	}
