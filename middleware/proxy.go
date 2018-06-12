@@ -55,10 +55,11 @@ type (
 		URL  *url.URL
 	}
 	bodyDumpResponseWriter struct {
-		body    *bytes.Buffer
-		headers http.Header
-		code    int
-		http.ResponseWriter
+		body          *bytes.Buffer
+		headers       http.Header
+		code          int
+		closeNotifyCh chan bool
+		http.CloseNotifier
 	}
 )
 
@@ -214,8 +215,9 @@ func Proxy(config ProxyConfig) echo.MiddlewareFunc {
 			}
 			// Proxy
 			writer := &bodyDumpResponseWriter{
-				body:    new(bytes.Buffer),
-				headers: make(http.Header),
+				body:          new(bytes.Buffer),
+				headers:       make(http.Header),
+				closeNotifyCh: make(chan bool, 1),
 			}
 			// proxy时为了避免304的出现，因此调用时临时删除header
 			ifModifiedSince := reqHeader.Get(echo.HeaderIfModifiedSince)
@@ -231,6 +233,7 @@ func Proxy(config ProxyConfig) echo.MiddlewareFunc {
 			done := make(chan bool)
 			go func() {
 				proxyHTTP(tgt).ServeHTTP(writer, req)
+				writer.closeNotifyCh <- true
 				done <- true
 			}()
 			select {
@@ -296,4 +299,8 @@ func (w *bodyDumpResponseWriter) Header() http.Header {
 
 func (w *bodyDumpResponseWriter) Write(b []byte) (int, error) {
 	return w.body.Write(b)
+}
+
+func (w *bodyDumpResponseWriter) CloseNotify() <-chan bool {
+	return w.closeNotifyCh
 }
