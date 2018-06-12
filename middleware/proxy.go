@@ -246,7 +246,6 @@ func Proxy(config ProxyConfig) echo.MiddlewareFunc {
 			done := make(chan bool)
 			go func() {
 				proxyHTTP(tgt).ServeHTTP(writer, req)
-				writer.closeNotifyCh <- true
 				done <- true
 			}()
 			select {
