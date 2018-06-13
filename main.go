@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
+	"net"
 	"net/http"
 	"os"
 	"path"
@@ -36,6 +37,8 @@ var buildAt string
 
 const (
 	defaultExpiredClearInterval = 300 * time.Second
+	maxIdleConnsPerHost         = 1024
+	maxIdleConns                = 10 * 1024
 )
 
 func startExpiredClearTask(client *cache.Client, interval time.Duration) {
@@ -159,6 +162,20 @@ func main() {
 		}
 		d.RefreshPriority()
 		d.GenRewriteRegexp()
+		d.SetTransport(
+			&http.Transport{
+				Proxy: http.ProxyFromEnvironment,
+				DialContext: (&net.Dialer{
+					Timeout:   30 * time.Second,
+					KeepAlive: 30 * time.Second,
+					DualStack: true,
+				}).DialContext,
+				MaxIdleConns:          maxIdleConns,
+				MaxIdleConnsPerHost:   maxIdleConnsPerHost,
+				IdleConnTimeout:       10 * time.Second,
+				TLSHandshakeTimeout:   10 * time.Second,
+				ExpectContinueTimeout: 1 * time.Second,
+			})
 		// 定时检测director是否可用
 		go d.StartHealthCheck(5 * time.Second)
 		directors = append(directors, d)

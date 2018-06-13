@@ -42,6 +42,8 @@ type (
 		sync.RWMutex
 		// roubin 的次数
 		roubin uint32
+		// transport 指定transport
+		Transport *http.Transport
 	}
 	// Directors 用于director排序
 	Directors []*Director
@@ -339,4 +341,9 @@ func (d *Director) StartHealthCheck(interval time.Duration) {
 // GenRewriteRegexp 生成重写url的正则
 func (d *Director) GenRewriteRegexp() {
 	d.RewriteRegexp = util.GetRewriteRegexp(d.Rewrites)
+}
+
+// SetTransport 设置transport
+func (d *Director) SetTransport(transport *http.Transport) {
+	d.Transport = transport
 }
