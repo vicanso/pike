@@ -63,7 +63,9 @@ type (
 )
 
 const (
-	defaultTimeout = 10 * time.Second
+	defaultTimeout      = 10 * time.Second
+	maxIdleConnsPerHost = 1024
+	maxIdleConns        = 10 * 1024
 )
 
 var defaultTransport = &http.Transport{
@@ -73,7 +75,8 @@ var defaultTransport = &http.Transport{
 		KeepAlive: 30 * time.Second,
 		DualStack: true,
 	}).DialContext,
-	MaxIdleConns:          1000,
+	MaxIdleConns:          maxIdleConns,
+	MaxIdleConnsPerHost:   maxIdleConnsPerHost,
 	IdleConnTimeout:       10 * time.Second,
 	TLSHandshakeTimeout:   10 * time.Second,
 	ExpectContinueTimeout: 1 * time.Second,
