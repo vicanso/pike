@@ -37,8 +37,7 @@ var buildAt string
 
 const (
 	defaultExpiredClearInterval = 300 * time.Second
-	maxIdleConnsPerHost         = 1024
-	maxIdleConns                = 10 * 1024
+	maxIdleConns                = 5 * 1024
 )
 
 func startExpiredClearTask(client *cache.Client, interval time.Duration) {
@@ -171,7 +170,7 @@ func main() {
 					DualStack: true,
 				}).DialContext,
 				MaxIdleConns:          maxIdleConns,
-				MaxIdleConnsPerHost:   maxIdleConnsPerHost,
+				MaxIdleConnsPerHost:   maxIdleConns,
 				IdleConnTimeout:       10 * time.Second,
 				TLSHandshakeTimeout:   10 * time.Second,
 				ExpectContinueTimeout: 1 * time.Second,

@@ -33,13 +33,15 @@ const (
 	// PikeMetric pike总体的处理时间
 	PikeMetric = "0PIKE"
 	// WaitForRequestStatusMetric 等待请求状态的时间
-	WaitForRequestStatusMetric = "0WRFS"
+	WaitForRequestStatusMetric = "1WRFS"
+	// GetMatchDirectorMetric 获取匹配的director
+	GetMatchDirectorMetric = "2GMD"
 	// GetResponseFromCacheMetric 从缓存数据库中取数据的时间
-	GetResponseFromCacheMetric = "0GRFC"
+	GetResponseFromCacheMetric = "3GRFC"
 	// GetResponseFromProxyMetric 从proxy中获取数据的时间
-	GetResponseFromProxyMetric = "0GRFP"
+	GetResponseFromProxyMetric = "4GRFP"
 	// DispatchResponseMetric 响应数据的处理时间
-	DispatchResponseMetric = "0DR"
+	DispatchResponseMetric = "5DR"
 
 	// HitForPassTTL hit for pass的有效期
 	HitForPassTTL = 600
