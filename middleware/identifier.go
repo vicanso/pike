@@ -32,10 +32,7 @@ func Identifier(config IdentifierConfig, client *cache.Client) echo.MiddlewareFu
 				return next(c)
 			}
 			rid := c.Get(vars.RID).(string)
-			timing := &servertiming.Header{}
-			pikeMetric := timing.NewMetric(vars.PikeMetric)
-			pikeMetric.WithDesc("pike handle time").Start()
-			c.Set(vars.Timing, timing)
+			timing, _ := c.Get(vars.Timing).(*servertiming.Header)
 			req := c.Request()
 			method := req.Method
 			debug := c.Logger().Debug
@@ -46,14 +43,27 @@ func Identifier(config IdentifierConfig, client *cache.Client) echo.MiddlewareFu
 				return next(c)
 			}
 			key := []byte(method + " " + req.Host + " " + req.RequestURI)
+			var m *servertiming.Metric
+			if timing != nil {
+				m = timing.NewMetric(vars.GetRequestStatusMetric)
+				m.WithDesc("get request status").Start()
+			}
 			status, ch := client.GetRequestStatus(key)
+			if m != nil {
+				m.Stop()
+				m = nil
+			}
 			if ch != nil {
 				debug(rid, " is waitting")
-				m := timing.NewMetric(vars.WaitForRequestStatusMetric)
-				m.WithDesc("wait for request status").Start()
+				if timing != nil {
+					m = timing.NewMetric(vars.WaitForRequestStatusMetric)
+					m.WithDesc("wait for request status").Start()
+				}
 				// TODO 是否需要增加超时处理
 				status = <-ch
-				m.Stop()
+				if m != nil {
+					m.Stop()
+				}
 			}
 			c.Set(vars.Status, status)
 			c.Set(vars.Identity, key)

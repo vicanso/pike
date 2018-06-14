@@ -5,6 +5,7 @@ import (
 	"strings"
 	"time"
 
+	servertiming "github.com/mitchellh/go-server-timing"
 	"github.com/oklog/ulid"
 	"github.com/vicanso/pike/util"
 	"github.com/vicanso/pike/vars"
@@ -55,6 +56,10 @@ func Initialization(config InitializationConfig) echo.MiddlewareFunc {
 			if config.Skipper(c) {
 				return next(c)
 			}
+			timing := &servertiming.Header{}
+			pikeMetric := timing.NewMetric(vars.PikeMetric)
+			pikeMetric.WithDesc("pike handle time").Start()
+			c.Set(vars.Timing, timing)
 			rid := ulid.MustNew(ulid.Timestamp(seed), entropy).String()
 			c.Set(vars.RID, rid)
 			startedAt := time.Now()
