@@ -42,8 +42,12 @@ const (
 	GetResponseFromCacheMetric = "4GRFC"
 	// GetResponseFromProxyMetric 从proxy中获取数据的时间
 	GetResponseFromProxyMetric = "5GRFP"
+	// HeaderSetterMetric 设置header的时间
+	HeaderSetterMetric = "6HS"
+	// FreshCheckerMetric 检查判断数据是否为fresh
+	FreshCheckerMetric = "7FC"
 	// DispatchResponseMetric 响应数据的处理时间
-	DispatchResponseMetric = "6DR"
+	DispatchResponseMetric = "8DR"
 
 	// HitForPassTTL hit for pass的有效期
 	HitForPassTTL = 600

@@ -35,7 +35,7 @@ func DirectorPicker(config DirectorPickerConfig, directors proxy.Directors) echo
 			timing, _ := c.Get(vars.Timing).(*servertiming.Header)
 			var m *servertiming.Metric
 			if timing != nil {
-				m = timing.NewMetric(vars.GetResponseFromProxyMetric)
+				m = timing.NewMetric(vars.GetMatchDirectorMetric)
 				m.WithDesc("get match director").Start()
 			}
 
