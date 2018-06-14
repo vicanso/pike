@@ -147,7 +147,13 @@ func Dispatcher(config DispatcherConfig, client *cache.Client) echo.MiddlewareFu
 			respHeader := resp.Header()
 			reqHeader := c.Request().Header
 			timing, _ := c.Get(vars.Timing).(*servertiming.Header)
+
 			var m *servertiming.Metric
+			if timing != nil {
+				m = timing.NewMetric(vars.DispatchResponseMetric)
+				m.WithDesc("dispatch response").Start()
+			}
+
 			setSeverTiming := func() {
 				if m == nil {
 					return
@@ -159,10 +165,6 @@ func Dispatcher(config DispatcherConfig, client *cache.Client) echo.MiddlewareFu
 					}
 				}
 				respHeader.Add(vars.ServerTiming, timing.String())
-			}
-			if timing != nil {
-				m = timing.NewMetric(vars.DispatchResponseMetric)
-				m.WithDesc("dispatch response").Start()
 			}
 			compressible := shouldCompress(compressTypes, respHeader.Get(echo.HeaderContentType))
 
