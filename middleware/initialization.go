@@ -53,7 +53,6 @@ func Initialization(config InitializationConfig) echo.MiddlewareFunc {
 	entropy := rand.New(rand.NewSource(seed.UnixNano()))
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) (err error) {
-			util.AddStartTiming(c)
 			if config.Skipper(c) {
 				return next(c)
 			}

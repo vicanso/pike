@@ -11,8 +11,6 @@ import (
 	"time"
 
 	"github.com/google/brotli/go/cbrotli"
-	"github.com/labstack/echo"
-	"github.com/vicanso/pike/vars"
 )
 
 const (
@@ -120,14 +118,4 @@ func GetRewriteRegexp(rewrites []string) map[*regexp.Regexp]string {
 		rewriteRegexp[regexp.MustCompile(k)] = v
 	}
 	return rewriteRegexp
-}
-
-// AddStartTiming 添加start开始时间线，用于性能排查使用
-func AddStartTiming(c echo.Context) {
-	timing, _ := c.Get(vars.StartTiming).([]int64)
-	if timing == nil {
-		timing = make([]int64, 0)
-	}
-	timing = append(timing, time.Now().UnixNano())
-	c.Set(vars.StartTiming, timing)
 }
