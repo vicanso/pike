@@ -5,6 +5,7 @@ import (
 	"github.com/labstack/echo/middleware"
 	"github.com/mitchellh/go-server-timing"
 	"github.com/vicanso/pike/cache"
+	"github.com/vicanso/pike/util"
 	"github.com/vicanso/pike/vars"
 )
 
@@ -23,6 +24,7 @@ func CacheFetcher(config CacheFetcherConfig, client *cache.Client) echo.Middlewa
 	}
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
+			util.AddStartTiming(c)
 			if config.Skipper(c) {
 				return next(c)
 			}

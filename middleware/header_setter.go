@@ -6,6 +6,7 @@ import (
 	servertiming "github.com/mitchellh/go-server-timing"
 	funk "github.com/thoas/go-funk"
 	"github.com/vicanso/pike/cache"
+	"github.com/vicanso/pike/util"
 	"github.com/vicanso/pike/vars"
 )
 
@@ -32,6 +33,7 @@ func HeaderSetter(config HeaderSetterConfig) echo.MiddlewareFunc {
 	}
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
+			util.AddStartTiming(c)
 			if config.Skipper(c) {
 				return next(c)
 			}

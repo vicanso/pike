@@ -20,6 +20,7 @@ import (
 	"github.com/vicanso/pike/config"
 	"github.com/vicanso/pike/controller"
 	"github.com/vicanso/pike/httplog"
+	"github.com/vicanso/pike/util"
 
 	"github.com/vicanso/pike/vars"
 
@@ -210,6 +211,7 @@ func main() {
 	// 对于websocke的直接不支持
 	e.Pre(func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
+			util.AddStartTiming(c)
 			if c.IsWebSocket() {
 				return vars.ErrNotSupportWebSocket
 			}

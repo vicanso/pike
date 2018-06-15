@@ -125,6 +125,7 @@ func Dispatcher(config DispatcherConfig, client *cache.Client) echo.MiddlewareFu
 	}
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
+			util.AddStartTiming(c)
 			if config.Skipper(c) {
 				return next(c)
 			}
@@ -163,6 +164,14 @@ func Dispatcher(config DispatcherConfig, client *cache.Client) echo.MiddlewareFu
 					if m.Name == vars.PikeMetric {
 						m.Stop()
 					}
+				}
+				startTiming, _ := c.Get(vars.StartTiming).([]int64)
+				if startTiming != nil {
+					startTimingDesc := ""
+					for _, v := range startTiming {
+						startTimingDesc += (strconv.FormatInt(v, 10) + ";")
+					}
+					respHeader.Set("Debug-Start-Timing", startTimingDesc)
 				}
 				respHeader.Add(vars.ServerTiming, timing.String())
 			}

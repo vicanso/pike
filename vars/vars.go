@@ -21,6 +21,8 @@ const (
 	Response = "response"
 	// Timing timing
 	Timing = "timing"
+	// StartTiming 启动时间线
+	StartTiming = "start-timing"
 	// Fresh request fresh flag
 	Fresh = "fresh"
 	// CacheClient cache client
