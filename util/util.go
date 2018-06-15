@@ -11,12 +11,17 @@ import (
 	"time"
 
 	"github.com/google/brotli/go/cbrotli"
+	"github.com/labstack/echo"
+	servertiming "github.com/mitchellh/go-server-timing"
+	"github.com/vicanso/pike/vars"
 )
 
 const (
 	kbytes = 1024
 	mbytes = 1024 * 1024
 )
+
+func noop() {}
 
 // Gzip 对数据压缩
 func Gzip(buf []byte, level int) ([]byte, error) {
@@ -118,4 +123,17 @@ func GetRewriteRegexp(rewrites []string) map[*regexp.Regexp]string {
 		rewriteRegexp[regexp.MustCompile(k)] = v
 	}
 	return rewriteRegexp
+}
+
+// CreateTiming 创建timing
+func CreateTiming(c echo.Context, metric *vars.MetricInfo) func() {
+	timing, _ := c.Get(vars.Timing).(*servertiming.Header)
+	if timing == nil {
+		return noop
+	}
+	m := timing.NewMetric(metric.Name)
+	m.WithDesc(metric.Desc).Start()
+	return func() {
+		m.Stop()
+	}
 }

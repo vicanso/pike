@@ -128,16 +128,19 @@ func Dispatcher(config DispatcherConfig, client *cache.Client) echo.MiddlewareFu
 			if config.Skipper(c) {
 				return next(c)
 			}
+			done := util.CreateTiming(c, vars.MetricDispatcher)
 			rid := c.Get(vars.RID).(string)
 			debug := c.Logger().Debug
 			status, ok := c.Get(vars.Status).(int)
 			if !ok {
 				debug(rid, " request status not set")
+				done()
 				return vars.ErrRequestStatusNotSet
 			}
 			cr, ok := c.Get(vars.Response).(*cache.Response)
 			if !ok {
 				debug(rid, " response not set")
+				done()
 				return vars.ErrResponseNotSet
 			}
 			cr.CompressMinLength = compressMinLength
@@ -146,19 +149,14 @@ func Dispatcher(config DispatcherConfig, client *cache.Client) echo.MiddlewareFu
 			resp := c.Response()
 			respHeader := resp.Header()
 			reqHeader := c.Request().Header
+
 			timing, _ := c.Get(vars.Timing).(*servertiming.Header)
 
-			var m *servertiming.Metric
-			if timing != nil {
-				m = timing.NewMetric(vars.DispatchResponseMetric)
-				m.WithDesc("dispatch response").Start()
-			}
-
 			setSeverTiming := func() {
-				if m == nil {
+				done()
+				if timing == nil {
 					return
 				}
-				m.Stop()
 				for _, m := range timing.Metrics {
 					if m.Name == vars.PikeMetric {
 						m.Stop()

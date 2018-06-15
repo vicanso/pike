@@ -14,7 +14,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/mitchellh/go-server-timing"
 	"github.com/vicanso/pike/cache"
 	"github.com/vicanso/pike/proxy"
 	"github.com/vicanso/pike/util"
@@ -167,9 +166,10 @@ func Proxy(config ProxyConfig) echo.MiddlewareFunc {
 			if config.Skipper(c) {
 				return next(c)
 			}
-
+			done := util.CreateTiming(c, vars.MetricProxy)
 			// 如果已获取到数据，则不需要proxy获取(已从cache中获取)
 			if c.Get(vars.Response) != nil {
+				done()
 				return next(c)
 			}
 			rid := c.Get(vars.RID).(string)
@@ -178,20 +178,15 @@ func Proxy(config ProxyConfig) echo.MiddlewareFunc {
 			director, ok := c.Get(vars.Director).(*proxy.Director)
 			if !ok {
 				debug(rid, " director not found")
+				done()
 				return vars.ErrDirectorNotFound
 			}
 			// 从director中选择可用的backend
 			backend := director.Select(c)
 			if len(backend) == 0 {
 				debug(rid, " no backend avaliable")
+				done()
 				return vars.ErrNoBackendAvaliable
-			}
-
-			timing, _ := c.Get(vars.Timing).(*servertiming.Header)
-			var m *servertiming.Metric
-			if timing != nil {
-				m = timing.NewMetric(vars.GetResponseFromProxyMetric)
-				m.WithDesc("get response from proxy").Start()
 			}
 
 			req := c.Request()
@@ -231,13 +226,13 @@ func Proxy(config ProxyConfig) echo.MiddlewareFunc {
 			}
 			ctx, cancel := context.WithTimeout(context.Background(), timeout)
 			defer cancel()
-			done := make(chan bool)
+			proxyDone := make(chan bool)
 			go func() {
 				proxyHTTP(tgt, director.Transport).ServeHTTP(writer, req)
-				done <- true
+				proxyDone <- true
 			}()
 			select {
-			case <-done:
+			case <-proxyDone:
 			case <-ctx.Done():
 				debug(rid, " gateway timeout")
 				return vars.ErrGatewayTimeout
@@ -280,10 +275,8 @@ func Proxy(config ProxyConfig) echo.MiddlewareFunc {
 				}
 			}
 			c.Set(vars.Response, cr)
-			if m != nil {
-				m.Stop()
-			}
 			debug(rid, " fetch from proxy done")
+			done()
 			return next(c)
 		}
 	}

@@ -57,9 +57,12 @@ func Initialization(config InitializationConfig) echo.MiddlewareFunc {
 				return next(c)
 			}
 			timing := &servertiming.Header{}
-			pikeMetric := timing.NewMetric(vars.PikeMetric)
-			pikeMetric.WithDesc("pike handle time").Start()
+
+			pikeMetric := timing.NewMetric(vars.MetricPike.Name)
+			pikeMetric.WithDesc(vars.MetricPike.Desc).Start()
 			c.Set(vars.Timing, timing)
+
+			done := util.CreateTiming(c, vars.MetricInit)
 			rid := ulid.MustNew(ulid.Timestamp(seed), entropy).String()
 			c.Set(vars.RID, rid)
 			startedAt := time.Now()
@@ -78,8 +81,10 @@ func Initialization(config InitializationConfig) echo.MiddlewareFunc {
 			performance.IncreaseRequestCount()
 			v := performance.IncreaseConcurrency()
 			if v > concurrency {
+				done()
 				return vars.ErrTooManyRequst
 			}
+			done()
 			return next(c)
 		}
 	}

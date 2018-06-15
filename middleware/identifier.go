@@ -3,9 +3,9 @@ package custommiddleware
 import (
 	"github.com/labstack/echo"
 	"github.com/labstack/echo/middleware"
-	"github.com/mitchellh/go-server-timing"
 
 	"github.com/vicanso/pike/cache"
+	"github.com/vicanso/pike/util"
 	"github.com/vicanso/pike/vars"
 )
 
@@ -32,7 +32,8 @@ func Identifier(config IdentifierConfig, client *cache.Client) echo.MiddlewareFu
 				return next(c)
 			}
 			rid := c.Get(vars.RID).(string)
-			timing, _ := c.Get(vars.Timing).(*servertiming.Header)
+			done := util.CreateTiming(c, vars.MetricIdentifier)
+			// timing, _ := c.Get(vars.Timing).(*servertiming.Header)
 			req := c.Request()
 			method := req.Method
 			debug := c.Logger().Debug
@@ -40,34 +41,18 @@ func Identifier(config IdentifierConfig, client *cache.Client) echo.MiddlewareFu
 			if method != echo.GET && method != echo.HEAD {
 				c.Set(vars.Status, cache.Pass)
 				debug(rid, " is pass")
+				done()
 				return next(c)
 			}
 			key := []byte(method + " " + req.Host + " " + req.RequestURI)
-			var m *servertiming.Metric
-			if timing != nil {
-				m = timing.NewMetric(vars.GetRequestStatusMetric)
-				m.WithDesc("get request status").Start()
-			}
 			status, ch := client.GetRequestStatus(key)
-			if m != nil {
-				m.Stop()
-				m = nil
-			}
 			if ch != nil {
-				debug(rid, " is waitting")
-				if timing != nil {
-					m = timing.NewMetric(vars.WaitForRequestStatusMetric)
-					m.WithDesc("wait for request status").Start()
-				}
-				// TODO 是否需要增加超时处理
 				status = <-ch
-				if m != nil {
-					m.Stop()
-				}
 			}
 			c.Set(vars.Status, status)
 			c.Set(vars.Identity, key)
 			debug(rid, " status:", status)
+			done()
 			return next(c)
 		}
 	}

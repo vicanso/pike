@@ -3,9 +3,9 @@ package custommiddleware
 import (
 	"github.com/labstack/echo"
 	"github.com/labstack/echo/middleware"
-	servertiming "github.com/mitchellh/go-server-timing"
 
 	"github.com/vicanso/pike/proxy"
+	"github.com/vicanso/pike/util"
 	"github.com/vicanso/pike/vars"
 )
 
@@ -32,12 +32,7 @@ func DirectorPicker(config DirectorPickerConfig, directors proxy.Directors) echo
 			host := req.Host
 			uri := req.RequestURI
 			found := false
-			timing, _ := c.Get(vars.Timing).(*servertiming.Header)
-			var m *servertiming.Metric
-			if timing != nil {
-				m = timing.NewMetric(vars.GetMatchDirectorMetric)
-				m.WithDesc("get match director").Start()
-			}
+			done := util.CreateTiming(c, vars.MetricDirectorMatcher)
 
 			var director *proxy.Director
 			for _, d := range directors {
@@ -48,16 +43,14 @@ func DirectorPicker(config DirectorPickerConfig, directors proxy.Directors) echo
 					break
 				}
 			}
-			if m != nil {
-				m.Stop()
-			}
-			rid := c.Get(vars.RID).(string)
 			debug := c.Logger().Debug
+			rid := c.Get(vars.RID).(string)
 			if !found {
 				debug(rid, " the director is not found")
 				return vars.ErrDirectorNotFound
 			}
 			debug(rid, " the director is ", director.Name)
+			done()
 			return next(c)
 		}
 	}

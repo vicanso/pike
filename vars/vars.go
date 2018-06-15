@@ -6,6 +6,12 @@ import (
 	"github.com/labstack/echo"
 )
 
+// MetricInfo metric配置
+type MetricInfo struct {
+	Name string
+	Desc string
+}
+
 const (
 	// Version 版本号
 	Version = "1.0.0"
@@ -31,23 +37,7 @@ const (
 	StaticFile = "static-file"
 
 	// PikeMetric pike总体的处理时间
-	PikeMetric = "0PIKE"
-	// GetRequestStatusMetric 获取请求的状态
-	GetRequestStatusMetric = "1GRS"
-	// WaitForRequestStatusMetric 等待请求状态的时间
-	WaitForRequestStatusMetric = "2WRFS"
-	// GetMatchDirectorMetric 获取匹配的director
-	GetMatchDirectorMetric = "3GMD"
-	// GetResponseFromCacheMetric 从缓存数据库中取数据的时间
-	GetResponseFromCacheMetric = "4GRFC"
-	// GetResponseFromProxyMetric 从proxy中获取数据的时间
-	GetResponseFromProxyMetric = "5GRFP"
-	// HeaderSetterMetric 设置header的时间
-	HeaderSetterMetric = "6HS"
-	// FreshCheckerMetric 检查判断数据是否为fresh
-	FreshCheckerMetric = "7FC"
-	// DispatchResponseMetric 响应数据的处理时间
-	DispatchResponseMetric = "8DR"
+	PikeMetric = "0"
 
 	// HitForPassTTL hit for pass的有效期
 	HitForPassTTL = 600
@@ -108,4 +98,50 @@ var (
 	ErrTooManyRequst = echo.NewHTTPError(http.StatusTooManyRequests, "too many request is handling")
 	// ErrTokenInvalid token校验失败
 	ErrTokenInvalid = echo.NewHTTPError(http.StatusUnauthorized, "token is invalid")
+
+	// MetricPike metric of pike
+	MetricPike = &MetricInfo{
+		Name: PikeMetric,
+		Desc: "pike handle time",
+	}
+	// MetricInit metric of init
+	MetricInit = &MetricInfo{
+		Name: "1",
+		Desc: "init",
+	}
+	// MetricIdentifier metric of identifier
+	MetricIdentifier = &MetricInfo{
+		Name: "2",
+		Desc: "indentifier",
+	}
+	// MetricDirectorMatcher metric of director matcher
+	MetricDirectorMatcher = &MetricInfo{
+		Name: "3",
+		Desc: "director matcher",
+	}
+	// MetricCacheFetcher metric of cache fetcher
+	MetricCacheFetcher = &MetricInfo{
+		Name: "4",
+		Desc: "cache fetcher",
+	}
+	// MetricProxy metric of proxy
+	MetricProxy = &MetricInfo{
+		Name: "5",
+		Desc: "proxy",
+	}
+	// MetricHeaderSetter metric of header setter
+	MetricHeaderSetter = &MetricInfo{
+		Name: "6",
+		Desc: "header setter",
+	}
+	// MetricFreshChecker metric of fresh checker
+	MetricFreshChecker = &MetricInfo{
+		Name: "7",
+		Desc: "fressh checker",
+	}
+	// MetricDispatcher metric of dispatcher
+	MetricDispatcher = &MetricInfo{
+		Name: "8",
+		Desc: "dispatcher",
+	}
 )

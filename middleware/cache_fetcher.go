@@ -3,8 +3,8 @@ package custommiddleware
 import (
 	"github.com/labstack/echo"
 	"github.com/labstack/echo/middleware"
-	"github.com/mitchellh/go-server-timing"
 	"github.com/vicanso/pike/cache"
+	"github.com/vicanso/pike/util"
 	"github.com/vicanso/pike/vars"
 )
 
@@ -27,7 +27,9 @@ func CacheFetcher(config CacheFetcherConfig, client *cache.Client) echo.Middlewa
 				return next(c)
 			}
 			status, ok := c.Get(vars.Status).(int)
+			done := util.CreateTiming(c, vars.MetricCacheFetcher)
 			if !ok {
+				done()
 				return vars.ErrRequestStatusNotSet
 			}
 			rid := c.Get(vars.RID).(string)
@@ -35,28 +37,23 @@ func CacheFetcher(config CacheFetcherConfig, client *cache.Client) echo.Middlewa
 			// 如果非cache的
 			if status != cache.Cacheable {
 				debug(rid, " pass cache fetcher")
+				done()
 				return next(c)
 			}
 			identity, ok := c.Get(vars.Identity).([]byte)
 			if !ok {
+				done()
 				return vars.ErrIdentityStatusNotSet
 			}
-			timing, _ := c.Get(vars.Timing).(*servertiming.Header)
-			var m *servertiming.Metric
-			if timing != nil {
-				m = timing.NewMetric(vars.GetResponseFromCacheMetric)
-				m.WithDesc("get response from cache").Start()
-			}
 			resp, err := client.GetResponse(identity)
-			if m != nil {
-				m.Stop()
-			}
 			if err != nil {
 				debug(rid, " get cache response fail")
+				done()
 				return err
 			}
 			c.Set(vars.Response, resp)
 			debug(rid, " get from cache")
+			done()
 			return next(c)
 		}
 	}

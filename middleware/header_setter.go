@@ -3,9 +3,9 @@ package custommiddleware
 import (
 	"github.com/labstack/echo"
 	"github.com/labstack/echo/middleware"
-	servertiming "github.com/mitchellh/go-server-timing"
 	funk "github.com/thoas/go-funk"
 	"github.com/vicanso/pike/cache"
+	"github.com/vicanso/pike/util"
 	"github.com/vicanso/pike/vars"
 )
 
@@ -35,18 +35,14 @@ func HeaderSetter(config HeaderSetterConfig) echo.MiddlewareFunc {
 			if config.Skipper(c) {
 				return next(c)
 			}
+			done := util.CreateTiming(c, vars.MetricHeaderSetter)
 			rid := c.Get(vars.RID).(string)
 			debug := c.Logger().Debug
 			cr, ok := c.Get(vars.Response).(*cache.Response)
 			if !ok {
 				debug(rid, " response not set")
+				done()
 				return vars.ErrResponseNotSet
-			}
-			timing, _ := c.Get(vars.Timing).(*servertiming.Header)
-			var m *servertiming.Metric
-			if timing != nil {
-				m = timing.NewMetric(vars.HeaderSetterMetric)
-				m.WithDesc("header setter").Start()
 			}
 			h := c.Response().Header()
 			for k, values := range cr.Header {
@@ -57,10 +53,8 @@ func HeaderSetter(config HeaderSetterConfig) echo.MiddlewareFunc {
 					h.Add(k, v)
 				}
 			}
-			if m != nil {
-				m.Stop()
-			}
 			debug(rid, " set header done")
+			done()
 			return next(c)
 		}
 	}
