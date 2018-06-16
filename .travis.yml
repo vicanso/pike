@@ -22,3 +22,7 @@ after_success:
   - docker images
   - docker tag pike $DOCKER_USERNAME/pike
   - docker push $DOCKER_USERNAME/pike
+  - docker build -f Dockerfile.ubuntu -t pike .
+  - docker images
+  - docker tag pike $DOCKER_USERNAME/pike:ubuntu
+  - docker push $DOCKER_USERNAME/pike:ubuntu
