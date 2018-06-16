@@ -14,8 +14,6 @@ RUN apt-get update \
 
 FROM ubuntu 
 
-RUN apk-get update && apt-get install -y ca-certificates
-
 COPY --from=builder /usr/local/lib/libbrotlicommon.so.1 /usr/lib/
 COPY --from=builder /usr/local/lib/libbrotlienc.so.1 /usr/lib/
 COPY --from=builder /usr/local/lib/libbrotlidec.so.1 /usr/lib/
