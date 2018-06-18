@@ -194,17 +194,17 @@ func main() {
 		}))
 	}
 
-	defaultSkipper := middleware.DefaultSkipper
-	if len(dc.AdminPath) != 0 {
-		defaultSkipper = func(c echo.Context) bool {
-			requestURI := c.Request().RequestURI
-			// 对于ping检测 skip
-			if requestURI == vars.PingURL {
-				return true
-			}
-			// 对于管理后台请求 skip
-			return strings.HasPrefix(requestURI, dc.AdminPath)
+	defaultSkipper := func(c echo.Context) bool {
+		requestURI := c.Request().RequestURI
+		// 对于ping检测 skip
+		if requestURI == vars.PingURL {
+			return true
 		}
+		if len(dc.AdminPath) == 0 {
+			return false
+		}
+		// 对于管理后台请求 skip
+		return strings.HasPrefix(requestURI, dc.AdminPath)
 	}
 
 	// 对于websocke的直接不支持
