@@ -12,6 +12,7 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/vicanso/pike/cache"
@@ -161,6 +162,16 @@ func Proxy(config ProxyConfig) echo.MiddlewareFunc {
 	}
 	config.rewriteRegexp = util.GetRewriteRegexp(config.Rewrites)
 
+	createWriter := func() interface{} {
+		return &bodyDumpResponseWriter{
+			body:    new(bytes.Buffer),
+			headers: make(http.Header),
+		}
+	}
+	writerPool := sync.Pool{
+		New: createWriter,
+	}
+
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) (err error) {
 			if config.Skipper(c) {
@@ -210,11 +221,15 @@ func Proxy(config ProxyConfig) echo.MiddlewareFunc {
 			if reqHeader.Get(echo.HeaderXForwardedProto) == "" {
 				reqHeader.Set(echo.HeaderXForwardedProto, c.Scheme())
 			}
+
 			// Proxy
-			writer := &bodyDumpResponseWriter{
-				body:    new(bytes.Buffer),
-				headers: make(http.Header),
+			writer := writerPool.Get().(*bodyDumpResponseWriter)
+			defer writerPool.Put(writer)
+			writer.body.Reset()
+			for k := range writer.headers {
+				delete(writer.headers, k)
 			}
+
 			// proxy时为了避免304的出现，因此调用时临时删除header
 			ifModifiedSince := reqHeader.Get(echo.HeaderIfModifiedSince)
 			ifNoneMatch := reqHeader.Get(vars.IfNoneMatch)
