@@ -13,7 +13,7 @@ import (
 	"strings"
 	"time"
 
-	// _ "net/http/pprof"
+	_ "net/http/pprof"
 
 	funk "github.com/thoas/go-funk"
 
@@ -95,9 +95,9 @@ func check(conf *config.Config) {
 }
 
 func main() {
-	// go func() {
-	// 	fmt.Println(http.ListenAndServe("localhost:6060", nil))
-	// }()
+	go func() {
+		fmt.Println(http.ListenAndServe("0.0.0.0:6060", nil))
+	}()
 	args := os.Args[1:]
 	if funk.ContainsString(args, "version") {
 		fmt.Println("Pike version " + vars.Version + ", build at " + buildAt)
