@@ -14,12 +14,6 @@
   version = "v3.2.0"
 
 [[projects]]
-  name = "github.com/felixge/httpsnoop"
-  packages = ["."]
-  revision = "eadd4fad6aac69ae62379194fe0219f3dbc80fd3"
-  version = "v1.0.0"
-
-[[projects]]
   name = "github.com/go-yaml/yaml"
   packages = ["."]
   revision = "5420a8b6744d3b0345ab293f6fcba19c978f1183"
@@ -32,12 +26,6 @@
   version = "v1.11.1"
 
 [[projects]]
-  branch = "master"
-  name = "github.com/golang/gddo"
-  packages = ["httputil/header"]
-  revision = "416d5fc8c9c85e9ec9252a70d01e069f4b287ff0"
-
-[[projects]]
   name = "github.com/google/brotli"
   packages = ["go/cbrotli"]
   revision = "c6333e1e79fb62ea088443f192293f964409b04e"
@@ -46,8 +34,8 @@
 [[projects]]
   name = "github.com/h2non/gock"
   packages = ["."]
-  revision = "550b7ca3aa563b9974e2391274ea55a940d05ca9"
-  version = "v1.0.8"
+  revision = "4692cba4394f79372bfe85996501ad43db9d82e0"
+  version = "v1.0.9"
 
 [[projects]]
   name = "github.com/json-iterator/go"
@@ -64,8 +52,8 @@
 [[projects]]
   name = "github.com/labstack/gommon"
   packages = ["bytes","color","log","random"]
-  revision = "588f4e8bddc6cb45c27b448e925c7fd6a5545434"
-  version = "0.2.5"
+  revision = "d6898124de917583f5ff5592ef931d1dfe0ddc05"
+  version = "0.2.6"
 
 [[projects]]
   name = "github.com/mattn/go-colorable"
@@ -80,12 +68,6 @@
   version = "v0.0.3"
 
 [[projects]]
-  branch = "master"
-  name = "github.com/mitchellh/go-server-timing"
-  packages = ["."]
-  revision = "d145200e1f903b0ea9e6fd99eea2fb9621e0feaa"
-
-[[projects]]
   name = "github.com/modern-go/concurrent"
   packages = ["."]
   revision = "bacd9c7ef1dd9b15be4a9909b8ac7a4e313eec94"
@@ -98,28 +80,16 @@
   version = "1.0.0"
 
 [[projects]]
-  name = "github.com/oklog/ulid"
-  packages = ["."]
-  revision = "d311cb43c92434ec4072dfbbda3400741d0a6337"
-  version = "v0.3.0"
-
-[[projects]]
   name = "github.com/pkg/errors"
   packages = ["."]
   revision = "645ef00459ed84a119197bfb8d8205042c6df63d"
   version = "v0.8.0"
 
 [[projects]]
-  name = "github.com/teris-io/shortid"
-  packages = ["."]
-  revision = "6c56cef5189ca1b3d5ef01dc07f4d611dfc0bb33"
-  version = "v1.0"
-
-[[projects]]
   branch = "master"
   name = "github.com/thoas/go-funk"
   packages = ["."]
-  revision = "f6e311f8b85db1db6b9c305e38791d0863c1d843"
+  revision = "117b407e73a24db470c596d00dd9ebee6977aad2"
 
 [[projects]]
   branch = "master"
@@ -143,17 +113,17 @@
   branch = "master"
   name = "golang.org/x/crypto"
   packages = ["acme","acme/autocert"]
-  revision = "b49d69b5da943f7ef3c9cf91c8777c1f78a0cc3c"
+  revision = "7f39a6fea4fe9364fb61e1def6a268a51b4f3a06"
 
 [[projects]]
   branch = "master"
   name = "golang.org/x/sys"
   packages = ["unix"]
-  revision = "cbbc999da32df943dac6cd71eb3ee39e1d7838b9"
+  revision = "fc8bd948cf46f9c7af0f07d34151ce25fe90e477"
 
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "261b3fab2a8891b328d2f2e7a5dd7e4a9398c3ec3d5405113e75d14821a23406"
+  inputs-digest = "60c265aeb186ec1a2645449e2cb3441eaf9c4e27e94948945719e767f2e4ad40"
   solver-name = "gps-cdcl"
   solver-version = 1
