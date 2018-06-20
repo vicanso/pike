@@ -1,12 +1,9 @@
 package custommiddleware
 
 import (
-	"math/rand"
 	"strings"
 	"time"
 
-	servertiming "github.com/mitchellh/go-server-timing"
-	"github.com/oklog/ulid"
 	"github.com/vicanso/pike/util"
 	"github.com/vicanso/pike/vars"
 
@@ -49,43 +46,30 @@ func Initialization(config InitializationConfig) echo.MiddlewareFunc {
 	if config.Concurrency != 0 {
 		concurrency = uint32(config.Concurrency)
 	}
-	seed := time.Now()
-	entropy := rand.New(rand.NewSource(seed.UnixNano()))
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) (err error) {
 			if config.Skipper(c) {
 				return next(c)
 			}
-			timing := &servertiming.Header{}
-
-			pikeMetric := timing.NewMetric(vars.MetricPike.Name)
-			pikeMetric.WithDesc(vars.MetricPike.Desc).Start()
-			c.Set(vars.Timing, timing)
-
-			done := util.CreateTiming(c, vars.MetricInit)
-			rid := ulid.MustNew(ulid.Timestamp(seed), entropy).String()
-			c.Set(vars.RID, rid)
+			pc := c.(*Context)
 			startedAt := time.Now()
 			defer func() {
 				performance.DecreaseConcurrency()
-				resp := c.Response()
+				resp := pc.Response()
 				status := resp.Status
 				use := util.GetTimeConsuming(startedAt)
 				performance.AddRequestStats(status, use)
-				c.Logger().Debug(rid, " request done")
 			}()
-			resHeader := c.Response().Header()
+			resHeader := pc.Response().Header()
 			for k, v := range customHeader {
 				resHeader.Add(k, v)
 			}
 			performance.IncreaseRequestCount()
 			v := performance.IncreaseConcurrency()
 			if v > concurrency {
-				done()
 				return vars.ErrTooManyRequst
 			}
-			done()
-			return next(c)
+			return next(pc)
 		}
 	}
 }

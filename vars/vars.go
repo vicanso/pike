@@ -15,29 +15,12 @@ type MetricInfo struct {
 const (
 	// Version 版本号
 	Version = "1.0.0"
-	// Status 请求状态（waiting fecthing等）
-	Status = "status"
-	// RID the request uid
-	RID = "rid"
-	// Identity 根据url生成的标识
-	Identity = "identity"
-	// Director 保存匹配的director
-	Director = "director"
-	// Response 响应数据
-	Response = "response"
-	// Timing timing
-	Timing = "timing"
-	// Fresh request fresh flag
-	Fresh = "fresh"
 	// CacheClient cache client
 	CacheClient = "cacheClient"
 	// Directors the director list
 	Directors = "directors"
 	// StaticFile static file name
 	StaticFile = "static-file"
-
-	// PikeMetric pike总体的处理时间
-	PikeMetric = "0"
 
 	// HitForPassTTL hit for pass的有效期
 	HitForPassTTL = 600
@@ -82,8 +65,8 @@ var (
 	ErrDirectorNotFound = echo.NewHTTPError(http.StatusNotImplemented, "director not found")
 	// ErrRequestStatusNotSet 未设置请求的status
 	ErrRequestStatusNotSet = echo.NewHTTPError(http.StatusNotImplemented, "request status not set")
-	// ErrIdentityStatusNotSet 未设置Identity
-	ErrIdentityStatusNotSet = echo.NewHTTPError(http.StatusNotImplemented, "identity not set")
+	// ErrIdentityNotSet 未设置Identity
+	ErrIdentityNotSet = echo.NewHTTPError(http.StatusNotImplemented, "identity not set")
 	// ErrResponseNotSet 未设置response
 	ErrResponseNotSet = echo.NewHTTPError(http.StatusNotImplemented, "response not set")
 	// ErrContentEncodingNotSupport 未支持此content encoding
@@ -98,50 +81,4 @@ var (
 	ErrTooManyRequst = echo.NewHTTPError(http.StatusTooManyRequests, "too many request is handling")
 	// ErrTokenInvalid token校验失败
 	ErrTokenInvalid = echo.NewHTTPError(http.StatusUnauthorized, "token is invalid")
-
-	// MetricPike metric of pike
-	MetricPike = &MetricInfo{
-		Name: PikeMetric,
-		Desc: "pike handle time",
-	}
-	// MetricInit metric of init
-	MetricInit = &MetricInfo{
-		Name: "1",
-		Desc: "init",
-	}
-	// MetricIdentifier metric of identifier
-	MetricIdentifier = &MetricInfo{
-		Name: "2",
-		Desc: "indentifier",
-	}
-	// MetricDirectorMatcher metric of director matcher
-	MetricDirectorMatcher = &MetricInfo{
-		Name: "3",
-		Desc: "director matcher",
-	}
-	// MetricCacheFetcher metric of cache fetcher
-	MetricCacheFetcher = &MetricInfo{
-		Name: "4",
-		Desc: "cache fetcher",
-	}
-	// MetricProxy metric of proxy
-	MetricProxy = &MetricInfo{
-		Name: "5",
-		Desc: "proxy",
-	}
-	// MetricHeaderSetter metric of header setter
-	MetricHeaderSetter = &MetricInfo{
-		Name: "6",
-		Desc: "header setter",
-	}
-	// MetricFreshChecker metric of fresh checker
-	MetricFreshChecker = &MetricInfo{
-		Name: "7",
-		Desc: "fressh checker",
-	}
-	// MetricDispatcher metric of dispatcher
-	MetricDispatcher = &MetricInfo{
-		Name: "8",
-		Desc: "dispatcher",
-	}
 )

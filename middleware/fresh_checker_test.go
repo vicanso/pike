@@ -19,9 +19,8 @@ func TestFreshChecker(t *testing.T) {
 			return nil
 		})
 		e := echo.New()
-		c := e.NewContext(nil, nil)
-		c.Set(vars.RID, "a")
-		err := fn(c)
+		pc := NewContext(e.NewContext(nil, nil))
+		err := fn(pc)
 		if err != vars.ErrResponseNotSet {
 			t.Fatalf("no response should return error")
 		}
@@ -29,8 +28,8 @@ func TestFreshChecker(t *testing.T) {
 
 	t.Run("post request", func(t *testing.T) {
 		fn := FreshChecker(freshCheckerConfig)(func(c echo.Context) error {
-			fresh := c.Get(vars.Fresh).(bool)
-			if fresh {
+			pc := c.(*Context)
+			if pc.fresh {
 				t.Fatalf("post request will not be fresh")
 			}
 			return nil
@@ -38,11 +37,11 @@ func TestFreshChecker(t *testing.T) {
 		e := echo.New()
 		req := httptest.NewRequest(echo.POST, "/users/me", nil)
 		c := e.NewContext(req, nil)
-		c.Set(vars.Response, &cache.Response{
+		pc := NewContext(c)
+		pc.resp = &cache.Response{
 			StatusCode: http.StatusOK,
-		})
-		c.Set(vars.RID, "a")
-		err := fn(c)
+		}
+		err := fn(pc)
 		if err != nil {
 			t.Fatalf("check post request fail, %v", err)
 		}
@@ -50,8 +49,8 @@ func TestFreshChecker(t *testing.T) {
 
 	t.Run("get request(502)", func(t *testing.T) {
 		fn := FreshChecker(freshCheckerConfig)(func(c echo.Context) error {
-			fresh := c.Get(vars.Fresh).(bool)
-			if fresh {
+			pc := c.(*Context)
+			if pc.fresh {
 				t.Fatalf("get request(502) will not be fresh")
 			}
 			return nil
@@ -59,11 +58,11 @@ func TestFreshChecker(t *testing.T) {
 		e := echo.New()
 		req := httptest.NewRequest(echo.GET, "/users/me", nil)
 		c := e.NewContext(req, nil)
-		c.Set(vars.Response, &cache.Response{
+		pc := NewContext(c)
+		pc.resp = &cache.Response{
 			StatusCode: http.StatusBadGateway,
-		})
-		c.Set(vars.RID, "a")
-		err := fn(c)
+		}
+		err := fn(pc)
 		if err != nil {
 			t.Fatalf("check get request(502) fail, %v", err)
 		}
@@ -71,8 +70,8 @@ func TestFreshChecker(t *testing.T) {
 
 	t.Run("get reqeust(fresh)", func(t *testing.T) {
 		fn := FreshChecker(freshCheckerConfig)(func(c echo.Context) error {
-			fresh := c.Get(vars.Fresh).(bool)
-			if !fresh {
+			pc := c.(*Context)
+			if !pc.fresh {
 				t.Fatalf("get reqeust(fresh) should be fresh")
 			}
 			return nil
@@ -81,13 +80,13 @@ func TestFreshChecker(t *testing.T) {
 		req := httptest.NewRequest(echo.GET, "/users/me", nil)
 		resp := &httptest.ResponseRecorder{}
 		c := e.NewContext(req, resp)
-		c.Set(vars.Response, &cache.Response{
+		pc := NewContext(c)
+		pc.resp = &cache.Response{
 			StatusCode: http.StatusOK,
-		})
-		c.Set(vars.RID, "a")
-		c.Request().Header.Set(vars.IfNoneMatch, "ABCD")
-		c.Response().Header().Set(vars.ETag, "ABCD")
-		err := fn(c)
+		}
+		pc.Request().Header.Set(vars.IfNoneMatch, "ABCD")
+		pc.Response().Header().Set(vars.ETag, "ABCD")
+		err := fn(pc)
 		if err != nil {
 			t.Fatalf("check get reqeust(fresh) fail, %v", err)
 		}

@@ -5,7 +5,6 @@ import (
 	"testing"
 
 	"github.com/labstack/echo"
-	"github.com/vicanso/pike/vars"
 )
 
 func TestInitialization(t *testing.T) {
@@ -15,7 +14,8 @@ func TestInitialization(t *testing.T) {
 		},
 	}
 	fn := Initialization(conf)(func(c echo.Context) error {
-		if c.Response().Header().Get("X-Token") != "ABCD" {
+		pc := c.(*Context)
+		if pc.Response().Header().Get("X-Token") != "ABCD" {
 			t.Fatalf("set header in init function fail")
 		}
 		return nil
@@ -23,8 +23,8 @@ func TestInitialization(t *testing.T) {
 	resp := &httptest.ResponseRecorder{}
 	e := echo.New()
 	c := e.NewContext(nil, resp)
-	c.Set(vars.RID, "a")
-	err := fn(c)
+	pc := NewContext(c)
+	err := fn(pc)
 	if err != nil {
 		t.Fatalf("initialization fail")
 	}

@@ -19,9 +19,8 @@ func TestHeaderSetter(t *testing.T) {
 			return nil
 		})
 		e := echo.New()
-		c := e.NewContext(nil, nil)
-		c.Set(vars.RID, "a")
-		err := fn(c)
+		pc := NewContext(e.NewContext(nil, nil))
+		err := fn(pc)
 		if err != vars.ErrResponseNotSet {
 			t.Fatalf("response not set should return error")
 		}
@@ -29,14 +28,15 @@ func TestHeaderSetter(t *testing.T) {
 
 	t.Run("set header", func(t *testing.T) {
 		fn := HeaderSetter(headerSetterConfig)(func(c echo.Context) error {
-
-			if (c.Response().Header().Get("Token")) != "ABCD" {
+			pc := c.(*Context)
+			if (pc.Response().Header().Get("Token")) != "ABCD" {
 				t.Fatalf("set header fail")
 			}
 			return nil
 		})
 		e := echo.New()
 		c := e.NewContext(nil, &httptest.ResponseRecorder{})
+		pc := NewContext(c)
 
 		resp := &cache.Response{
 			Header: http.Header{
@@ -48,8 +48,7 @@ func TestHeaderSetter(t *testing.T) {
 				},
 			},
 		}
-		c.Set(vars.Response, resp)
-		c.Set(vars.RID, "a")
-		fn(c)
+		pc.resp = resp
+		fn(pc)
 	})
 }

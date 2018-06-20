@@ -4,8 +4,6 @@ import (
 	"github.com/labstack/echo"
 	"github.com/labstack/echo/middleware"
 	funk "github.com/thoas/go-funk"
-	"github.com/vicanso/pike/cache"
-	"github.com/vicanso/pike/util"
 	"github.com/vicanso/pike/vars"
 )
 
@@ -35,16 +33,12 @@ func HeaderSetter(config HeaderSetterConfig) echo.MiddlewareFunc {
 			if config.Skipper(c) {
 				return next(c)
 			}
-			done := util.CreateTiming(c, vars.MetricHeaderSetter)
-			rid := c.Get(vars.RID).(string)
-			debug := c.Logger().Debug
-			cr, ok := c.Get(vars.Response).(*cache.Response)
-			if !ok {
-				debug(rid, " response not set")
-				done()
+			pc := c.(*Context)
+			cr := pc.resp
+			if cr == nil {
 				return vars.ErrResponseNotSet
 			}
-			h := c.Response().Header()
+			h := pc.Response().Header()
 			for k, values := range cr.Header {
 				if funk.ContainsString(ignoreHeaderKeys, k) {
 					continue
@@ -53,9 +47,7 @@ func HeaderSetter(config HeaderSetterConfig) echo.MiddlewareFunc {
 					h.Add(k, v)
 				}
 			}
-			debug(rid, " set header done")
-			done()
-			return next(c)
+			return next(pc)
 		}
 	}
 }

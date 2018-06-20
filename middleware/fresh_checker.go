@@ -6,8 +6,6 @@ import (
 	"github.com/labstack/echo"
 	"github.com/labstack/echo/middleware"
 	"github.com/vicanso/fresh"
-	"github.com/vicanso/pike/cache"
-	"github.com/vicanso/pike/util"
 	"github.com/vicanso/pike/vars"
 )
 
@@ -29,31 +27,23 @@ func FreshChecker(config FreshCheckerConfig) echo.MiddlewareFunc {
 			if config.Skipper(c) {
 				return next(c)
 			}
-			done := util.CreateTiming(c, vars.MetricFreshChecker)
-			rid := c.Get(vars.RID).(string)
-			debug := c.Logger().Debug
-			cr, ok := c.Get(vars.Response).(*cache.Response)
-			if !ok {
-				debug(rid, " response not set")
-				done()
+			pc := c.(*Context)
+			cr := pc.resp
+			if cr == nil {
 				return vars.ErrResponseNotSet
 			}
 			statusCode := int(cr.StatusCode)
 			method := c.Request().Method
-			c.Set(vars.Fresh, false)
+			pc.fresh = false
 			if method != echo.GET && method != echo.HEAD {
-				debug(rid, " method no need to check fresh")
-				done()
-				return next(c)
+				return next(pc)
 			}
 			if statusCode < http.StatusOK || statusCode >= http.StatusBadRequest {
-				debug(rid, " status no need to check fresh")
-				done()
 				return next(c)
 			}
 
-			reqHeader := c.Request().Header
-			resHeader := c.Response().Header()
+			reqHeader := pc.Request().Header
+			resHeader := pc.Response().Header()
 
 			ifModifiedSince := reqHeader.Get(echo.HeaderIfModifiedSince)
 			ifNoneMatch := reqHeader.Get(vars.IfNoneMatch)
@@ -72,12 +62,9 @@ func FreshChecker(config FreshCheckerConfig) echo.MiddlewareFunc {
 
 			// 如果请求还是fresh，则后续处理可返回304
 			if fresh.Fresh(reqHeaderData, resHeaderData) {
-				debug(rid, " is fresh")
-				c.Set(vars.Fresh, true)
+				pc.fresh = true
 			}
-			debug(rid, " isn't fresh")
-			done()
-			return next(c)
+			return next(pc)
 		}
 	}
 }

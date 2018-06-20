@@ -5,8 +5,6 @@ import (
 	"github.com/labstack/echo/middleware"
 
 	"github.com/vicanso/pike/cache"
-	"github.com/vicanso/pike/util"
-	"github.com/vicanso/pike/vars"
 )
 
 type (
@@ -31,29 +29,22 @@ func Identifier(config IdentifierConfig, client *cache.Client) echo.MiddlewareFu
 			if config.Skipper(c) {
 				return next(c)
 			}
-			rid := c.Get(vars.RID).(string)
-			done := util.CreateTiming(c, vars.MetricIdentifier)
-			// timing, _ := c.Get(vars.Timing).(*servertiming.Header)
-			req := c.Request()
+			pc := c.(*Context)
+			req := pc.Request()
 			method := req.Method
-			debug := c.Logger().Debug
 			// 只有get与head请求可缓存
 			if method != echo.GET && method != echo.HEAD {
-				c.Set(vars.Status, cache.Pass)
-				debug(rid, " is pass")
-				done()
-				return next(c)
+				pc.status = cache.Pass
+				return next(pc)
 			}
 			key := []byte(method + " " + req.Host + " " + req.RequestURI)
 			status, ch := client.GetRequestStatus(key)
 			if ch != nil {
 				status = <-ch
 			}
-			c.Set(vars.Status, status)
-			c.Set(vars.Identity, key)
-			debug(rid, " status:", status)
-			done()
-			return next(c)
+			pc.status = status
+			pc.identity = key
+			return next(pc)
 		}
 	}
 }

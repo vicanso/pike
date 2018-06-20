@@ -6,8 +6,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/mitchellh/go-server-timing"
-
 	"github.com/vicanso/pike/cache"
 
 	"github.com/h2non/gock"
@@ -125,16 +123,16 @@ func TestProxy(t *testing.T) {
 	t.Run("proxy with cache", func(t *testing.T) {
 		resp := &cache.Response{}
 		fn := Proxy(ProxyConfig{})(func(c echo.Context) error {
-			if c.Get(vars.Response).(*cache.Response) != resp {
+			pc := c.(*Context)
+			if pc.resp != resp {
 				t.Fatalf("proxy with cache fail")
 			}
 			return nil
 		})
 		e := echo.New()
-		c := e.NewContext(nil, nil)
-		c.Set(vars.Response, resp)
-		c.Set(vars.RID, "a")
-		fn(c)
+		pc := NewContext(e.NewContext(nil, nil))
+		pc.resp = resp
+		fn(pc)
 	})
 
 	t.Run("proxy", func(t *testing.T) {
@@ -143,7 +141,8 @@ func TestProxy(t *testing.T) {
 				"/api/*:/$1",
 			},
 		})(func(c echo.Context) error {
-			resp := c.Get(vars.Response).(*cache.Response)
+			pc := c.(*Context)
+			resp := pc.resp
 			if strings.TrimSpace(string(resp.Body)) != `{"name":"tree.xie"}` {
 				t.Fatalf("get response from proxy fail")
 			}
@@ -155,25 +154,24 @@ func TestProxy(t *testing.T) {
 		req.Header.Set(vars.IfNoneMatch, `"16e36-540b1498e39c0"`)
 		res := newCloseNotifyRecorder()
 		c := e.NewContext(req, res)
-		c.Set(vars.RID, "a")
-		timing := &servertiming.Header{}
-		c.Set(vars.Timing, timing)
+		pc := NewContext(c)
 		aslant := "aslant"
 		backend := "http://127.0.0.1:5001"
 		d := &proxy.Director{
 			Name: aslant,
 		}
-		err := fn(c)
+		err := fn(pc)
 		if err != vars.ErrDirectorNotFound {
 			t.Fatalf("should return director not found")
 		}
 
-		c.Set(vars.Director, d)
+		pc.director = d
+
 		d.Hosts = []string{
 			"(www.)?aslant.site",
 		}
 
-		err = fn(c)
+		err = fn(pc)
 		if err != vars.ErrNoBackendAvaliable {
 			t.Fatalf("should return no backend avaliable")
 		}
@@ -186,7 +184,7 @@ func TestProxy(t *testing.T) {
 				"name": "tree.xie",
 			})
 		d.AddAvailableBackend(backend)
-		err = fn(c)
+		err = fn(pc)
 		if err != nil {
 			t.Fatalf("proxy fail")
 		}
@@ -194,7 +192,8 @@ func TestProxy(t *testing.T) {
 
 	t.Run("director with rewrites", func(t *testing.T) {
 		fn := Proxy(ProxyConfig{})(func(c echo.Context) error {
-			resp := c.Get(vars.Response).(*cache.Response)
+			pc := c.(*Context)
+			resp := pc.resp
 			if strings.TrimSpace(string(resp.Body)) != `{"name":"tree.xie"}` {
 				t.Fatalf("get response from director with rewrites fail")
 			}
@@ -206,9 +205,7 @@ func TestProxy(t *testing.T) {
 		req.Header.Set(vars.IfNoneMatch, `"16e36-540b1498e39c0"`)
 		res := newCloseNotifyRecorder()
 		c := e.NewContext(req, res)
-		c.Set(vars.RID, "a")
-		timing := &servertiming.Header{}
-		c.Set(vars.Timing, timing)
+		pc := NewContext(c)
 		aslant := "aslant"
 		backend := "http://127.0.0.1:5001"
 		d := &proxy.Director{
@@ -218,17 +215,16 @@ func TestProxy(t *testing.T) {
 			},
 		}
 		d.GenRewriteRegexp()
-		err := fn(c)
+		err := fn(pc)
 		if err != vars.ErrDirectorNotFound {
 			t.Fatalf("should return director not found")
 		}
-
-		c.Set(vars.Director, d)
+		pc.director = d
 		d.Hosts = []string{
 			"(www.)?aslant.site",
 		}
 
-		err = fn(c)
+		err = fn(pc)
 		if err != vars.ErrNoBackendAvaliable {
 			t.Fatalf("should return no backend avaliable")
 		}
@@ -241,7 +237,7 @@ func TestProxy(t *testing.T) {
 				"name": "tree.xie",
 			})
 		d.AddAvailableBackend(backend)
-		err = fn(c)
+		err = fn(pc)
 		if err != nil {
 			t.Fatalf("director with rewrites fail")
 		}
@@ -249,7 +245,8 @@ func TestProxy(t *testing.T) {
 
 	t.Run("proxy response gzip", func(t *testing.T) {
 		fn := Proxy(ProxyConfig{})(func(c echo.Context) error {
-			resp := c.Get(vars.Response).(*cache.Response)
+			pc := c.(*Context)
+			resp := pc.resp
 			if strings.TrimSpace(string(resp.GzipBody)) != `{"name":"tree.xie"}` {
 				t.Fatalf("get gzip response from proxy fail")
 			}
@@ -259,14 +256,13 @@ func TestProxy(t *testing.T) {
 		req := httptest.NewRequest(echo.GET, "http://aslant.site/api/users/me", nil)
 		res := newCloseNotifyRecorder()
 		c := e.NewContext(req, res)
-		c.Set(vars.RID, "a")
+		pc := NewContext(c)
 		aslant := "aslant"
 		backend := "http://127.0.0.1:5001"
 		d := &proxy.Director{
 			Name: aslant,
 		}
-
-		c.Set(vars.Director, d)
+		pc.director = d
 
 		gock.New(backend).
 			Get("/users/me").
@@ -277,12 +273,13 @@ func TestProxy(t *testing.T) {
 				"name": "tree.xie",
 			})
 		d.AddAvailableBackend(backend)
-		fn(c)
+		fn(pc)
 	})
 
 	t.Run("proxy response br", func(t *testing.T) {
 		fn := Proxy(ProxyConfig{})(func(c echo.Context) error {
-			resp := c.Get(vars.Response).(*cache.Response)
+			pc := c.(*Context)
+			resp := pc.resp
 			if strings.TrimSpace(string(resp.BrBody)) != `{"name":"tree.xie"}` {
 				t.Fatalf("get gzip response from proxy fail")
 			}
@@ -292,14 +289,14 @@ func TestProxy(t *testing.T) {
 		req := httptest.NewRequest(echo.GET, "http://aslant.site/api/users/me", nil)
 		res := newCloseNotifyRecorder()
 		c := e.NewContext(req, res)
-		c.Set(vars.RID, "a")
+		pc := NewContext(c)
 		aslant := "aslant"
 		backend := "http://127.0.0.1:5001"
 		d := &proxy.Director{
 			Name: aslant,
 		}
 
-		c.Set(vars.Director, d)
+		pc.director = d
 
 		gock.New(backend).
 			Get("/users/me").
@@ -310,7 +307,7 @@ func TestProxy(t *testing.T) {
 				"name": "tree.xie",
 			})
 		d.AddAvailableBackend(backend)
-		fn(c)
+		fn(pc)
 	})
 
 	t.Run("proxy response unsupport encoding", func(t *testing.T) {
@@ -321,14 +318,14 @@ func TestProxy(t *testing.T) {
 		req := httptest.NewRequest(echo.GET, "http://aslant.site/api/users/me", nil)
 		res := newCloseNotifyRecorder()
 		c := e.NewContext(req, res)
-		c.Set(vars.RID, "a")
+		pc := NewContext(c)
 		aslant := "aslant"
 		backend := "http://127.0.0.1:5001"
 		d := &proxy.Director{
 			Name: aslant,
 		}
 
-		c.Set(vars.Director, d)
+		pc.director = d
 
 		gock.New(backend).
 			Get("/users/me").
@@ -339,7 +336,7 @@ func TestProxy(t *testing.T) {
 				"name": "tree.xie",
 			})
 		d.AddAvailableBackend(backend)
-		err := fn(c)
+		err := fn(pc)
 		if err != vars.ErrContentEncodingNotSupport {
 			t.Fatalf("not support encoding should return error")
 		}

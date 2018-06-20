@@ -7,10 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/mitchellh/go-server-timing"
-
 	"github.com/vicanso/pike/util"
-	"github.com/vicanso/pike/vars"
 
 	"github.com/labstack/echo"
 	"github.com/vicanso/pike/cache"
@@ -177,20 +174,17 @@ func TestDispatcher(t *testing.T) {
 			Body: new(bytes.Buffer),
 		}
 		c := e.NewContext(req, resp)
-		timing := &servertiming.Header{}
-		timing.NewMetric(vars.PikeMetric)
-		c.Set(vars.Timing, timing)
-		c.Set(vars.Identity, []byte("abc"))
-		c.Set(vars.Status, cache.Fetching)
-		c.Set(vars.RID, "a")
+		pc := NewContext(c)
+		pc.identity = []byte("abc")
+		pc.status = cache.Fetching
 		cr := &cache.Response{
 			CreatedAt:  uint32(time.Now().Unix()),
 			TTL:        300,
 			StatusCode: 200,
 			Body:       []byte("ABCD"),
 		}
-		c.Set(vars.Response, cr)
-		fn(c)
+		pc.resp = cr
+		fn(pc)
 		if resp.Code != 200 {
 			t.Fatalf("the response code should be 200")
 		}
@@ -218,11 +212,11 @@ func TestDispatcher(t *testing.T) {
 		}
 		e := echo.New()
 		c := e.NewContext(req, resp)
-		c.Set(vars.Identity, identity)
-		c.Set(vars.Status, cache.Cacheable)
-		c.Set(vars.Response, cr)
-		c.Set(vars.RID, "a")
-		fn(c)
+		pc := NewContext(c)
+		pc.identity = identity
+		pc.status = cache.Cacheable
+		pc.resp = cr
+		fn(pc)
 		if !bytes.Equal(resp.Body.Bytes(), cr.Body) {
 			t.Fatalf("dispatch cacheable data fail")
 		}
@@ -245,12 +239,12 @@ func TestDispatcher(t *testing.T) {
 		}
 		e := echo.New()
 		c := e.NewContext(req, resp)
-		c.Set(vars.Fresh, true)
-		c.Set(vars.Identity, identity)
-		c.Set(vars.Status, cache.Cacheable)
-		c.Set(vars.Response, cr)
-		c.Set(vars.RID, "a")
-		fn(c)
+		pc := NewContext(c)
+		pc.fresh = true
+		pc.identity = identity
+		pc.status = cache.Cacheable
+		pc.resp = cr
+		fn(pc)
 		if resp.Code != http.StatusNotModified {
 			t.Fatalf("dispatch not modified fail")
 		}

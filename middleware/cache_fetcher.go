@@ -4,7 +4,6 @@ import (
 	"github.com/labstack/echo"
 	"github.com/labstack/echo/middleware"
 	"github.com/vicanso/pike/cache"
-	"github.com/vicanso/pike/util"
 	"github.com/vicanso/pike/vars"
 )
 
@@ -26,35 +25,26 @@ func CacheFetcher(config CacheFetcherConfig, client *cache.Client) echo.Middlewa
 			if config.Skipper(c) {
 				return next(c)
 			}
-			status, ok := c.Get(vars.Status).(int)
-			done := util.CreateTiming(c, vars.MetricCacheFetcher)
-			if !ok {
-				done()
+			pc := c.(*Context)
+			// status, ok := c.Get(vars.Status).(int)
+			status := pc.status
+			if status == 0 {
 				return vars.ErrRequestStatusNotSet
 			}
-			rid := c.Get(vars.RID).(string)
-			debug := c.Logger().Debug
 			// 如果非cache的
 			if status != cache.Cacheable {
-				debug(rid, " pass cache fetcher")
-				done()
-				return next(c)
+				return next(pc)
 			}
-			identity, ok := c.Get(vars.Identity).([]byte)
-			if !ok {
-				done()
-				return vars.ErrIdentityStatusNotSet
+			identity := pc.identity
+			if identity == nil {
+				return vars.ErrIdentityNotSet
 			}
 			resp, err := client.GetResponse(identity)
 			if err != nil {
-				debug(rid, " get cache response fail")
-				done()
 				return err
 			}
-			c.Set(vars.Response, resp)
-			debug(rid, " get from cache")
-			done()
-			return next(c)
+			pc.resp = resp
+			return next(pc)
 		}
 	}
 }

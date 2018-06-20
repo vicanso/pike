@@ -37,7 +37,8 @@ func TestUpstreamPicker(t *testing.T) {
 	config := DirectorPickerConfig{}
 	t.Run("get director match host", func(t *testing.T) {
 		fn := DirectorPicker(config, directors)(func(c echo.Context) error {
-			d := c.Get(vars.Director).(*proxy.Director)
+			pc := c.(*Context)
+			d := pc.director
 			if d.Name != aslant {
 				t.Fatalf("get director match host fail")
 			}
@@ -46,13 +47,14 @@ func TestUpstreamPicker(t *testing.T) {
 		e := echo.New()
 		req := httptest.NewRequest(echo.GET, "http://aslant.site/api/users/me", nil)
 		c := e.NewContext(req, nil)
-		c.Set(vars.RID, "a")
-		fn(c)
+		pc := NewContext(c)
+		fn(pc)
 	})
 
 	t.Run("get director match url prefix", func(t *testing.T) {
 		fn := DirectorPicker(config, directors)(func(c echo.Context) error {
-			d := c.Get(vars.Director).(*proxy.Director)
+			pc := c.(*Context)
+			d := pc.director
 			if d.Name != tiny {
 				t.Fatalf("get director match url prefix fail")
 			}
@@ -61,13 +63,14 @@ func TestUpstreamPicker(t *testing.T) {
 		e := echo.New()
 		req := httptest.NewRequest(echo.GET, "/api/users/me", nil)
 		c := e.NewContext(req, nil)
-		c.Set(vars.RID, "a")
-		fn(c)
+		pc := NewContext(c)
+		fn(pc)
 	})
 
 	t.Run("no director match", func(t *testing.T) {
 		fn := DirectorPicker(config, directors)(func(c echo.Context) error {
-			d := c.Get(vars.Director).(*proxy.Director)
+			pc := c.(*Context)
+			d := pc.director
 			if d.Name != tiny {
 				t.Fatalf("get director match url prefix fail")
 			}
@@ -76,8 +79,8 @@ func TestUpstreamPicker(t *testing.T) {
 		e := echo.New()
 		req := httptest.NewRequest(echo.GET, "/test", nil)
 		c := e.NewContext(req, nil)
-		c.Set(vars.RID, "a")
-		err := fn(c)
+		pc := NewContext(c)
+		err := fn(pc)
 		if err != vars.ErrDirectorNotFound {
 			t.Fatalf("no director match should return error")
 		}

@@ -43,7 +43,7 @@ type (
 		// roubin 的次数
 		roubin uint32
 		// transport 指定transport
-		Transport *http.Transport
+		Transport *http.Transport `json:"-"`
 	}
 	// Directors 用于director排序
 	Directors []*Director

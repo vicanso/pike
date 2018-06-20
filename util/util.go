@@ -12,7 +12,6 @@ import (
 
 	"github.com/google/brotli/go/cbrotli"
 	"github.com/labstack/echo"
-	servertiming "github.com/mitchellh/go-server-timing"
 	"github.com/vicanso/pike/vars"
 )
 
@@ -127,13 +126,14 @@ func GetRewriteRegexp(rewrites []string) map[*regexp.Regexp]string {
 
 // CreateTiming 创建timing
 func CreateTiming(c echo.Context, metric *vars.MetricInfo) func() {
-	timing, _ := c.Get(vars.Timing).(*servertiming.Header)
-	if timing == nil {
-		return noop
-	}
-	m := timing.NewMetric(metric.Name)
-	m.WithDesc(metric.Desc).Start()
-	return func() {
-		m.Stop()
-	}
+	return noop
+	// timing, _ := c.Get(vars.Timing).(*servertiming.Header)
+	// if timing == nil {
+	// 	return noop
+	// }
+	// m := timing.NewMetric(metric.Name)
+	// m.WithDesc(metric.Desc).Start()
+	// return func() {
+	// 	m.Stop()
+	// }
 }

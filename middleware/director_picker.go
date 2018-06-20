@@ -5,7 +5,6 @@ import (
 	"github.com/labstack/echo/middleware"
 
 	"github.com/vicanso/pike/proxy"
-	"github.com/vicanso/pike/util"
 	"github.com/vicanso/pike/vars"
 )
 
@@ -28,30 +27,23 @@ func DirectorPicker(config DirectorPickerConfig, directors proxy.Directors) echo
 			if config.Skipper(c) {
 				return next(c)
 			}
-			req := c.Request()
+			pc := c.(*Context)
+			req := pc.Request()
 			host := req.Host
 			uri := req.RequestURI
 			found := false
-			done := util.CreateTiming(c, vars.MetricDirectorMatcher)
 
-			var director *proxy.Director
 			for _, d := range directors {
 				if d.Match(host, uri) {
-					c.Set(vars.Director, d)
-					director = d
+					pc.director = d
 					found = true
 					break
 				}
 			}
-			debug := c.Logger().Debug
-			rid := c.Get(vars.RID).(string)
 			if !found {
-				debug(rid, " the director is not found")
 				return vars.ErrDirectorNotFound
 			}
-			debug(rid, " the director is ", director.Name)
-			done()
-			return next(c)
+			return next(pc)
 		}
 	}
 }

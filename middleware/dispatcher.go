@@ -6,8 +6,6 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/mitchellh/go-server-timing"
-
 	"github.com/labstack/echo"
 	"github.com/labstack/echo/middleware"
 	"github.com/vicanso/pike/cache"
@@ -128,42 +126,16 @@ func Dispatcher(config DispatcherConfig, client *cache.Client) echo.MiddlewareFu
 			if config.Skipper(c) {
 				return next(c)
 			}
-			done := util.CreateTiming(c, vars.MetricDispatcher)
-			rid := c.Get(vars.RID).(string)
-			debug := c.Logger().Debug
-			status, ok := c.Get(vars.Status).(int)
-			if !ok {
-				debug(rid, " request status not set")
-				done()
-				return vars.ErrRequestStatusNotSet
-			}
-			cr, ok := c.Get(vars.Response).(*cache.Response)
-			if !ok {
-				debug(rid, " response not set")
-				done()
-				return vars.ErrResponseNotSet
-			}
+			pc := c.(*Context)
+			status := pc.status
+			cr := pc.resp
 			cr.CompressMinLength = compressMinLength
 			cr.CompressLevel = compressLevel
 
-			resp := c.Response()
+			resp := pc.Response()
 			respHeader := resp.Header()
-			reqHeader := c.Request().Header
+			reqHeader := pc.Request().Header
 
-			timing, _ := c.Get(vars.Timing).(*servertiming.Header)
-
-			setSeverTiming := func() {
-				done()
-				if timing == nil {
-					return
-				}
-				for _, m := range timing.Metrics {
-					if m.Name == vars.PikeMetric {
-						m.Stop()
-					}
-				}
-				respHeader.Add(vars.ServerTiming, timing.String())
-			}
 			compressible := shouldCompress(compressTypes, respHeader.Get(echo.HeaderContentType))
 
 			if status == cache.Cacheable {
@@ -189,28 +161,19 @@ func Dispatcher(config DispatcherConfig, client *cache.Client) echo.MiddlewareFu
 			// pass的都是不可能缓存
 			// 可缓存的处理继续后续缓存流程
 			if status != cache.Cacheable && status != cache.Pass {
-				debug(rid, " should check for cache")
-				identity, ok := c.Get(vars.Identity).([]byte)
+				identity := pc.identity
 				go func() {
-					if !ok {
-						return
-					}
 					if cr.TTL == 0 {
-						debug(rid, " hit for pass")
 						client.HitForPass(identity, vars.HitForPassTTL)
 					} else {
-						debug(rid, " save response for cache")
 						save(client, identity, cr, compressible)
 					}
 				}()
 			}
 
-			fresh, _ := c.Get(vars.Fresh).(bool)
 			// 304 的处理
-			if fresh {
-				setSeverTiming()
+			if pc.fresh {
 				resp.WriteHeader(http.StatusNotModified)
-				debug(rid, " 304")
 				return nil
 			}
 
@@ -224,11 +187,9 @@ func Dispatcher(config DispatcherConfig, client *cache.Client) echo.MiddlewareFu
 				respHeader.Set(echo.HeaderContentEncoding, enconding)
 			}
 
-			setSeverTiming()
 			respHeader.Set(echo.HeaderContentLength, strconv.Itoa(len(body)))
 			resp.WriteHeader(statusCode)
 			_, err := resp.Write(body)
-			debug(rid, " response write done, err:", err)
 			return err
 		}
 	}

@@ -3,8 +3,6 @@ package custommiddleware
 import (
 	"testing"
 
-	"github.com/mitchellh/go-server-timing"
-
 	"github.com/vicanso/pike/vars"
 
 	"github.com/labstack/echo"
@@ -28,20 +26,18 @@ func TestCacheFetcher(t *testing.T) {
 		})
 
 		fn := CacheFetcher(config, client)(func(c echo.Context) error {
-			resp := c.Get(vars.Response).(*cache.Response)
+			pc := c.(*Context)
+			resp := pc.resp
 			if resp.TTL != 300 {
 				t.Fatalf("fetch cache fail")
 			}
 			return nil
 		})
 		e := echo.New()
-		c := e.NewContext(nil, nil)
-		timing := &servertiming.Header{}
-		c.Set(vars.Status, cache.Cacheable)
-		c.Set(vars.Identity, identity)
-		c.Set(vars.Timing, timing)
-		c.Set(vars.RID, "a")
-		fn(c)
+		pc := NewContext(e.NewContext(nil, nil))
+		pc.status = cache.Cacheable
+		pc.identity = identity
+		fn(pc)
 	})
 
 	t.Run("fectch with no status", func(t *testing.T) {
@@ -49,8 +45,8 @@ func TestCacheFetcher(t *testing.T) {
 			return nil
 		})
 		e := echo.New()
-		c := e.NewContext(nil, nil)
-		err := fn(c)
+		pc := NewContext(e.NewContext(nil, nil))
+		err := fn(pc)
 		if err != vars.ErrRequestStatusNotSet {
 			t.Fatalf("fetch with no status should return error")
 		}
@@ -58,17 +54,17 @@ func TestCacheFetcher(t *testing.T) {
 
 	t.Run("fetch is not cacheable", func(t *testing.T) {
 		fn := CacheFetcher(config, client)(func(c echo.Context) error {
-			resp := c.Get(vars.Response)
+			pc := c.(*Context)
+			resp := pc.resp
 			if resp != nil {
 				t.Fatalf("fetch is not cacheable fail")
 			}
 			return nil
 		})
 		e := echo.New()
-		c := e.NewContext(nil, nil)
-		c.Set(vars.Status, cache.Pass)
-		c.Set(vars.RID, "a")
-		fn(c)
+		pc := NewContext(e.NewContext(nil, nil))
+		pc.status = cache.Pass
+		fn(pc)
 	})
 
 	t.Run("fetch cacheable but no identity", func(t *testing.T) {
@@ -76,11 +72,10 @@ func TestCacheFetcher(t *testing.T) {
 			return nil
 		})
 		e := echo.New()
-		c := e.NewContext(nil, nil)
-		c.Set(vars.Status, cache.Cacheable)
-		c.Set(vars.RID, "a")
-		err := fn(c)
-		if err != vars.ErrIdentityStatusNotSet {
+		pc := NewContext(e.NewContext(nil, nil))
+		pc.status = cache.Cacheable
+		err := fn(pc)
+		if err != vars.ErrIdentityNotSet {
 			t.Fatalf("fetch cacheable but not identity should return error")
 		}
 	})

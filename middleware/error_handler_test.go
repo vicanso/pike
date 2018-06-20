@@ -24,7 +24,8 @@ func TestErrorHandler(t *testing.T) {
 	req := httptest.NewRequest(echo.POST, "/users/me", nil)
 	resp := &httptest.ResponseRecorder{}
 	c := e.NewContext(req, resp)
-	c.Set(vars.Identity, []byte("ABCD"))
-	c.Set(vars.Status, cache.Fetching)
-	fn(vars.ErrDirectorNotFound, c)
+	pc := NewContext(c)
+	pc.identity = []byte("ABCD")
+	pc.status = cache.Fetching
+	fn(vars.ErrDirectorNotFound, pc)
 }

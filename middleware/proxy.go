@@ -1,8 +1,6 @@
 package custommiddleware
 
 import (
-	"bytes"
-	"context"
 	"crypto/sha1"
 	"encoding/base64"
 	"fmt"
@@ -12,11 +10,9 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/vicanso/pike/cache"
-	"github.com/vicanso/pike/proxy"
 	"github.com/vicanso/pike/util"
 	"github.com/vicanso/pike/vars"
 
@@ -41,8 +37,6 @@ type (
 		// "/users/*/orders/*": "/user/$1/order/$2",
 		Rewrites []string
 
-		// Timeout 超时间隔
-		Timeout time.Duration
 		// ETag 是否生成ETag
 		ETag bool
 
@@ -54,15 +48,16 @@ type (
 		Name string
 		URL  *url.URL
 	}
-	bodyDumpResponseWriter struct {
-		body    *bytes.Buffer
-		headers http.Header
-		code    int
-	}
 )
 
 const (
 	defaultTimeout = 10 * time.Second
+)
+
+var (
+	noCacheReg = regexp.MustCompile(`no-cache|no-store|private`)
+	sMaxAgeReg = regexp.MustCompile(`s-maxage=(\d+)`)
+	maxAgeReg  = regexp.MustCompile(`max-age=(\d+)`)
 )
 
 // genETag 获取数据对应的ETag
@@ -126,23 +121,20 @@ func getCacheAge(header http.Header) uint16 {
 		return 0
 	}
 	// 如果设置不可缓存，返回0
-	reg, _ := regexp.Compile(`no-cache|no-store|private`)
-	match := reg.Match(cacheControl)
+	match := noCacheReg.Match(cacheControl)
 	if match {
 		return 0
 	}
 
 	// 优先从s-maxage中获取
-	reg, _ = regexp.Compile(`s-maxage=(\d+)`)
-	result := reg.FindSubmatch(cacheControl)
+	result := sMaxAgeReg.FindSubmatch(cacheControl)
 	if len(result) == 2 {
 		maxAge, _ := strconv.Atoi(string(result[1]))
 		return uint16(maxAge)
 	}
 
 	// 从max-age中获取缓存时间
-	reg, _ = regexp.Compile(`max-age=(\d+)`)
-	result = reg.FindSubmatch(cacheControl)
+	result = maxAgeReg.FindSubmatch(cacheControl)
 	if len(result) != 2 {
 		return 0
 	}
@@ -156,51 +148,30 @@ func Proxy(config ProxyConfig) echo.MiddlewareFunc {
 	if config.Skipper == nil {
 		config.Skipper = middleware.DefaultSkipper
 	}
-	timeout := config.Timeout
-	if timeout <= 0 {
-		timeout = defaultTimeout
-	}
 	config.rewriteRegexp = util.GetRewriteRegexp(config.Rewrites)
-
-	createWriter := func() interface{} {
-		return &bodyDumpResponseWriter{
-			body:    new(bytes.Buffer),
-			headers: make(http.Header),
-		}
-	}
-	writerPool := sync.Pool{
-		New: createWriter,
-	}
 
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) (err error) {
 			if config.Skipper(c) {
 				return next(c)
 			}
-			done := util.CreateTiming(c, vars.MetricProxy)
+			pc := c.(*Context)
 			// 如果已获取到数据，则不需要proxy获取(已从cache中获取)
-			if c.Get(vars.Response) != nil {
-				done()
-				return next(c)
+			if pc.resp != nil {
+				return next(pc)
 			}
-			rid := c.Get(vars.RID).(string)
-			debug := c.Logger().Debug
 			// 获取director
-			director, ok := c.Get(vars.Director).(*proxy.Director)
-			if !ok {
-				debug(rid, " director not found")
-				done()
+			director := pc.director
+			if director == nil {
 				return vars.ErrDirectorNotFound
 			}
 			// 从director中选择可用的backend
-			backend := director.Select(c)
+			backend := director.Select(pc)
 			if len(backend) == 0 {
-				debug(rid, " no backend avaliable")
-				done()
 				return vars.ErrNoBackendAvaliable
 			}
 
-			req := c.Request()
+			req := pc.Request()
 			reqHeader := req.Header
 			targetURL, _ := url.Parse(backend)
 			tgt := &ProxyTarget{
@@ -216,19 +187,15 @@ func Proxy(config ProxyConfig) echo.MiddlewareFunc {
 
 			// Fix header
 			if reqHeader.Get(echo.HeaderXRealIP) == "" {
-				reqHeader.Set(echo.HeaderXRealIP, c.RealIP())
+				reqHeader.Set(echo.HeaderXRealIP, pc.RealIP())
 			}
 			if reqHeader.Get(echo.HeaderXForwardedProto) == "" {
-				reqHeader.Set(echo.HeaderXForwardedProto, c.Scheme())
+				reqHeader.Set(echo.HeaderXForwardedProto, pc.Scheme())
 			}
 
 			// Proxy
-			writer := writerPool.Get().(*bodyDumpResponseWriter)
-			defer writerPool.Put(writer)
-			writer.body.Reset()
-			for k := range writer.headers {
-				delete(writer.headers, k)
-			}
+			writer := NewBodyDumpResponseWriter()
+			defer ReleaseBodyDumpResponseWriter(writer)
 
 			// proxy时为了避免304的出现，因此调用时临时删除header
 			ifModifiedSince := reqHeader.Get(echo.HeaderIfModifiedSince)
@@ -239,19 +206,7 @@ func Proxy(config ProxyConfig) echo.MiddlewareFunc {
 			if len(ifNoneMatch) != 0 {
 				reqHeader.Del(vars.IfNoneMatch)
 			}
-			ctx, cancel := context.WithTimeout(context.Background(), timeout)
-			defer cancel()
-			proxyDone := make(chan bool)
-			go func() {
-				proxyHTTP(tgt, director.Transport).ServeHTTP(writer, req)
-				proxyDone <- true
-			}()
-			select {
-			case <-proxyDone:
-			case <-ctx.Done():
-				debug(rid, " gateway timeout")
-				return vars.ErrGatewayTimeout
-			}
+			proxyHTTP(tgt, director.Transport).ServeHTTP(writer, req)
 			if len(ifModifiedSince) != 0 {
 				reqHeader.Set(echo.HeaderIfModifiedSince, ifModifiedSince)
 			}
@@ -285,26 +240,11 @@ func Proxy(config ProxyConfig) echo.MiddlewareFunc {
 				case vars.BrEncoding:
 					cr.BrBody = body
 				default:
-					debug(rid, " content encoding not support")
 					return vars.ErrContentEncodingNotSupport
 				}
 			}
-			c.Set(vars.Response, cr)
-			debug(rid, " fetch from proxy done")
-			done()
-			return next(c)
+			pc.resp = cr
+			return next(pc)
 		}
 	}
-}
-
-func (w *bodyDumpResponseWriter) WriteHeader(code int) {
-	w.code = code
-}
-
-func (w *bodyDumpResponseWriter) Header() http.Header {
-	return w.headers
-}
-
-func (w *bodyDumpResponseWriter) Write(b []byte) (int, error) {
-	return w.body.Write(b)
 }
