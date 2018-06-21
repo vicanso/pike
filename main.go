@@ -64,7 +64,9 @@ func getLogger(dc *config.Config) httplog.Writer {
 	}
 	var logWriter httplog.Writer
 	udpPrefix := "udp://"
-	if strings.HasPrefix(dc.AccessLog, udpPrefix) {
+	if dc.AccessLog == "console" {
+		logWriter = &httplog.Console{}
+	} else if strings.HasPrefix(dc.AccessLog, udpPrefix) {
 		logWriter = &httplog.UDPWriter{
 			URI: dc.AccessLog[len(udpPrefix):],
 		}

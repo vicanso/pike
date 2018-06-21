@@ -1,6 +1,7 @@
 package httplog
 
 import (
+	"fmt"
 	"net"
 	"os"
 	"regexp"
@@ -70,6 +71,10 @@ type FileWriter struct {
 	m        sync.RWMutex
 	date     string
 	file     string
+}
+
+// Console 输出至控制台
+type Console struct {
 }
 
 func (w *FileWriter) checkDate() {
@@ -143,6 +148,17 @@ func (w *FileWriter) Close() error {
 	if w.fd != nil {
 		return w.fd.Close()
 	}
+	return nil
+}
+
+// Write 写日志
+func (c *Console) Write(buf []byte) error {
+	fmt.Println(string(buf))
+	return nil
+}
+
+// Close 关闭console
+func (c *Console) Close() error {
 	return nil
 }
 

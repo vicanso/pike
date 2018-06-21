@@ -12,6 +12,7 @@ func TestInitialization(t *testing.T) {
 		Header: []string{
 			"X-Token:ABCD",
 		},
+		Concurrency: 10,
 	}
 	fn := Initialization(conf)(func(c echo.Context) error {
 		pc := c.(*Context)

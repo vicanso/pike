@@ -2,7 +2,6 @@ package custommiddleware
 
 import (
 	"strings"
-	"time"
 
 	"github.com/vicanso/pike/util"
 	"github.com/vicanso/pike/vars"
@@ -52,12 +51,11 @@ func Initialization(config InitializationConfig) echo.MiddlewareFunc {
 				return next(c)
 			}
 			pc := c.(*Context)
-			startedAt := time.Now()
 			defer func() {
 				performance.DecreaseConcurrency()
 				resp := pc.Response()
 				status := resp.Status
-				use := util.GetTimeConsuming(startedAt)
+				use := util.GetTimeConsuming(pc.createdAt)
 				performance.AddRequestStats(status, use)
 			}()
 			resHeader := pc.Response().Header()
@@ -67,7 +65,7 @@ func Initialization(config InitializationConfig) echo.MiddlewareFunc {
 			performance.IncreaseRequestCount()
 			v := performance.IncreaseConcurrency()
 			if v > concurrency {
-				return vars.ErrTooManyRequst
+				return vars.ErrTooManyRequest
 			}
 			return next(pc)
 		}

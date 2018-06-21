@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"net/http"
 	"sync"
+	"time"
 
 	"github.com/labstack/echo"
 	"github.com/vicanso/pike/cache"
@@ -24,6 +25,8 @@ type (
 		resp *cache.Response
 		// fresh 是否fresh
 		fresh bool
+		// createdAt 创建时间
+		createdAt time.Time
 	}
 	// BodyDumpResponseWriter dump writer
 	BodyDumpResponseWriter struct {
@@ -40,6 +43,7 @@ func (c *Context) Init() {
 	c.director = nil
 	c.resp = nil
 	c.fresh = false
+	c.createdAt = time.Now()
 }
 
 // WriteHeader write header

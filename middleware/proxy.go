@@ -172,12 +172,6 @@ func Proxy(config ProxyConfig) echo.MiddlewareFunc {
 			}
 
 			req := pc.Request()
-			reqHeader := req.Header
-			targetURL, _ := url.Parse(backend)
-			tgt := &ProxyTarget{
-				Name: director.Name,
-				URL:  targetURL,
-			}
 
 			// Rewrite
 			rewrite(config.rewriteRegexp, req)
@@ -185,12 +179,11 @@ func Proxy(config ProxyConfig) echo.MiddlewareFunc {
 				rewrite(director.RewriteRegexp, req)
 			}
 
-			// Fix header
-			if reqHeader.Get(echo.HeaderXRealIP) == "" {
-				reqHeader.Set(echo.HeaderXRealIP, pc.RealIP())
-			}
-			if reqHeader.Get(echo.HeaderXForwardedProto) == "" {
-				reqHeader.Set(echo.HeaderXForwardedProto, pc.Scheme())
+			reqHeader := req.Header
+			targetURL, _ := url.Parse(backend)
+			tgt := &ProxyTarget{
+				Name: director.Name,
+				URL:  targetURL,
 			}
 
 			// Proxy

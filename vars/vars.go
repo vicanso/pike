@@ -6,12 +6,6 @@ import (
 	"github.com/labstack/echo"
 )
 
-// MetricInfo metric配置
-type MetricInfo struct {
-	Name string
-	Desc string
-}
-
 const (
 	// Version 版本号
 	Version = "1.0.0"
@@ -77,8 +71,8 @@ var (
 	ErrNoBackendAvaliable = echo.NewHTTPError(http.StatusServiceUnavailable, "no backend avaliable")
 	// ErrGatewayTimeout 网关超时
 	ErrGatewayTimeout = echo.NewHTTPError(http.StatusGatewayTimeout, "gateway timeout")
-	// ErrTooManyRequst 太多的请求正在处理中
-	ErrTooManyRequst = echo.NewHTTPError(http.StatusTooManyRequests, "too many request is handling")
+	// ErrTooManyRequest 太多的请求正在处理中
+	ErrTooManyRequest = echo.NewHTTPError(http.StatusTooManyRequests, "too many request is handling")
 	// ErrTokenInvalid token校验失败
 	ErrTokenInvalid = echo.NewHTTPError(http.StatusUnauthorized, "token is invalid")
 )
