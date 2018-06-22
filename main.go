@@ -194,6 +194,9 @@ func main() {
 	e.Use(func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
 			pc := custommiddleware.NewContext(c)
+			if !dc.EnableServerTiming {
+				pc.DisableServerTiming()
+			}
 			defer custommiddleware.ReleaseContext(pc)
 			return next(pc)
 		}

@@ -41,6 +41,7 @@ type (
 	}
 	// ServerTiming server timing
 	ServerTiming struct {
+		disabled           bool
 		startedAt          int64
 		use                int64
 		getRequestStatsAt  int64
@@ -60,6 +61,11 @@ func (c *Context) Init() {
 	c.resp = nil
 	c.fresh = false
 	c.createdAt = time.Now()
+}
+
+// DisableServerTiming 禁用server timing
+func (c *Context) DisableServerTiming() {
+	c.serverTiming.disabled = true
 }
 
 // WriteHeader write header
@@ -137,41 +143,65 @@ func (st *ServerTiming) Init() {
 
 // End 结束
 func (st *ServerTiming) End() {
+	if st.disabled {
+		return
+	}
 	st.use = time.Now().UnixNano() - st.startedAt
 }
 
 // GetRequestStatusStart 开始获取get request status
 func (st *ServerTiming) GetRequestStatusStart() {
+	if st.disabled {
+		return
+	}
 	st.getRequestStatsAt = time.Now().UnixNano()
 }
 
 // GetRequestStatusEnd 结束获取get request status
 func (st *ServerTiming) GetRequestStatusEnd() {
+	if st.disabled {
+		return
+	}
 	st.getRequestStatsUse = time.Now().UnixNano() - st.getRequestStatsAt
 }
 
 // CacheFetchStart 开始获取缓存
 func (st *ServerTiming) CacheFetchStart() {
+	if st.disabled {
+		return
+	}
 	st.cacheFetchAt = time.Now().UnixNano()
 }
 
 // CacheFetchEnd 获取缓存结束
 func (st *ServerTiming) CacheFetchEnd() {
+	if st.disabled {
+		return
+	}
 	st.cacheFetchUse = time.Now().UnixNano() - st.cacheFetchAt
 }
 
 // ProxyStart 开始转发至backend
 func (st *ServerTiming) ProxyStart() {
+	if st.disabled {
+		return
+	}
 	st.proxyAt = time.Now().UnixNano()
 }
 
 // ProxyEnd 转发处理完成
 func (st *ServerTiming) ProxyEnd() {
+	if st.disabled {
+		return
+	}
 	st.proxyUse = time.Now().UnixNano() - st.proxyAt
 }
 
 // String 获取server timing的http header string
 func (st *ServerTiming) String() string {
+	if st.disabled {
+		return ""
+	}
 	desList := []string{}
 	ms := float64(time.Millisecond)
 	use := st.use

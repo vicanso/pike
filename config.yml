@@ -10,6 +10,8 @@ adminPath: /pike
 adminToken: ry3WwvhVG
 # 是否使用自动生成ETag（对于没有ETag的添加）
 etag: true
+# 是否启用server timing
+enableServerTiming: false
 # 设置对于数据压缩的最小文件（大于此值才压缩），如果设置为0，则使用默认值1024
 compressMinLength: 1024
 # 设置对于数据的压缩级别，如果设置为0，则使用golang默认值（建议使用）

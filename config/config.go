@@ -25,6 +25,7 @@ type Config struct {
 	DB                   string        `yaml:"db"`
 	ETag                 bool          `yaml:"etag"`
 	Header               []string      `yaml:"header"`
+	EnableServerTiming   bool          `yaml:"enableServerTiming"`
 	CompressMinLength    int           `yaml:"compressMinLength"`
 	CompressLevel        int           `yaml:"compressLevel"`
 	Concurrency          int           `yaml:"concurrency"`

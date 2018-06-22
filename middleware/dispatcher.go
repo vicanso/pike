@@ -139,7 +139,10 @@ func Dispatcher(config DispatcherConfig, client *cache.Client) echo.MiddlewareFu
 
 			setSeverTiming := func() {
 				serverTiming.End()
-				respHeader.Add(vars.ServerTiming, serverTiming.String())
+				timingStr := serverTiming.String()
+				if len(timingStr) != 0 {
+					respHeader.Add(vars.ServerTiming, timingStr)
+				}
 			}
 
 			compressible := shouldCompress(compressTypes, respHeader.Get(echo.HeaderContentType))
