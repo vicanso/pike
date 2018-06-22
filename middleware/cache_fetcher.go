@@ -39,7 +39,10 @@ func CacheFetcher(config CacheFetcherConfig, client *cache.Client) echo.Middlewa
 			if identity == nil {
 				return vars.ErrIdentityNotSet
 			}
+			serverTiming := pc.serverTiming
+			serverTiming.CacheFetchStart()
 			resp, err := client.GetResponse(identity)
+			serverTiming.CacheFetchEnd()
 			if err != nil {
 				return err
 			}

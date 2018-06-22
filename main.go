@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"path"
+	"regexp"
 	"sort"
 	"strconv"
 	"strings"
@@ -33,7 +34,7 @@ import (
 )
 
 // buildAt 构建时间
-var buildAt string
+var buildAt = "20180101.000000"
 
 const (
 	defaultExpiredClearInterval = 300 * time.Second
@@ -96,13 +97,19 @@ func check(conf *config.Config) {
 	os.Exit(0)
 }
 
+func getBuildAtDesc() string {
+	reg := regexp.MustCompile(`(\d{4})(\d{2})(\d{2}).(\d{2})(\d{2})(\d{2})`)
+	str := reg.ReplaceAllString(buildAt, "$1-$2-$3 $4:$5:$6.000Z")
+	return strings.Replace(str, " ", "T", 1)
+}
+
 func main() {
 	// go func() {
 	// 	fmt.Println(http.ListenAndServe("0.0.0.0:6060", nil))
 	// }()
 	args := os.Args[1:]
 	if funk.ContainsString(args, "version") {
-		fmt.Println("Pike version " + vars.Version + ", build at " + buildAt)
+		fmt.Println("Pike version " + vars.Version + ", build at " + getBuildAtDesc())
 		return
 	}
 	var configFile string

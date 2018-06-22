@@ -199,7 +199,10 @@ func Proxy(config ProxyConfig) echo.MiddlewareFunc {
 			if len(ifNoneMatch) != 0 {
 				reqHeader.Del(vars.IfNoneMatch)
 			}
+			serverTiming := pc.serverTiming
+			serverTiming.ProxyStart()
 			proxyHTTP(tgt, director.Transport).ServeHTTP(writer, req)
+			serverTiming.ProxyEnd()
 			if len(ifModifiedSince) != 0 {
 				reqHeader.Set(echo.HeaderIfModifiedSince, ifModifiedSince)
 			}

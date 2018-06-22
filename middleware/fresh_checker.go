@@ -45,25 +45,17 @@ func FreshChecker(config FreshCheckerConfig) echo.MiddlewareFunc {
 			reqHeader := pc.Request().Header
 			resHeader := pc.Response().Header()
 
-			ifModifiedSince := reqHeader.Get(echo.HeaderIfModifiedSince)
-			ifNoneMatch := reqHeader.Get(vars.IfNoneMatch)
-			cacheControl := reqHeader.Get(vars.CacheControl)
-			reqHeaderData := &fresh.RequestHeader{
-				IfModifiedSince: []byte(ifModifiedSince),
-				IfNoneMatch:     []byte(ifNoneMatch),
-				CacheControl:    []byte(cacheControl),
-			}
-			eTag := resHeader.Get(vars.ETag)
-			lastModified := resHeader.Get(echo.HeaderLastModified)
-			resHeaderData := &fresh.ResponseHeader{
-				ETag:         []byte(eTag),
-				LastModified: []byte(lastModified),
-			}
+			ifModifiedSince := []byte(reqHeader.Get(echo.HeaderIfModifiedSince))
+			ifNoneMatch := []byte(reqHeader.Get(vars.IfNoneMatch))
+			cacheControl := []byte(reqHeader.Get(vars.CacheControl))
+			eTag := []byte(resHeader.Get(vars.ETag))
+			lastModified := []byte(resHeader.Get(echo.HeaderLastModified))
 
 			// 如果请求还是fresh，则后续处理可返回304
-			if fresh.Fresh(reqHeaderData, resHeaderData) {
+			if fresh.Check(ifModifiedSince, ifNoneMatch, cacheControl, lastModified, eTag) {
 				pc.fresh = true
 			}
+
 			return next(pc)
 		}
 	}

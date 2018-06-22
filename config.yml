@@ -24,8 +24,8 @@ expiredClearInterval: 300s
 logFormat: "pike\t{when-iso-ms} - {client-ip} - \"{method} {uri}\" {status} {size} {latency-ms}ms"
 # 访问日志保存路径
 # accessLog: /tmp/pike/access.log
-# accessLog: udp://mac:7349
-accessLog: console
+accessLog: udp://mac:7349
+# accessLog: console
 # accessLog: /tmp/pike
 # 日志类型，如果为"date"表示按天分割日志，accessLog则应该配置为一个目录
 logType: date

@@ -30,6 +30,7 @@ func Identifier(config IdentifierConfig, client *cache.Client) echo.MiddlewareFu
 				return next(c)
 			}
 			pc := c.(*Context)
+			serverTiming := pc.serverTiming
 			req := pc.Request()
 			method := req.Method
 			// 只有get与head请求可缓存
@@ -38,7 +39,9 @@ func Identifier(config IdentifierConfig, client *cache.Client) echo.MiddlewareFu
 				return next(pc)
 			}
 			key := []byte(method + " " + req.Host + " " + req.RequestURI)
+			serverTiming.GetRequestStatusStart()
 			status, ch := client.GetRequestStatus(key)
+			serverTiming.GetRequestStatusEnd()
 			if ch != nil {
 				status = <-ch
 			}

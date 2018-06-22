@@ -106,8 +106,8 @@
 [[projects]]
   name = "github.com/vicanso/fresh"
   packages = ["."]
-  revision = "1eb0ff1831e6eee3240b637b98e558766a3f58db"
-  version = "0.0.1"
+  revision = "9d7cefa8d277c750125393c865f8e15b9a2ff9a1"
+  version = "0.0.2"
 
 [[projects]]
   branch = "master"
@@ -124,6 +124,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "60c265aeb186ec1a2645449e2cb3441eaf9c4e27e94948945719e767f2e4ad40"
+  inputs-digest = "1c6b522c48876f10dd50a412a8042a4795e0ae3ff9b92a5199dca56c866aee4c"
   solver-name = "gps-cdcl"
   solver-version = 1

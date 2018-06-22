@@ -129,12 +129,18 @@ func Dispatcher(config DispatcherConfig, client *cache.Client) echo.MiddlewareFu
 			pc := c.(*Context)
 			status := pc.status
 			cr := pc.resp
+			serverTiming := pc.serverTiming
 			cr.CompressMinLength = compressMinLength
 			cr.CompressLevel = compressLevel
 
 			resp := pc.Response()
 			respHeader := resp.Header()
 			reqHeader := pc.Request().Header
+
+			setSeverTiming := func() {
+				serverTiming.End()
+				respHeader.Add(vars.ServerTiming, serverTiming.String())
+			}
 
 			compressible := shouldCompress(compressTypes, respHeader.Get(echo.HeaderContentType))
 
@@ -174,6 +180,7 @@ func Dispatcher(config DispatcherConfig, client *cache.Client) echo.MiddlewareFu
 			// 304 的处理
 			if pc.fresh {
 				resp.WriteHeader(http.StatusNotModified)
+				setSeverTiming()
 				return nil
 			}
 
@@ -187,6 +194,7 @@ func Dispatcher(config DispatcherConfig, client *cache.Client) echo.MiddlewareFu
 				respHeader.Set(echo.HeaderContentEncoding, enconding)
 			}
 
+			setSeverTiming()
 			respHeader.Set(echo.HeaderContentLength, strconv.Itoa(len(body)))
 			resp.WriteHeader(statusCode)
 			_, err := resp.Write(body)
