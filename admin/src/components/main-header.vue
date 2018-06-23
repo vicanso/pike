@@ -87,6 +87,10 @@ export default {
           name: 'Cached List',
           route: 'cached',
         },
+        {
+          name: 'Fetching List',
+          route: 'fetching',
+        },
       ],
     };
   },

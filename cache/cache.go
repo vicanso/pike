@@ -84,6 +84,11 @@ type (
 		TTL       uint16 `json:"ttl"`
 		CreatedAt uint32 `json:"createdAt"`
 	}
+	// FetchingResponse fetching中的请求
+	FetchingResponse struct {
+		Key       string `json:"key"`
+		CreatedAt uint32 `json:"createdAt"`
+	}
 )
 
 // 将uint16转换为字节
@@ -421,4 +426,21 @@ func (c *Client) GetCachedList() []*CachedResponse {
 		})
 	}
 	return cacheDatas
+}
+
+// GetFetchingList 获取fetching的列表
+func (c *Client) GetFetchingList() []*FetchingResponse {
+	c.Lock()
+	defer c.Unlock()
+	fetchingDatas := make([]*FetchingResponse, 0)
+	for key, v := range c.rsMap {
+		if v.status != Fetching {
+			continue
+		}
+		fetchingDatas = append(fetchingDatas, &FetchingResponse{
+			Key:       key,
+			CreatedAt: v.createdAt,
+		})
+	}
+	return fetchingDatas
 }

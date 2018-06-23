@@ -331,6 +331,7 @@ func main() {
 
 	adminGroup.GET("/directors", controller.GetDirectors)
 	adminGroup.GET("/cacheds", controller.GetCachedList)
+	adminGroup.GET("/fetchings", controller.GetFetchingList)
 	adminGroup.DELETE("/cacheds/:key", controller.RemoveCached)
 
 	adminGroup.GET("/*", controller.Serve)

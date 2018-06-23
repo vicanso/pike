@@ -11,6 +11,7 @@ request.interceptors.request.use(config => {
     const token = getAdminToken();
     config.headers['X-Admin-Token'] = token;
   } catch (err) {
+    // eslint-disable-next-line
     console.error(err);
   }
   config.url = `${urlPrefix}${config.url}`;

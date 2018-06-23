@@ -88,3 +88,12 @@ func RemoveCached(c echo.Context) error {
 	client := c.Get(vars.CacheClient).(*cache.Client)
 	return client.Remove(key)
 }
+
+// GetFetchingList 获取fetching的列表
+func GetFetchingList(c echo.Context) error {
+	client := c.Get(vars.CacheClient).(*cache.Client)
+	fetchingList := client.GetFetchingList()
+	m := make(map[string]interface{})
+	m["fetchings"] = fetchingList
+	return c.JSON(http.StatusOK, m)
+}

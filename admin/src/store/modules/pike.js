@@ -6,6 +6,7 @@ import {
   STATS,
   DIRECTORS,
   CACHEDS,
+  FETCHINGS,
 } from '../../urls';
 
 import {
@@ -13,6 +14,7 @@ import {
   PIKE_DIRECTORS,
   PIKE_CACHED,
   PIKE_CACHED_CLEAR,
+  PIKE_FETCHING,
 } from '../mutation-types';
 
 const state = {
@@ -20,6 +22,7 @@ const state = {
   directors: null,
   performances: null,
   cacheds: null,
+  fetchings: null,
 };
 const minute = 60;
 const hour = 60 * minute;
@@ -136,6 +139,19 @@ const mutations = {
     const cacheds = _.filter(state.cacheds, item => item.key != key);
     state.cacheds = cacheds;
   },
+  [PIKE_FETCHING](state, data) {
+    const items = _.sortBy(data.fetchings, item => item.key);
+    const now = Math.floor(Date.now() / 1000);
+    _.forEach(items, (item) => {
+      const {
+        createdAt,
+      } = item;
+      item.timeConsuming = now - createdAt;
+      item.timeConsumingDesc = getExpiredDesc(item.timeConsuming);
+      item.createdAt = dayjs(createdAt * 1000).format('YYYY-MM-DD HH:mm:ss');
+    });
+    state.fetchings = items;
+  },
 };
 
 // 获取系统性能统计相关信息
@@ -165,11 +181,17 @@ async function clearCached({commit}, key) {
   commit(PIKE_CACHED_CLEAR, key);
 }
 
+async function getFetching({commit}) {
+  const res = await request.get(FETCHINGS);
+  commit(PIKE_FETCHING, res.data);
+}
+
 export const actions = {
   getStats,
   getDirectors,
   getCached,
   clearCached,
+  getFetching,
 };
 
 export default {
