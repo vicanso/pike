@@ -98,3 +98,15 @@ func TestGetRewriteRegexp(t *testing.T) {
 		}
 	}
 }
+
+func TestGetIdentity(t *testing.T) {
+	req := &http.Request{
+		Method:     "GET",
+		Host:       "aslant.site",
+		RequestURI: "/users/me",
+	}
+	id := GetIdentity(req)
+	if string(id) != "GET aslant.site /users/me" {
+		t.Fatalf("get identity fail")
+	}
+}

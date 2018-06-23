@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/vicanso/pike/cache"
+	"github.com/vicanso/pike/util"
 	"github.com/vicanso/pike/vars"
 
 	"github.com/labstack/echo"
@@ -15,14 +16,10 @@ import (
 // CreateErrorHandler  创建异常处理函数
 func CreateErrorHandler(e *echo.Echo, client *cache.Client) echo.HTTPErrorHandler {
 	return func(err error, c echo.Context) {
-		pc, ok := c.(*Context)
-		if ok {
-			status := pc.status
-			// 如果status状态为fetching，则设置此请求为hit for pass
-			if status == cache.Fetching {
-				client.HitForPass(pc.identity, vars.HitForPassTTL)
-			}
-		}
+		c.Logger().Debug("error handler")
+		// 如果出错的请求，都设置为hit for pass
+		key := util.GetIdentity(c.Request())
+		client.HitForPass(key, vars.HitForPassTTL)
 
 		var (
 			code = http.StatusInternalServerError

@@ -5,6 +5,7 @@ import (
 	"github.com/labstack/echo/middleware"
 
 	"github.com/vicanso/pike/cache"
+	"github.com/vicanso/pike/util"
 )
 
 type (
@@ -26,6 +27,7 @@ func Identifier(config IdentifierConfig, client *cache.Client) echo.MiddlewareFu
 	}
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
+			c.Logger().Debug("identifier middleware")
 			if config.Skipper(c) {
 				return next(c)
 			}
@@ -38,10 +40,11 @@ func Identifier(config IdentifierConfig, client *cache.Client) echo.MiddlewareFu
 				pc.status = cache.Pass
 				return next(pc)
 			}
-			key := []byte(method + " " + req.Host + " " + req.RequestURI)
+			key := util.GetIdentity(req)
 			serverTiming.GetRequestStatusStart()
 			status, ch := client.GetRequestStatus(key)
 			serverTiming.GetRequestStatusEnd()
+			// TODO是否应该增加超时机制
 			if ch != nil {
 				status = <-ch
 			}

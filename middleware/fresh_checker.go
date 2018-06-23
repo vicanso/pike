@@ -24,6 +24,7 @@ func FreshChecker(config FreshCheckerConfig) echo.MiddlewareFunc {
 	}
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
+			c.Logger().Debug("fresh checker middleware")
 			if config.Skipper(c) {
 				return next(c)
 			}

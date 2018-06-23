@@ -30,6 +30,7 @@ func HeaderSetter(config HeaderSetterConfig) echo.MiddlewareFunc {
 	}
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
+			c.Logger().Debug("header setter middleware")
 			if config.Skipper(c) {
 				return next(c)
 			}

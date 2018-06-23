@@ -193,6 +193,7 @@ func main() {
 	// 创建自定义的pike context
 	e.Use(func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
+			c.Logger().Debug("start middleware")
 			pc := custommiddleware.NewContext(c)
 			if !dc.EnableServerTiming {
 				pc.DisableServerTiming()

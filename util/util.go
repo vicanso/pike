@@ -121,3 +121,8 @@ func GetRewriteRegexp(rewrites []string) map[*regexp.Regexp]string {
 	}
 	return rewriteRegexp
 }
+
+// GetIdentity 获取该请求对应的标识
+func GetIdentity(req *http.Request) []byte {
+	return []byte(req.Method + " " + req.Host + " " + req.RequestURI)
+}
