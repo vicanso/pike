@@ -8,9 +8,11 @@
     span(
       v-if='statsInfo'
     ) ({{statsInfo.version}})
-  .pullRight.startedAt(
+  .pullRight(
     v-if='statsInfo'
-  ) {{statsInfo.startedAt}}
+  )
+    span.cpus CPU:{{statsInfo.goMaxProcs}}
+    span.startedAt {{statsInfo.startedAt}}
   ul.functions.pullLeft
     li(
       :class=`{
@@ -62,7 +64,7 @@
       display: block
     &.active a
       color: $COLOR_WHITE
-.startedAt
+.startedAt, .cpus
   color: rgba($COLOR_WHITE, 0.5)
   margin-right: 15px
 </style>

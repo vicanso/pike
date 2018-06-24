@@ -54,6 +54,8 @@ type (
 		Spdy map[string]uint64 `json:"spdy"`
 		// 当前并发处理请求数
 		Concurrency uint32 `json:"concurrency"`
+		// GoMaxProcs 当前使用的cpu数
+		GoMaxProcs int `json:"goMaxProcs"`
 		// 使用内存
 		Sys int `json:"sys"`
 		// heap sys内存
@@ -165,6 +167,7 @@ func GetStats(client *cache.Client) *Stats {
 			"3": spdy3Count,
 			"4": spdy4Count,
 		},
+		GoMaxProcs:   runtime.GOMAXPROCS(0),
 		Concurrency:  GetConcurrency(),
 		Sys:          int(m.Sys / mb),
 		HeapSys:      int(m.HeapSys / mb),
