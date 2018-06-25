@@ -11,7 +11,7 @@ import (
 	"time"
 
 	"github.com/google/brotli/go/cbrotli"
-	"github.com/vicanso/pike.old/vars"
+	"github.com/vicanso/pike/vars"
 )
 
 const (
@@ -134,13 +134,13 @@ func GetIdentity(req *http.Request) []byte {
 	copy(buffer[len:], req.Method)
 	len += methodLen
 
-	buffer[len] = vars.Space
+	buffer[len] = vars.SpaceByte
 	len++
 
 	copy(buffer[len:], req.Host)
 	len += hostLen
 
-	buffer[len] = vars.Space
+	buffer[len] = vars.SpaceByte
 	len++
 
 	copy(buffer[len:], req.RequestURI)
