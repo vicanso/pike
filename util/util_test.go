@@ -106,7 +106,17 @@ func TestGetIdentity(t *testing.T) {
 		RequestURI: "/users/me",
 	}
 	id := GetIdentity(req)
-	if string(id) != "GET aslant.site /users/me" {
+	if len(id) != 25 || string(id) != "GET aslant.site /users/me" {
 		t.Fatalf("get identity fail")
+	}
+
+	req = &http.Request{
+		Method:     "GET",
+		Host:       "aslant.site",
+		RequestURI: "/中文",
+	}
+	id = GetIdentity(req)
+	if len(id) != 23 || string(id) != "GET aslant.site /中文" {
+		t.Fatalf("get identity(include chinese) fail")
 	}
 }

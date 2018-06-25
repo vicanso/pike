@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net"
 	"net/http"
+	"net/url"
 	"os"
 	"path"
 	"regexp"
@@ -160,13 +161,14 @@ func main() {
 	directors := make(proxy.Directors, 0)
 	for _, item := range dc.Directors {
 		d := &proxy.Director{
-			Name:     item.Name,
-			Policy:   item.Policy,
-			Ping:     item.Ping,
-			Backends: item.Backend,
-			Hosts:    item.Host,
-			Prefixs:  item.Prefix,
-			Rewrites: item.Rewrites,
+			Name:         item.Name,
+			Policy:       item.Policy,
+			Ping:         item.Ping,
+			Backends:     item.Backend,
+			Hosts:        item.Host,
+			Prefixs:      item.Prefix,
+			Rewrites:     item.Rewrites,
+			TargetURLMap: make(map[string]*url.URL),
 		}
 		d.RefreshPriority()
 		d.GenRewriteRegexp()
@@ -195,10 +197,20 @@ func main() {
 		return func(c echo.Context) error {
 			c.Logger().Debug("start middleware")
 			pc := custommiddleware.NewContext(c)
+			defer custommiddleware.ReleaseContext(pc)
 			if !dc.EnableServerTiming {
 				pc.DisableServerTiming()
 			}
-			defer custommiddleware.ReleaseContext(pc)
+			requestURI := c.Request().RequestURI
+			// 对于ping检测 skip
+			if requestURI == vars.PingURL {
+				pc.Skip = true
+			}
+			// 对于管理后台请求 skip
+			if len(dc.AdminPath) != 0 && strings.HasPrefix(requestURI, dc.AdminPath) {
+				pc.Skip = true
+			}
+
 			return next(pc)
 		}
 	})
@@ -217,16 +229,11 @@ func main() {
 	}
 
 	defaultSkipper := func(c echo.Context) bool {
-		requestURI := c.Request().RequestURI
-		// 对于ping检测 skip
-		if requestURI == vars.PingURL {
+		pc, ok := c.(*custommiddleware.Context)
+		if !ok {
 			return true
 		}
-		if len(dc.AdminPath) == 0 {
-			return false
-		}
-		// 对于管理后台请求 skip
-		return strings.HasPrefix(requestURI, dc.AdminPath)
+		return pc.Skip
 	}
 
 	// 对于websocke的直接不支持

@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"net/http"
+	"net/url"
 	"strconv"
 	"strings"
 	"sync"
@@ -32,6 +33,8 @@ type (
 		fresh bool
 		// createdAt 创建时间
 		createdAt time.Time
+		// Skip 是否跳过中间件
+		Skip bool
 	}
 	// BodyDumpResponseWriter dump writer
 	BodyDumpResponseWriter struct {
@@ -51,6 +54,11 @@ type (
 		proxyAt            int64
 		proxyUse           int64
 	}
+	// ProxyTarget defines the upstream target.
+	ProxyTarget struct {
+		Name string
+		URL  *url.URL
+	}
 )
 
 // Init 对Context重置
@@ -60,6 +68,7 @@ func (c *Context) Init() {
 	c.director = nil
 	c.resp = nil
 	c.fresh = false
+	c.Skip = false
 	c.createdAt = time.Now()
 }
 
@@ -98,6 +107,12 @@ var writerPool = sync.Pool{
 	},
 }
 
+var proxyTargetPool = sync.Pool{
+	New: func() interface{} {
+		return &ProxyTarget{}
+	},
+}
+
 // NewContext 获取新的context
 func NewContext(c echo.Context) *Context {
 	pc := contextPool.Get().(*Context)
@@ -128,6 +143,16 @@ func NewBodyDumpResponseWriter() *BodyDumpResponseWriter {
 // ReleaseBodyDumpResponseWriter 释放writer
 func ReleaseBodyDumpResponseWriter(w *BodyDumpResponseWriter) {
 	writerPool.Put(w)
+}
+
+// NewProxyTarget 获取新的proxy target
+func NewProxyTarget() *ProxyTarget {
+	return proxyTargetPool.Get().(*ProxyTarget)
+}
+
+// ReleaseProxyTarget 释放proxy target
+func ReleaseProxyTarget(target *ProxyTarget) {
+	proxyTargetPool.Put(target)
 }
 
 // Init 初始化server timing

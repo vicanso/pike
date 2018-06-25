@@ -3,6 +3,7 @@ package custommiddleware
 import (
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"strings"
 	"testing"
 
@@ -158,7 +159,8 @@ func TestProxy(t *testing.T) {
 		aslant := "aslant"
 		backend := "http://127.0.0.1:5001"
 		d := &proxy.Director{
-			Name: aslant,
+			Name:         aslant,
+			TargetURLMap: make(map[string]*url.URL),
 		}
 		err := fn(pc)
 		if err != vars.ErrDirectorNotFound {
@@ -213,6 +215,7 @@ func TestProxy(t *testing.T) {
 			Rewrites: []string{
 				"/api/*:/_api/$1",
 			},
+			TargetURLMap: make(map[string]*url.URL),
 		}
 		d.GenRewriteRegexp()
 		err := fn(pc)
@@ -260,7 +263,8 @@ func TestProxy(t *testing.T) {
 		aslant := "aslant"
 		backend := "http://127.0.0.1:5001"
 		d := &proxy.Director{
-			Name: aslant,
+			Name:         aslant,
+			TargetURLMap: make(map[string]*url.URL),
 		}
 		pc.director = d
 
@@ -293,7 +297,8 @@ func TestProxy(t *testing.T) {
 		aslant := "aslant"
 		backend := "http://127.0.0.1:5001"
 		d := &proxy.Director{
-			Name: aslant,
+			Name:         aslant,
+			TargetURLMap: make(map[string]*url.URL),
 		}
 
 		pc.director = d
@@ -322,7 +327,8 @@ func TestProxy(t *testing.T) {
 		aslant := "aslant"
 		backend := "http://127.0.0.1:5001"
 		d := &proxy.Director{
-			Name: aslant,
+			Name:         aslant,
+			TargetURLMap: make(map[string]*url.URL),
 		}
 
 		pc.director = d

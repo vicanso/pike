@@ -75,4 +75,10 @@ var (
 	ErrTooManyRequest = echo.NewHTTPError(http.StatusTooManyRequests, "too many request is handling")
 	// ErrTokenInvalid token校验失败
 	ErrTokenInvalid = echo.NewHTTPError(http.StatusUnauthorized, "token is invalid")
+	// ErrTargetURLNotInit target url map未初始化
+	ErrTargetURLNotInit = echo.NewHTTPError(http.StatusNotImplemented, "target url is not init")
+	// ErrParseBackendURLFail 生成backend url失败
+	ErrParseBackendURLFail = echo.NewHTTPError(http.StatusNotImplemented, "parse backend url fail")
+	// SpaceByte 空格
+	SpaceByte = byte(' ')
 )

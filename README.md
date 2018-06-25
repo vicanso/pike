@@ -9,6 +9,8 @@ HTTP缓存服务，提供高效简单的HTTP缓存服务。
 
 go test -race -coverprofile=test.out ./... && go tool cover --html=test.out
 
+go test -v -bench=".*" ./benchmark
+
 ## 构建命令
 
 生成后台管理文件

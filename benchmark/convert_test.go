@@ -2,6 +2,7 @@ package benchmark
 
 import (
 	"encoding/binary"
+	"net/http"
 	"testing"
 	"time"
 )
@@ -48,6 +49,13 @@ func BenchmarkUint16ToByte(b *testing.B) {
 	}
 }
 
+func BenchmarkCreateRequestStatus(b *testing.B) {
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		_ = &RequestStatus{}
+	}
+}
+
 func BenchmarkRequestStatusMap(b *testing.B) {
 	rsMap := make(map[string]*RequestStatus)
 	b.ResetTimer()
@@ -68,5 +76,45 @@ func BenchmarkDeleteRequestStatusMap(b *testing.B) {
 	b.ResetTimer()
 	for key := range rsMap {
 		delete(rsMap, key)
+	}
+}
+
+func BenchmarkJoinString(b *testing.B) {
+	req := &http.Request{
+		Method:     "GET",
+		Host:       "127.0.0.1",
+		RequestURI: "/uesrs/me",
+	}
+	b.ResetTimer()
+	space := " "
+	for i := 0; i < b.N; i++ {
+		_ = []byte(req.Method + space + req.Host + space + req.RequestURI)
+	}
+}
+
+func BenchmarkJoinBytes(b *testing.B) {
+	req := &http.Request{
+		Method:     "GET",
+		Host:       "127.0.0.1",
+		RequestURI: "/uesrs/me",
+	}
+	b.ResetTimer()
+	space := byte(' ')
+	for i := 0; i < b.N; i++ {
+		methodLen := len(req.Method)
+		hostLen := len(req.Host)
+		uriLen := len(req.RequestURI)
+		buffer := make([]byte, methodLen+hostLen+uriLen+2)
+		len := 0
+		copy(buffer[len:], req.Method)
+		len += methodLen
+		buffer[len] = space
+		len++
+		copy(buffer[len:], req.Host)
+		len += hostLen
+		buffer[len] = space
+		len++
+		copy(buffer[len:], req.RequestURI)
+		_ = buffer
 	}
 }

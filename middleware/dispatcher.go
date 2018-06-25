@@ -174,7 +174,9 @@ func Dispatcher(config DispatcherConfig, client *cache.Client) echo.MiddlewareFu
 				identity := pc.identity
 				go func() {
 					if cr.TTL == 0 {
-						client.HitForPass(identity, vars.HitForPassTTL)
+						if status != cache.HitForPass {
+							client.HitForPass(identity, vars.HitForPassTTL)
+						}
 					} else {
 						save(client, identity, cr, compressible)
 					}

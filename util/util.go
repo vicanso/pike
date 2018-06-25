@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/google/brotli/go/cbrotli"
+	"github.com/vicanso/pike.old/vars"
 )
 
 const (
@@ -124,5 +125,24 @@ func GetRewriteRegexp(rewrites []string) map[*regexp.Regexp]string {
 
 // GetIdentity 获取该请求对应的标识
 func GetIdentity(req *http.Request) []byte {
-	return []byte(req.Method + " " + req.Host + " " + req.RequestURI)
+	methodLen := len(req.Method)
+	hostLen := len(req.Host)
+	uriLen := len(req.RequestURI)
+	buffer := make([]byte, methodLen+hostLen+uriLen+2)
+	len := 0
+
+	copy(buffer[len:], req.Method)
+	len += methodLen
+
+	buffer[len] = vars.Space
+	len++
+
+	copy(buffer[len:], req.Host)
+	len += hostLen
+
+	buffer[len] = vars.Space
+	len++
+
+	copy(buffer[len:], req.RequestURI)
+	return buffer
 }

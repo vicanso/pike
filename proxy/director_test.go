@@ -2,6 +2,7 @@ package proxy
 
 import (
 	"net/http/httptest"
+	"net/url"
 	"sort"
 	"testing"
 	"time"
@@ -117,6 +118,33 @@ func TestDirector(t *testing.T) {
 		backend = d.Select(c)
 		if backend != "" {
 			t.Fatalf("not support policy should return no backend")
+		}
+	})
+
+	t.Run("get target url", func(t *testing.T) {
+		backend := "http://127.0.0.1:5001"
+		d := &Director{
+			Name:   "tiny",
+			Policy: "random",
+			Ping:   "/ping",
+			Backends: []string{
+				backend,
+			},
+			TargetURLMap: make(map[string]*url.URL),
+		}
+		targetHost := "127.0.0.1:5001"
+		targetURL, err := d.GetTargetURL(&backend)
+		if err != nil {
+			t.Fatalf("get url from director fail, %v", err)
+		}
+		if targetURL.Host != targetHost {
+			t.Fatalf("the target host should be" + targetHost)
+		}
+		if targetURL.Scheme != "http" {
+			t.Fatalf("the target schema should be http")
+		}
+		if len(targetURL.RawQuery) != 0 {
+			t.Fatalf("the target raw query should be empty")
 		}
 	})
 }

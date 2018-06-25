@@ -336,6 +336,7 @@ func (c *Client) UpdateRequestStatus(key []byte, status int, ttl uint16) {
 	// 对所有等待中的请求触发channel
 	for _, c := range waitingChans {
 		c <- status
+		close(c)
 	}
 	rs.waitingChans = nil
 }

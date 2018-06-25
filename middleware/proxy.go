@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httputil"
-	"net/url"
 	"regexp"
 	"strconv"
 	"strings"
@@ -41,12 +40,6 @@ type (
 		ETag bool
 
 		rewriteRegexp map[*regexp.Regexp]string
-	}
-
-	// ProxyTarget defines the upstream target.
-	ProxyTarget struct {
-		Name string
-		URL  *url.URL
 	}
 )
 
@@ -181,10 +174,9 @@ func Proxy(config ProxyConfig) echo.MiddlewareFunc {
 			}
 
 			reqHeader := req.Header
-			targetURL, _ := url.Parse(backend)
-			tgt := &ProxyTarget{
-				Name: director.Name,
-				URL:  targetURL,
+			targetURL, err := director.GetTargetURL(&backend)
+			if err != nil {
+				return err
 			}
 
 			// Proxy
@@ -202,8 +194,16 @@ func Proxy(config ProxyConfig) echo.MiddlewareFunc {
 			}
 			serverTiming := pc.serverTiming
 			serverTiming.ProxyStart()
+
+			// 在proxy http之后则立即release
+			tgt := NewProxyTarget()
+			tgt.Name = director.Name
+			tgt.URL = targetURL
 			proxyHTTP(tgt, director.Transport).ServeHTTP(writer, req)
+			ReleaseProxyTarget(tgt)
+
 			serverTiming.ProxyEnd()
+
 			if len(ifModifiedSince) != 0 {
 				reqHeader.Set(echo.HeaderIfModifiedSince, ifModifiedSince)
 			}

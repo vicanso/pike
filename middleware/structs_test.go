@@ -12,6 +12,7 @@ func TestContext(t *testing.T) {
 	t.Run("new context", func(t *testing.T) {
 		e := echo.New()
 		pc := NewContext(e.NewContext(nil, nil))
+		defer ReleaseContext(pc)
 		if pc.status != 0 {
 			t.Fatalf("status of context should be 0")
 		}
@@ -30,20 +31,19 @@ func TestContext(t *testing.T) {
 		if time.Now().Unix()-pc.createdAt.Unix() > 5 {
 			t.Fatalf("created at should be now time")
 		}
-		ReleaseContext(pc)
 	})
 }
 
 func TestBodyDump(t *testing.T) {
 	t.Run("new body dump response", func(t *testing.T) {
 		w := NewBodyDumpResponseWriter()
+		defer ReleaseBodyDumpResponseWriter(w)
 		if w.body.Len() != 0 {
 			t.Fatalf("the body should be empty")
 		}
 		if len(w.headers) != 0 {
 			t.Fatalf("the header should be empty")
 		}
-		ReleaseBodyDumpResponseWriter(w)
 	})
 }
 
@@ -58,6 +58,18 @@ func TestServerTiming(t *testing.T) {
 		serverTiming := st.String()
 		if len(strings.Split(serverTiming, ",")) != 2 {
 			t.Fatalf("get server timing fail")
+		}
+	})
+}
+
+func TestProxyTarget(t *testing.T) {
+	t.Run("new proxy target", func(t *testing.T) {
+		name := "test"
+		target := NewProxyTarget()
+		target.Name = name
+		defer ReleaseProxyTarget(target)
+		if target.Name != name || target.URL != nil {
+			t.Fatalf("get proxy target fail")
 		}
 	})
 }

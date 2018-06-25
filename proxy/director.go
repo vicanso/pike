@@ -4,6 +4,7 @@ import (
 	"hash/fnv"
 	"math/rand"
 	"net/http"
+	"net/url"
 	"regexp"
 	"strings"
 	"sync"
@@ -13,6 +14,7 @@ import (
 	"github.com/labstack/echo"
 	funk "github.com/thoas/go-funk"
 	"github.com/vicanso/pike/util"
+	"github.com/vicanso/pike/vars"
 )
 
 type (
@@ -44,6 +46,8 @@ type (
 		roubin uint32
 		// transport 指定transport
 		Transport *http.Transport `json:"-"`
+		// TargetURLMap 每个backend对应的URL对象
+		TargetURLMap map[string]*url.URL `json:"-"`
 	}
 	// Directors 用于director排序
 	Directors []*Director
@@ -250,6 +254,27 @@ func (d *Director) Match(host, uri string) (match bool) {
 		}
 	}
 	return
+}
+
+// GetTargetURL 获取backend对应的*URL
+func (d *Director) GetTargetURL(backend *string) (*url.URL, error) {
+	if d.TargetURLMap == nil {
+		return nil, vars.ErrTargetURLNotInit
+	}
+	name := *backend
+	result := d.TargetURLMap[name]
+	if result != nil {
+		return result, nil
+	}
+	d.Lock()
+	defer d.Unlock()
+	// 如果在lock的时候，同时有其它的已lock并生成，则重复生成（概率较低而无不良影响，忽略）
+	result, _ = url.Parse(name)
+	if result == nil {
+		return nil, vars.ErrParseBackendURLFail
+	}
+	d.TargetURLMap[name] = result
+	return result, nil
 }
 
 // 检测url，如果5次有3次通过则认为是healthy
