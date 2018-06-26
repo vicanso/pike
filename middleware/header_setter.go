@@ -35,6 +35,9 @@ func HeaderSetter(config HeaderSetterConfig) echo.MiddlewareFunc {
 				return next(c)
 			}
 			pc := c.(*Context)
+			if pc.Debug {
+				c.Logger().Info("header setter middleware")
+			}
 			done := pc.serverTiming.Start(ServerTimingHeaderSetter)
 			cr := pc.resp
 			if cr == nil {

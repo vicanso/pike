@@ -128,6 +128,9 @@ func Dispatcher(config DispatcherConfig, client *cache.Client) echo.MiddlewareFu
 				return next(c)
 			}
 			pc := c.(*Context)
+			if pc.Debug {
+				c.Logger().Info("dispatcher middleware")
+			}
 			serverTiming := pc.serverTiming
 			done := serverTiming.Start(ServerTimingDispatcher)
 			status := pc.status

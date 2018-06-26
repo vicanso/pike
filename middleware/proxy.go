@@ -150,6 +150,9 @@ func Proxy(config ProxyConfig) echo.MiddlewareFunc {
 				return next(c)
 			}
 			pc := c.(*Context)
+			if pc.Debug {
+				c.Logger().Info("proxy middleware")
+			}
 			done := pc.serverTiming.Start(ServerTimingProxy)
 			// 如果已获取到数据，则不需要proxy获取(已从cache中获取)
 			if pc.resp != nil {

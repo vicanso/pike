@@ -223,7 +223,9 @@ func main() {
 			if len(dc.AdminPath) != 0 && strings.HasPrefix(requestURI, dc.AdminPath) {
 				pc.Skip = true
 			}
-
+			if len(c.Request().Header.Get(vars.XDebug)) != 0 {
+				pc.Debug = true
+			}
 			return next(pc)
 		}
 	})

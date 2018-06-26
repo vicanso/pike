@@ -29,6 +29,9 @@ func FreshChecker(config FreshCheckerConfig) echo.MiddlewareFunc {
 				return next(c)
 			}
 			pc := c.(*Context)
+			if pc.Debug {
+				c.Logger().Info("fresh checker middleware")
+			}
 			done := pc.serverTiming.Start(ServerTimingFreshChecker)
 			cr := pc.resp
 			if cr == nil {
