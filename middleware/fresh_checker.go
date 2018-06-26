@@ -29,17 +29,21 @@ func FreshChecker(config FreshCheckerConfig) echo.MiddlewareFunc {
 				return next(c)
 			}
 			pc := c.(*Context)
+			done := pc.serverTiming.Start(ServerTimingFreshChecker)
 			cr := pc.resp
 			if cr == nil {
+				done()
 				return vars.ErrResponseNotSet
 			}
 			statusCode := int(cr.StatusCode)
 			method := c.Request().Method
 			pc.fresh = false
 			if method != echo.GET && method != echo.HEAD {
+				done()
 				return next(pc)
 			}
 			if statusCode < http.StatusOK || statusCode >= http.StatusBadRequest {
+				done()
 				return next(c)
 			}
 
@@ -57,6 +61,7 @@ func FreshChecker(config FreshCheckerConfig) echo.MiddlewareFunc {
 				pc.fresh = true
 			}
 
+			done()
 			return next(pc)
 		}
 	}

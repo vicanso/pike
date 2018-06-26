@@ -150,18 +150,22 @@ func Proxy(config ProxyConfig) echo.MiddlewareFunc {
 				return next(c)
 			}
 			pc := c.(*Context)
+			done := pc.serverTiming.Start(ServerTimingProxy)
 			// 如果已获取到数据，则不需要proxy获取(已从cache中获取)
 			if pc.resp != nil {
+				done()
 				return next(pc)
 			}
 			// 获取director
 			director := pc.director
 			if director == nil {
+				done()
 				return vars.ErrDirectorNotFound
 			}
 			// 从director中选择可用的backend
 			backend := director.Select(pc)
 			if len(backend) == 0 {
+				done()
 				return vars.ErrNoBackendAvaliable
 			}
 
@@ -176,6 +180,7 @@ func Proxy(config ProxyConfig) echo.MiddlewareFunc {
 			reqHeader := req.Header
 			targetURL, err := director.GetTargetURL(&backend)
 			if err != nil {
+				done()
 				return err
 			}
 
@@ -192,8 +197,6 @@ func Proxy(config ProxyConfig) echo.MiddlewareFunc {
 			if len(ifNoneMatch) != 0 {
 				reqHeader.Del(vars.IfNoneMatch)
 			}
-			serverTiming := pc.serverTiming
-			serverTiming.ProxyStart()
 
 			// 在proxy http之后则立即release
 			tgt := NewProxyTarget()
@@ -201,8 +204,6 @@ func Proxy(config ProxyConfig) echo.MiddlewareFunc {
 			tgt.URL = targetURL
 			proxyHTTP(tgt, director.Transport).ServeHTTP(writer, req)
 			ReleaseProxyTarget(tgt)
-
-			serverTiming.ProxyEnd()
 
 			if len(ifModifiedSince) != 0 {
 				reqHeader.Set(echo.HeaderIfModifiedSince, ifModifiedSince)
@@ -241,6 +242,7 @@ func Proxy(config ProxyConfig) echo.MiddlewareFunc {
 				}
 			}
 			pc.resp = cr
+			done()
 			return next(pc)
 		}
 	}

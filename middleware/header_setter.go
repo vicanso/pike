@@ -35,8 +35,10 @@ func HeaderSetter(config HeaderSetterConfig) echo.MiddlewareFunc {
 				return next(c)
 			}
 			pc := c.(*Context)
+			done := pc.serverTiming.Start(ServerTimingHeaderSetter)
 			cr := pc.resp
 			if cr == nil {
+				done()
 				return vars.ErrResponseNotSet
 			}
 			h := pc.Response().Header()
@@ -48,6 +50,7 @@ func HeaderSetter(config HeaderSetterConfig) echo.MiddlewareFunc {
 					h.Add(k, v)
 				}
 			}
+			done()
 			return next(pc)
 		}
 	}

@@ -52,6 +52,7 @@ func Initialization(config InitializationConfig) echo.MiddlewareFunc {
 				return next(c)
 			}
 			pc := c.(*Context)
+			done := pc.serverTiming.Start(ServerTimingInitialization)
 			defer func() {
 				performance.DecreaseConcurrency()
 				resp := pc.Response()
@@ -66,8 +67,10 @@ func Initialization(config InitializationConfig) echo.MiddlewareFunc {
 			performance.IncreaseRequestCount()
 			v := performance.IncreaseConcurrency()
 			if v > concurrency {
+				done()
 				return vars.ErrTooManyRequest
 			}
+			done()
 			return next(pc)
 		}
 	}

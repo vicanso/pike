@@ -33,23 +33,24 @@ func Identifier(config IdentifierConfig, client *cache.Client) echo.MiddlewareFu
 			}
 			pc := c.(*Context)
 			serverTiming := pc.serverTiming
+			done := serverTiming.Start(ServerTimingIdentifier)
 			req := pc.Request()
 			method := req.Method
 			// 只有get与head请求可缓存
 			if method != echo.GET && method != echo.HEAD {
 				pc.status = cache.Pass
+				done()
 				return next(pc)
 			}
 			key := util.GetIdentity(req)
-			serverTiming.GetRequestStatusStart()
 			status, ch := client.GetRequestStatus(key)
-			serverTiming.GetRequestStatusEnd()
 			// TODO是否应该增加超时机制
 			if ch != nil {
 				status = <-ch
 			}
 			pc.status = status
 			pc.identity = key
+			done()
 			return next(pc)
 		}
 	}

@@ -44,21 +44,55 @@ type (
 	}
 	// ServerTiming server timing
 	ServerTiming struct {
-		disabled           bool
-		startedAt          int64
-		use                int64
-		getRequestStatsAt  int64
-		getRequestStatsUse int64
-		cacheFetchAt       int64
-		cacheFetchUse      int64
-		proxyAt            int64
-		proxyUse           int64
+		disabled      bool
+		startedAt     int64
+		startedAtList []int64
+		useList       []int64
 	}
 	// ProxyTarget defines the upstream target.
 	ProxyTarget struct {
 		Name string
 		URL  *url.URL
 	}
+)
+
+const (
+	// ServerTimingPike pike
+	ServerTimingPike = iota
+	// ServerTimingInitialization init中间件
+	ServerTimingInitialization
+	// ServerTimingIdentifier identifier中间件
+	ServerTimingIdentifier
+	// ServerTimingDirectorPicker director picker中间件
+	ServerTimingDirectorPicker
+	// ServerTimingCacheFetcher cache fetcher中间件
+	ServerTimingCacheFetcher
+	// ServerTimingProxy proxy中间件
+	ServerTimingProxy
+	// ServerTimingHeaderSetter header setter中间件
+	ServerTimingHeaderSetter
+	// ServerTimingFreshChecker fresh checker中间件
+	ServerTimingFreshChecker
+	// ServerTimingDispatcher dispatcher中间件
+	ServerTimingDispatcher
+	// ServerTimingEnd server timing end
+	ServerTimingEnd
+)
+
+var (
+	// serverTimingDesList server timing的描述
+	serverTimingDesList = []string{
+		"0;dur=%s;desc=\"pike\"",
+		"1;dur=%s;desc=\"init\"",
+		"2;dur=%s;desc=\"identifier\"",
+		"3;dur=%s;desc=\"director picker\"",
+		"4;dur=%s;desc=\"cache fetcher\"",
+		"5;dur=%s;desc=\"proxy\"",
+		"6;dur=%s;desc=\"header setter\"",
+		"7;dur=%s;desc=\"fresh checker\"",
+		"7;dur=%s;desc=\"dispatcher\"",
+	}
+	noop = func() {}
 )
 
 // Init 对Context重置
@@ -119,9 +153,14 @@ func NewContext(c echo.Context) *Context {
 	pc.Init()
 	pc.Context = c
 	if pc.serverTiming == nil {
-		pc.serverTiming = &ServerTiming{}
+		pc.serverTiming = NewServerTiming()
+	} else {
+		useList := pc.serverTiming.useList
+		for i := range useList {
+			useList[i] = 0
+		}
+		pc.serverTiming.startedAt = time.Now().UnixNano()
 	}
-	pc.serverTiming.Init()
 	return pc
 }
 
@@ -155,71 +194,24 @@ func ReleaseProxyTarget(target *ProxyTarget) {
 	proxyTargetPool.Put(target)
 }
 
-// Init 初始化server timing
-func (st *ServerTiming) Init() {
-	st.getRequestStatsAt = 0
-	st.getRequestStatsUse = 0
-	st.cacheFetchAt = 0
-	st.cacheFetchUse = 0
-	st.proxyAt = 0
-	st.proxyUse = 0
-	st.startedAt = time.Now().UnixNano()
+// NewServerTiming 创建新的server timing
+func NewServerTiming() *ServerTiming {
+	return &ServerTiming{
+		startedAtList: make([]int64, ServerTimingEnd),
+		useList:       make([]int64, ServerTimingEnd),
+		startedAt:     time.Now().UnixNano(),
+	}
 }
 
-// End 结束
-func (st *ServerTiming) End() {
-	if st.disabled {
-		return
+// Start 开始
+func (st *ServerTiming) Start(index int) func() {
+	if st.disabled || index <= ServerTimingPike || index >= ServerTimingEnd {
+		return noop
 	}
-	st.use = time.Now().UnixNano() - st.startedAt
-}
-
-// GetRequestStatusStart 开始获取get request status
-func (st *ServerTiming) GetRequestStatusStart() {
-	if st.disabled {
-		return
+	startedAt := time.Now().UnixNano()
+	return func() {
+		st.useList[index] = time.Now().UnixNano() - startedAt
 	}
-	st.getRequestStatsAt = time.Now().UnixNano()
-}
-
-// GetRequestStatusEnd 结束获取get request status
-func (st *ServerTiming) GetRequestStatusEnd() {
-	if st.disabled {
-		return
-	}
-	st.getRequestStatsUse = time.Now().UnixNano() - st.getRequestStatsAt
-}
-
-// CacheFetchStart 开始获取缓存
-func (st *ServerTiming) CacheFetchStart() {
-	if st.disabled {
-		return
-	}
-	st.cacheFetchAt = time.Now().UnixNano()
-}
-
-// CacheFetchEnd 获取缓存结束
-func (st *ServerTiming) CacheFetchEnd() {
-	if st.disabled {
-		return
-	}
-	st.cacheFetchUse = time.Now().UnixNano() - st.cacheFetchAt
-}
-
-// ProxyStart 开始转发至backend
-func (st *ServerTiming) ProxyStart() {
-	if st.disabled {
-		return
-	}
-	st.proxyAt = time.Now().UnixNano()
-}
-
-// ProxyEnd 转发处理完成
-func (st *ServerTiming) ProxyEnd() {
-	if st.disabled {
-		return
-	}
-	st.proxyUse = time.Now().UnixNano() - st.proxyAt
 }
 
 // String 获取server timing的http header string
@@ -229,28 +221,18 @@ func (st *ServerTiming) String() string {
 	}
 	desList := []string{}
 	ms := float64(time.Millisecond)
-	use := st.use
+	// use := st.use
 	appendDesc := func(v int64, str string) {
 		desc := fmt.Sprintf(str, strconv.FormatFloat(float64(v)/ms, 'f', -1, 64))
 		desList = append(desList, desc)
 	}
-	if use != 0 {
-		appendDesc(use, "0;dur=%s;desc=\"pike\"")
-	}
+	useList := st.useList
+	useList[0] = time.Now().UnixNano() - st.startedAt
 
-	use = st.getRequestStatsUse
-	if use != 0 {
-		appendDesc(use, "1;dur=%s;desc=\"get request status\"")
-	}
-
-	use = st.cacheFetchUse
-	if use != 0 {
-		appendDesc(use, "2;dur=%s;desc=\"fetch cache\"")
-	}
-
-	use = st.proxyUse
-	if use != 0 {
-		appendDesc(use, "3;dur=%s;desc=\"fetch data from backend\"")
+	for i, v := range st.useList {
+		if v != 0 {
+			appendDesc(v, serverTimingDesList[i])
+		}
 	}
 	return strings.Join(desList, ",")
 }

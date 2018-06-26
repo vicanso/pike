@@ -2,9 +2,12 @@ package benchmark
 
 import (
 	"encoding/binary"
+	"fmt"
 	"net/http"
 	"testing"
 	"time"
+
+	"github.com/labstack/echo"
 )
 
 type RequestStatus struct {
@@ -14,6 +17,10 @@ type RequestStatus struct {
 	status int
 	// 如果此请求为fetching，则此时相同的请求会写入一个chan
 	waitingChans []chan int
+}
+
+type Context struct {
+	echo.Context
 }
 
 func BenchmarkConvertNoop(b *testing.B) {
@@ -116,5 +123,18 @@ func BenchmarkJoinBytes(b *testing.B) {
 		len++
 		copy(buffer[len:], req.RequestURI)
 		_ = buffer
+	}
+}
+
+func BenchmarkConvertContext(b *testing.B) {
+	e := echo.New()
+	pc := &Context{}
+	pc.Context = e.NewContext(nil, nil)
+	var c echo.Context = pc
+	for i := 0; i < b.N; i++ {
+		_, ok := c.(*Context)
+		if !ok {
+			fmt.Println("conver fail")
+		}
 	}
 }

@@ -27,27 +27,29 @@ func CacheFetcher(config CacheFetcherConfig, client *cache.Client) echo.Middlewa
 				return next(c)
 			}
 			pc := c.(*Context)
-			// status, ok := c.Get(vars.Status).(int)
+			done := pc.serverTiming.Start(ServerTimingCacheFetcher)
 			status := pc.status
 			if status == 0 {
+				done()
 				return vars.ErrRequestStatusNotSet
 			}
 			// 如果非cache的
 			if status != cache.Cacheable {
+				done()
 				return next(pc)
 			}
 			identity := pc.identity
 			if identity == nil {
+				done()
 				return vars.ErrIdentityNotSet
 			}
-			serverTiming := pc.serverTiming
-			serverTiming.CacheFetchStart()
 			resp, err := client.GetResponse(identity)
-			serverTiming.CacheFetchEnd()
 			if err != nil {
+				done()
 				return err
 			}
 			pc.resp = resp
+			done()
 			return next(pc)
 		}
 	}

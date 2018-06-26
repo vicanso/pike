@@ -128,9 +128,10 @@ func Dispatcher(config DispatcherConfig, client *cache.Client) echo.MiddlewareFu
 				return next(c)
 			}
 			pc := c.(*Context)
+			serverTiming := pc.serverTiming
+			done := serverTiming.Start(ServerTimingDispatcher)
 			status := pc.status
 			cr := pc.resp
-			serverTiming := pc.serverTiming
 			cr.CompressMinLength = compressMinLength
 			cr.CompressLevel = compressLevel
 
@@ -139,7 +140,7 @@ func Dispatcher(config DispatcherConfig, client *cache.Client) echo.MiddlewareFu
 			reqHeader := pc.Request().Header
 
 			setSeverTiming := func() {
-				serverTiming.End()
+				done()
 				timingStr := serverTiming.String()
 				if len(timingStr) != 0 {
 					respHeader.Add(vars.ServerTiming, timingStr)

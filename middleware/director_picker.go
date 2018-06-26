@@ -29,6 +29,7 @@ func DirectorPicker(config DirectorPickerConfig, directors proxy.Directors) echo
 				return next(c)
 			}
 			pc := c.(*Context)
+			done := pc.serverTiming.Start(ServerTimingDirectorPicker)
 			req := pc.Request()
 			host := req.Host
 			uri := req.RequestURI
@@ -42,8 +43,10 @@ func DirectorPicker(config DirectorPickerConfig, directors proxy.Directors) echo
 				}
 			}
 			if !found {
+				done()
 				return vars.ErrDirectorNotFound
 			}
+			done()
 			return next(pc)
 		}
 	}

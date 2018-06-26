@@ -49,12 +49,10 @@ func TestBodyDump(t *testing.T) {
 
 func TestServerTiming(t *testing.T) {
 	t.Run("server timing", func(t *testing.T) {
-		st := ServerTiming{}
-		st.Init()
-		st.GetRequestStatusStart()
+		st := NewServerTiming()
+		done := st.Start(ServerTimingInitialization)
 		time.Sleep(time.Millisecond * 5)
-		st.GetRequestStatusEnd()
-		st.End()
+		done()
 		serverTiming := st.String()
 		if len(strings.Split(serverTiming, ",")) != 2 {
 			t.Fatalf("get server timing fail")
