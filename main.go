@@ -193,10 +193,10 @@ func main() {
 	sort.Sort(directors)
 
 	// Middleware
-	e.Pre(middleware.Recover())
+	e.Use(middleware.Recover())
 
 	// 对于websocke的直接不支持
-	e.Pre(func(next echo.HandlerFunc) echo.HandlerFunc {
+	e.Use(func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
 			if c.IsWebSocket() {
 				return vars.ErrNotSupportWebSocket
@@ -206,7 +206,7 @@ func main() {
 	})
 
 	// 创建自定义的pike context
-	e.Pre(func(next echo.HandlerFunc) echo.HandlerFunc {
+	e.Use(func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
 			c.Logger().Debug("start middleware")
 			pc := custommiddleware.NewContext(c)
@@ -232,7 +232,7 @@ func main() {
 	if len(dc.AccessLog) != 0 {
 		logWriter := getLogger(dc)
 		defer logWriter.Close()
-		e.Pre(custommiddleware.Logger(custommiddleware.LoggerConfig{
+		e.Use(custommiddleware.Logger(custommiddleware.LoggerConfig{
 			LogFormat: dc.LogFormat,
 			Writer:    logWriter,
 		}))
@@ -252,25 +252,25 @@ func main() {
 		Skipper:     defaultSkipper,
 		Concurrency: dc.Concurrency,
 	}
-	e.Pre(custommiddleware.Initialization(initConfig))
+	e.Use(custommiddleware.Initialization(initConfig))
 
 	// 生成请求唯一标识与状态中间件
 	idConfig := custommiddleware.IdentifierConfig{
 		Skipper: defaultSkipper,
 	}
-	e.Pre(custommiddleware.Identifier(idConfig, client))
+	e.Use(custommiddleware.Identifier(idConfig, client))
 
 	// 获取director的中间件
 	directorConfig := custommiddleware.DirectorPickerConfig{
 		Skipper: defaultSkipper,
 	}
-	e.Pre(custommiddleware.DirectorPicker(directorConfig, directors))
+	e.Use(custommiddleware.DirectorPicker(directorConfig, directors))
 
 	// 缓存读取中间件
 	cacheFetcherConfig := custommiddleware.CacheFetcherConfig{
 		Skipper: defaultSkipper,
 	}
-	e.Pre(custommiddleware.CacheFetcher(cacheFetcherConfig, client))
+	e.Use(custommiddleware.CacheFetcher(cacheFetcherConfig, client))
 
 	// 代理转发中间件
 	proxyConfig := custommiddleware.ProxyConfig{
@@ -278,19 +278,19 @@ func main() {
 		Skipper:  defaultSkipper,
 		Rewrites: dc.Rewrites,
 	}
-	e.Pre(custommiddleware.Proxy(proxyConfig))
+	e.Use(custommiddleware.Proxy(proxyConfig))
 
 	// http响应头设置中间件
 	headerSetterConfig := custommiddleware.HeaderSetterConfig{
 		Skipper: defaultSkipper,
 	}
-	e.Pre(custommiddleware.HeaderSetter(headerSetterConfig))
+	e.Use(custommiddleware.HeaderSetter(headerSetterConfig))
 
 	// 判断客户端缓存请求是否fresh的中间件
 	freshCheckerConfig := custommiddleware.FreshCheckerConfig{
 		Skipper: defaultSkipper,
 	}
-	e.Pre(custommiddleware.FreshChecker(freshCheckerConfig))
+	e.Use(custommiddleware.FreshChecker(freshCheckerConfig))
 
 	// 响应数据处理中间件
 	dispatcherConfig := custommiddleware.DispatcherConfig{
@@ -299,10 +299,10 @@ func main() {
 		CompressLevel:     dc.CompressLevel,
 		Skipper:           defaultSkipper,
 	}
-	e.Pre(custommiddleware.Dispatcher(dispatcherConfig, client))
+	e.Use(custommiddleware.Dispatcher(dispatcherConfig, client))
 
 	// 后续route需要使用原有的context
-	e.Pre(func(next echo.HandlerFunc) echo.HandlerFunc {
+	e.Use(func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
 			pc, ok := c.(*custommiddleware.Context)
 			if ok {
