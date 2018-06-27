@@ -16,7 +16,6 @@ import (
 // CreateErrorHandler  创建异常处理函数
 func CreateErrorHandler(e *echo.Echo, client *cache.Client) echo.HTTPErrorHandler {
 	return func(err error, c echo.Context) {
-		c.Logger().Debug("error handler")
 		// 如果出错的请求，都设置为hit for pass
 		key := util.GetIdentity(c.Request())
 		client.HitForPass(key, vars.HitForPassTTL)

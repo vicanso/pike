@@ -123,7 +123,6 @@ func Dispatcher(config DispatcherConfig, client *cache.Client) echo.MiddlewareFu
 	}
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
-			c.Logger().Debug("dispatcher middleware")
 			if config.Skipper(c) {
 				return next(c)
 			}

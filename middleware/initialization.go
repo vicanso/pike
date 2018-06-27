@@ -47,7 +47,6 @@ func Initialization(config InitializationConfig) echo.MiddlewareFunc {
 	}
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) (err error) {
-			c.Logger().Debug("init middleware")
 			if config.Skipper(c) {
 				return next(c)
 			}

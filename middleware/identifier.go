@@ -27,7 +27,6 @@ func Identifier(config IdentifierConfig, client *cache.Client) echo.MiddlewareFu
 	}
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
-			c.Logger().Debug("identifier middleware")
 			if config.Skipper(c) {
 				return next(c)
 			}

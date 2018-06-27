@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/labstack/echo"
+	"github.com/labstack/gommon/log"
 )
 
 type RequestStatus struct {
@@ -136,5 +137,21 @@ func BenchmarkConvertContext(b *testing.B) {
 		if !ok {
 			fmt.Println("conver fail")
 		}
+	}
+}
+
+func BenchmarkEchoLog(b *testing.B) {
+	e := echo.New()
+	e.Logger.SetLevel(log.Lvl(log.OFF))
+	c := e.NewContext(nil, nil)
+	for i := 0; i < b.N; i++ {
+		c.Logger().Debug("a")
+	}
+}
+
+func BenchmarkNoop(b *testing.B) {
+	noop := func(args ...interface{}) {}
+	for i := 0; i < b.N; i++ {
+		noop("a")
 	}
 }
