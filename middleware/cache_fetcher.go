@@ -27,9 +27,6 @@ func CacheFetcher(config CacheFetcherConfig, client *cache.Client) echo.Middlewa
 				return next(c)
 			}
 			pc := c.(*Context)
-			if pc.Debug {
-				c.Logger().Info("cache fetcher middleware")
-			}
 			done := pc.serverTiming.Start(ServerTimingCacheFetcher)
 			status := pc.status
 			if status == 0 {

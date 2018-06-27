@@ -35,8 +35,6 @@ type (
 		createdAt time.Time
 		// Skip 是否跳过中间件
 		Skip bool
-		// Debug 是否debug
-		Debug bool
 	}
 	// BodyDumpResponseWriter dump writer
 	BodyDumpResponseWriter struct {
@@ -105,7 +103,6 @@ func (c *Context) Init() {
 	c.resp = nil
 	c.fresh = false
 	c.Skip = false
-	c.Debug = false
 	c.createdAt = time.Now()
 }
 

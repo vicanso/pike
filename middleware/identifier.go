@@ -32,9 +32,6 @@ func Identifier(config IdentifierConfig, client *cache.Client) echo.MiddlewareFu
 				return next(c)
 			}
 			pc := c.(*Context)
-			if pc.Debug {
-				c.Logger().Info("identifier middleware")
-			}
 			serverTiming := pc.serverTiming
 			done := serverTiming.Start(ServerTimingIdentifier)
 			req := pc.Request()

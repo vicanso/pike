@@ -29,9 +29,6 @@ func DirectorPicker(config DirectorPickerConfig, directors proxy.Directors) echo
 				return next(c)
 			}
 			pc := c.(*Context)
-			if pc.Debug {
-				c.Logger().Info("director picker middleware")
-			}
 			done := pc.serverTiming.Start(ServerTimingDirectorPicker)
 			req := pc.Request()
 			host := req.Host

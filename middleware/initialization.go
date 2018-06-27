@@ -52,9 +52,6 @@ func Initialization(config InitializationConfig) echo.MiddlewareFunc {
 				return next(c)
 			}
 			pc := c.(*Context)
-			if pc.Debug {
-				c.Logger().Info("init middleware")
-			}
 			done := pc.serverTiming.Start(ServerTimingInitialization)
 			defer func() {
 				performance.DecreaseConcurrency()

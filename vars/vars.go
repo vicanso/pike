@@ -24,8 +24,6 @@ const (
 	Age = "Age"
 	// XStatus cache状态
 	XStatus = "X-Status"
-	// XDebug debug header
-	XDebug = "X-Debug"
 	// Pass pass status
 	Pass = "pass"
 	// Fetching fetching status
