@@ -20,14 +20,13 @@ after_success:
   - export VERSION=$(date -u +%Y%m%d%H%M%S)
   - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
   - docker build -t pike .
-  - docker images
   - docker tag pike $DOCKER_USERNAME/pike
   - docker tag pike $DOCKER_USERNAME/pike:$VERSION
   - docker push $DOCKER_USERNAME/pike
   - docker push $DOCKER_USERNAME/pike:$VERSION
   - docker build -f Dockerfile.ubuntu -t pike .
-  - docker images
   - docker tag pike $DOCKER_USERNAME/pike:ubuntu
   - docker tag pike $DOCKER_USERNAME/pike:ubuntu:$VERSION
   - docker push $DOCKER_USERNAME/pike:ubuntu
   - docker push $DOCKER_USERNAME/pike:ubuntu:$VERSION
+  - docker images
