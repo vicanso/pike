@@ -66,7 +66,7 @@ func TestProxyTarget(t *testing.T) {
 		target := NewProxyTarget()
 		target.Name = name
 		defer ReleaseProxyTarget(target)
-		if target.Name != name || target.URL != nil {
+		if target.Name != name {
 			t.Fatalf("get proxy target fail")
 		}
 	})
