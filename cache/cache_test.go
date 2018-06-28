@@ -24,7 +24,7 @@ func TestCacheClient(t *testing.T) {
 			Path: dbPath,
 		}
 
-		err := c.Init(0)
+		err := c.Init()
 
 		if err != nil {
 			t.Fatalf("cache init fail, %v", err)
@@ -70,7 +70,7 @@ func TestResponse(t *testing.T) {
 	c := Client{
 		Path: dbPath,
 	}
-	err := c.Init(0)
+	err := c.Init()
 	if err != nil {
 		t.Fatalf("cache init fail, %v", err)
 	}
@@ -241,7 +241,7 @@ func TestRequestStatus(t *testing.T) {
 	c := Client{
 		Path: dbPath,
 	}
-	err := c.Init(0)
+	err := c.Init()
 	if err != nil {
 		t.Fatalf("cache init fail, %v", err)
 	}
@@ -354,7 +354,7 @@ func TestClearExpired(t *testing.T) {
 	c := Client{
 		Path: dbPath,
 	}
-	err := c.Init(0)
+	err := c.Init()
 	if err != nil {
 		t.Fatalf("cache init fail, %v", err)
 	}
@@ -385,7 +385,7 @@ func TestGetStats(t *testing.T) {
 	c := Client{
 		Path: dbPath,
 	}
-	err := c.Init(0)
+	err := c.Init()
 	if err != nil {
 		t.Fatalf("cache init fail, %v", err)
 	}

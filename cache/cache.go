@@ -9,7 +9,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/golang/groupcache/lru"
 	jsoniter "github.com/json-iterator/go"
 	"github.com/vicanso/pike/util"
 	"github.com/vicanso/pike/vars"
@@ -32,17 +31,12 @@ const (
 	Cacheable
 )
 
-const (
-	defaultLRUCacheSize = 1000
-)
-
 type (
 
 	// Client 缓存
 	Client struct {
 		Path  string
 		db    *pogreb.DB
-		lru   *lru.Cache
 		rsMap map[string]*RequestStatus
 		sync.Mutex
 	}
@@ -216,17 +210,11 @@ func (r *Response) GetBody(acceptEncoding string) (body []byte, encoding string)
 }
 
 // Init 初始化缓存
-func (c *Client) Init(lruCacheSize int) error {
+func (c *Client) Init() error {
 	os.Remove(c.Path + ".lock")
 	db, err := pogreb.Open(c.Path, nil)
 	c.db = db
 	c.rsMap = make(map[string]*RequestStatus)
-	if lruCacheSize == 0 {
-		lruCacheSize = defaultLRUCacheSize
-	}
-	if lruCacheSize > 0 {
-		c.lru = lru.New(lruCacheSize)
-	}
 	return err
 }
 
@@ -269,17 +257,6 @@ func (c *Client) SaveResponse(key []byte, resp *Response) error {
 
 // GetResponse 从缓存中获取Response
 func (c *Client) GetResponse(key []byte) (resp *Response, err error) {
-	k := string(key)
-	if c.lru != nil {
-		c.Lock()
-		defer c.Unlock()
-		result, ok := c.lru.Get(k)
-		if ok {
-			resp = result.(*Response)
-			return
-		}
-	}
-
 	data, err := c.db.Get(key)
 	if err != nil {
 		return
@@ -311,9 +288,7 @@ func (c *Client) GetResponse(key []byte) (resp *Response, err error) {
 	offset += gzipLength
 
 	resp.BrBody = data[offset : offset+brLength]
-	if c.lru != nil {
-		c.lru.Add(k, resp)
-	}
+
 	return
 }
 
@@ -333,9 +308,6 @@ func (c *Client) GetRequestStatus(key []byte) (status int, ch chan int) {
 			status:       Fetching,
 		}
 		c.rsMap[k] = rs
-		if c.lru != nil {
-			c.lru.Remove(k)
-		}
 	} else if rs.status == Fetching {
 		// 如果该key对应的请求正在处理中，添加chan
 		status = Waiting
@@ -392,9 +364,6 @@ func (c *Client) ClearExpired(delay int) {
 		ttl := v.ttl
 		if ttl != 0 && now-v.createdAt > uint32(ttl)+uint32(delay) {
 			delete(c.rsMap, k)
-			if c.lru != nil {
-				c.lru.Remove(k)
-			}
 			c.db.Delete([]byte(k))
 		}
 	}
@@ -404,11 +373,7 @@ func (c *Client) ClearExpired(delay int) {
 func (c *Client) Remove(key []byte) error {
 	c.Lock()
 	defer c.Unlock()
-	k := string(key)
-	delete(c.rsMap, k)
-	if c.lru != nil {
-		c.lru.Remove(k)
-	}
+	delete(c.rsMap, string(key))
 	return c.db.Delete(key)
 }
 

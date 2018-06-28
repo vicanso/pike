@@ -146,7 +146,7 @@ func main() {
 	client := &cache.Client{
 		Path: dc.DB,
 	}
-	err = client.Init(dc.LRUCacheSize)
+	err = client.Init()
 	if err != nil {
 		panic(err)
 	}
