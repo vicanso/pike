@@ -48,7 +48,7 @@ func TestPerformance(t *testing.T) {
 			Path: "/tmp/test.cache",
 		}
 
-		err := c.Init(0)
+		err := c.Init()
 
 		if err != nil {
 			t.Fatalf("cache init fail, %v", err)
@@ -72,7 +72,7 @@ func TestPerformance(t *testing.T) {
 			Path: "/tmp/test.cache",
 		}
 
-		err := c.Init(0)
+		err := c.Init()
 
 		if err != nil {
 			t.Fatalf("cache init fail, %v", err)

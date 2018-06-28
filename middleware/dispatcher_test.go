@@ -33,7 +33,7 @@ func TestSave(t *testing.T) {
 	client := &cache.Client{
 		Path: "/tmp/test.cache",
 	}
-	err := client.Init(-1)
+	err := client.Init()
 	if err != nil {
 		t.Fatalf("cache init fail, %v", err)
 	}
@@ -158,7 +158,7 @@ func TestDispatcher(t *testing.T) {
 	client := &cache.Client{
 		Path: "/tmp/test.cache",
 	}
-	err := client.Init(0)
+	err := client.Init()
 	if err != nil {
 		t.Fatalf("cache init fail, %v", err)
 	}
