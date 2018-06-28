@@ -26,6 +26,12 @@
   version = "v1.11.1"
 
 [[projects]]
+  branch = "master"
+  name = "github.com/golang/groupcache"
+  packages = ["lru"]
+  revision = "24b0969c4cb722950103eed87108c8d291a8df00"
+
+[[projects]]
   name = "github.com/google/brotli"
   packages = ["go/cbrotli"]
   revision = "c6333e1e79fb62ea088443f192293f964409b04e"
@@ -124,6 +130,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "1c6b522c48876f10dd50a412a8042a4795e0ae3ff9b92a5199dca56c866aee4c"
+  inputs-digest = "8a5cee1ae869a49e9b95e543c49b33a996f72336373b3590f8eab79824f98e51"
   solver-name = "gps-cdcl"
   solver-version = 1

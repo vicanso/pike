@@ -23,6 +23,7 @@ type Config struct {
 	Name                 string        `yaml:"name"`
 	Listen               string        `yaml:"listen"`
 	DB                   string        `yaml:"db"`
+	LRUCacheSize         int           `yaml:"lruCacheSize"`
 	ETag                 bool          `yaml:"etag"`
 	Header               []string      `yaml:"header"`
 	EnableServerTiming   bool          `yaml:"enableServerTiming"`
