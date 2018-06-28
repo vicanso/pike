@@ -14,7 +14,7 @@ func TestErrorHandler(t *testing.T) {
 	client := &cache.Client{
 		Path: "/tmp/test.cache",
 	}
-	err := client.Init()
+	err := client.Init(0)
 	if err != nil {
 		t.Fatalf("cache init fail, %v", err)
 	}
