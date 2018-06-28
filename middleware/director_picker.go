@@ -3,6 +3,7 @@ package custommiddleware
 import (
 	"github.com/labstack/echo"
 	"github.com/labstack/echo/middleware"
+	"github.com/vicanso/pike/cache"
 
 	"github.com/vicanso/pike/proxy"
 	"github.com/vicanso/pike/vars"
@@ -29,6 +30,11 @@ func DirectorPicker(config DirectorPickerConfig, directors proxy.Directors) echo
 			}
 			pc := c.(*Context)
 			done := pc.serverTiming.Start(ServerTimingDirectorPicker)
+			// 如果缓存数据，不需要获取director
+			if pc.status == cache.Cacheable {
+				done()
+				return next(pc)
+			}
 			req := pc.Request()
 			host := req.Host
 			uri := req.RequestURI
