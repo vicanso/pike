@@ -97,23 +97,23 @@ cd admin \
 Pike的health check，无其它处理逻辑，返回200
 
 ```bash
-wrk -H 'Accept-Encoding: gzip, deflate' -t10 -c200 \
+wrk -H 'Accept-Encoding: gzip, deflate' -t10 -c2000 \
 -d1m 'http://127.0.0.1:3015/ping' --latency
-```
 
-```bash
-10 threads and 200 connections
-Thread Stats   Avg      Stdev     Max   +/- Stdev
-  Latency     3.54ms    2.02ms  32.63ms   74.82%
-  Req/Sec     5.78k   630.05    33.10k    78.33%
-Latency Distribution
-    50%    3.20ms
-    75%    4.43ms
-    90%    6.00ms
-    99%   10.38ms
-3450900 requests in 1.00m, 394.92MB read
-Requests/sec:  57421.72
-Transfer/sec:      6.57MB
+Running 1m test @ http://127.0.0.1:3015/ping
+  10 threads and 2000 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency    31.75ms   28.44ms   1.31s    97.45%
+    Req/Sec     6.55k   527.81    15.52k    74.38%
+  Latency Distribution
+     50%   28.25ms
+     75%   33.96ms
+     90%   41.65ms
+     99%   80.62ms
+  3909084 requests in 1.00m, 447.36MB read
+  Socket errors: connect 0, read 0, write 0, timeout 35
+Requests/sec:  65049.24
+Transfer/sec:      7.44MB
 ```
 
 ### 获取可缓存请求
@@ -190,6 +190,8 @@ Latency Distribution
 Requests/sec:  10243.72
 Transfer/sec:    211.52MB
 ```
+
+可以看出，`Pike`的性能已经能满足大部分的网站了，虽然达不到`varnish`那么强悍，但是配置简单更多，有简便的管理后台，如果有兴趣试用的，请联系我~在此，感恩不言谢！
 
 ## 流程图
 
