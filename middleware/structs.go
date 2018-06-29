@@ -166,6 +166,7 @@ func NewContext(c echo.Context) *Context {
 
 // ReleaseContext 释放Context
 func ReleaseContext(pc *Context) {
+	pc.Context = nil
 	contextPool.Put(pc)
 }
 

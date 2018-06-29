@@ -26,13 +26,14 @@ cd admin \
 
 ## 中间件
 
-中间件设置的Cotenxt参数有：
+中间件自定义Cotenxt新增参数有：
 
 - `status`: 该请求对应的状态（必须）
 - `identity`: 该请求对应的id（如果是Pass的请求则无此参数）
 - `director`: 该请求对应的director
-- `response`: 该请求的响应数据（包括HTTP状态码，响应头，响应内容）
-- `timing`: 记录处理时长，生成Server-Timing
+- `resp`: 该请求的响应数据（包括HTTP状态码，响应头，响应内容）
+- `createdAt`: 记录context的创建时间
+- `serverTiming`: 用于记录生成各中间件处理时长的server timing
 - `fresh`: 根据HTTP请求头与响应头判断数据是否为fresh
 
 ### Initialization
@@ -44,7 +45,6 @@ cd admin \
 
 ### Identifier
 
-- 生成Timing并添加至Context中
 - 判断该请求是否为Pass(非GET与HEAD请求)，如果是则跳至下一中间件
 - 生成请求的唯一ID (method + host + requestURI)
 - 获取该ID对应的请求状态（fetching, hitforpas cacheable）
@@ -53,21 +53,21 @@ cd admin \
 
 ## DirectorPicker
 
+- 如果请求是`Cacheable`，直接从缓存中读取，跳过director picker
 - 根据Host与Request从配置的director列表中选择符合的director
 - 设置符合的director至Context中
 
 ## CacheFetcher
 
 - 如果该请求对应的状态不是`cacheable`，则跳至下一中间件
-- 从缓存数据库中读取该请求对应的响应数据并记录耗时
+- 从缓存数据库中读取该请求对应的响应数据
 - 设置响应数据至Context中
 
 ## Proxy
 
 - 如果该请求已经从缓存中获取数据，则跳至下一中间件
 - 根据director配置的backend选择算法，选择符合的可用backend
-- 将当前请求转发至backend，获取数据并记录耗时
-- 生成响应数据，并设置至Context中
+- 将当前请求转发至backend，获取响应数据，并设置至Context中
 
 ## HeaderSetter
 
