@@ -43,7 +43,7 @@ func Identifier(config IdentifierConfig, client *cache.Client) echo.MiddlewareFu
 			}
 			key := util.GetIdentity(req)
 			status, ch := client.GetRequestStatus(key)
-			// TODO是否应该增加超时机制
+			// TODO是否应该增加超时机制（proxy中已有超时机制，应该不会有其它流程会卡，因此暂认为无需处理）
 			if ch != nil {
 				status = <-ch
 			}

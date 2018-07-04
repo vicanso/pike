@@ -276,6 +276,7 @@ func main() {
 		ETag:     dc.ETag,
 		Skipper:  defaultSkipper,
 		Rewrites: dc.Rewrites,
+		Timeout:  dc.ConnectTimeout,
 	}
 	e.Pre(custommiddleware.Proxy(proxyConfig))
 

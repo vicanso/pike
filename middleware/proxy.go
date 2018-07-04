@@ -40,6 +40,8 @@ type (
 		ETag bool
 
 		rewriteRegexp map[*regexp.Regexp]string
+		// Timeout proxy的连接超时
+		Timeout time.Duration
 	}
 )
 
@@ -142,6 +144,10 @@ func Proxy(config ProxyConfig) echo.MiddlewareFunc {
 		config.Skipper = middleware.DefaultSkipper
 	}
 	config.rewriteRegexp = util.GetRewriteRegexp(config.Rewrites)
+	timeout := defaultTimeout
+	if config.Timeout > 0 {
+		timeout = config.Timeout
+	}
 
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) (err error) {
@@ -196,13 +202,23 @@ func Proxy(config ProxyConfig) echo.MiddlewareFunc {
 			if len(ifNoneMatch) != 0 {
 				reqHeader.Del(vars.IfNoneMatch)
 			}
+			proxyDone := make(chan bool)
 
-			// 在proxy http之后则立即release
-			tgt := NewProxyTarget()
-			tgt.Name = director.Name
-			tgt.URL = targetURL
-			proxyHTTP(tgt, director.Transport).ServeHTTP(writer, req)
-			ReleaseProxyTarget(tgt)
+			go func() {
+				// 在proxy http之后则立即release
+				tgt := NewProxyTarget()
+				tgt.Name = director.Name
+				tgt.URL = targetURL
+				proxyHTTP(tgt, director.Transport).ServeHTTP(writer, req)
+				ReleaseProxyTarget(tgt)
+				proxyDone <- true
+			}()
+			select {
+			case <-proxyDone:
+				close(proxyDone)
+			case <-time.After(timeout):
+				return vars.ErrGatewayTimeout
+			}
 
 			if len(ifModifiedSince) != 0 {
 				reqHeader.Set(echo.HeaderIfModifiedSince, ifModifiedSince)
