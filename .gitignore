@@ -1,7 +1,6 @@
 vendor
 _vendor*
 *.out
-pike
 node_modules
 dist
 test/test
