@@ -1,4 +1,4 @@
-package custommiddleware
+package middleware
 
 import (
 	"net/http"
@@ -7,37 +7,10 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/vicanso/pike/cache"
-
 	"github.com/h2non/gock"
-
-	"github.com/vicanso/pike/vars"
-
-	"github.com/labstack/echo"
-	"github.com/vicanso/pike/proxy"
+	"github.com/vicanso/pike/cache"
+	"github.com/vicanso/pike/pike"
 )
-
-type (
-	closeNotifyRecorder struct {
-		*httptest.ResponseRecorder
-		closed chan bool
-	}
-)
-
-func newCloseNotifyRecorder() *closeNotifyRecorder {
-	return &closeNotifyRecorder{
-		httptest.NewRecorder(),
-		make(chan bool, 1),
-	}
-}
-
-func (c *closeNotifyRecorder) close() {
-	c.closed <- true
-}
-
-func (c *closeNotifyRecorder) CloseNotify() <-chan bool {
-	return c.closed
-}
 
 func TestGetCacheAge(t *testing.T) {
 	t.Run("set cookie", func(t *testing.T) {
@@ -104,7 +77,6 @@ func TestGetCacheAge(t *testing.T) {
 			t.Fatalf("response cache should get from max-age")
 		}
 	})
-
 }
 
 func TestGenETag(t *testing.T) {
@@ -123,17 +95,15 @@ func TestProxy(t *testing.T) {
 	// 响应数据已从缓存中获取，next
 	t.Run("proxy with cache", func(t *testing.T) {
 		resp := &cache.Response{}
-		fn := Proxy(ProxyConfig{})(func(c echo.Context) error {
-			pc := c.(*Context)
-			if pc.resp != resp {
-				t.Fatalf("proxy with cache fail")
-			}
+		fn := Proxy(ProxyConfig{})
+		c := pike.NewContext(nil)
+		c.Resp = resp
+		err := fn(c, func() error {
 			return nil
 		})
-		e := echo.New()
-		pc := NewContext(e.NewContext(nil, nil))
-		pc.resp = resp
-		fn(pc)
+		if err != nil {
+			t.Fatalf("proxy with cache response fail, %v", err)
+		}
 	})
 
 	t.Run("proxy", func(t *testing.T) {
@@ -141,43 +111,33 @@ func TestProxy(t *testing.T) {
 			Rewrites: []string{
 				"/api/*:/$1",
 			},
-		})(func(c echo.Context) error {
-			pc := c.(*Context)
-			resp := pc.resp
-			if strings.TrimSpace(string(resp.Body)) != `{"name":"tree.xie"}` {
-				t.Fatalf("get response from proxy fail")
-			}
-			return nil
 		})
-		e := echo.New()
-		req := httptest.NewRequest(echo.GET, "http://aslant.site/api/users/me", nil)
-		req.Header.Set(echo.HeaderIfModifiedSince, "Mon, 07 Nov 2016 07:51:11 GMT")
-		req.Header.Set(vars.IfNoneMatch, `"16e36-540b1498e39c0"`)
-		res := newCloseNotifyRecorder()
-		c := e.NewContext(req, res)
-		pc := NewContext(c)
+		req := httptest.NewRequest(http.MethodGet, "http://aslant.site/api/users/me", nil)
+		req.Header.Set(pike.HeaderIfModifiedSince, "Mon, 07 Nov 2016 07:51:11 GMT")
+		req.Header.Set(pike.HeaderIfNoneMatch, `"16e36-540b1498e39c0"`)
+		c := pike.NewContext(req)
 		aslant := "aslant"
 		backend := "http://127.0.0.1:5001"
-		d := &proxy.Director{
+		d := &pike.Director{
 			Name:         aslant,
 			TargetURLMap: make(map[string]*url.URL),
 		}
-		err := fn(pc)
-		if err != vars.ErrDirectorNotFound {
+		err := fn(c, func() error {
+			return nil
+		})
+		if err != ErrDirectorNotFound {
 			t.Fatalf("should return director not found")
 		}
-
-		pc.director = d
-
+		c.Director = d
 		d.Hosts = []string{
 			"(www.)?aslant.site",
 		}
-
-		err = fn(pc)
-		if err != vars.ErrNoBackendAvaliable {
+		err = fn(c, func() error {
+			return nil
+		})
+		if err != ErrNoBackendAvaliable {
 			t.Fatalf("should return no backend avaliable")
 		}
-
 		gock.New(backend).
 			Get("/users/me").
 			Reply(200).
@@ -186,31 +146,28 @@ func TestProxy(t *testing.T) {
 				"name": "tree.xie",
 			})
 		d.AddAvailableBackend(backend)
-		err = fn(pc)
+		err = fn(c, func() error {
+			return nil
+		})
 		if err != nil {
 			t.Fatalf("proxy fail")
+		}
+		// 字符串最后有个换行符
+		str := strings.Trim(string(c.Response.Bytes()), "\n")
+		if str != `{"name":"tree.xie"}` {
+			t.Fatalf("response is wrong")
 		}
 	})
 
 	t.Run("director with rewrites", func(t *testing.T) {
-		fn := Proxy(ProxyConfig{})(func(c echo.Context) error {
-			pc := c.(*Context)
-			resp := pc.resp
-			if strings.TrimSpace(string(resp.Body)) != `{"name":"tree.xie"}` {
-				t.Fatalf("get response from director with rewrites fail")
-			}
-			return nil
-		})
-		e := echo.New()
-		req := httptest.NewRequest(echo.GET, "http://aslant.site/api/users/me", nil)
-		req.Header.Set(echo.HeaderIfModifiedSince, "Mon, 07 Nov 2016 07:51:11 GMT")
-		req.Header.Set(vars.IfNoneMatch, `"16e36-540b1498e39c0"`)
-		res := newCloseNotifyRecorder()
-		c := e.NewContext(req, res)
-		pc := NewContext(c)
+		fn := Proxy(ProxyConfig{})
+		req := httptest.NewRequest(http.MethodGet, "http://aslant.site/api/users/me", nil)
+		req.Header.Set(pike.HeaderIfModifiedSince, "Mon, 07 Nov 2016 07:51:11 GMT")
+		req.Header.Set(pike.HeaderIfNoneMatch, `"16e36-540b1498e39c0"`)
+		c := pike.NewContext(req)
 		aslant := "aslant"
 		backend := "http://127.0.0.1:5001"
-		d := &proxy.Director{
+		d := &pike.Director{
 			Name: aslant,
 			Rewrites: []string{
 				"/api/*:/_api/$1",
@@ -218,20 +175,7 @@ func TestProxy(t *testing.T) {
 			TargetURLMap: make(map[string]*url.URL),
 		}
 		d.GenRewriteRegexp()
-		err := fn(pc)
-		if err != vars.ErrDirectorNotFound {
-			t.Fatalf("should return director not found")
-		}
-		pc.director = d
-		d.Hosts = []string{
-			"(www.)?aslant.site",
-		}
-
-		err = fn(pc)
-		if err != vars.ErrNoBackendAvaliable {
-			t.Fatalf("should return no backend avaliable")
-		}
-
+		c.Director = d
 		gock.New(backend).
 			Get("/_api/users/me").
 			Reply(200).
@@ -240,33 +184,29 @@ func TestProxy(t *testing.T) {
 				"name": "tree.xie",
 			})
 		d.AddAvailableBackend(backend)
-		err = fn(pc)
+		err := fn(c, func() error {
+			return nil
+		})
 		if err != nil {
-			t.Fatalf("director with rewrites fail")
+			t.Fatalf("director with rewrites fail, %v", err)
+		}
+		str := strings.Trim(string(c.Response.Bytes()), "\n")
+		if str != `{"name":"tree.xie"}` {
+			t.Fatalf("response is wrong")
 		}
 	})
 
 	t.Run("proxy response gzip", func(t *testing.T) {
-		fn := Proxy(ProxyConfig{})(func(c echo.Context) error {
-			pc := c.(*Context)
-			resp := pc.resp
-			if strings.TrimSpace(string(resp.GzipBody)) != `{"name":"tree.xie"}` {
-				t.Fatalf("get gzip response from proxy fail")
-			}
-			return nil
-		})
-		e := echo.New()
-		req := httptest.NewRequest(echo.GET, "http://aslant.site/api/users/me", nil)
-		res := newCloseNotifyRecorder()
-		c := e.NewContext(req, res)
-		pc := NewContext(c)
+		fn := Proxy(ProxyConfig{})
+		req := httptest.NewRequest(http.MethodGet, "http://aslant.site/api/users/me", nil)
+		c := pike.NewContext(req)
 		aslant := "aslant"
 		backend := "http://127.0.0.1:5001"
-		d := &proxy.Director{
+		d := &pike.Director{
 			Name:         aslant,
 			TargetURLMap: make(map[string]*url.URL),
 		}
-		pc.director = d
+		c.Director = d
 
 		gock.New(backend).
 			Get("/users/me").
@@ -277,31 +217,29 @@ func TestProxy(t *testing.T) {
 				"name": "tree.xie",
 			})
 		d.AddAvailableBackend(backend)
-		fn(pc)
+		err := fn(c, func() error {
+			return nil
+		})
+		if err != nil {
+			t.Fatalf("proxy response gzip fail, %v", err)
+		}
+		str := strings.Trim(string(c.Response.Bytes()), "\n")
+		if str != `{"name":"tree.xie"}` {
+			t.Fatalf("response is wrong")
+		}
 	})
 
 	t.Run("proxy response br", func(t *testing.T) {
-		fn := Proxy(ProxyConfig{})(func(c echo.Context) error {
-			pc := c.(*Context)
-			resp := pc.resp
-			if strings.TrimSpace(string(resp.BrBody)) != `{"name":"tree.xie"}` {
-				t.Fatalf("get gzip response from proxy fail")
-			}
-			return nil
-		})
-		e := echo.New()
-		req := httptest.NewRequest(echo.GET, "http://aslant.site/api/users/me", nil)
-		res := newCloseNotifyRecorder()
-		c := e.NewContext(req, res)
-		pc := NewContext(c)
+		fn := Proxy(ProxyConfig{})
+		req := httptest.NewRequest(http.MethodGet, "http://aslant.site/api/users/me", nil)
+		c := pike.NewContext(req)
 		aslant := "aslant"
 		backend := "http://127.0.0.1:5001"
-		d := &proxy.Director{
+		d := &pike.Director{
 			Name:         aslant,
 			TargetURLMap: make(map[string]*url.URL),
 		}
-
-		pc.director = d
+		c.Director = d
 
 		gock.New(backend).
 			Get("/users/me").
@@ -312,26 +250,29 @@ func TestProxy(t *testing.T) {
 				"name": "tree.xie",
 			})
 		d.AddAvailableBackend(backend)
-		fn(pc)
+		err := fn(c, func() error {
+			return nil
+		})
+		if err != nil {
+			t.Fatalf("proxy response br fail, %v", err)
+		}
+		str := strings.Trim(string(c.Response.Bytes()), "\n")
+		if str != `{"name":"tree.xie"}` {
+			t.Fatalf("response is wrong")
+		}
 	})
 
 	t.Run("proxy response unsupport encoding", func(t *testing.T) {
-		fn := Proxy(ProxyConfig{})(func(c echo.Context) error {
-			return nil
-		})
-		e := echo.New()
-		req := httptest.NewRequest(echo.GET, "http://aslant.site/api/users/me", nil)
-		res := newCloseNotifyRecorder()
-		c := e.NewContext(req, res)
-		pc := NewContext(c)
+		fn := Proxy(ProxyConfig{})
+		req := httptest.NewRequest(http.MethodGet, "http://aslant.site/api/users/me", nil)
+		c := pike.NewContext(req)
 		aslant := "aslant"
 		backend := "http://127.0.0.1:5001"
-		d := &proxy.Director{
+		d := &pike.Director{
 			Name:         aslant,
 			TargetURLMap: make(map[string]*url.URL),
 		}
-
-		pc.director = d
+		c.Director = d
 
 		gock.New(backend).
 			Get("/users/me").
@@ -342,8 +283,10 @@ func TestProxy(t *testing.T) {
 				"name": "tree.xie",
 			})
 		d.AddAvailableBackend(backend)
-		err := fn(pc)
-		if err != vars.ErrContentEncodingNotSupport {
+		err := fn(c, func() error {
+			return nil
+		})
+		if err != ErrContentEncodingNotSupport {
 			t.Fatalf("not support encoding should return error")
 		}
 	})

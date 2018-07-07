@@ -1,17 +1,16 @@
-package custommiddleware
+package middleware
 
 import (
-	"github.com/labstack/echo"
-	"github.com/labstack/echo/middleware"
+	"net/http"
 
 	"github.com/vicanso/pike/cache"
+	"github.com/vicanso/pike/pike"
 	"github.com/vicanso/pike/util"
 )
 
 type (
 	// IdentifierConfig 定义配置
 	IdentifierConfig struct {
-		Skipper middleware.Skipper
 	}
 )
 
@@ -20,37 +19,27 @@ type (
 - 判断请求状态，生成status
 - 对于状态非Pass的请求，根据request url 生成identity
 */
-func Identifier(config IdentifierConfig, client *cache.Client) echo.MiddlewareFunc {
-	// Defaults
-	if config.Skipper == nil {
-		config.Skipper = middleware.DefaultSkipper
-	}
-	return func(next echo.HandlerFunc) echo.HandlerFunc {
-		return func(c echo.Context) error {
-			if config.Skipper(c) {
-				return next(c)
-			}
-			pc := c.(*Context)
-			serverTiming := pc.serverTiming
-			done := serverTiming.Start(ServerTimingIdentifier)
-			req := pc.Request()
-			method := req.Method
-			// 只有get与head请求可缓存
-			if method != echo.GET && method != echo.HEAD {
-				pc.status = cache.Pass
-				done()
-				return next(pc)
-			}
-			key := util.GetIdentity(req)
-			status, ch := client.GetRequestStatus(key)
-			// TODO是否应该增加超时机制（proxy中已有超时机制，应该不会有其它流程会卡，因此暂认为无需处理）
-			if ch != nil {
-				status = <-ch
-			}
-			pc.status = status
-			pc.identity = key
+func Identifier(config IdentifierConfig, client *cache.Client) pike.Middleware {
+	return func(c *pike.Context, next pike.Next) error {
+		serverTiming := c.ServerTiming
+		done := serverTiming.Start(pike.ServerTimingIdentifier)
+		req := c.Request
+		method := req.Method
+		// 只有get与head请求可缓存
+		if method != http.MethodGet && method != http.MethodHead {
+			c.Status = cache.Pass
 			done()
-			return next(pc)
+			return next()
 		}
+		key := util.GetIdentity(req)
+		status, ch := client.GetRequestStatus(key)
+		// TODO是否应该增加超时机制（proxy中已有超时机制，应该不会有其它流程会卡，因此暂认为无需处理）
+		if ch != nil {
+			status = <-ch
+		}
+		c.Status = status
+		c.Identity = key
+		done()
+		return next()
 	}
 }

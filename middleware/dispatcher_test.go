@@ -1,4 +1,4 @@
-package custommiddleware
+package middleware
 
 import (
 	"bytes"
@@ -7,10 +7,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/vicanso/pike/util"
+	"github.com/vicanso/pike/pike"
 
-	"github.com/labstack/echo"
+	"github.com/vicanso/echo"
 	"github.com/vicanso/pike/cache"
+	"github.com/vicanso/pike/util"
 )
 
 func TestShouldCompress(t *testing.T) {
@@ -75,6 +76,7 @@ func TestSave(t *testing.T) {
 			t.Fatalf("should save br data")
 		}
 	})
+
 	t.Run("save br content", func(t *testing.T) {
 		data := []byte("data")
 		brData, _ := util.BrotliEncode(data, 0)
@@ -150,7 +152,6 @@ func TestSave(t *testing.T) {
 		if !bytes.Equal(raw, data) {
 			t.Fatalf("big cotent response brotli fail")
 		}
-
 	})
 }
 
@@ -165,30 +166,28 @@ func TestDispatcher(t *testing.T) {
 	defer client.Close()
 	conf := DispatcherConfig{}
 	t.Run("dispatch response", func(t *testing.T) {
-		fn := Dispatcher(conf, client)(func(c echo.Context) error {
-			return nil
-		})
-		e := echo.New()
+		fn := Dispatcher(conf, client)
 		req := httptest.NewRequest(echo.POST, "/users/me", nil)
-		resp := &httptest.ResponseRecorder{
-			Body: new(bytes.Buffer),
-		}
-		c := e.NewContext(req, resp)
-		pc := NewContext(c)
-		pc.identity = []byte("abc")
-		pc.status = cache.Fetching
+		c := pike.NewContext(req)
+		c.Identity = []byte("abc")
+		c.Status = cache.Fetching
 		cr := &cache.Response{
 			CreatedAt:  uint32(time.Now().Unix()),
 			TTL:        300,
 			StatusCode: 200,
 			Body:       []byte("ABCD"),
 		}
-		pc.resp = cr
-		fn(pc)
-		if resp.Code != 200 {
+		c.Resp = cr
+		err := fn(c, func() error {
+			return nil
+		})
+		if err != nil {
+			t.Fatalf("dispatch fail, %v", err)
+		}
+		if c.Response.Status() != 200 {
 			t.Fatalf("the response code should be 200")
 		}
-		if string(resp.Body.Bytes()) != "ABCD" {
+		if string(c.Response.Bytes()) != "ABCD" {
 			t.Fatalf("the response body should be ABCD")
 		}
 		// 由于缓存的数据需要写数据库，因此需要延时关闭client
@@ -203,21 +202,20 @@ func TestDispatcher(t *testing.T) {
 			StatusCode: 200,
 			Body:       []byte("ABCD"),
 		}
-		fn := Dispatcher(conf, client)(func(c echo.Context) error {
+		fn := Dispatcher(conf, client)
+		req := httptest.NewRequest(echo.POST, "/users/me", nil)
+
+		c := pike.NewContext(req)
+		c.Identity = identity
+		c.Status = cache.Cacheable
+		c.Resp = cr
+		err := fn(c, func() error {
 			return nil
 		})
-		req := httptest.NewRequest(echo.POST, "/users/me", nil)
-		resp := &httptest.ResponseRecorder{
-			Body: new(bytes.Buffer),
+		if err != nil {
+			t.Fatalf("dispatch cacheable data fail, %v", err)
 		}
-		e := echo.New()
-		c := e.NewContext(req, resp)
-		pc := NewContext(c)
-		pc.identity = identity
-		pc.status = cache.Cacheable
-		pc.resp = cr
-		fn(pc)
-		if !bytes.Equal(resp.Body.Bytes(), cr.Body) {
+		if !bytes.Equal(c.Response.Bytes(), cr.Body) {
 			t.Fatalf("dispatch cacheable data fail")
 		}
 	})
@@ -230,22 +228,20 @@ func TestDispatcher(t *testing.T) {
 			StatusCode: 200,
 			Body:       []byte("ABCD"),
 		}
-		fn := Dispatcher(conf, client)(func(c echo.Context) error {
+		fn := Dispatcher(conf, client)
+		req := httptest.NewRequest(echo.GET, "/users/me", nil)
+		c := pike.NewContext(req)
+		c.Fresh = true
+		c.Identity = identity
+		c.Status = cache.Cacheable
+		c.Resp = cr
+		err := fn(c, func() error {
 			return nil
 		})
-		req := httptest.NewRequest(echo.GET, "/users/me", nil)
-		resp := &httptest.ResponseRecorder{
-			Body: new(bytes.Buffer),
+		if err != nil {
+			t.Fatalf("dispatch not modified fail, %v", err)
 		}
-		e := echo.New()
-		c := e.NewContext(req, resp)
-		pc := NewContext(c)
-		pc.fresh = true
-		pc.identity = identity
-		pc.status = cache.Cacheable
-		pc.resp = cr
-		fn(pc)
-		if resp.Code != http.StatusNotModified {
+		if c.Response.Status() != http.StatusNotModified {
 			t.Fatalf("dispatch not modified fail")
 		}
 	})

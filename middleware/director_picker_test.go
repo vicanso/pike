@@ -1,20 +1,19 @@
-package custommiddleware
+package middleware
 
 import (
+	"net/http"
 	"net/http/httptest"
 	"sort"
 	"testing"
 
-	"github.com/labstack/echo"
-
-	"github.com/vicanso/pike/proxy"
-	"github.com/vicanso/pike/vars"
+	"github.com/vicanso/pike/cache"
+	"github.com/vicanso/pike/pike"
 )
 
-func TestUpstreamPicker(t *testing.T) {
-	directors := make(proxy.Directors, 0)
+func TestDirectorPicker(t *testing.T) {
+	directors := make(pike.Directors, 0)
 	aslant := "aslant"
-	d := &proxy.Director{
+	d := &pike.Director{
 		Name: aslant,
 		Hosts: []string{
 			"(www.)?aslant.site",
@@ -23,7 +22,7 @@ func TestUpstreamPicker(t *testing.T) {
 	directors = append(directors, d)
 
 	tiny := "tiny"
-	d = &proxy.Director{
+	d = &pike.Director{
 		Name: tiny,
 		Prefixs: []string{
 			"/api",
@@ -36,53 +35,62 @@ func TestUpstreamPicker(t *testing.T) {
 	sort.Sort(directors)
 	config := DirectorPickerConfig{}
 	t.Run("get director match host", func(t *testing.T) {
-		fn := DirectorPicker(config, directors)(func(c echo.Context) error {
-			pc := c.(*Context)
-			d := pc.director
-			if d.Name != aslant {
-				t.Fatalf("get director match host fail")
-			}
+		fn := DirectorPicker(config, directors)
+		r := httptest.NewRequest(http.MethodGet, "http://aslant.site/api/users/me", nil)
+		c := pike.NewContext(r)
+		err := fn(c, func() error {
 			return nil
 		})
-		e := echo.New()
-		req := httptest.NewRequest(echo.GET, "http://aslant.site/api/users/me", nil)
-		c := e.NewContext(req, nil)
-		pc := NewContext(c)
-		fn(pc)
+		if err != nil {
+			t.Fatalf("director picker middleware fail, %v", err)
+		}
+		if c.Director == nil || c.Director.Name != aslant {
+			t.Fatalf("director picker fail")
+		}
 	})
 
 	t.Run("get director match url prefix", func(t *testing.T) {
-		fn := DirectorPicker(config, directors)(func(c echo.Context) error {
-			pc := c.(*Context)
-			d := pc.director
-			if d.Name != tiny {
-				t.Fatalf("get director match url prefix fail")
-			}
+		fn := DirectorPicker(config, directors)
+		r := httptest.NewRequest(http.MethodGet, "/api/users/me", nil)
+		c := pike.NewContext(r)
+		err := fn(c, func() error {
 			return nil
 		})
-		e := echo.New()
-		req := httptest.NewRequest(echo.GET, "/api/users/me", nil)
-		c := e.NewContext(req, nil)
-		pc := NewContext(c)
-		fn(pc)
+		if err != nil {
+			t.Fatalf("director picker middleware fail, %v", err)
+		}
+		if c.Director == nil || c.Director.Name != tiny {
+			t.Fatalf("director picker fail")
+		}
 	})
 
 	t.Run("no director match", func(t *testing.T) {
-		fn := DirectorPicker(config, directors)(func(c echo.Context) error {
-			pc := c.(*Context)
-			d := pc.director
-			if d.Name != tiny {
-				t.Fatalf("get director match url prefix fail")
-			}
+		fn := DirectorPicker(config, directors)
+		r := httptest.NewRequest(http.MethodGet, "/test", nil)
+		c := pike.NewContext(r)
+		c.Request = r
+		err := fn(c, func() error {
 			return nil
 		})
-		e := echo.New()
-		req := httptest.NewRequest(echo.GET, "/test", nil)
-		c := e.NewContext(req, nil)
-		pc := NewContext(c)
-		err := fn(pc)
-		if err != vars.ErrDirectorNotFound {
+		if err != ErrDirectorNotFound {
 			t.Fatalf("no director match should return error")
+		}
+	})
+
+	t.Run("cache response pass director picker", func(t *testing.T) {
+		fn := DirectorPicker(config, directors)
+		r := httptest.NewRequest(http.MethodGet, "/test", nil)
+		c := pike.NewContext(r)
+		c.Request = r
+		c.Status = cache.Cacheable
+		err := fn(c, func() error {
+			return nil
+		})
+		if err != nil {
+			t.Fatalf("pass diretcor picker fail, %v", err)
+		}
+		if c.Director != nil {
+			t.Fatalf("cache response should pass director picker")
 		}
 	})
 

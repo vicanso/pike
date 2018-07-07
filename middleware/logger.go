@@ -1,9 +1,10 @@
-package custommiddleware
+package middleware
 
 import (
 	"time"
 
-	"github.com/labstack/echo"
+	"github.com/vicanso/pike/pike"
+
 	"github.com/vicanso/pike/httplog"
 )
 
@@ -16,22 +17,20 @@ type (
 )
 
 // Logger logger中间件
-func Logger(config LoggerConfig) echo.MiddlewareFunc {
+func Logger(config LoggerConfig) pike.Middleware {
 	writer := config.Writer
 	tags := httplog.Parse([]byte(config.LogFormat))
 	enabledLogger := writer != nil && len(tags) != 0
-	return func(next echo.HandlerFunc) echo.HandlerFunc {
-		return func(c echo.Context) (err error) {
-			if !enabledLogger {
-				return next(c)
-			}
-			startedAt := time.Now()
-			err = next(c)
-			str := httplog.Format(c, tags, startedAt)
-			go func() {
-				writer.Write([]byte(str))
-			}()
-			return
+	return func(c *pike.Context, next pike.Next) (err error) {
+		if !enabledLogger {
+			return next()
 		}
+		startedAt := time.Now()
+		err = next()
+		str := httplog.Format(c, tags, startedAt)
+		go func() {
+			writer.Write([]byte(str))
+		}()
+		return
 	}
 }

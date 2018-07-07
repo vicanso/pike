@@ -1,4 +1,4 @@
-package custommiddleware
+package middleware
 
 import (
 	"net/http"
@@ -6,9 +6,8 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/labstack/echo"
-	"github.com/labstack/echo/middleware"
 	"github.com/vicanso/pike/cache"
+	"github.com/vicanso/pike/pike"
 	"github.com/vicanso/pike/util"
 	"github.com/vicanso/pike/vars"
 )
@@ -16,7 +15,6 @@ import (
 type (
 	// DispatcherConfig dipatcher的配置
 	DispatcherConfig struct {
-		Skipper middleware.Skipper
 		// 压缩数据类型
 		CompressTypes []string
 		// 最小压缩
@@ -110,101 +108,81 @@ func shouldCompress(compressTypes []string, contentType string) (compressible bo
 }
 
 // Dispatcher 对响应数据做缓存，复制等处理
-func Dispatcher(config DispatcherConfig, client *cache.Client) echo.MiddlewareFunc {
+func Dispatcher(config DispatcherConfig, client *cache.Client) pike.Middleware {
 	compressTypes := config.CompressTypes
 	if len(compressTypes) == 0 {
 		compressTypes = defaultCompressTypes
 	}
 	compressMinLength := config.CompressMinLength
 	compressLevel := config.CompressLevel
-	// Defaults
-	if config.Skipper == nil {
-		config.Skipper = middleware.DefaultSkipper
-	}
-	return func(next echo.HandlerFunc) echo.HandlerFunc {
-		return func(c echo.Context) error {
-			if config.Skipper(c) {
-				return next(c)
+	return func(c *pike.Context, next pike.Next) error {
+		serverTiming := c.ServerTiming
+		done := serverTiming.Start(pike.ServerTimingDispatcher)
+
+		status := c.Status
+		cr := c.Resp
+		cr.CompressMinLength = compressMinLength
+		cr.CompressLevel = compressLevel
+
+		resp := c.Response
+		respHeader := resp.Header()
+		reqHeader := c.Request.Header
+
+		setSeverTiming := func() {
+			done()
+			timingStr := serverTiming.String()
+			if len(timingStr) != 0 {
+				respHeader.Add(pike.HeaderServerTiming, timingStr)
 			}
-			pc := c.(*Context)
-			serverTiming := pc.serverTiming
-			done := serverTiming.Start(ServerTimingDispatcher)
-			status := pc.status
-			cr := pc.resp
-			cr.CompressMinLength = compressMinLength
-			cr.CompressLevel = compressLevel
-
-			resp := pc.Response()
-			respHeader := resp.Header()
-			reqHeader := pc.Request().Header
-
-			setSeverTiming := func() {
-				done()
-				timingStr := serverTiming.String()
-				if len(timingStr) != 0 {
-					respHeader.Add(vars.ServerTiming, timingStr)
-				}
-			}
-
-			compressible := shouldCompress(compressTypes, respHeader.Get(echo.HeaderContentType))
-
-			if status == cache.Cacheable {
-				// 如果数据是读取缓存，有需要设置Age
-				age := uint32(time.Now().Unix()) - cr.CreatedAt
-				respHeader.Set(vars.Age, strconv.Itoa(int(age)))
-			}
-
-			xStatus := ""
-			switch status {
-			case cache.Pass:
-				xStatus = vars.Pass
-			case cache.Fetching:
-				xStatus = vars.Fetching
-			case cache.HitForPass:
-				xStatus = vars.HitForPass
-			default:
-				xStatus = vars.Cacheable
-			}
-			respHeader.Set(vars.XStatus, xStatus)
-			statusCode := int(cr.StatusCode)
-
-			// pass的都是不可能缓存
-			// 可缓存的处理继续后续缓存流程
-			if status != cache.Cacheable && status != cache.Pass {
-				identity := pc.identity
-				go func() {
-					if cr.TTL == 0 {
-						if status != cache.HitForPass {
-							client.HitForPass(identity, vars.HitForPassTTL)
-						}
-					} else {
-						save(client, identity, cr, compressible)
-					}
-				}()
-			}
-
-			// 304 的处理
-			if pc.fresh {
-				resp.WriteHeader(http.StatusNotModified)
-				setSeverTiming()
-				return nil
-			}
-
-			acceptEncoding := ""
-			// 如果数据不应该被压缩，则直接认为客户端不接受压缩数据
-			if compressible {
-				acceptEncoding = reqHeader.Get(echo.HeaderAcceptEncoding)
-			}
-			body, enconding := cr.GetBody(acceptEncoding)
-			if enconding != "" {
-				respHeader.Set(echo.HeaderContentEncoding, enconding)
-			}
-
-			setSeverTiming()
-			respHeader.Set(echo.HeaderContentLength, strconv.Itoa(len(body)))
-			resp.WriteHeader(statusCode)
-			_, err := resp.Write(body)
-			return err
 		}
+
+		compressible := shouldCompress(compressTypes, respHeader.Get(pike.HeaderContentType))
+
+		if status == cache.Cacheable {
+			// 如果数据是读取缓存，有需要设置Age
+			age := uint32(time.Now().Unix()) - cr.CreatedAt
+			respHeader.Set(pike.HeaderAge, strconv.Itoa(int(age)))
+		}
+
+		xStatus := cache.StatusDescArr[status]
+		respHeader.Set(pike.HeaderXStatus, xStatus)
+		statusCode := int(cr.StatusCode)
+
+		// pass的都是不可能缓存
+		// 可缓存的处理继续后续缓存流程
+		if status != cache.Cacheable && status != cache.Pass {
+			identity := c.Identity
+			go func() {
+				if cr.TTL == 0 {
+					if status != cache.HitForPass {
+						client.HitForPass(identity, vars.HitForPassTTL)
+					}
+				} else {
+					save(client, identity, cr, compressible)
+				}
+			}()
+		}
+
+		// 304 的处理
+		if c.Fresh {
+			resp.WriteHeader(http.StatusNotModified)
+			setSeverTiming()
+			return nil
+		}
+
+		acceptEncoding := ""
+		// 如果数据不应该被压缩，则直接认为客户端不接受压缩数据
+		if compressible {
+			acceptEncoding = reqHeader.Get(pike.HeaderAcceptEncoding)
+		}
+		body, enconding := cr.GetBody(acceptEncoding)
+		if enconding != "" {
+			respHeader.Set(pike.HeaderContentEncoding, enconding)
+		}
+
+		setSeverTiming()
+		resp.WriteHeader(statusCode)
+		_, err := resp.Write(body)
+		return err
 	}
 }

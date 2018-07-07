@@ -1,58 +1,43 @@
-package custommiddleware
+package middleware
 
 import (
-	"github.com/labstack/echo"
-	"github.com/labstack/echo/middleware"
 	"github.com/vicanso/pike/cache"
-
-	"github.com/vicanso/pike/proxy"
-	"github.com/vicanso/pike/vars"
+	"github.com/vicanso/pike/pike"
 )
 
 type (
 	// DirectorPickerConfig director配置
 	DirectorPickerConfig struct {
-		Skipper middleware.Skipper
 	}
 )
 
 // DirectorPicker 根据请求的参数获取相应的director
 // 判断director是否符合是顺序查询，因此需要将directors先根据优先级排好序
-func DirectorPicker(config DirectorPickerConfig, directors proxy.Directors) echo.MiddlewareFunc {
-	// Defaults
-	if config.Skipper == nil {
-		config.Skipper = middleware.DefaultSkipper
-	}
-	return func(next echo.HandlerFunc) echo.HandlerFunc {
-		return func(c echo.Context) error {
-			if config.Skipper(c) {
-				return next(c)
-			}
-			pc := c.(*Context)
-			done := pc.serverTiming.Start(ServerTimingDirectorPicker)
-			// 如果缓存数据，不需要获取director
-			if pc.status == cache.Cacheable {
-				done()
-				return next(pc)
-			}
-			req := pc.Request()
-			host := req.Host
-			uri := req.RequestURI
-			found := false
-
-			for _, d := range directors {
-				if d.Match(host, uri) {
-					pc.director = d
-					found = true
-					break
-				}
-			}
-			if !found {
-				done()
-				return vars.ErrDirectorNotFound
-			}
+func DirectorPicker(config DirectorPickerConfig, directors pike.Directors) pike.Middleware {
+	return func(c *pike.Context, next pike.Next) error {
+		done := c.ServerTiming.Start(pike.ServerTimingDirectorPicker)
+		// 如果缓存数据，不需要获取director
+		if c.Status == cache.Cacheable {
 			done()
-			return next(pc)
+			return next()
 		}
+		req := c.Request
+		host := req.Host
+		uri := req.RequestURI
+		found := false
+
+		for _, d := range directors {
+			if d.Match(host, uri) {
+				c.Director = d
+				found = true
+				break
+			}
+		}
+		if !found {
+			done()
+			return ErrDirectorNotFound
+		}
+		done()
+		return next()
 	}
 }

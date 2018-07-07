@@ -1,14 +1,11 @@
-package custommiddleware
+package middleware
 
 import (
 	"strings"
 
-	"github.com/vicanso/pike/util"
-	"github.com/vicanso/pike/vars"
-
-	"github.com/labstack/echo"
-	"github.com/labstack/echo/middleware"
 	"github.com/vicanso/pike/performance"
+	"github.com/vicanso/pike/pike"
+	"github.com/vicanso/pike/util"
 )
 
 const (
@@ -18,18 +15,13 @@ const (
 type (
 	// InitializationConfig 初始化配置
 	InitializationConfig struct {
-		Skipper     middleware.Skipper
 		Header      []string
 		Concurrency int
 	}
 )
 
 // Initialization 相关一些初始化的操作
-func Initialization(config InitializationConfig) echo.MiddlewareFunc {
-	// Defaults
-	if config.Skipper == nil {
-		config.Skipper = middleware.DefaultSkipper
-	}
+func Initialization(config InitializationConfig) pike.Middleware {
 	customHeader := make(map[string]string)
 	// 将自定义的http response header格式化
 	for _, v := range config.Header {
@@ -45,32 +37,29 @@ func Initialization(config InitializationConfig) echo.MiddlewareFunc {
 	if config.Concurrency != 0 {
 		concurrency = uint32(config.Concurrency)
 	}
-	return func(next echo.HandlerFunc) echo.HandlerFunc {
-		return func(c echo.Context) (err error) {
-			if config.Skipper(c) {
-				return next(c)
-			}
-			pc := c.(*Context)
-			done := pc.serverTiming.Start(ServerTimingInitialization)
-			defer func() {
-				performance.DecreaseConcurrency()
-				resp := pc.Response()
-				status := resp.Status
-				use := util.GetTimeConsuming(pc.createdAt)
-				performance.AddRequestStats(status, use)
-			}()
-			resHeader := pc.Response().Header()
-			for k, v := range customHeader {
-				resHeader.Add(k, v)
-			}
-			performance.IncreaseRequestCount()
-			v := performance.IncreaseConcurrency()
-			if v > concurrency {
-				done()
-				return vars.ErrTooManyRequest
-			}
-			done()
-			return next(pc)
+
+	return func(c *pike.Context, next pike.Next) error {
+		done := c.ServerTiming.Start(pike.ServerTimingInitialization)
+		performance.IncreaseRequestCount()
+
+		defer func() {
+			performance.DecreaseConcurrency()
+			status := c.Response.Status()
+			use := util.GetTimeConsuming(c.CreatedAt)
+			performance.AddRequestStats(status, use)
+		}()
+
+		resHeader := c.Response.Header()
+		for k, v := range customHeader {
+			resHeader.Add(k, v)
 		}
+
+		v := performance.IncreaseConcurrency()
+		if v > concurrency {
+			done()
+			return ErrTooManyRequest
+		}
+		done()
+		return next()
 	}
 }

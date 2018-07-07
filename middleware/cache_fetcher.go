@@ -1,55 +1,42 @@
-package custommiddleware
+package middleware
 
 import (
-	"github.com/labstack/echo"
-	"github.com/labstack/echo/middleware"
 	"github.com/vicanso/pike/cache"
-	"github.com/vicanso/pike/vars"
+	"github.com/vicanso/pike/pike"
 )
 
 type (
 	// CacheFetcherConfig cache fetcher配置
 	CacheFetcherConfig struct {
-		Skipper middleware.Skipper
 	}
 )
 
 // CacheFetcher 从缓存中获取数据
-func CacheFetcher(config CacheFetcherConfig, client *cache.Client) echo.MiddlewareFunc {
-	// Defaults
-	if config.Skipper == nil {
-		config.Skipper = middleware.DefaultSkipper
-	}
-	return func(next echo.HandlerFunc) echo.HandlerFunc {
-		return func(c echo.Context) error {
-			if config.Skipper(c) {
-				return next(c)
-			}
-			pc := c.(*Context)
-			done := pc.serverTiming.Start(ServerTimingCacheFetcher)
-			status := pc.status
-			if status == 0 {
-				done()
-				return vars.ErrRequestStatusNotSet
-			}
-			// 如果非cache的
-			if status != cache.Cacheable {
-				done()
-				return next(pc)
-			}
-			identity := pc.identity
-			if identity == nil {
-				done()
-				return vars.ErrIdentityNotSet
-			}
-			resp, err := client.GetResponse(identity)
-			if err != nil {
-				done()
-				return err
-			}
-			pc.resp = resp
+func CacheFetcher(config CacheFetcherConfig, client *cache.Client) pike.Middleware {
+	return func(c *pike.Context, next pike.Next) error {
+		done := c.ServerTiming.Start(pike.ServerTimingCacheFetcher)
+		status := c.Status
+		if status == 0 {
 			done()
-			return next(pc)
+			return ErrRequestStatusNotSet
 		}
+		// 如果非cache的
+		if status != cache.Cacheable {
+			done()
+			return next()
+		}
+		identity := c.Identity
+		if identity == nil {
+			done()
+			return ErrIdentityNotSet
+		}
+		resp, err := client.GetResponse(identity)
+		if err != nil {
+			done()
+			return err
+		}
+		c.Resp = resp
+		done()
+		return next()
 	}
 }

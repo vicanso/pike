@@ -1,13 +1,13 @@
-package custommiddleware
+package middleware
 
 import (
-	"net/http/httptest"
+	"net/http"
 	"testing"
 	"time"
 
 	"github.com/vicanso/pike/cache"
-
-	"github.com/labstack/echo"
+	"github.com/vicanso/pike/pike"
+	"github.com/vicanso/pike/util"
 )
 
 func TestIdentifier(t *testing.T) {
@@ -22,55 +22,53 @@ func TestIdentifier(t *testing.T) {
 
 	conf := IdentifierConfig{}
 
-	t.Run("pass", func(t *testing.T) {
-		fn := Identifier(conf, client)(func(c echo.Context) error {
-			pc := c.(*Context)
-			if pc.status != cache.Pass {
-				t.Fatalf("the status of post request should be pass")
-			}
-			return nil
-		})
-		e := echo.New()
-		req := httptest.NewRequest(echo.POST, "/users/me", nil)
-		c := e.NewContext(req, nil)
-		pc := NewContext(c)
-		fn(pc)
-	})
+	fn := Identifier(conf, client)
 
+	r := &http.Request{}
+
+	r.Method = http.MethodGet
+	r.Host = "127.0.0.1"
+	r.RequestURI = "/users/me?cache-control=no-cache"
 	t.Run("fetching", func(t *testing.T) {
-		fn := Identifier(conf, client)(func(c echo.Context) error {
-			pc := c.(*Context)
-			if pc.status != cache.Fetching {
-				t.Fatalf("the status of the first get request should be fetching")
-			}
+		c := pike.NewContext(&http.Request{})
+		err = fn(c, func() error {
 			return nil
 		})
-		e := echo.New()
-		req := httptest.NewRequest(echo.GET, "/users/me", nil)
-		c := e.NewContext(req, nil)
-		pc := NewContext(c)
-		fn(pc)
-
+		if err != nil {
+			t.Fatalf("identifier middleware fail, %v", err)
+		}
+		if c.Status != cache.Pass {
+			t.Fatalf("the request should be pass(Not GET OR HEAD)")
+		}
+		c.Request = r
+		err = fn(c, func() error {
+			return nil
+		})
+		if err != nil {
+			t.Fatalf("identifier middleware fail, %v", err)
+		}
+		if c.Status != cache.Fetching {
+			t.Fatalf("the request of get should be fetching")
+		}
+		if string(c.Identity) != "GET 127.0.0.1 /users/me?cache-control=no-cache" {
+			t.Fatalf("the identity of request is wrong")
+		}
 	})
 
-	t.Run("hit for pass", func(t *testing.T) {
-		fn := Identifier(conf, client)(func(c echo.Context) error {
-			pc := c.(*Context)
-			if pc.status != cache.HitForPass {
-				t.Fatalf("the status of the request should be hit for pass")
-			}
+	t.Run("waiting status", func(t *testing.T) {
+		c := pike.NewContext(r)
+		go func() {
+			time.Sleep(10 * time.Millisecond)
+			client.UpdateRequestStatus(util.GetIdentity(r), cache.HitForPass, 300)
+		}()
+		err = fn(c, func() error {
 			return nil
 		})
-		e := echo.New()
-		req := httptest.NewRequest(echo.GET, "/users/me", nil)
-		c := e.NewContext(req, nil)
-		pc := NewContext(c)
-		go func() {
-			// 延时执行
-			time.Sleep(10 * time.Millisecond)
-			client.HitForPass([]byte("GET example.com /users/me"), 600)
-		}()
-		fn(pc)
-
+		if err != nil {
+			t.Fatalf("wait for status fail, %v", err)
+		}
+		if c.Status != cache.HitForPass {
+			t.Fatalf("the wait for status should be hit for pass")
+		}
 	})
 }

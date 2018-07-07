@@ -1,10 +1,11 @@
-package custommiddleware
+package middleware
 
 import (
-	"net/http/httptest"
+	"net/http"
 	"testing"
 
-	"github.com/labstack/echo"
+	"github.com/vicanso/pike/performance"
+	"github.com/vicanso/pike/pike"
 )
 
 func TestInitialization(t *testing.T) {
@@ -12,21 +13,25 @@ func TestInitialization(t *testing.T) {
 		Header: []string{
 			"X-Token:ABCD",
 		},
-		Concurrency: 10,
+		Concurrency: 1,
 	}
-	fn := Initialization(conf)(func(c echo.Context) error {
-		pc := c.(*Context)
-		if pc.Response().Header().Get("X-Token") != "ABCD" {
-			t.Fatalf("set header in init function fail")
-		}
+	fn := Initialization(conf)
+	r := &http.Request{}
+	c := pike.NewContext(r)
+	err := fn(c, func() error {
 		return nil
 	})
-	resp := &httptest.ResponseRecorder{}
-	e := echo.New()
-	c := e.NewContext(nil, resp)
-	pc := NewContext(c)
-	err := fn(pc)
 	if err != nil {
-		t.Fatalf("initialization fail")
+		t.Fatalf("init middleware fail, %v", err)
+	}
+	if c.Response.Header().Get("X-Token") != "ABCD" {
+		t.Fatalf("init middleware set header fail")
+	}
+	performance.IncreaseConcurrency()
+	err = fn(c, func() error {
+		return nil
+	})
+	if err != ErrTooManyRequest {
+		t.Fatalf("init middleware should throw too many request error")
 	}
 }

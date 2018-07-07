@@ -10,8 +10,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/labstack/echo"
-
+	"github.com/vicanso/pike/pike"
 	"github.com/vicanso/pike/util"
 )
 
@@ -249,48 +248,48 @@ func Parse(desc []byte) []*Tag {
 }
 
 // Format 格式化访问日志信息
-func Format(c echo.Context, tags []*Tag, startedAt time.Time) string {
+func Format(c *pike.Context, tags []*Tag, startedAt time.Time) string {
 	fn := func(tag *Tag) string {
 		switch tag.category {
 		case host:
-			return c.Request().Host
+			return c.Request.Host
 		case method:
-			return c.Request().Method
+			return c.Request.Method
 		case path:
-			p := c.Request().URL.Path
+			p := c.Request.URL.Path
 			if p == "" {
 				p = "/"
 			}
 			return p
 		case proto:
-			return c.Request().Proto
+			return c.Request.Proto
 		case query:
-			return c.QueryString()
+			return c.Request.URL.RawQuery
 		case remote:
-			return c.Request().RemoteAddr
+			return c.Request.RemoteAddr
 		case clientIP:
 			return c.RealIP()
 		case scheme:
-			if c.IsTLS() {
+			if c.Request.TLS != nil {
 				return httpsProto
 			}
 			return httpProto
 		case uri:
-			return c.Request().RequestURI
+			return c.Request.RequestURI
 		case cookie:
-			cookie, err := c.Cookie(tag.data)
+			cookie, err := c.Request.Cookie(tag.data)
 			if err != nil {
 				return ""
 			}
 			return cookie.Value
 		case requestHeader:
-			return c.Request().Header.Get(tag.data)
+			return c.Request.Header.Get(tag.data)
 		case responseHeader:
-			return c.Response().Header().Get(tag.data)
+			return c.Response.Header().Get(tag.data)
 		case referer:
-			return c.Request().Referer()
+			return c.Request.Referer()
 		case userAgent:
-			return c.Request().UserAgent()
+			return c.Request.UserAgent()
 		case when:
 			return time.Now().Format(time.RFC1123Z)
 		case whenISO:
@@ -300,13 +299,13 @@ func Format(c echo.Context, tags []*Tag, startedAt time.Time) string {
 		case whenUnix:
 			return strconv.FormatInt(time.Now().Unix(), 10)
 		case status:
-			return strconv.Itoa(c.Response().Status)
+			return strconv.Itoa(c.Response.Status())
 		// case payloadSize:
 		// 	return []byte(strconv.Itoa(len(ctx.Request.Body())))
 		case size:
-			return strconv.FormatInt(c.Response().Size, 10)
+			return strconv.Itoa(c.Response.Size())
 		case sizeHuman:
-			return util.GetHumanReadableSize(c.Response().Size)
+			return util.GetHumanReadableSize(c.Response.Size())
 		case latency:
 			return time.Since(startedAt).String()
 		case latencyMs:

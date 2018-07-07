@@ -12,7 +12,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/labstack/echo"
+	"github.com/vicanso/pike/pike"
 )
 
 func TestParse(t *testing.T) {
@@ -23,20 +23,18 @@ func TestParse(t *testing.T) {
 	}
 	startedAt := time.Now()
 
-	e := echo.New()
-	req := httptest.NewRequest(echo.GET, "http://aslant.site:5000/users/login?cache-control=no-cache", nil)
-	resp := httptest.NewRecorder()
-	c := e.NewContext(req, resp)
-	c.Request().Header.Set("Referer", "http://pike.aslant.site/")
-	c.Request().Header.Set("User-Agent", "pike/client")
+	req := httptest.NewRequest(http.MethodGet, "http://aslant.site:5000/users/login?cache-control=no-cache", nil)
+	c := pike.NewContext(req)
+	c.Request.Header.Set("Referer", "http://pike.aslant.site/")
+	c.Request.Header.Set("User-Agent", "pike/client")
 	cookie := &http.Cookie{
 		Name:  "jt",
 		Value: "cookieValue",
 	}
-	c.SetCookie(cookie)
-	c.Request().Header.Set("X-Request-Id", "requestId")
-	c.Response().Header().Set("X-Response-Id", "responseId")
-	c.Response().Write([]byte("hello world"))
+	c.Request.AddCookie(cookie)
+	c.Request.Header.Set("X-Request-Id", "requestId")
+	c.Response.Header().Set("X-Response-Id", "responseId")
+	c.Response.Write([]byte("hello world"))
 
 	str := Format(c, tags, startedAt)
 	fmt.Println(str)

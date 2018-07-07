@@ -8,8 +8,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/vicanso/pike/vars"
-
 	"github.com/vicanso/pike/util"
 )
 
@@ -110,7 +108,7 @@ func TestResponse(t *testing.T) {
 
 		r.BrBody = nil
 		_, err = r.getRawBody()
-		if err != vars.ErrBodyCotentNotFound {
+		if err != ErrBodyCotentNotFound {
 			t.Fatalf("not found body should return error")
 		}
 	})
@@ -433,4 +431,22 @@ func TestGetStats(t *testing.T) {
 			t.Fatalf("remove cached fail")
 		}
 	})
+}
+
+func TestGetFetchingList(t *testing.T) {
+	c := Client{
+		Path: dbPath,
+	}
+	err := c.Init()
+	if err != nil {
+		t.Fatalf("cache init fail, %v", err)
+	}
+	defer c.Close()
+	c.GetRequestStatus([]byte("1"))
+	c.GetRequestStatus([]byte("2"))
+	c.HitForPass([]byte("2"), 300)
+	result := c.GetFetchingList()
+	if len(result) != 1 && result[0].Key != "1" {
+		t.Fatalf("get fetch list fail")
+	}
 }

@@ -1,67 +1,56 @@
-package custommiddleware
+package middleware
 
 import (
 	"net/http"
 
-	"github.com/labstack/echo"
-	"github.com/labstack/echo/middleware"
+	"github.com/vicanso/pike/pike"
+
 	"github.com/vicanso/fresh"
-	"github.com/vicanso/pike/vars"
 )
 
 type (
 	// FreshCheckerConfig freshChecker配置
 	FreshCheckerConfig struct {
-		Skipper middleware.Skipper
 	}
 )
 
 // FreshChecker 判断请求是否fresh(304)
-func FreshChecker(config FreshCheckerConfig) echo.MiddlewareFunc {
-	// Defaults
-	if config.Skipper == nil {
-		config.Skipper = middleware.DefaultSkipper
-	}
-	return func(next echo.HandlerFunc) echo.HandlerFunc {
-		return func(c echo.Context) error {
-			if config.Skipper(c) {
-				return next(c)
-			}
-			pc := c.(*Context)
-			done := pc.serverTiming.Start(ServerTimingFreshChecker)
-			cr := pc.resp
-			if cr == nil {
-				done()
-				return vars.ErrResponseNotSet
-			}
-			statusCode := int(cr.StatusCode)
-			method := c.Request().Method
-			pc.fresh = false
-			if method != echo.GET && method != echo.HEAD {
-				done()
-				return next(pc)
-			}
-			if statusCode < http.StatusOK || statusCode >= http.StatusBadRequest {
-				done()
-				return next(c)
-			}
+func FreshChecker(config FreshCheckerConfig) pike.Middleware {
 
-			reqHeader := pc.Request().Header
-			resHeader := pc.Response().Header()
-
-			ifModifiedSince := []byte(reqHeader.Get(echo.HeaderIfModifiedSince))
-			ifNoneMatch := []byte(reqHeader.Get(vars.IfNoneMatch))
-			cacheControl := []byte(reqHeader.Get(vars.CacheControl))
-			eTag := []byte(resHeader.Get(vars.ETag))
-			lastModified := []byte(resHeader.Get(echo.HeaderLastModified))
-
-			// 如果请求还是fresh，则后续处理可返回304
-			if fresh.Check(ifModifiedSince, ifNoneMatch, cacheControl, lastModified, eTag) {
-				pc.fresh = true
-			}
-
+	return func(c *pike.Context, next pike.Next) error {
+		done := c.ServerTiming.Start(pike.ServerTimingFreshChecker)
+		cr := c.Resp
+		if cr == nil {
 			done()
-			return next(pc)
+			return ErrResponseNotSet
 		}
+		statusCode := int(cr.StatusCode)
+		method := c.Request.Method
+		c.Fresh = false
+		if method != http.MethodGet && method != http.MethodHead {
+			done()
+			return next()
+		}
+		if statusCode < http.StatusOK || statusCode >= http.StatusBadRequest {
+			done()
+			return next()
+		}
+
+		reqHeader := c.Request.Header
+		resHeader := c.Response.Header()
+
+		ifModifiedSince := []byte(reqHeader.Get(pike.HeaderIfModifiedSince))
+		ifNoneMatch := []byte(reqHeader.Get(pike.HeaderIfNoneMatch))
+		cacheControl := []byte(reqHeader.Get(pike.HeaderCacheControl))
+		eTag := []byte(resHeader.Get(pike.HeaderETag))
+		lastModified := []byte(resHeader.Get(pike.HeaderLastModified))
+
+		// 如果请求还是fresh，则后续处理可返回304
+		if fresh.Check(ifModifiedSince, ifNoneMatch, cacheControl, lastModified, eTag) {
+			c.Fresh = true
+		}
+
+		done()
+		return next()
 	}
 }

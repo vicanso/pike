@@ -3,6 +3,7 @@ package cache
 import (
 	"bytes"
 	"encoding/binary"
+	"errors"
 	"net/http"
 	"os"
 	"strings"
@@ -18,6 +19,11 @@ import (
 
 var json = jsoniter.ConfigCompatibleWithStandardLibrary
 
+var (
+	// ErrBodyCotentNotFound 无数据
+	ErrBodyCotentNotFound = errors.New("content not found")
+)
+
 const (
 	// Pass request status: pass
 	Pass = iota + 1
@@ -30,6 +36,16 @@ const (
 	// Cacheable request status: cacheable
 	Cacheable
 )
+
+// StatusDescArr status desc
+var StatusDescArr = []string{
+	"",
+	"pass",
+	"fetching",
+	"waiting",
+	"hitForPass",
+	"cacheable",
+}
 
 type (
 
@@ -134,7 +150,7 @@ func (r *Response) getRawBody() ([]byte, error) {
 	if len(r.BrBody) != 0 {
 		return util.BrotliDecode(r.BrBody)
 	}
-	return nil, vars.ErrBodyCotentNotFound
+	return nil, ErrBodyCotentNotFound
 }
 
 // GetBody 根据accept encondings 获取数据

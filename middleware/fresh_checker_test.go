@@ -1,92 +1,68 @@
-package custommiddleware
+package middleware
 
 import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
+	"github.com/vicanso/pike/pike"
+
 	"github.com/vicanso/pike/cache"
-
-	"github.com/vicanso/pike/vars"
-
-	"github.com/labstack/echo"
 )
 
 func TestFreshChecker(t *testing.T) {
 	freshCheckerConfig := FreshCheckerConfig{}
 	t.Run("no response", func(t *testing.T) {
-		fn := FreshChecker(freshCheckerConfig)(func(c echo.Context) error {
-			return nil
-		})
-		e := echo.New()
-		pc := NewContext(e.NewContext(nil, nil))
-		err := fn(pc)
-		if err != vars.ErrResponseNotSet {
+		fn := FreshChecker(freshCheckerConfig)
+		c := pike.NewContext(nil)
+		err := fn(c, pike.NoopNext)
+		if err != ErrResponseNotSet {
 			t.Fatalf("no response should return error")
 		}
 	})
 
 	t.Run("post request", func(t *testing.T) {
-		fn := FreshChecker(freshCheckerConfig)(func(c echo.Context) error {
-			pc := c.(*Context)
-			if pc.fresh {
-				t.Fatalf("post request will not be fresh")
-			}
-			return nil
-		})
-		e := echo.New()
-		req := httptest.NewRequest(echo.POST, "/users/me", nil)
-		c := e.NewContext(req, nil)
-		pc := NewContext(c)
-		pc.resp = &cache.Response{
+		fn := FreshChecker(freshCheckerConfig)
+		req := httptest.NewRequest(http.MethodPost, "/users/me", nil)
+		c := pike.NewContext(req)
+		c.Resp = &cache.Response{
 			StatusCode: http.StatusOK,
 		}
-		err := fn(pc)
+		err := fn(c, pike.NoopNext)
 		if err != nil {
 			t.Fatalf("check post request fail, %v", err)
+		}
+		if c.Fresh {
+			t.Fatalf("post request will not be fresh")
 		}
 	})
 
 	t.Run("get request(502)", func(t *testing.T) {
-		fn := FreshChecker(freshCheckerConfig)(func(c echo.Context) error {
-			pc := c.(*Context)
-			if pc.fresh {
-				t.Fatalf("get request(502) will not be fresh")
-			}
-			return nil
-		})
-		e := echo.New()
-		req := httptest.NewRequest(echo.GET, "/users/me", nil)
-		c := e.NewContext(req, nil)
-		pc := NewContext(c)
-		pc.resp = &cache.Response{
+		fn := FreshChecker(freshCheckerConfig)
+		req := httptest.NewRequest(http.MethodGet, "/users/me", nil)
+		c := pike.NewContext(req)
+		c.Resp = &cache.Response{
 			StatusCode: http.StatusBadGateway,
 		}
-		err := fn(pc)
+		err := fn(c, pike.NoopNext)
 		if err != nil {
 			t.Fatalf("check get request(502) fail, %v", err)
+		}
+		if c.Fresh {
+			t.Fatalf("post request will not be fresh")
 		}
 	})
 
 	t.Run("get reqeust(fresh)", func(t *testing.T) {
-		fn := FreshChecker(freshCheckerConfig)(func(c echo.Context) error {
-			pc := c.(*Context)
-			if !pc.fresh {
-				t.Fatalf("get reqeust(fresh) should be fresh")
-			}
-			return nil
-		})
-		e := echo.New()
-		req := httptest.NewRequest(echo.GET, "/users/me", nil)
-		resp := &httptest.ResponseRecorder{}
-		c := e.NewContext(req, resp)
-		pc := NewContext(c)
-		pc.resp = &cache.Response{
+		fn := FreshChecker(freshCheckerConfig)
+		req := httptest.NewRequest(http.MethodGet, "/users/me", nil)
+		c := pike.NewContext(req)
+		c.Resp = &cache.Response{
 			StatusCode: http.StatusOK,
 		}
-		pc.Request().Header.Set(vars.IfNoneMatch, "ABCD")
-		pc.Response().Header().Set(vars.ETag, "ABCD")
-		err := fn(pc)
+		c.Request.Header.Set(pike.HeaderIfNoneMatch, "ABCD")
+		c.Response.Header().Set(pike.HeaderETag, "ABCD")
+		err := fn(c, pike.NoopNext)
 		if err != nil {
 			t.Fatalf("check get reqeust(fresh) fail, %v", err)
 		}

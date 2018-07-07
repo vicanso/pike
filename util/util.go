@@ -94,7 +94,7 @@ func cut(str string) string {
 }
 
 // GetHumanReadableSize 获取便于阅读的数据大小
-func GetHumanReadableSize(size int64) string {
+func GetHumanReadableSize(size int) string {
 	if size < kbytes {
 		return fmt.Sprintf("%dB", size)
 	}
