@@ -11,7 +11,6 @@ import (
 	"github.com/vicanso/pike/performance"
 
 	"github.com/gobuffalo/packr"
-	"github.com/vicanso/echo"
 	"github.com/vicanso/pike/pike"
 	"github.com/vicanso/pike/util"
 )
@@ -49,7 +48,7 @@ func serve(c *pike.Context, file string) error {
 		gzip, err := util.Gzip(buf, 0)
 		if err == nil {
 			buf = gzip
-			header.Set(echo.HeaderContentEncoding, pike.GzipEncoding)
+			header.Set(pike.HeaderContentEncoding, pike.GzipEncoding)
 		}
 	}
 	setMaxAge := func(age int) {

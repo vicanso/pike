@@ -7,8 +7,6 @@ import (
 )
 
 var (
-	// // ErrNotSupportWebSocket 不支持websocket
-	// ErrNotSupportWebSocket = pike.NewHTTPError(http.StatusNotImplemented, "not support web socket")
 	// ErrDirectorNotFound 未找到可用的director
 	ErrDirectorNotFound = pike.NewHTTPError(http.StatusNotImplemented, "director not found")
 	// ErrRequestStatusNotSet 未设置请求的status

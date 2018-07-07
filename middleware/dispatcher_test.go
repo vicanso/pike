@@ -9,7 +9,6 @@ import (
 
 	"github.com/vicanso/pike/pike"
 
-	"github.com/vicanso/echo"
 	"github.com/vicanso/pike/cache"
 	"github.com/vicanso/pike/util"
 )
@@ -167,7 +166,7 @@ func TestDispatcher(t *testing.T) {
 	conf := DispatcherConfig{}
 	t.Run("dispatch response", func(t *testing.T) {
 		fn := Dispatcher(conf, client)
-		req := httptest.NewRequest(echo.POST, "/users/me", nil)
+		req := httptest.NewRequest(http.MethodPost, "/users/me", nil)
 		c := pike.NewContext(req)
 		c.Identity = []byte("abc")
 		c.Status = cache.Fetching
@@ -203,7 +202,7 @@ func TestDispatcher(t *testing.T) {
 			Body:       []byte("ABCD"),
 		}
 		fn := Dispatcher(conf, client)
-		req := httptest.NewRequest(echo.POST, "/users/me", nil)
+		req := httptest.NewRequest(http.MethodPost, "/users/me", nil)
 
 		c := pike.NewContext(req)
 		c.Identity = identity
@@ -229,7 +228,7 @@ func TestDispatcher(t *testing.T) {
 			Body:       []byte("ABCD"),
 		}
 		fn := Dispatcher(conf, client)
-		req := httptest.NewRequest(echo.GET, "/users/me", nil)
+		req := httptest.NewRequest(http.MethodGet, "/users/me", nil)
 		c := pike.NewContext(req)
 		c.Fresh = true
 		c.Identity = identity
