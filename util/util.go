@@ -11,12 +11,13 @@ import (
 	"time"
 
 	"github.com/google/brotli/go/cbrotli"
-	"github.com/vicanso/pike/vars"
 )
 
 const (
 	kbytes = 1024
 	mbytes = 1024 * 1024
+	// spaceByte 空格
+	spaceByte = byte(' ')
 )
 
 func noop() {}
@@ -134,13 +135,13 @@ func GetIdentity(req *http.Request) []byte {
 	copy(buffer[len:], req.Method)
 	len += methodLen
 
-	buffer[len] = vars.SpaceByte
+	buffer[len] = spaceByte
 	len++
 
 	copy(buffer[len:], req.Host)
 	len += hostLen
 
-	buffer[len] = vars.SpaceByte
+	buffer[len] = spaceByte
 	len++
 
 	copy(buffer[len:], req.RequestURI)

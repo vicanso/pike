@@ -6,6 +6,11 @@ import (
 	"github.com/vicanso/pike/pike"
 )
 
+const (
+	// HitForPassTTL hit for pass的有效期
+	HitForPassTTL = 600
+)
+
 var (
 	// ErrDirectorNotFound 未找到可用的director
 	ErrDirectorNotFound = pike.NewHTTPError(http.StatusNotImplemented, "director not found")

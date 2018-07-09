@@ -1,17 +1,13 @@
 package pike
 
 import (
-	"bytes"
-	"encoding/json"
 	"fmt"
-	"net"
 	"net/http"
 	"strconv"
-	"strings"
 	"sync"
 	"time"
 
-	"github.com/vicanso/pike/cache"
+	"github.com/vicanso/pike/vars"
 )
 
 /*
@@ -61,42 +57,7 @@ const (
 	JSONContent = "application/json; charset=utf-8"
 )
 
-const (
-	// ServerTimingPike pike
-	ServerTimingPike = iota
-	// ServerTimingInitialization init中间件
-	ServerTimingInitialization
-	// ServerTimingIdentifier identifier中间件
-	ServerTimingIdentifier
-	// ServerTimingDirectorPicker director picker中间件
-	ServerTimingDirectorPicker
-	// ServerTimingCacheFetcher cache fetcher中间件
-	ServerTimingCacheFetcher
-	// ServerTimingProxy proxy中间件
-	ServerTimingProxy
-	// ServerTimingHeaderSetter header setter中间件
-	ServerTimingHeaderSetter
-	// ServerTimingFreshChecker fresh checker中间件
-	ServerTimingFreshChecker
-	// ServerTimingDispatcher dispatcher中间件
-	ServerTimingDispatcher
-	// ServerTimingEnd server timing end
-	ServerTimingEnd
-)
-
 var (
-	// serverTimingDesList server timing的描述
-	serverTimingDesList = []string{
-		"0;dur=%s;desc=\"pike\"",
-		"1;dur=%s;desc=\"init\"",
-		"2;dur=%s;desc=\"identifier\"",
-		"3;dur=%s;desc=\"director picker\"",
-		"4;dur=%s;desc=\"cache fetcher\"",
-		"5;dur=%s;desc=\"proxy\"",
-		"6;dur=%s;desc=\"header setter\"",
-		"7;dur=%s;desc=\"fresh checker\"",
-		"7;dur=%s;desc=\"dispatcher\"",
-	}
 	noop = func() {}
 	// NoopNext no op next function
 	NoopNext = func() error {
@@ -117,45 +78,14 @@ type (
 		WriteTimeout time.Duration
 		ErrorHandler ErrorHandler
 	}
-	// Context context
-	Context struct {
-		Request        *http.Request
-		Response       *Response
-		ResponseWriter http.ResponseWriter
-		ServerTiming   *ServerTiming
-		// Status 该请求的状态 fetching pass等
-		Status int
-		// Identity 该请求的标记
-		Identity []byte
-		// Director 该请求对应的director
-		Director *Director
-		// Resp 该请求的响应数据
-		Resp *cache.Response
-		// Fresh 是否fresh
-		Fresh bool
-		// CreatedAt 创建时间
-		CreatedAt time.Time
-	}
+
 	// Middleware middleware function
 	Middleware func(*Context, Next) error
 	// Next next function
 	Next func() error
 	// ErrorHandler error handle function
 	ErrorHandler func(error, *Context)
-	// ServerTiming server timing
-	ServerTiming struct {
-		disabled      bool
-		startedAt     int64
-		startedAtList []int64
-		useList       []int64
-	}
-	// Response http response
-	Response struct {
-		body      *bytes.Buffer
-		headers   http.Header
-		code      int
-		Committed bool
-	}
+
 	// HTTPError represents an error that occurred while handling a request. (copy from echo)
 	HTTPError struct {
 		Code     int
@@ -192,153 +122,6 @@ func New() (p *Pike) {
 	}
 	p.ErrorHandler = p.DefaultErrorHanddler
 	return
-}
-
-// NewContext 创新新的Context并重置相应的属性
-func NewContext(req *http.Request) (c *Context) {
-	c = contextPool.Get().(*Context)
-	if c.ServerTiming == nil {
-		c.ServerTiming = &ServerTiming{
-			startedAtList: make([]int64, ServerTimingEnd),
-			useList:       make([]int64, ServerTimingEnd),
-			startedAt:     time.Now().UnixNano(),
-		}
-	} else {
-		c.ServerTiming.Reset()
-	}
-	if c.Response == nil {
-		c.Response = &Response{
-			body:    new(bytes.Buffer),
-			headers: make(http.Header),
-			code:    http.StatusNotFound,
-		}
-	} else {
-		c.Response.Reset()
-	}
-	c.Request = req
-	c.Reset()
-	return
-}
-
-// Reset 重置context
-func (c *Context) Reset() {
-	c.Status = 0
-	c.Identity = nil
-	c.Director = nil
-	c.Resp = nil
-	c.Fresh = false
-	c.CreatedAt = time.Now()
-}
-
-// RealIP 客户端真实IP
-func (c *Context) RealIP() string {
-	ra := c.Request.RemoteAddr
-	if ip := c.Request.Header.Get(HeaderXForwardedFor); ip != "" {
-		ra = strings.Split(ip, ", ")[0]
-	} else if ip := c.Request.Header.Get(HeaderXRealIP); ip != "" {
-		ra = ip
-	} else {
-		ra, _, _ = net.SplitHostPort(ra)
-	}
-	return ra
-}
-
-// JSON 返回json
-func (c *Context) JSON(data interface{}, status int) error {
-	buf, err := json.Marshal(data)
-	if err != nil {
-		return err
-	}
-	resp := c.Response
-	header := resp.Header()
-	header.Set(HeaderContentType, JSONContent)
-	header.Set(HeaderContentLength, strconv.Itoa(len(buf)))
-	resp.WriteHeader(status)
-	_, err = resp.Write(buf)
-	return err
-}
-
-// Reset 重置
-func (st *ServerTiming) Reset() {
-	useList := st.useList
-	for i := range useList {
-		useList[i] = 0
-	}
-	st.startedAt = time.Now().UnixNano()
-}
-
-// Start 开始server timing的记录
-func (st *ServerTiming) Start(index int) func() {
-	if st.disabled || index <= ServerTimingPike || index >= ServerTimingEnd {
-		return noop
-	}
-	startedAt := time.Now().UnixNano()
-	return func() {
-		st.useList[index] = time.Now().UnixNano() - startedAt
-	}
-}
-
-// String 获取server timing的http header string
-func (st *ServerTiming) String() string {
-	if st.disabled {
-		return ""
-	}
-	desList := []string{}
-	ms := float64(time.Millisecond)
-	// use := st.use
-	appendDesc := func(v int64, str string) {
-		desc := fmt.Sprintf(str, strconv.FormatFloat(float64(v)/ms, 'f', -1, 64))
-		desList = append(desList, desc)
-	}
-	useList := st.useList
-	useList[0] = time.Now().UnixNano() - st.startedAt
-
-	for i, v := range st.useList {
-		if v != 0 {
-			appendDesc(v, serverTimingDesList[i])
-		}
-	}
-	return strings.Join(desList, ",")
-}
-
-// WriteHeader write header
-func (w *Response) WriteHeader(code int) {
-	w.code = code
-}
-
-// Header get header
-func (w *Response) Header() http.Header {
-	return w.headers
-}
-
-// Write write buffer
-func (w *Response) Write(b []byte) (int, error) {
-	return w.body.Write(b)
-}
-
-// Status get the response status
-func (w *Response) Status() int {
-	return w.code
-}
-
-// Size get the response size
-func (w *Response) Size() int {
-	return w.body.Len()
-}
-
-// Reset reset the response sturct
-func (w *Response) Reset() {
-	w.body.Reset()
-	w.code = http.StatusNotFound
-	w.Committed = false
-	for k := range w.headers {
-		delete(w.headers, k)
-	}
-}
-
-// Bytes get the bytes of response
-func (w *Response) Bytes() []byte {
-	return w.body.Bytes()
 }
 
 // Use add middleware function
@@ -394,6 +177,7 @@ func (p *Pike) ListenAndServe(addr string) error {
 		WriteTimeout:   p.WriteTimeout,
 		MaxHeaderBytes: 1 << 20,
 	}
+	fmt.Printf("pike(%s) will listen on %s", vars.Version, addr)
 	return p.server.ListenAndServe()
 }
 

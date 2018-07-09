@@ -9,7 +9,6 @@ import (
 	"github.com/vicanso/pike/cache"
 	"github.com/vicanso/pike/pike"
 	"github.com/vicanso/pike/util"
-	"github.com/vicanso/pike/vars"
 )
 
 type (
@@ -40,7 +39,7 @@ func save(client *cache.Client, identity []byte, resp *cache.Response, compressi
 	level := resp.CompressLevel
 	compressMinLength := resp.CompressMinLength
 	if compressMinLength == 0 {
-		compressMinLength = vars.CompressMinLength
+		compressMinLength = cache.CompressMinLength
 	}
 	if resp.StatusCode == http.StatusNoContent || !compressible {
 		doSave()
@@ -73,7 +72,7 @@ func save(client *cache.Client, identity []byte, resp *cache.Response, compressi
 	// 204没有内容的情况已处理，不应该出现 body为空的现象（因为程序不支持304的处理，所以在proxy时已删除相应头，也不会出现304）
 	// 如果原始数据还是为空，则直接设置为hit for pass
 	if bodyLength == 0 {
-		client.HitForPass(identity, vars.HitForPassTTL)
+		client.HitForPass(identity, HitForPassTTL)
 		return
 	}
 	// 如果数据比最小压缩还小，不需要压缩缓存
@@ -155,7 +154,7 @@ func Dispatcher(config DispatcherConfig, client *cache.Client) pike.Middleware {
 			go func() {
 				if cr.TTL == 0 {
 					if status != cache.HitForPass {
-						client.HitForPass(identity, vars.HitForPassTTL)
+						client.HitForPass(identity, HitForPassTTL)
 					}
 				} else {
 					save(client, identity, cr, compressible)

@@ -172,14 +172,14 @@ func TestHealthCheck(t *testing.T) {
 		Backends: backends,
 	}
 	d.HealthCheck()
-	time.Sleep(5 * time.Millisecond)
+	time.Sleep(100 * time.Millisecond)
 	availableBackends := d.GetAvailableBackends()
 	if len(availableBackends) != 2 {
 		t.Fatalf("the health check fail")
 	}
 	// 此次测试由于没有mock，因此全部失败
 	d.HealthCheck()
-	time.Sleep(5 * time.Millisecond)
+	time.Sleep(100 * time.Millisecond)
 	availableBackends = d.GetAvailableBackends()
 	if len(availableBackends) != 0 {
 		t.Fatalf("the health check fail(all backend should be down)")
@@ -196,9 +196,17 @@ func TestSelect(t *testing.T) {
 		Policy:   "first",
 		Ping:     "/ping",
 		Backends: backends,
+		Rewrites: []string{
+			"/api/*:/$1",
+		},
 	}
 	d.AddAvailableBackend("http://127.0.0.1:5001")
 	d.AddAvailableBackend("http://127.0.0.1:5002")
+	d.GenRewriteRegexp()
+	if len(d.RewriteRegexp) != len(d.Rewrites) {
+		t.Fatalf("gen rewrite regexp fail")
+	}
+
 	for i := 0; i < 10; i++ {
 		backend := d.Select(NewContext(nil))
 		if backend != backends[0] {

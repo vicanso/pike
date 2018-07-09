@@ -13,6 +13,8 @@ import (
 	"strings"
 	"time"
 
+	// _ "net/http/pprof"
+
 	funk "github.com/thoas/go-funk"
 	"github.com/vicanso/pike/cache"
 	"github.com/vicanso/pike/config"
@@ -96,6 +98,9 @@ func getBuildAtDesc() string {
 }
 
 func main() {
+	// go func() {
+	// 	fmt.Println(http.ListenAndServe("0.0.0.0:6060", nil))
+	// }()
 	args := os.Args[1:]
 	if funk.ContainsString(args, "version") {
 		fmt.Println("Pike version " + vars.Version + ", build at " + getBuildAtDesc())
@@ -176,7 +181,7 @@ func main() {
 
 	// ping health check
 	p.Use(middleware.Ping(middleware.PingConfig{
-		URL: vars.PingURL,
+		URL: "/ping",
 	}))
 
 	// admin管理后台

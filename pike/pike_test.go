@@ -8,6 +8,16 @@ import (
 	"testing"
 )
 
+func TestHTTPError(t *testing.T) {
+	err := &HTTPError{
+		Code:    500,
+		Message: "abc",
+	}
+	if err.Error() != "code=500, message=abc" {
+		t.Fatalf("http error fail")
+	}
+}
+
 func TestPike(t *testing.T) {
 	t.Run("use middleware", func(t *testing.T) {
 		p := New()
@@ -74,6 +84,24 @@ func TestPike(t *testing.T) {
 		}
 		if len(stepList) != 1 && stepList[0] != "START1" {
 			t.Fatalf("midlleware run order is wrong")
+		}
+	})
+
+	t.Run("default error hadnler", func(t *testing.T) {
+		p := New()
+		c := NewContext(nil)
+		resp := httptest.NewRecorder()
+		c.ResponseWriter = resp
+		err := &HTTPError{
+			Code:    http.StatusBadGateway,
+			Message: "AB",
+		}
+		p.DefaultErrorHanddler(err, c)
+		if resp.Code != http.StatusBadGateway {
+			t.Fatalf("the response status code shoud be bad gate way")
+		}
+		if string(resp.Body.Bytes()) != "AB" {
+			t.Fatalf("check the error response message fail")
 		}
 	})
 

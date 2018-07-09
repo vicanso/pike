@@ -111,6 +111,7 @@ func TestProxy(t *testing.T) {
 			Rewrites: []string{
 				"/api/*:/$1",
 			},
+			ETag: true,
 		})
 		req := httptest.NewRequest(http.MethodGet, "http://aslant.site/api/users/me", nil)
 		req.Header.Set(pike.HeaderIfModifiedSince, "Mon, 07 Nov 2016 07:51:11 GMT")
@@ -156,6 +157,9 @@ func TestProxy(t *testing.T) {
 		str := strings.Trim(string(c.Response.Bytes()), "\n")
 		if str != `{"name":"tree.xie"}` {
 			t.Fatalf("response is wrong")
+		}
+		if c.Resp.Header.Get(pike.HeaderETag) != `"14-ZdLTgzijvqSBiiTfc9EBKpL-yNs="` {
+			t.Fatalf("gen etag fail")
 		}
 	})
 

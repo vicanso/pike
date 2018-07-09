@@ -17,7 +17,6 @@ import (
 
 	"github.com/vicanso/pike/cache"
 	"github.com/vicanso/pike/util"
-	"github.com/vicanso/pike/vars"
 )
 
 type (
@@ -117,7 +116,7 @@ func getCacheAge(header http.Header) uint16 {
 		return 0
 	}
 
-	cacheControl := []byte(header[vars.CacheControl][0])
+	cacheControl := []byte(header.Get(pike.HeaderCacheControl))
 	// 如果为空，则不可缓存
 	if len(cacheControl) == 0 {
 		return 0
@@ -229,9 +228,7 @@ func Proxy(config ProxyConfig) pike.Middleware {
 		if config.ETag {
 			eTagValue := util.GetHeaderValue(headers, pike.HeaderETag)
 			if len(eTagValue) == 0 {
-				headers[pike.HeaderETag] = []string{
-					genETag(body),
-				}
+				headers.Set(pike.HeaderETag, genETag(body))
 			}
 		}
 		cr := &cache.Response{
@@ -245,9 +242,9 @@ func Proxy(config ProxyConfig) pike.Middleware {
 			cr.Body = body
 		} else {
 			switch contentEncoding[0] {
-			case vars.GzipEncoding:
+			case cache.GzipEncoding:
 				cr.GzipBody = body
-			case vars.BrEncoding:
+			case cache.BrEncoding:
 				cr.BrBody = body
 			default:
 				return ErrContentEncodingNotSupport

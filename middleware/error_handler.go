@@ -7,7 +7,6 @@ import (
 	"github.com/vicanso/pike/cache"
 	"github.com/vicanso/pike/pike"
 	"github.com/vicanso/pike/util"
-	"github.com/vicanso/pike/vars"
 )
 
 // echo 默认的http error处理，增加对feching状态的设置
@@ -17,7 +16,7 @@ func CreateErrorHandler(client *cache.Client) pike.ErrorHandler {
 	return func(err error, c *pike.Context) {
 		// 如果出错的请求，都设置为hit for pass
 		key := util.GetIdentity(c.Request)
-		client.HitForPass(key, vars.HitForPassTTL)
+		client.HitForPass(key, HitForPassTTL)
 		if c.Response.Committed {
 			return
 		}

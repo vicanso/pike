@@ -12,7 +12,6 @@ import (
 
 	jsoniter "github.com/json-iterator/go"
 	"github.com/vicanso/pike/util"
-	"github.com/vicanso/pike/vars"
 
 	"github.com/akrylysov/pogreb"
 )
@@ -35,6 +34,15 @@ const (
 	HitForPass
 	// Cacheable request status: cacheable
 	Cacheable
+)
+
+const (
+	// CompressMinLength the min length to gzip
+	CompressMinLength = 1024
+	// GzipEncoding gzip encoding
+	GzipEncoding = "gzip"
+	// BrEncoding br encoding
+	BrEncoding = "br"
 )
 
 // StatusDescArr status desc
@@ -131,7 +139,7 @@ func bytesToUint32(buf []byte) uint32 {
 	return binary.LittleEndian.Uint32(buf)
 }
 
-// 判断是否已过期
+// 判断是否已过期 内嵌性能更高
 func isExpired(rs *RequestStatus) bool {
 	now := uint32(time.Now().Unix())
 	if rs.ttl != 0 && now-rs.createdAt > uint32(rs.ttl) {
@@ -161,7 +169,7 @@ func (r *Response) GetBody(acceptEncoding string) (body []byte, encoding string)
 	}
 	compressMinLength := r.CompressMinLength
 	if compressMinLength == 0 {
-		compressMinLength = vars.CompressMinLength
+		compressMinLength = CompressMinLength
 	}
 	rawBodySize := len(r.Body)
 	// 如果原始数据小于最低压缩限制，则直接返回
@@ -171,14 +179,14 @@ func (r *Response) GetBody(acceptEncoding string) (body []byte, encoding string)
 	}
 	level := r.CompressLevel
 	supportEncondings := []string{
-		vars.BrEncoding,
-		vars.GzipEncoding,
+		BrEncoding,
+		GzipEncoding,
 	}
 	for _, enc := range supportEncondings {
 		if !strings.Contains(acceptEncoding, enc) {
 			continue
 		}
-		if enc == vars.BrEncoding {
+		if enc == BrEncoding {
 			if len(r.BrBody) != 0 {
 				body = r.BrBody
 				encoding = enc
@@ -198,7 +206,7 @@ func (r *Response) GetBody(acceptEncoding string) (body []byte, encoding string)
 			body = brBody
 			encoding = enc
 			return
-		} else if enc == vars.GzipEncoding {
+		} else if enc == GzipEncoding {
 			if len(r.GzipBody) != 0 {
 				body = r.GzipBody
 				encoding = enc
@@ -315,7 +323,7 @@ func (c *Client) GetRequestStatus(key []byte) (status int, ch chan int) {
 	k := string(key)
 	rs := c.rsMap[k]
 	// 如果该key对应的状态为空或者已过期
-	if rs == nil || isExpired(rs) {
+	if rs == nil || (rs.ttl != 0 && uint32(time.Now().Unix())-rs.createdAt > uint32(rs.ttl)) {
 		status = Fetching
 		rs = &RequestStatus{
 			createdAt:    uint32(time.Now().Unix()),
