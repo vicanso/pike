@@ -88,3 +88,10 @@ func (c *Context) JSON(data interface{}, status int) error {
 	_, err = resp.Write(buf)
 	return err
 }
+
+// Error 出错处理
+func (c *Context) Error(err error) {
+	resp := c.ResponseWriter
+	resp.WriteHeader(http.StatusInternalServerError)
+	resp.Write([]byte(err.Error()))
+}

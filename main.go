@@ -202,6 +202,8 @@ func main() {
 		}))
 	}
 
+	p.Use(middleware.Recover(middleware.DefaultRecoverConfig))
+
 	// 初始化中间件的参数
 	initConfig := middleware.InitializationConfig{
 		Header:      dc.Header,

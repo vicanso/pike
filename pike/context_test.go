@@ -1,6 +1,7 @@
 package pike
 
 import (
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -61,6 +62,20 @@ func TestContext(t *testing.T) {
 		if string(c.Response.Bytes()) != `{"a":"1"}` {
 			t.Fatalf("json response fail")
 		}
+	})
 
+	t.Run("error", func(t *testing.T) {
+
+		r := &http.Request{}
+		w := httptest.NewRecorder()
+		c := NewContext(r)
+		c.ResponseWriter = w
+		c.Error(errors.New("ABCD"))
+		if w.Code != http.StatusInternalServerError {
+			t.Fatalf("status code should be internal error")
+		}
+		if string(w.Body.Bytes()) != "ABCD" {
+			t.Fatalf("response body should be ABCD")
+		}
 	})
 }
