@@ -7,6 +7,7 @@ import (
 	"sync"
 	"time"
 
+	log "github.com/sirupsen/logrus"
 	"github.com/vicanso/pike/vars"
 )
 
@@ -177,7 +178,7 @@ func (p *Pike) ListenAndServe(addr string) error {
 		WriteTimeout:   p.WriteTimeout,
 		MaxHeaderBytes: 1 << 20,
 	}
-	fmt.Printf("pike(%s) will listen on %s", vars.Version, addr)
+	log.Infof("pike(%s) will listen on %s", vars.Version, addr)
 	return p.server.ListenAndServe()
 }
 

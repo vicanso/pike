@@ -1,7 +1,6 @@
 package httplog
 
 import (
-	"fmt"
 	"net"
 	"os"
 	"regexp"
@@ -10,6 +9,7 @@ import (
 	"sync"
 	"time"
 
+	log "github.com/sirupsen/logrus"
 	"github.com/vicanso/pike/pike"
 	"github.com/vicanso/pike/util"
 )
@@ -152,7 +152,7 @@ func (w *FileWriter) Close() error {
 
 // Write 写日志
 func (c *Console) Write(buf []byte) error {
-	fmt.Println(string(buf))
+	log.Info(string(buf))
 	return nil
 }
 

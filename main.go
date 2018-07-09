@@ -3,7 +3,6 @@ package main
 import (
 	"encoding/json"
 	"flag"
-	"fmt"
 	"net"
 	"net/http"
 	"net/url"
@@ -15,6 +14,7 @@ import (
 
 	// _ "net/http/pprof"
 
+	log "github.com/sirupsen/logrus"
 	funk "github.com/thoas/go-funk"
 	"github.com/vicanso/pike/cache"
 	"github.com/vicanso/pike/config"
@@ -78,13 +78,13 @@ func check(conf *config.Config) {
 	url := "http://127.0.0.1" + conf.Listen + "/ping"
 	resp, err := http.Get(url)
 	if err != nil {
-		fmt.Println(err)
+		log.Error("health check fail, ", err)
 		os.Exit(1)
 		return
 	}
 	statusCode := resp.StatusCode
 	if statusCode < 200 || statusCode >= 400 {
-		fmt.Println(err)
+		log.Errorf("helth check fail, status:%d", statusCode)
 		os.Exit(1)
 		return
 	}
@@ -103,7 +103,7 @@ func main() {
 	// }()
 	args := os.Args[1:]
 	if funk.ContainsString(args, "version") {
-		fmt.Println("Pike version " + vars.Version + ", build at " + getBuildAtDesc())
+		log.Infof("Pike version %s build at %s", vars.Version, getBuildAtDesc())
 		return
 	}
 	var configFile string
@@ -118,15 +118,14 @@ func main() {
 		if err != nil {
 			panic(err)
 		}
-		fmt.Println(string(configJSON))
-		fmt.Println("the config file test done")
+		log.Infof("the config file test done, config:%s", string(configJSON))
 		return
 	}
-	fmt.Println("pike config file: " + configFile)
 	if funk.ContainsString(args, "check") {
 		check(dc)
 		return
 	}
+	log.Infof("start pike use the config:%s", configFile)
 
 	// 初始化缓存
 	client := &cache.Client{

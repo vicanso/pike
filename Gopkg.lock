@@ -56,6 +56,12 @@
   version = "v0.8.0"
 
 [[projects]]
+  name = "github.com/sirupsen/logrus"
+  packages = ["."]
+  revision = "418b41d23a1bf978c06faea5313ba194650ac088"
+  version = "v0.8.7"
+
+[[projects]]
   name = "github.com/thoas/go-funk"
   packages = ["."]
   revision = "14304e8530de7dbb909c8305591b3a8370dd9dbb"
@@ -70,6 +76,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "a9cf9388f401695ca11bc69d0f73d99af8f5345d8045308d5f718d595169e5fe"
+  inputs-digest = "7196e533d82028620776728b1aabe65100aed311a4a8ff2e3505c53bb71622f8"
   solver-name = "gps-cdcl"
   solver-version = 1
