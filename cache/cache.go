@@ -379,7 +379,7 @@ func (c *Client) UpdateRequestStatus(key []byte, status int, ttl uint16) {
 
 	c.Lock()
 	defer c.Unlock()
-	k := string(key)
+	k := byteSliceToString(key)
 	rs := c.rsMap[k]
 	if rs == nil {
 		return
@@ -427,7 +427,7 @@ func (c *Client) ClearExpired(delay int) {
 func (c *Client) Remove(key []byte) error {
 	c.Lock()
 	defer c.Unlock()
-	delete(c.rsMap, string(key))
+	delete(c.rsMap, byteSliceToString(key))
 	return c.db.Delete(key)
 }
 
