@@ -10,7 +10,7 @@ RUN apk update \
   && ./configure-cmake \
   && make && make install \
   && cd /go/src/github.com/vicanso/pike \
-  && GOOS=linux GOARCH=amd64 go build -tags netgo -ldflags "-X main.buildAt=`date -u +%Y%m%d.%H%M%S`" -o pike
+  && GOOS=linux GOARCH=amd64 go build -tags netgo -ldflags "-X main.buildAt=`date -u +%Y%m%d.%H%M%S`" -o pike-linux
 
 FROM alpine
 
@@ -19,12 +19,12 @@ RUN apk add --no-cache ca-certificates
 COPY --from=builder /usr/local/lib/libbrotlicommon.so.1 /usr/lib/
 COPY --from=builder /usr/local/lib/libbrotlienc.so.1 /usr/lib/
 COPY --from=builder /usr/local/lib/libbrotlidec.so.1 /usr/lib/
-COPY --from=builder /go/src/github.com/vicanso/pike/pike /
+COPY --from=builder /go/src/github.com/vicanso/pike/pike-linux /usr/local/bin/pike
 
 
 ADD ./config.yml /etc/pike/config.yml
 
-CMD ["/pike", "-c", "/etc/pike/config.yml"]
+CMD ["pike", "-c", "/etc/pike/config.yml"]
 
 HEALTHCHECK --interval=10s --timeout=3s \
   CMD ./pike -c /etc/pike/config.yml check || exit 1
