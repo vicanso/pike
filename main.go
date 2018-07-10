@@ -118,14 +118,14 @@ func main() {
 		if err != nil {
 			panic(err)
 		}
-		log.Infof("the config file test done, config:%s", string(configJSON))
+		log.Infof("the config file test done, config: %s", string(configJSON))
 		return
 	}
 	if funk.ContainsString(args, "check") {
 		check(dc)
 		return
 	}
-	log.Infof("start pike use the config:%s", configFile)
+	log.Infof("start pike use the config: %s", configFile)
 
 	// 初始化缓存
 	client := &cache.Client{
