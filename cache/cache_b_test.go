@@ -3,6 +3,8 @@ package cache
 import (
 	"net/http"
 	"testing"
+	"time"
+	"unsafe"
 )
 
 func BenchmarkSaveResponse(b *testing.B) {
@@ -71,8 +73,27 @@ func BenchmarkBytesToString(b *testing.B) {
 	}
 }
 
-func BenchmarkGetRequestStatus(b *testing.B) {
+func BenchmarkByteSliceToString(b *testing.B) {
 	key := []byte("ABCD")
+	for i := 0; i < b.N; i++ {
+		_ = *(*string)(unsafe.Pointer(&key))
+	}
+}
+
+func BenchmarkTimeNowNano(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		_ = time.Now().UnixNano()
+	}
+}
+
+func BenchmarkTimeNowSec(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		_ = time.Now().Unix()
+	}
+}
+
+func BenchmarkGetRequestStatus(b *testing.B) {
+	key := []byte("ABCDEFG")
 	c := Client{
 		Path: dbPath,
 	}
@@ -80,7 +101,15 @@ func BenchmarkGetRequestStatus(b *testing.B) {
 	if err != nil {
 		panic(err)
 	}
+	c.GetRequestStatus(key)
 	c.HitForPass(key, 300)
+	for j := 0; j < 4; j++ {
+		go func() {
+			for i := 0; i < b.N; i++ {
+				c.GetRequestStatus(key)
+			}
+		}()
+	}
 	for i := 0; i < b.N; i++ {
 		c.GetRequestStatus(key)
 	}

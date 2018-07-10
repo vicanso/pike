@@ -60,9 +60,10 @@ type (
 
 	// Client 缓存
 	Client struct {
-		Path  string
-		db    *pogreb.DB
-		rsMap map[string]*RequestStatus
+		Path         string
+		db           *pogreb.DB
+		rsMap        map[string]*RequestStatus
+		fastCacheMap *sync.Map
 		sync.RWMutex
 	}
 	// Response 响应数据
@@ -94,6 +95,11 @@ type (
 		status int
 		// 如果此请求为fetching，则此时相同的请求会写入一个chan
 		waitingChans []chan int
+	}
+	// FastCacheStatus 缓存的请求状态 (cacheable or hit for pass)
+	FastCacheStatus struct {
+		expiredAt int64
+		status    int
 	}
 	// Stats 各状态数量统计
 	Stats struct {
@@ -245,6 +251,7 @@ func (c *Client) Init() error {
 	db, err := pogreb.Open(c.Path, nil)
 	c.db = db
 	c.rsMap = make(map[string]*RequestStatus)
+	c.fastCacheMap = &sync.Map{}
 	return err
 }
 
@@ -351,27 +358,17 @@ func (c *Client) lockAndUpdateRsMap(k string) (status int, ch chan int) {
 // GetRequestStatus 获取key对应的请求status
 func (c *Client) GetRequestStatus(key []byte) (status int, ch chan int) {
 	k := byteSliceToString(key)
-	c.RLock()
-	rs := c.rsMap[k]
-	// 为空则需要做更新
-	if rs == nil {
-		c.RUnlock()
-		return c.lockAndUpdateRsMap(k)
-	}
-	// 过期
-	if rs.ttl != 0 && uint32(time.Now().Unix())-rs.createdAt > uint32(rs.ttl) {
-		c.RUnlock()
-		return c.lockAndUpdateRsMap(k)
-	}
-	if rs.status == Fetching {
-		c.RUnlock()
-		return c.lockAndUpdateRsMap(k)
+	now := time.Now().Unix()
+	result, ok := c.fastCacheMap.Load(k)
+	if ok {
+		fastCache := result.(*FastCacheStatus)
+		if fastCache.expiredAt > now {
+			status = fastCache.status
+			return
+		}
 	}
 
-	// hit for pass 或者 cacheable
-	status = rs.status
-	c.RUnlock()
-	return
+	return c.lockAndUpdateRsMap(k)
 }
 
 // UpdateRequestStatus 更新状态，获取等待中的请求，并设置状态和有效期
@@ -379,7 +376,7 @@ func (c *Client) UpdateRequestStatus(key []byte, status int, ttl uint16) {
 
 	c.Lock()
 	defer c.Unlock()
-	k := string(key)
+	k := byteSliceToString(key)
 	rs := c.rsMap[k]
 	if rs == nil {
 		return
@@ -393,6 +390,13 @@ func (c *Client) UpdateRequestStatus(key []byte, status int, ttl uint16) {
 		close(c)
 	}
 	rs.waitingChans = nil
+	if status == HitForPass || status == Cacheable {
+		fastCacheStatus := &FastCacheStatus{
+			expiredAt: time.Now().Unix() + int64(ttl),
+			status:    status,
+		}
+		c.fastCacheMap.Store(k, fastCacheStatus)
+	}
 }
 
 // HitForPass 设置为hit for pass
@@ -419,6 +423,7 @@ func (c *Client) ClearExpired(delay int) {
 		if ttl != 0 && now-v.createdAt > uint32(ttl)+uint32(delay) {
 			delete(c.rsMap, k)
 			c.db.Delete([]byte(k))
+			c.fastCacheMap.Delete(k)
 		}
 	}
 }
@@ -427,7 +432,9 @@ func (c *Client) ClearExpired(delay int) {
 func (c *Client) Remove(key []byte) error {
 	c.Lock()
 	defer c.Unlock()
-	delete(c.rsMap, string(key))
+	k := byteSliceToString(key)
+	delete(c.rsMap, k)
+	c.fastCacheMap.Delete(k)
 	return c.db.Delete(key)
 }
 
