@@ -30,16 +30,14 @@ func BenchmarkIdentifier(b *testing.B) {
 	client.Cacheable(key, 100)
 
 	fn := Identifier(IdentifierConfig{}, client)
-	go func() {
-		for i := 0; i < b.N; i++ {
-			fn(c, pike.NoopNext)
-		}
-	}()
-	go func() {
-		for i := 0; i < b.N; i++ {
-			fn(c, pike.NoopNext)
-		}
-	}()
+	for j := 0; j < 20; j++ {
+		go func() {
+			for i := 0; i < b.N; i++ {
+				fn(c, pike.NoopNext)
+			}
+		}()
+	}
+
 	for i := 0; i < b.N; i++ {
 		fn(c, pike.NoopNext)
 	}

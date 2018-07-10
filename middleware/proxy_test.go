@@ -154,7 +154,7 @@ func TestProxy(t *testing.T) {
 			t.Fatalf("proxy fail")
 		}
 		// 字符串最后有个换行符
-		str := strings.Trim(string(c.Response.Bytes()), "\n")
+		str := strings.Trim(string(c.Resp.Body), "\n")
 		if str != `{"name":"tree.xie"}` {
 			t.Fatalf("response is wrong")
 		}
@@ -194,7 +194,7 @@ func TestProxy(t *testing.T) {
 		if err != nil {
 			t.Fatalf("director with rewrites fail, %v", err)
 		}
-		str := strings.Trim(string(c.Response.Bytes()), "\n")
+		str := strings.Trim(string(c.Resp.Body), "\n")
 		if str != `{"name":"tree.xie"}` {
 			t.Fatalf("response is wrong")
 		}
@@ -227,7 +227,7 @@ func TestProxy(t *testing.T) {
 		if err != nil {
 			t.Fatalf("proxy response gzip fail, %v", err)
 		}
-		str := strings.Trim(string(c.Response.Bytes()), "\n")
+		str := strings.Trim(string(c.Resp.GzipBody), "\n")
 		if str != `{"name":"tree.xie"}` {
 			t.Fatalf("response is wrong")
 		}
@@ -260,7 +260,7 @@ func TestProxy(t *testing.T) {
 		if err != nil {
 			t.Fatalf("proxy response br fail, %v", err)
 		}
-		str := strings.Trim(string(c.Response.Bytes()), "\n")
+		str := strings.Trim(string(c.Resp.BrBody), "\n")
 		if str != `{"name":"tree.xie"}` {
 			t.Fatalf("response is wrong")
 		}

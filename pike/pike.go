@@ -156,6 +156,10 @@ func (p *Pike) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	res := c.Response
+	// 已经返回数据
+	if res.Committed {
+		return
+	}
 	res.Committed = true
 	header := w.Header()
 	for field, values := range res.Header() {

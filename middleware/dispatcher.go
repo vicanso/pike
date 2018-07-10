@@ -124,6 +124,7 @@ func Dispatcher(config DispatcherConfig, client *cache.Client) pike.Middleware {
 		cr.CompressLevel = compressLevel
 
 		resp := c.Response
+		header := cr.Header
 		respHeader := resp.Header()
 		reqHeader := c.Request.Header
 
@@ -135,7 +136,7 @@ func Dispatcher(config DispatcherConfig, client *cache.Client) pike.Middleware {
 			}
 		}
 
-		compressible := shouldCompress(compressTypes, respHeader.Get(pike.HeaderContentType))
+		compressible := shouldCompress(compressTypes, header.Get(pike.HeaderContentType))
 
 		if status == cache.Cacheable {
 			// 如果数据是读取缓存，有需要设置Age

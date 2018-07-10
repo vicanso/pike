@@ -31,7 +31,4 @@ var (
 	ErrGatewayTimeout = pike.NewHTTPError(http.StatusGatewayTimeout, "gateway timeout")
 	// ErrTooManyRequest 太多的请求正在处理中
 	ErrTooManyRequest = pike.NewHTTPError(http.StatusTooManyRequests, "too many request is handling")
-
-// // ErrTokenInvalid token校验失败
-// ErrTokenInvalid = pike.NewHTTPError(http.StatusUnauthorized, "token is invalid")
 )

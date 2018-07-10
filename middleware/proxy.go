@@ -12,6 +12,7 @@ import (
 	"strings"
 	"sync"
 	"time"
+	"unsafe"
 
 	"github.com/vicanso/pike/pike"
 
@@ -105,18 +106,24 @@ func proxyHTTP(t *ProxyTarget, transport *http.Transport) http.Handler {
 	return p
 }
 
+// byteSliceToString converts a []byte to string without a heap allocation.
+func byteSliceToString(b []byte) string {
+	return *(*string)(unsafe.Pointer(&b))
+}
+
 // 根据Cache-Control的信息，获取s-maxage或者max-age的值
 func getCacheAge(header http.Header) uint16 {
 	// 如果有设置cookie，则为不可缓存
-	if len(header[pike.HeaderSetCookie]) != 0 {
+	if len(header.Get(pike.HeaderSetCookie)) != 0 {
 		return 0
 	}
 	// 如果没有设置cache-control，则不可缓存
-	if len(header[pike.HeaderCacheControl]) == 0 {
+	cc := header.Get(pike.HeaderCacheControl)
+	if len(cc) == 0 {
 		return 0
 	}
 
-	cacheControl := []byte(header.Get(pike.HeaderCacheControl))
+	cacheControl := []byte(cc)
 	// 如果为空，则不可缓存
 	if len(cacheControl) == 0 {
 		return 0
@@ -130,7 +137,7 @@ func getCacheAge(header http.Header) uint16 {
 	// 优先从s-maxage中获取
 	result := sMaxAgeReg.FindSubmatch(cacheControl)
 	if len(result) == 2 {
-		maxAge, _ := strconv.Atoi(string(result[1]))
+		maxAge, _ := strconv.Atoi(byteSliceToString(result[1]))
 		return uint16(maxAge)
 	}
 
@@ -139,7 +146,7 @@ func getCacheAge(header http.Header) uint16 {
 	if len(result) != 2 {
 		return 0
 	}
-	maxAge, _ := strconv.Atoi(string(result[1]))
+	maxAge, _ := strconv.Atoi(byteSliceToString(result[1]))
 	return uint16(maxAge)
 }
 
@@ -187,7 +194,7 @@ func Proxy(config ProxyConfig) pike.Middleware {
 		}
 
 		// Proxy
-		writer := c.Response
+		writer := pike.NewResponse()
 
 		// proxy时为了避免304的出现，因此调用时临时删除header
 		ifModifiedSince := reqHeader.Get(pike.HeaderIfModifiedSince)
@@ -237,11 +244,11 @@ func Proxy(config ProxyConfig) pike.Middleware {
 			StatusCode: uint16(writer.Status()),
 			Header:     headers,
 		}
-		contentEncoding := headers[pike.HeaderContentEncoding]
+		contentEncoding := headers.Get(pike.HeaderContentEncoding)
 		if len(contentEncoding) == 0 {
 			cr.Body = body
 		} else {
-			switch contentEncoding[0] {
+			switch contentEncoding {
 			case cache.GzipEncoding:
 				cr.GzipBody = body
 			case cache.BrEncoding:

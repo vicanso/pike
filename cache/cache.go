@@ -9,6 +9,7 @@ import (
 	"strings"
 	"sync"
 	"time"
+	"unsafe"
 
 	jsoniter "github.com/json-iterator/go"
 	"github.com/vicanso/pike/util"
@@ -62,7 +63,7 @@ type (
 		Path  string
 		db    *pogreb.DB
 		rsMap map[string]*RequestStatus
-		sync.Mutex
+		sync.RWMutex
 	}
 	// Response 响应数据
 	Response struct {
@@ -114,6 +115,11 @@ type (
 		CreatedAt uint32 `json:"createdAt"`
 	}
 )
+
+// byteSliceToString converts a []byte to string without a heap allocation.
+func byteSliceToString(b []byte) string {
+	return *(*string)(unsafe.Pointer(&b))
+}
 
 // 将uint16转换为字节
 func uint16ToBytes(v uint16) []byte {
@@ -316,11 +322,9 @@ func (c *Client) GetResponse(key []byte) (resp *Response, err error) {
 	return
 }
 
-// GetRequestStatus 获取key对应的请求status
-func (c *Client) GetRequestStatus(key []byte) (status int, ch chan int) {
+func (c *Client) lockAndUpdateRsMap(k string) (status int, ch chan int) {
 	c.Lock()
 	defer c.Unlock()
-	k := string(key)
 	rs := c.rsMap[k]
 	// 如果该key对应的状态为空或者已过期
 	if rs == nil || (rs.ttl != 0 && uint32(time.Now().Unix())-rs.createdAt > uint32(rs.ttl)) {
@@ -341,6 +345,32 @@ func (c *Client) GetRequestStatus(key []byte) (status int, ch chan int) {
 		// hit for pass 或者 cacheable
 		status = rs.status
 	}
+	return
+}
+
+// GetRequestStatus 获取key对应的请求status
+func (c *Client) GetRequestStatus(key []byte) (status int, ch chan int) {
+	k := byteSliceToString(key)
+	c.RLock()
+	rs := c.rsMap[k]
+	// 为空则需要做更新
+	if rs == nil {
+		c.RUnlock()
+		return c.lockAndUpdateRsMap(k)
+	}
+	// 过期
+	if rs.ttl != 0 && uint32(time.Now().Unix())-rs.createdAt > uint32(rs.ttl) {
+		c.RUnlock()
+		return c.lockAndUpdateRsMap(k)
+	}
+	if rs.status == Fetching {
+		c.RUnlock()
+		return c.lockAndUpdateRsMap(k)
+	}
+
+	// hit for pass 或者 cacheable
+	status = rs.status
+	c.RUnlock()
 	return
 }
 

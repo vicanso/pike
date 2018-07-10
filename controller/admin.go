@@ -21,6 +21,12 @@ const (
 	cachesURL      = "/cacheds"
 	fetchingsURL   = "/fetchings"
 	cacheRemoveURL = "/cacheds/"
+	adminToken     = "X-Admin-Token"
+)
+
+var (
+	// ErrTokenInvalid token校验失败
+	ErrTokenInvalid = pike.NewHTTPError(http.StatusUnauthorized, "token is invalid")
 )
 
 type (
@@ -123,7 +129,8 @@ func AdminHandler(config AdminConfig) pike.Middleware {
 	client := config.Client
 	directors := config.Directors
 	return func(c *pike.Context, next pike.Next) error {
-		uri := c.Request.RequestURI
+		req := c.Request
+		uri := req.RequestURI
 		if !strings.HasPrefix(uri, prefix) {
 			return next()
 		}
@@ -132,6 +139,9 @@ func AdminHandler(config AdminConfig) pike.Middleware {
 		// 静态文件不校验token
 		if len(ext) != 0 {
 			return serve(c, uri[1:])
+		}
+		if req.Header.Get(adminToken) != config.Token {
+			return ErrTokenInvalid
 		}
 		switch uri {
 		case statsURL:

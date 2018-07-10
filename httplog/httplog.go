@@ -8,6 +8,7 @@ import (
 	"strings"
 	"sync"
 	"time"
+	"unsafe"
 
 	log "github.com/sirupsen/logrus"
 	"github.com/vicanso/pike/pike"
@@ -150,9 +151,14 @@ func (w *FileWriter) Close() error {
 	return nil
 }
 
+// byteSliceToString converts a []byte to string without a heap allocation.
+func byteSliceToString(b []byte) string {
+	return *(*string)(unsafe.Pointer(&b))
+}
+
 // Write 写日志
 func (c *Console) Write(buf []byte) error {
-	log.Info(string(buf))
+	log.Info(byteSliceToString(buf))
 	return nil
 }
 
@@ -210,7 +216,7 @@ func Parse(desc []byte) []*Tag {
 		if start != index {
 			arr = append(arr, &Tag{
 				category: fillCategory,
-				data:     string(desc[index:start]),
+				data:     byteSliceToString(desc[index:start]),
 			})
 		}
 		k := desc[start+1 : end-1]
@@ -218,21 +224,21 @@ func Parse(desc []byte) []*Tag {
 		case byte('~'):
 			arr = append(arr, &Tag{
 				category: cookie,
-				data:     string(k[1:]),
+				data:     byteSliceToString(k[1:]),
 			})
 		case byte('>'):
 			arr = append(arr, &Tag{
 				category: requestHeader,
-				data:     string(k[1:]),
+				data:     byteSliceToString(k[1:]),
 			})
 		case byte('<'):
 			arr = append(arr, &Tag{
 				category: responseHeader,
-				data:     string(k[1:]),
+				data:     byteSliceToString(k[1:]),
 			})
 		default:
 			arr = append(arr, &Tag{
-				category: string(k),
+				category: byteSliceToString(k),
 				data:     "",
 			})
 		}
@@ -241,7 +247,7 @@ func Parse(desc []byte) []*Tag {
 	if index < len(desc) {
 		arr = append(arr, &Tag{
 			category: fillCategory,
-			data:     string(desc[index:]),
+			data:     byteSliceToString(desc[index:]),
 		})
 	}
 	return arr

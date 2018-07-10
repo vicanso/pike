@@ -245,7 +245,7 @@ func TestDispatcher(t *testing.T) {
 		}
 	})
 
-	t.Run("dispatch not compress response", func(t *testing.T) {
+	t.Run("dispatch compress response", func(t *testing.T) {
 		fn := Dispatcher(DispatcherConfig{
 			CompressMinLength: 1,
 		}, client)
@@ -254,12 +254,46 @@ func TestDispatcher(t *testing.T) {
 		c := pike.NewContext(req)
 		c.Identity = []byte("abc")
 		c.Status = cache.Cacheable
-		c.Response.Header().Set(pike.HeaderContentType, "application/json")
+		header := make(http.Header)
+		header[pike.HeaderContentType] = []string{
+			"application/json",
+		}
 		cr := &cache.Response{
 			CreatedAt:  uint32(time.Now().Unix()),
 			TTL:        300,
 			StatusCode: 200,
 			GzipBody:   []byte("ABCD"),
+			Header:     header,
+		}
+		c.Resp = cr
+		err := fn(c, func() error {
+			return nil
+		})
+		if err != nil {
+			t.Fatalf("dispatch fail, %v", err)
+		}
+		if c.Response.Status() != 200 {
+			t.Fatalf("the response code should be 200")
+		}
+		if string(c.Response.Bytes()) != "ABCD" {
+			t.Fatalf("the response body should be ABCD")
+		}
+	})
+
+	t.Run("dispatch gunzip response", func(t *testing.T) {
+		fn := Dispatcher(DispatcherConfig{
+			CompressMinLength: 1,
+		}, client)
+		req := httptest.NewRequest(http.MethodPost, "/users/me", nil)
+		c := pike.NewContext(req)
+		c.Identity = []byte("abc")
+		c.Status = cache.Cacheable
+		gzipBody, _ := util.Gzip([]byte("ABCD"), 0)
+		cr := &cache.Response{
+			CreatedAt:  uint32(time.Now().Unix()),
+			TTL:        300,
+			StatusCode: 200,
+			GzipBody:   gzipBody,
 		}
 		c.Resp = cr
 		err := fn(c, func() error {
