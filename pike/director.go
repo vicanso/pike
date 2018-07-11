@@ -124,6 +124,9 @@ func init() {
 
 // AddPolicySelectFunc 增加新的policy选择函数
 func AddPolicySelectFunc(policy string) (err error) {
+	if len(policy) == 0 {
+		return
+	}
 	switch policy {
 	case first:
 		break
