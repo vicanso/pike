@@ -43,6 +43,8 @@ var (
 	spdy3Count uint64
 	// 大于3000ms的处理汇总
 	spdy4Count uint64
+	// 出现recover的次数
+	recoverCount uint64
 )
 
 type (
@@ -68,6 +70,8 @@ type (
 		RoutineCount int `json:"routine"`
 		// 缓存数量（包括hit for pass 与 cacheable）
 		CacheCount int `json:"cacheCount"`
+		// recover的数量
+		RecoverCount uint64 `json:"recoverCount"`
 		// 正在请求的数量（请求backend）
 		Fetching int `json:"fetching"`
 		// 等待中的请求数量（由于有相同的请求为fetching）
@@ -98,6 +102,11 @@ func DecreaseConcurrency() uint32 {
 // IncreaseRequestCount 处理请求数加一
 func IncreaseRequestCount() uint64 {
 	return atomic.AddUint64(&requestCount, 1)
+}
+
+// IncreaseRecoverCount recover的次数加一
+func IncreaseRecoverCount() uint64 {
+	return atomic.AddUint64(&recoverCount, 1)
 }
 
 // GetRequstCount 获取处理请求数
@@ -175,6 +184,7 @@ func GetStats(client *cache.Client) *Stats {
 		StartedAt:    startedAt,
 		RoutineCount: runtime.NumGoroutine(),
 		CacheCount:   client.Size(),
+		RecoverCount: recoverCount,
 		Fetching:     result.Fetching,
 		Waiting:      result.Waiting,
 		Cacheable:    result.Cacheable,

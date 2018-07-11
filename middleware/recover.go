@@ -5,6 +5,7 @@ import (
 	"runtime"
 
 	log "github.com/sirupsen/logrus"
+	"github.com/vicanso/pike/performance"
 	"github.com/vicanso/pike/pike"
 )
 
@@ -40,6 +41,7 @@ func Recover(config RecoverConfig) pike.Middleware {
 	return func(c *pike.Context, next pike.Next) error {
 		defer func() {
 			if r := recover(); r != nil {
+				performance.IncreaseRecoverCount()
 				err, ok := r.(error)
 				if !ok {
 					err = fmt.Errorf("%v", r)

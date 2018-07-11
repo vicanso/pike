@@ -1,6 +1,7 @@
 package pike
 
 import (
+	"net/http"
 	"net/http/httptest"
 	"net/url"
 	"sort"
@@ -207,59 +208,102 @@ func TestSelect(t *testing.T) {
 		t.Fatalf("gen rewrite regexp fail")
 	}
 
-	for i := 0; i < 10; i++ {
-		backend := d.Select(NewContext(nil))
-		if backend != backends[0] {
-			t.Fatalf("first policy fail")
+	t.Run("first policy", func(t *testing.T) {
+		for i := 0; i < 10; i++ {
+			backend := d.Select(NewContext(nil))
+			if backend != backends[0] {
+				t.Fatalf("first policy fail")
+			}
 		}
-	}
+	})
 
-	d.Policy = "roundRobin"
-	for i := 0; i < 10; i++ {
-		backend := d.Select(NewContext(nil))
-		if backend != backends[(i+1)%2] {
-			t.Fatalf("roundRobin policy fail")
+	t.Run("roundRobin policy", func(t *testing.T) {
+		d.Policy = "roundRobin"
+		for i := 0; i < 10; i++ {
+			backend := d.Select(NewContext(nil))
+			if backend != backends[(i+1)%2] {
+				t.Fatalf("roundRobin policy fail")
+			}
 		}
-	}
+	})
 
-	d.Policy = "random"
-	for i := 0; i < 10; i++ {
-		backend := d.Select(NewContext(nil))
-		if backend == "" {
-			t.Fatalf("random policy fail")
+	t.Run("random", func(t *testing.T) {
+		d.Policy = "random"
+		for i := 0; i < 10; i++ {
+			backend := d.Select(NewContext(nil))
+			if backend == "" {
+				t.Fatalf("random policy fail")
+			}
 		}
-	}
+	})
 
-	d.Policy = "ipHash"
-	c := NewContext(httptest.NewRequest("GET", "/", nil))
-	for i := 0; i < 10; i++ {
-		backend := d.Select(c)
-		if backend != backends[0] {
-			t.Fatalf("ipHash policy fail")
+	t.Run("ipHash", func(t *testing.T) {
+		d.Policy = "ipHash"
+		c := NewContext(httptest.NewRequest("GET", "/", nil))
+		for i := 0; i < 10; i++ {
+			backend := d.Select(c)
+			if backend != backends[0] {
+				t.Fatalf("ipHash policy fail")
+			}
 		}
-	}
+	})
 
-	// custom select function
-	cusPolicy := "header:token"
-	AddSelectByHeader(cusPolicy, "token")
-	d.Policy = cusPolicy
-	req := httptest.NewRequest("GET", "/", nil)
-	c = NewContext(req)
-	req.Header.Set("token", "ABCD")
-	c.Request = req
-	for i := 0; i < 10; i++ {
-		backend := d.Select(c)
-		if backend != backends[1] {
-			t.Fatalf("custom policy fail")
+	t.Run("uriHash", func(t *testing.T) {
+		d.Policy = "uriHash"
+		c := NewContext(httptest.NewRequest("GET", "/users/me", nil))
+		for i := 0; i < 10; i++ {
+			backend := d.Select(c)
+			if backend != backends[1] {
+				t.Fatalf("uriHash policy fail")
+			}
 		}
-	}
+	})
 
-	d.Policy = "roundRobin"
-	d.RemoveAvailableBackend("http://127.0.0.1:5002")
-	for i := 0; i < 10; i++ {
-		backend := d.Select(NewContext(nil))
-		if backend != backends[0] {
-			t.Fatalf("roundRobin policy fail(one backend avaliable)")
+	t.Run("header hash", func(t *testing.T) {
+		cusPolicy := "header:token"
+		AddSelectByHeader(cusPolicy, "token")
+		d.Policy = cusPolicy
+		req := httptest.NewRequest("GET", "/", nil)
+		c := NewContext(req)
+		req.Header.Set("token", "ABCD")
+		c.Request = req
+		for i := 0; i < 10; i++ {
+			backend := d.Select(c)
+			if backend != backends[1] {
+				t.Fatalf("custom policy fail")
+			}
 		}
-	}
+	})
+
+	t.Run("cookie hash", func(t *testing.T) {
+		cookiePolicy := "cookie:jt"
+		AddSelectByCookie(cookiePolicy, "jt")
+		d.Policy = cookiePolicy
+		req := httptest.NewRequest("GET", "/", nil)
+		cookie := &http.Cookie{
+			Name:  "jt",
+			Value: "abcde",
+		}
+		req.AddCookie(cookie)
+		c := NewContext(req)
+		c.Request = req
+		for i := 0; i < 10; i++ {
+			backend := d.Select(c)
+			if backend != backends[0] {
+				t.Fatalf("cookie policy fail")
+			}
+		}
+	})
+
+	t.Run("roundRobin only one backend", func(t *testing.T) {
+		d.Policy = "roundRobin"
+		d.RemoveAvailableBackend("http://127.0.0.1:5002")
+		for i := 0; i < 10; i++ {
+			backend := d.Select(NewContext(nil))
+			if backend != backends[0] {
+				t.Fatalf("roundRobin policy fail(one backend avaliable)")
+			}
+		}
+	})
+
 }

@@ -53,8 +53,9 @@ directors:
   -
     # 名称
     name: tiny 
-    # backend的选择策略，支持 random roundRobin leastConn ipHash uriHash first
-    policy: first 
+    # backend的选择策略，支持 random roundRobin ipHash uriHash first header:field  cookie:name
+    # 默认为 roundRobin
+    policy: "cookie:jt"
     # backend的健康检测，如果不配置，则默认判断该端口是否被监听
     ping: /ping
     # prefix与host是AND的关系
@@ -73,7 +74,8 @@ directors:
       - http://192.168.31.3:3002
   -
     name: npmtrend
-    type: roundRobin
+    # 根据header中的token选择backend
+    policy: "header:Token" 
     ping: /ping
     host:
       - npmtrend.com

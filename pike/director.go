@@ -1,6 +1,7 @@
 package pike
 
 import (
+	"errors"
 	"hash/fnv"
 	"math/rand"
 	"net/http"
@@ -11,6 +12,7 @@ import (
 	"sync/atomic"
 	"time"
 
+	log "github.com/sirupsen/logrus"
 	funk "github.com/thoas/go-funk"
 	"github.com/vicanso/pike/util"
 )
@@ -54,16 +56,19 @@ type (
 )
 
 const (
-	first      = "first"
-	random     = "random"
-	roundRobin = "roundRobin"
-	ipHash     = "ipHash"
+	first            = "first"
+	random           = "random"
+	roundRobin       = "roundRobin"
+	ipHash           = "ipHash"
+	uriHash          = "uriHash"
+	headerHashPrefix = "header:"
+	cookieHashPrefix = "cookie:"
 )
 
-var selectFuncMap = make(map[string]SelectFunc)
-
-// 保证director列表
-var directorList = make(Directors, 0)
+var (
+	selectFuncMap       = make(map[string]SelectFunc)
+	errNotSupportPolicy = errors.New("not support the policy")
+)
 
 // hash calculates a hash based on string s
 func hash(s string) uint32 {
@@ -86,6 +91,19 @@ func AddSelectByHeader(name, headerField string) {
 	AddSelect(name, fn)
 }
 
+// AddSelectByCookie 根据cookie来选择backend
+func AddSelectByCookie(name, cookieName string) {
+	fn := func(c *Context, d *Director) uint32 {
+		s := ""
+		cookie, _ := c.Request.Cookie(cookieName)
+		if cookie != nil {
+			s = cookie.Value
+		}
+		return hash(s)
+	}
+	AddSelect(name, fn)
+}
+
 func init() {
 	AddSelect(first, func(c *Context, d *Director) uint32 {
 		return 0
@@ -99,6 +117,39 @@ func init() {
 	AddSelect(ipHash, func(c *Context, d *Director) uint32 {
 		return hash(c.RealIP())
 	})
+	AddSelect(uriHash, func(c *Context, d *Director) uint32 {
+		return hash(c.Request.RequestURI)
+	})
+}
+
+// AddPolicySelectFunc 增加新的policy选择函数
+func AddPolicySelectFunc(policy string) (err error) {
+	switch policy {
+	case first:
+		break
+	case random:
+		break
+	case roundRobin:
+		break
+	case ipHash:
+		break
+	case uriHash:
+		break
+	default:
+		if strings.HasPrefix(policy, headerHashPrefix) {
+
+			header := policy[len(headerHashPrefix):]
+			// 增加自定义的header select function
+			AddSelectByHeader(policy, header)
+		} else if strings.HasPrefix(policy, cookieHashPrefix) {
+			cookie := policy[len(cookieHashPrefix):]
+			// 增加自定义的cookie select function
+			AddSelectByCookie(policy, cookie)
+		} else {
+			err = errNotSupportPolicy
+		}
+	}
+	return
 }
 
 // Len 获取director slice的长度
@@ -349,7 +400,7 @@ func (d *Director) StartHealthCheck(interval time.Duration) {
 	defer func() {
 		if err := recover(); err != nil {
 			// 如果异常，等待后继续检测
-			// TODO 增加错误日志输出
+			log.Error("health check fail, ", err)
 			time.Sleep(time.Second)
 			d.StartHealthCheck(interval)
 		}

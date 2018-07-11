@@ -142,9 +142,14 @@ func main() {
 	// 生成director列表
 	directors := make(pike.Directors, 0)
 	for _, item := range dc.Directors {
+		policy := item.Policy
+		err := pike.AddPolicySelectFunc(policy)
+		if err != nil {
+			log.Panic("create policy fail, ", err)
+		}
 		d := &pike.Director{
 			Name:         item.Name,
-			Policy:       item.Policy,
+			Policy:       policy,
 			Ping:         item.Ping,
 			Backends:     item.Backend,
 			Hosts:        item.Host,

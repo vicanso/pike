@@ -15,8 +15,6 @@ import (
 Package pike for high performance http cache server.
 */
 
-// TODO recover
-
 const (
 	defaultReadTimeout  = 10 * time.Second
 	defaultWriteTimeout = 10 * time.Second
