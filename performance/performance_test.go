@@ -80,7 +80,7 @@ func TestPerformance(t *testing.T) {
 		c.Close()
 		stats := GetStats(c)
 		keys := funk.Keys(stats).([]string)
-		if len(keys) != 17 {
+		if len(keys) != 18 {
 			t.Fatalf("get stats fail")
 		}
 	})
