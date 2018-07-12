@@ -39,7 +39,8 @@ textTypes:
   - json
 # 需要添加的自定义的响应头
 header:
-  - "X-Server:My-Pike"
+  # ${env} 从env中获取该值
+  - "X-Server:${SERVER}"
   - "X-Location:GZ"
 # 需要做rewrite的url列表
 # /old:/new

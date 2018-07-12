@@ -1,6 +1,9 @@
 package middleware
 
 import (
+	"fmt"
+	"os"
+	"regexp"
 	"strings"
 
 	"github.com/vicanso/pike/performance"
@@ -29,7 +32,17 @@ func Initialization(config InitializationConfig) pike.Middleware {
 		if len(arr) != 2 {
 			continue
 		}
-		customHeader[arr[0]] = arr[1]
+		value := arr[1]
+		reg := regexp.MustCompile(`\$\{(.+)\}`)
+		groups := reg.FindAllStringSubmatch(value, -1)
+		if len(groups) != 0 {
+			fmt.Println(groups[0][1])
+			v := os.Getenv(groups[0][1])
+			if len(v) != 0 {
+				value = v
+			}
+		}
+		customHeader[arr[0]] = value
 	}
 
 	// 获取限制并发请求数
