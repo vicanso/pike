@@ -1,6 +1,7 @@
 package httplog
 
 import (
+	"fmt"
 	"net"
 	"os"
 	"regexp"
@@ -120,8 +121,10 @@ func (w *FileWriter) initFd() error {
 	}
 	fd, err := os.OpenFile(w.file, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0666)
 	if err != nil {
+		log.Errorf("create log file:%s, err:%v", w.file, err)
 		return err
 	}
+	log.Infof("create log file:%s", w.file)
 	w.fd = fd
 	// 如果是以按天生成日志，增加定时检测
 	if w.Category == Date {
@@ -158,7 +161,7 @@ func byteSliceToString(b []byte) string {
 
 // Write 写日志
 func (c *Console) Write(buf []byte) error {
-	log.Info(byteSliceToString(buf))
+	fmt.Println(byteSliceToString(buf))
 	return nil
 }
 

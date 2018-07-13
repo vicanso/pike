@@ -185,8 +185,15 @@ func Proxy(config ProxyConfig) pike.Middleware {
 		if director.RewriteRegexp != nil {
 			rewrite(director.RewriteRegexp, req)
 		}
-
 		reqHeader := req.Header
+
+		// 添加自定义请求头
+		if director.RequestHeaderMap != nil {
+			for k, v := range director.RequestHeaderMap {
+				reqHeader.Add(k, v)
+			}
+		}
+
 		targetURL, err := director.GetTargetURL(&backend)
 		if err != nil {
 			done()
@@ -229,7 +236,14 @@ func Proxy(config ProxyConfig) pike.Middleware {
 		if len(ifNoneMatch) != 0 {
 			reqHeader.Set(pike.HeaderIfNoneMatch, ifNoneMatch)
 		}
+
 		headers := writer.Header()
+		if director.HeaderMap != nil {
+			for k, v := range director.HeaderMap {
+				headers.Add(k, v)
+			}
+		}
+
 		ttl := getCacheAge(headers)
 		body := writer.Bytes()
 		if config.ETag {

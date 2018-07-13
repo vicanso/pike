@@ -36,6 +36,14 @@ type (
 		Prefixs []string `json:"prefixs"`
 		// Rewrites 需要重写的url配置
 		Rewrites []string `json:"rewrites"`
+		// RequestHeader 需要设置的请求头
+		RequestHeader []string `json:"-"`
+		// RequestHeaderMap 请求头
+		RequestHeaderMap map[string]string `json:"requestHeader"`
+		// Header 需要设置的响应头
+		Header []string `json:"-"`
+		// HeaderMap 响应头
+		HeaderMap map[string]string `json:"header"`
 		// RewriteRegexp 需要重写的正则匹配
 		RewriteRegexp map[*regexp.Regexp]string `json:"-"`
 		// 优先级
@@ -327,6 +335,44 @@ func (d *Director) GetTargetURL(backend *string) (*url.URL, error) {
 	}
 	d.TargetURLMap[name] = result
 	return result, nil
+}
+
+func genHeaderMap(header []string) map[string]string {
+	if len(header) == 0 {
+		return nil
+	}
+	m := make(map[string]string)
+	for _, v := range header {
+		arr := strings.Split(v, ":")
+		if len(arr) != 2 {
+			continue
+		}
+		value := arr[1]
+		v := util.CheckAndGetValueFromEnv(value)
+		if len(v) != 0 {
+			value = v
+		}
+		m[arr[0]] = value
+	}
+	return m
+}
+
+// GenRequestHeaderMap 生成请求头
+func (d *Director) GenRequestHeaderMap() {
+	d.RequestHeaderMap = genHeaderMap(d.RequestHeader)
+}
+
+// GenHeaderMap 生成响应头的header
+func (d *Director) GenHeaderMap() {
+	d.HeaderMap = genHeaderMap(d.Header)
+}
+
+// Prepare 调用生成、刷新配置
+func (d *Director) Prepare() {
+	d.RefreshPriority()
+	d.GenRewriteRegexp()
+	d.GenRequestHeaderMap()
+	d.GenHeaderMap()
 }
 
 // 检测url，如果5次有3次通过则认为是healthy

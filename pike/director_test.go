@@ -305,5 +305,39 @@ func TestSelect(t *testing.T) {
 			}
 		}
 	})
+}
 
+func TestDirectorPrepare(t *testing.T) {
+	backends := []string{
+		"http://127.0.0.1:5001",
+		"http://127.0.0.1:5002",
+	}
+	d := &Director{
+		Name:     "tiny",
+		Policy:   "first",
+		Ping:     "/ping",
+		Backends: backends,
+		RequestHeader: []string{
+			"X-Token:a",
+		},
+		Header: []string{
+			"X-Powered-By:koa",
+		},
+		Rewrites: []string{
+			"/api/*:/$1",
+		},
+	}
+	d.Prepare()
+	if len(d.RequestHeaderMap) != len(d.RequestHeader) {
+		t.Fatalf("gen request map fail")
+	}
+	if len(d.RewriteRegexp) != len(d.Rewrites) {
+		t.Fatalf("gen rewrite regexp fail")
+	}
+	if len(d.Header) != len(d.HeaderMap) {
+		t.Fatalf("gen header map fail")
+	}
+	if d.Priority != 8 {
+		t.Fatalf("gen priority fail")
+	}
 }

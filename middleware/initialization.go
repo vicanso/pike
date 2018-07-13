@@ -1,9 +1,6 @@
 package middleware
 
 import (
-	"fmt"
-	"os"
-	"regexp"
 	"strings"
 
 	"github.com/vicanso/pike/performance"
@@ -18,32 +15,37 @@ const (
 type (
 	// InitializationConfig 初始化配置
 	InitializationConfig struct {
-		Header      []string
-		Concurrency int
+		Header        []string
+		RequestHeader []string
+		Concurrency   int
 	}
 )
 
-// Initialization 相关一些初始化的操作
-func Initialization(config InitializationConfig) pike.Middleware {
-	customHeader := make(map[string]string)
+func genHeader(header []string) map[string]string {
+	m := make(map[string]string)
 	// 将自定义的http response header格式化
-	for _, v := range config.Header {
+	for _, v := range header {
 		arr := strings.Split(v, ":")
 		if len(arr) != 2 {
 			continue
 		}
 		value := arr[1]
-		reg := regexp.MustCompile(`\$\{(.+)\}`)
-		groups := reg.FindAllStringSubmatch(value, -1)
-		if len(groups) != 0 {
-			fmt.Println(groups[0][1])
-			v := os.Getenv(groups[0][1])
-			if len(v) != 0 {
-				value = v
-			}
+		v := util.CheckAndGetValueFromEnv(value)
+		if len(v) != 0 {
+			value = v
 		}
-		customHeader[arr[0]] = value
+		m[arr[0]] = value
 	}
+	if len(m) == 0 {
+		return nil
+	}
+	return m
+}
+
+// Initialization 相关一些初始化的操作
+func Initialization(config InitializationConfig) pike.Middleware {
+	customHeader := genHeader(config.Header)
+	customReqHeader := genHeader(config.RequestHeader)
 
 	// 获取限制并发请求数
 	concurrency := uint32(defaultConcurrency)
@@ -63,8 +65,14 @@ func Initialization(config InitializationConfig) pike.Middleware {
 		}()
 
 		resHeader := c.Response.Header()
+
 		for k, v := range customHeader {
 			resHeader.Add(k, v)
+		}
+
+		reqHeader := c.Request.Header
+		for k, v := range customReqHeader {
+			reqHeader.Add(k, v)
 		}
 
 		v := performance.IncreaseConcurrency()

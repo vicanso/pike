@@ -42,6 +42,11 @@ header:
   # ${env} 从env中获取该值
   - "X-Server:${SERVER}"
   - "X-Location:GZ"
+# 需要添加的自定义请求头
+requestHeader:
+  # ${env} 从env中获取该值
+  - "X-Server:${SERVER}"
+  - "X-Location:GZ"
 # 需要做rewrite的url列表
 # /old:/new
 # /api/*:/$1
@@ -61,15 +66,21 @@ directors:
     ping: /ping
     # prefix与host是AND的关系
     # 判断请求url的是否包含该前缀，如果是，则是此director
-    prefix:
+    prefixs:
       - /api
     rewrites:
       - "/api/*:/$1"
     # 判断请求的host是否符合，如果符合，则是此director
-    # host:
+    # hosts:
     #   - mac:3015
+    # 请求头，单独设置至此director（和全局header的配置方式一样）
+    requestHeader:
+      - "X-Version:${VERSION}" 
+    header:
+    # 响应头，单独设置至此director（和全局header的配置方式一样）
+      - "X-Powered-By:koa"
     # backend列表
-    backend:
+    backends:
       - http://127.0.0.1:5018
       - http://192.168.31.3:3001
       - http://192.168.31.3:3002
@@ -78,8 +89,8 @@ directors:
     # 根据header中的token选择backend
     policy: "header:Token" 
     ping: /ping
-    host:
+    hosts:
       - npmtrend.com
-    backend:
+    backends:
       - http://192.168.31.3:3200
       - http://192.168.31.3:3300

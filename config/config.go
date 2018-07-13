@@ -9,13 +9,15 @@ import (
 
 // Director 服务器配置列表
 type Director struct {
-	Name     string
-	Policy   string
-	Ping     string
-	Prefix   []string
-	Host     []string
-	Backend  []string
-	Rewrites []string
+	Name          string
+	Policy        string
+	Ping          string
+	RequestHeader []string `yaml:"requestHeader"`
+	Header        []string
+	Prefixs       []string
+	Hosts         []string
+	Backends      []string
+	Rewrites      []string
 }
 
 // Config 应用配置
@@ -25,6 +27,7 @@ type Config struct {
 	DB                   string        `yaml:"db"`
 	ETag                 bool          `yaml:"etag"`
 	Header               []string      `yaml:"header"`
+	RequestHeader        []string      `yaml:"requestHeader"`
 	EnableServerTiming   bool          `yaml:"enableServerTiming"`
 	CompressMinLength    int           `yaml:"compressMinLength"`
 	CompressLevel        int           `yaml:"compressLevel"`

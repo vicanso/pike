@@ -2,6 +2,7 @@ package util
 
 import (
 	"net/http"
+	"os"
 	"testing"
 	"time"
 )
@@ -118,5 +119,12 @@ func TestGetIdentity(t *testing.T) {
 	id = GetIdentity(req)
 	if len(id) != 23 || string(id) != "GET aslant.site /中文" {
 		t.Fatalf("get identity(include chinese) fail")
+	}
+}
+
+func TestCheckAndGetEnv(t *testing.T) {
+	os.Setenv("test-env", "a")
+	if CheckAndGetValueFromEnv("${test-env}") != "a" {
+		t.Fatalf("check and get env fail")
 	}
 }

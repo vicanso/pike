@@ -9,6 +9,7 @@ import (
 	"os"
 	"regexp"
 	"sort"
+	"strconv"
 	"strings"
 	"time"
 
@@ -98,6 +99,13 @@ func getBuildAtDesc() string {
 }
 
 func main() {
+	// 初始化日志输出级别
+	logLevel := os.Getenv("LVL")
+	if logLevel != "" {
+		lv, _ := strconv.Atoi(logLevel)
+		log.SetLevel(log.Level(lv))
+	}
+
 	// go func() {
 	// 	fmt.Println(http.ListenAndServe("0.0.0.0:6060", nil))
 	// }()
@@ -148,17 +156,18 @@ func main() {
 			log.Panic("create policy fail, ", err)
 		}
 		d := &pike.Director{
-			Name:         item.Name,
-			Policy:       policy,
-			Ping:         item.Ping,
-			Backends:     item.Backend,
-			Hosts:        item.Host,
-			Prefixs:      item.Prefix,
-			Rewrites:     item.Rewrites,
-			TargetURLMap: make(map[string]*url.URL),
+			Name:          item.Name,
+			Policy:        policy,
+			Ping:          item.Ping,
+			Backends:      item.Backends,
+			Hosts:         item.Hosts,
+			Prefixs:       item.Prefixs,
+			Rewrites:      item.Rewrites,
+			RequestHeader: item.RequestHeader,
+			Header:        item.Header,
+			TargetURLMap:  make(map[string]*url.URL),
 		}
-		d.RefreshPriority()
-		d.GenRewriteRegexp()
+		d.Prepare()
 		d.SetTransport(
 			&http.Transport{
 				Proxy: http.ProxyFromEnvironment,
@@ -211,8 +220,9 @@ func main() {
 
 	// 初始化中间件的参数
 	initConfig := middleware.InitializationConfig{
-		Header:      dc.Header,
-		Concurrency: dc.Concurrency,
+		Header:        dc.Header,
+		RequestHeader: dc.RequestHeader,
+		Concurrency:   dc.Concurrency,
 	}
 	p.Use(middleware.Initialization(initConfig))
 

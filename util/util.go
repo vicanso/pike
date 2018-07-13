@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"os"
 	"regexp"
 	"strings"
 	"time"
@@ -146,4 +147,18 @@ func GetIdentity(req *http.Request) []byte {
 
 	copy(buffer[len:], req.RequestURI)
 	return buffer
+}
+
+// CheckAndGetValueFromEnv 检查并从env中获取值
+func CheckAndGetValueFromEnv(value string) (result string) {
+	// key必须为${key}的形式
+	reg := regexp.MustCompile(`\$\{(.+)\}`)
+	groups := reg.FindAllStringSubmatch(value, -1)
+	if len(groups) != 0 {
+		v := os.Getenv(groups[0][1])
+		if len(v) != 0 {
+			result = v
+		}
+	}
+	return
 }

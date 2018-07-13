@@ -15,6 +15,9 @@ func TestInitialization(t *testing.T) {
 			"X-Token:ABCD",
 			"X-Server:${SERVER}",
 		},
+		RequestHeader: []string{
+			"X-Server:${SERVER}",
+		},
 		Concurrency: 1,
 	}
 	err := os.Setenv("SERVER", "puma")
@@ -22,7 +25,9 @@ func TestInitialization(t *testing.T) {
 		t.Fatalf("set env fail, %v", err)
 	}
 	fn := Initialization(conf)
-	r := &http.Request{}
+	r := &http.Request{
+		Header: make(http.Header),
+	}
 	c := pike.NewContext(r)
 	err = fn(c, func() error {
 		return nil
@@ -35,6 +40,9 @@ func TestInitialization(t *testing.T) {
 	}
 	if c.Response.Header().Get("X-Server") != "puma" {
 		t.Fatalf("init middleware set header fail")
+	}
+	if c.Request.Header.Get("X-Server") != "puma" {
+		t.Fatalf("init middleware set request header fail")
 	}
 	performance.IncreaseConcurrency()
 	err = fn(c, func() error {
