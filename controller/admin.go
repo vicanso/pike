@@ -130,7 +130,7 @@ func AdminHandler(config AdminConfig) pike.Middleware {
 	directors := config.Directors
 	return func(c *pike.Context, next pike.Next) error {
 		req := c.Request
-		uri := req.RequestURI
+		uri := req.URL.Path
 		if !strings.HasPrefix(uri, prefix) {
 			return next()
 		}
