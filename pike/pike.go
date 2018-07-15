@@ -162,7 +162,7 @@ func (p *Pike) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	header := w.Header()
 	for field, values := range res.Header() {
 		for _, value := range values {
-			header.Set(field, value)
+			header.Add(field, value)
 		}
 	}
 	body := res.Bytes()
