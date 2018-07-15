@@ -38,7 +38,7 @@ cd admin \
 
 ### Initialization
 
-- 设置公共响应头
+- 设置公共请求、响应头
 - 处理请求数+1，当前处理并发数+1
 - 如果当前处理并发数大于最大值（默认为256 * 1000），则返回出错
 - 将请求交至下一中间件（在所有中间件处理完成时，当前处理并发数-1）
@@ -71,7 +71,7 @@ cd admin \
 
 ## HeaderSetter
 
-- 从响应数据中获取响应数据，设置至Responser.Header中
+- 从响应数据中获取响应的响应头，设置至Response.Header中
 
 ## FreshChecker
 
@@ -92,106 +92,125 @@ cd admin \
 
 ## 性能测试
 
+测试机器：8核 8GB内存，测试环境有限，wrk与测试程序均在同一机器上运行
+
 ### Ping测试
 
 Pike的health check，无其它处理逻辑，返回200
 
 ```bash
 wrk -H 'Accept-Encoding: gzip, deflate' -t10 -c2000 \
--d1m 'http://127.0.0.1:3015/ping' --latency
+-d1m 'http://127.0.0.1:3015/ping' --latency --timeout 3s
 
 Running 1m test @ http://127.0.0.1:3015/ping
   10 threads and 2000 connections
   Thread Stats   Avg      Stdev     Max   +/- Stdev
-    Latency    31.75ms   28.44ms   1.31s    97.45%
-    Req/Sec     6.55k   527.81    15.52k    74.38%
+    Latency    33.29ms   50.93ms   1.56s    99.22%
+    Req/Sec     6.54k   656.09    11.02k    84.68%
   Latency Distribution
-     50%   28.25ms
-     75%   33.96ms
-     90%   41.65ms
-     99%   80.62ms
-  3909084 requests in 1.00m, 447.36MB read
-  Socket errors: connect 0, read 0, write 0, timeout 35
-Requests/sec:  65049.24
+     50%   29.03ms
+     75%   32.89ms
+     90%   37.99ms
+     99%   70.45ms
+  3906289 requests in 1.00m, 447.04MB read
+Requests/sec:  65003.93
 Transfer/sec:      7.44MB
 ```
 
 ### 获取可缓存请求
 
-对于可缓存请求的压测，主要三种情况，客户端不支持压缩、支持gzip压缩、支持br压缩（在我自己的HP gen8 做的压力测试）
+对于可缓存请求的压测，主要三种情况，客户端不支持压缩、支持gzip压缩、支持br压缩
 
 #### 客户端不支持压缩
 
-由于默认缓存的数据只有gzip与br两份数据（现在的客户端都支持两种压缩之一），因此如果客户端不支持，需要将gzip解压返回，性能有所损耗，平均每个请求的数据量为：75KB。
+由于默认缓存的数据只有gzip与br两份数据（现在的客户端都支持两种压缩之一），因此如果客户端不支持，需要将gzip解压返回，性能有所损耗，平均每个请求的数据量为：24KB。
 
 ```bash
-wrk -t10 -c200 -d1m 'http://127.0.0.1:3015/css/app.f81943d4.css' --latency
-```
+wrk -t10 -c2000 -d1m 'http://127.0.0.1:3015/api/i18ns' --latency --timeout 3s
 
-```bash
-10 threads and 200 connections
-Thread Stats   Avg      Stdev     Max   +/- Stdev
-  Latency    66.49ms   69.82ms   1.03s    97.56%
-  Req/Sec   337.83     46.65   666.00     74.90%
-Latency Distribution
-    50%   62.98ms
-    75%   76.56ms
-    90%   96.10ms
-    99%  344.35ms
-199258 requests in 1.00m, 14.41GB read
-Requests/sec:   3318.15
-Transfer/sec:    245.70MB
+Running 1m test @ http://127.0.0.1:3015/api/i18ns
+  10 threads and 2000 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency   373.53ms  460.48ms   3.00s    85.21%
+    Req/Sec   832.91    209.89     2.04k    71.07%
+  Latency Distribution
+     50%  246.35ms
+     75%  603.95ms
+     90%    1.01s
+     99%    1.94s
+  497138 requests in 1.00m, 11.14GB read
+Requests/sec:   8273.95
+Transfer/sec:    189.79MB
 ```
 
 ### 客户端支持gzip压缩
 
-缓存数据中有gzip与br数据，因此无需要重新做压缩，性能较高，平均每个请求的数据量为：23KB。
+缓存数据中有gzip与br数据，因此无需要重新做压缩，性能较高，平均每个请求的数据量为：5KB。
 
 ```bash
-wrk -H 'Accept-Encoding: gzip, deflate' -t10 -c200 \
--d1m 'http://127.0.0.1:3015/css/app.f81943d4.css' --latency
-```
+wrk -H 'Accept-Encoding: gzip, deflate' -t10 -c2000 \
+-d1m 'http://127.0.0.1:3015/api/i18ns' --latency --timeout 3s
 
-```bash
-10 threads and 200 connections
-Thread Stats   Avg      Stdev     Max   +/- Stdev
-  Latency    19.54ms    8.67ms  74.71ms   77.84%
-  Req/Sec     1.03k    95.60     1.56k    72.60%
-Latency Distribution
-    50%   21.60ms
-    75%   23.47ms
-    90%   26.54ms
-    99%   37.29ms
-615208 requests in 1.00m, 13.59GB read
-Requests/sec:  10245.77
-Transfer/sec:    231.70MB
+Running 1m test @ http://127.0.0.1:3015/api/i18ns
+  10 threads and 2000 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency   203.61ms  226.35ms   3.00s    85.52%
+    Req/Sec     1.31k   240.96     3.15k    74.11%
+  Latency Distribution
+     50%  157.26ms
+     75%  315.03ms
+     90%  506.21ms
+     99%  963.79ms
+  785711 requests in 1.00m, 4.13GB read
+Requests/sec:  13075.99
+Transfer/sec:     70.40MB
 ```
 
 ### 客户端支持br压缩
 
-缓存数据中有gzip与br数据，因此无需要重新做压缩，性能较高，平均每个请求的数据量为：21KB。
+缓存数据中有gzip与br数据，因此无需要重新做压缩，性能较高，平均每个请求的数据量为：4KB。
 
 ```bash
-wrk -H 'Accept-Encoding: br, gzip, deflate' -t10 -c200 \
--d1m 'http://127.0.0.1:3015/css/app.f81943d4.css' --latency
+wrk -H 'Accept-Encoding: br, gzip, deflate' -t10 -c2000 \
+-d1m 'http://127.0.0.1:3015/api/i18ns' --latency --timeout 3s
+
+Running 1m test @ http://127.0.0.1:3015/api/i18ns
+  10 threads and 2000 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency   199.74ms  222.63ms   2.30s    85.41%
+    Req/Sec     1.33k   292.32     3.47k    79.24%
+  Latency Distribution
+     50%  154.28ms
+     75%  309.51ms
+     90%  498.98ms
+     99%  946.04ms
+  795014 requests in 1.00m, 3.58GB read
+Requests/sec:  13230.77
+Transfer/sec:     61.09MB
 ```
+
+上面的测试中，`pike`是以docker的形式运行，`docker-proxy`会占用了部分的CPU资源，下面再测试非docker下的性能测试（只测试gzip）:
 
 ```bash
-10 threads and 200 connections
-Thread Stats   Avg      Stdev     Max   +/- Stdev
-  Latency    19.54ms    8.65ms  69.72ms   77.90%
-  Req/Sec     1.03k    93.44     1.54k    73.88%
-Latency Distribution
-    50%   21.59ms
-    75%   23.36ms
-    90%   26.47ms
-    99%   37.22ms
-615076 requests in 1.00m, 12.40GB read
-Requests/sec:  10243.72
-Transfer/sec:    211.52MB
+wrk -H 'Accept-Encoding: gzip, deflate' -t10 -c2000 \
+-d1m 'http://127.0.0.1:3015/api/i18ns' --latency --timeout 3s
+
+Running 1m test @ http://127.0.0.1:3015/api/i18ns
+  10 threads and 2000 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency   212.12ms  277.83ms   2.99s    86.40%
+    Req/Sec     1.71k   441.18     4.68k    70.75%
+  Latency Distribution
+     50%  130.96ms
+     75%  330.50ms
+     90%  569.07ms
+     99%    1.19s
+  1018914 requests in 1.00m, 5.36GB read
+Requests/sec:  16965.24
+Transfer/sec:     91.34MB
 ```
 
-可以看出，`Pike`的性能已经能满足大部分的网站了，虽然达不到`varnish`那么强悍，但是配置简单更多，有简便的管理后台，如果有兴趣试用的，请联系我~在此，感恩不言谢！
+可以看出，`Pike`的性能已经能满足大部分的网站了，虽然达不到`varnish`那么强悍(docker形式运行，同样的请求可达30K Requests/sec)，但是配置简单更多，有简便的管理后台，如果有兴趣试用的，请联系我~在此，感恩不言谢！
 
 ## 流程图
 
