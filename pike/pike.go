@@ -168,7 +168,10 @@ func (p *Pike) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	body := res.Bytes()
 	header.Set(HeaderContentLength, strconv.Itoa(len(body)))
 	w.WriteHeader(res.Status())
-	w.Write(body)
+	_, err = w.Write(body)
+	if err != nil {
+		log.Errorf("response write fail, %v", err)
+	}
 }
 
 // ListenAndServe the http function ListenAndServe
