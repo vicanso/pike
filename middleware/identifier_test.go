@@ -20,7 +20,9 @@ func TestIdentifier(t *testing.T) {
 	}
 	defer client.Close()
 
-	conf := IdentifierConfig{}
+	conf := IdentifierConfig{
+		Format: "method host uri",
+	}
 
 	fn := Identifier(conf, client)
 

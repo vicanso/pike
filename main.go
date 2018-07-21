@@ -227,7 +227,9 @@ func main() {
 	p.Use(middleware.Initialization(initConfig))
 
 	// 生成请求唯一标识与状态中间件
-	p.Use(middleware.Identifier(middleware.IdentifierConfig{}, client))
+	p.Use(middleware.Identifier(middleware.IdentifierConfig{
+		Format: dc.Identity,
+	}, client))
 
 	// 获取director的中间件
 	p.Use(middleware.DirectorPicker(middleware.DirectorPickerConfig{}, directors))

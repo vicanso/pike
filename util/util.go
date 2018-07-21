@@ -19,6 +19,17 @@ const (
 	mbytes = 1024 * 1024
 	// spaceByte 空格
 	spaceByte = byte(' ')
+
+	host       = "host"
+	method     = "method"
+	path       = "path"
+	proto      = "proto"
+	scheme     = "scheme"
+	uri        = "uri"
+	userAgent  = "userAgent"
+	query      = "query"
+	httpProto  = "HTTP"
+	httpsProto = "HTTPS"
 )
 
 func noop() {}
@@ -123,6 +134,70 @@ func GetRewriteRegexp(rewrites []string) map[*regexp.Regexp]string {
 		rewriteRegexp[regexp.MustCompile(k)] = v
 	}
 	return rewriteRegexp
+}
+
+// GenerateGetIdentity 生成get identity的函数
+func GenerateGetIdentity(format string) func(*http.Request) []byte {
+	keys := strings.Split(format, " ")
+	return func(req *http.Request) []byte {
+		values := make([]string, len(keys))
+		size := 0
+		for i, key := range keys {
+			switch key {
+			case host:
+				values[i] = req.Host
+			case method:
+				values[i] = req.Method
+			case path:
+				values[i] = req.URL.Path
+			case proto:
+				values[i] = req.Proto
+			case scheme:
+				if req.TLS != nil {
+					values[i] = httpsProto
+				} else {
+					values[i] = httpProto
+				}
+			case uri:
+				values[i] = req.RequestURI
+			case userAgent:
+				values[i] = req.UserAgent()
+			case query:
+				values[i] = req.URL.RawQuery
+			default:
+				first := key[0]
+				newKey := key[1:]
+				switch first {
+				case byte('~'):
+					// cookie
+					cookie, _ := req.Cookie(newKey)
+					if cookie != nil {
+						values[i] = cookie.Value
+					}
+				case byte('>'):
+					// requeset header
+					values[i] = req.Header.Get(newKey)
+				case byte('?'):
+					// request query fields
+					values[i] = req.URL.Query().Get(newKey)
+					// the invalid field will be ignore
+				}
+			}
+			size += len(values[i])
+		}
+		spaceCount := len(values) - 1
+		buffer := make([]byte, size+spaceCount)
+		index := 0
+		for i, v := range values {
+			copy(buffer[index:], v)
+			index += len(v)
+			if i < spaceCount {
+				buffer[index] = spaceByte
+				index++
+			}
+		}
+		return buffer
+	}
 }
 
 // GetIdentity 获取该请求对应的标识

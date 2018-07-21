@@ -11,6 +11,7 @@ import (
 type (
 	// IdentifierConfig 定义配置
 	IdentifierConfig struct {
+		Format string
 	}
 )
 
@@ -20,6 +21,10 @@ type (
 - 对于状态非Pass的请求，根据request url 生成identity
 */
 func Identifier(config IdentifierConfig, client *cache.Client) pike.Middleware {
+	fn := util.GetIdentity
+	if config.Format != "" {
+		fn = util.GenerateGetIdentity(config.Format)
+	}
 	return func(c *pike.Context, next pike.Next) error {
 		serverTiming := c.ServerTiming
 		done := serverTiming.Start(pike.ServerTimingIdentifier)
@@ -31,7 +36,7 @@ func Identifier(config IdentifierConfig, client *cache.Client) pike.Middleware {
 			done()
 			return next()
 		}
-		key := util.GetIdentity(req)
+		key := fn(req)
 		status, ch := client.GetRequestStatus(key)
 		// TODO是否应该增加超时机制（proxy中已有超时机制，应该不会有其它流程会卡，因此暂认为无需处理）
 		if ch != nil {

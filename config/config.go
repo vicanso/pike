@@ -25,6 +25,7 @@ type Config struct {
 	Name                 string        `yaml:"name"`
 	Listen               string        `yaml:"listen"`
 	DB                   string        `yaml:"db"`
+	Identity             string        `yaml:"identity"`
 	ETag                 bool          `yaml:"etag"`
 	Header               []string      `yaml:"header"`
 	RequestHeader        []string      `yaml:"requestHeader"`

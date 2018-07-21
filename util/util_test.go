@@ -2,6 +2,7 @@ package util
 
 import (
 	"net/http"
+	"net/http/httptest"
 	"os"
 	"testing"
 	"time"
@@ -119,6 +120,23 @@ func TestGetIdentity(t *testing.T) {
 	id = GetIdentity(req)
 	if len(id) != 23 || string(id) != "GET aslant.site /中文" {
 		t.Fatalf("get identity(include chinese) fail")
+	}
+}
+
+func TestGenerateGetIdentity(t *testing.T) {
+	c := &http.Cookie{
+		Name:  "jt",
+		Value: "HJxX4OOoX7",
+	}
+	fn := GenerateGetIdentity("host method path proto scheme uri userAgent query ~jt >X-Token ?id")
+	req := httptest.NewRequest(http.MethodGet, "/users/me?cache=no-cache&id=1", nil)
+	req.Header.Set("User-Agent", "golang-http")
+	req.Header.Set("X-Token", "ABCD")
+	req.AddCookie(c)
+	buf := fn(req)
+	expectID := "example.com GET /users/me HTTP/1.1 HTTP /users/me?cache=no-cache&id=1 golang-http cache=no-cache&id=1 HJxX4OOoX7 ABCD 1"
+	if string(buf) != expectID {
+		t.Fatalf("get identity fail")
 	}
 }
 

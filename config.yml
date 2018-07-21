@@ -8,6 +8,8 @@ db: /tmp/pike.cache
 adminPath: /pike
 # 管理员验证token
 adminToken: ry3WwvhVG
+# 生成请求唯一标记的配置，默认为 host method uri，建议使用默认配置
+# identity: host method path proto scheme uri userAgent query ~jt >X-Token ?id
 # 是否使用自动生成ETag（对于没有ETag的添加）
 etag: true
 # 是否启用server timing
