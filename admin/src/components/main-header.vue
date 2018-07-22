@@ -8,6 +8,14 @@
     span(
       v-if='statsInfo'
     ) ({{statsInfo.version}})
+  .pullRight.pingCtrl(
+    v-if='ping'
+  )
+    span ping :
+    el-switch(
+      v-model='pingEnabled'
+      @change='changePingStatus'
+    )
   .pullRight(
     v-if='statsInfo'
   )
@@ -67,6 +75,11 @@
 .startedAt, .cpus
   color: rgba($COLOR_WHITE, 0.5)
   margin-right: 15px
+.pingCtrl
+  color: $COLOR_WHITE
+  margin-right: 15px
+  span
+    margin-right: 5px
 </style>
 
 <script>
@@ -94,6 +107,7 @@ export default {
           route: 'fetching',
         },
       ],
+      pingEnabled: true,
     };
   },
   methods: {
@@ -102,11 +116,38 @@ export default {
         name: item.route,
       });
     },
+    async changePingStatus() {
+      const {pingEnabled} = this;
+      let status = 'off';
+      if (pingEnabled) {
+        status = 'on';
+      }
+      try {
+        await this.$confirm(`Are you sure to toggle ping ${status}?`);
+        this.$emit('togglePing', status);
+      } catch (err) {
+        if (err === 'cancel') {
+          this.pingEnabled = !pingEnabled;
+          return;
+        }
+      }
+    },
+  },
+  watch: {
+    ping(v) {
+      if (v === 'on') {
+        this.pingEnabled = true;
+      } else {
+        this.pingEnabled = false;
+      }
+    },
   },
   computed: {
+    // ...mapActions(['togglePing']),
     ...mapState({
       statsInfo: ({pike}) => pike.stats,
       currentRoute: ({route}) => route.name,
+      ping: ({pike}) => pike.ping,
     }),
   },
 };

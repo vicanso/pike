@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"path"
 	"strings"
+	"sync/atomic"
 
 	"github.com/vicanso/pike/cache"
 	"github.com/vicanso/pike/performance"
@@ -16,12 +17,14 @@ import (
 )
 
 const (
-	statsURL       = "/stats"
-	directorsURL   = "/directors"
-	cachesURL      = "/cacheds"
-	fetchingsURL   = "/fetchings"
-	cacheRemoveURL = "/cacheds/"
-	adminToken     = "X-Admin-Token"
+	statsURL         = "/stats"
+	directorsURL     = "/directors"
+	cachesURL        = "/cacheds"
+	fetchingsURL     = "/fetchings"
+	cacheRemoveURL   = "/cacheds/"
+	togglePingURL    = "/toggle/ping"
+	pingIsDiabledURL = "/ping/is-disabled"
+	adminToken       = "X-Admin-Token"
 )
 
 var (
@@ -32,10 +35,11 @@ var (
 type (
 	// AdminConfig admin config
 	AdminConfig struct {
-		Prefix    string
-		Token     string
-		Client    *cache.Client
-		Directors pike.Directors
+		Prefix       string
+		Token        string
+		Client       *cache.Client
+		Directors    pike.Directors
+		DisabledPing *int32
 	}
 )
 
@@ -123,6 +127,29 @@ func removeCached(c *pike.Context, client *cache.Client, key string) error {
 	return nil
 }
 
+// togglePing 切换ping的状态
+func togglePing(c *pike.Context, addr *int32) error {
+	// 0表示非禁用，非0表示禁用
+	v := atomic.LoadInt32(addr)
+	newValue := int32(0)
+	if v == 0 {
+		newValue = 1
+	}
+	atomic.StoreInt32(addr, newValue)
+	m := make(map[string]interface{})
+	m["disabled"] = newValue != 0
+	return c.JSON(m, http.StatusOK)
+}
+
+// getPingIsDisabeld 获取ping是否禁用
+func getPingIsDisabeld(c *pike.Context, addr *int32) error {
+	// 0表示非禁用，非0表示禁用
+	v := atomic.LoadInt32(addr)
+	m := make(map[string]interface{})
+	m["disabled"] = v != 0
+	return c.JSON(m, http.StatusOK)
+}
+
 // AdminHandler admin handler
 func AdminHandler(config AdminConfig) pike.Middleware {
 	prefix := config.Prefix
@@ -152,6 +179,10 @@ func AdminHandler(config AdminConfig) pike.Middleware {
 			return getCachedList(c, client)
 		case fetchingsURL:
 			return getFetchingList(c, client)
+		case togglePingURL:
+			return togglePing(c, config.DisabledPing)
+		case pingIsDiabledURL:
+			return getPingIsDisabeld(c, config.DisabledPing)
 		}
 		if strings.HasPrefix(uri, cacheRemoveURL) {
 			key := uri[len(cacheRemoveURL):]

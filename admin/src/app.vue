@@ -1,6 +1,8 @@
 <template lang="pug">
   #app
-    main-header
+    main-header(
+      @togglePing="changePingStatus"
+    )
     transition
       .contentWrapper: router-view
 </template>
@@ -15,17 +17,28 @@ export default {
     MainHeader,
   },
   methods: {
-    ...mapActions(['getStats']),
+    ...mapActions(['getStats', 'getPingStatus', 'togglePing']),
     intervalGetStats() {
       setInterval(() => {
         this.getStats();
       }, 60 * 1000);
+    },
+    async changePingStatus() {
+      const close = this.$loading();
+      try {
+        await this.togglePing();
+      } catch (err) {
+        this.$error(err);
+      } finally {
+        close();
+      }
     },
   },
   async beforeMount() {
     const close = this.$loading();
     try {
       await this.getStats();
+      await this.getPingStatus();
       this.intervalGetStats();
     } catch (err) {
       if (_.get(err, 'response.status') === 401) {

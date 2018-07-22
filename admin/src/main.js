@@ -3,6 +3,7 @@ import _ from 'lodash';
 import ElementUI from 'element-ui';
 import 'element-ui/lib/theme-chalk/index.css';
 import VuexRouterSync from 'vuex-router-sync';
+import locale from 'element-ui/lib/locale/lang/en';
 
 import App from './app.vue';
 import router from './router';
@@ -11,7 +12,7 @@ import './request-interceptors';
 import {getErrorMessage} from './helpers/util';
 import {env} from './config';
 
-Vue.use(ElementUI);
+Vue.use(ElementUI, {locale});
 
 VuexRouterSync.sync(store, router);
 

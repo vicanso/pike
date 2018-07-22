@@ -7,6 +7,8 @@ import {
   DIRECTORS,
   CACHEDS,
   FETCHINGS,
+  PING_IS_DISABLED,
+  TOGGLE_PING,
 } from '../../urls';
 
 import {
@@ -15,6 +17,7 @@ import {
   PIKE_CACHED,
   PIKE_CACHED_CLEAR,
   PIKE_FETCHING,
+  PIKE_PING,
 } from '../mutation-types';
 
 const state = {
@@ -23,6 +26,7 @@ const state = {
   performances: null,
   cacheds: null,
   fetchings: null,
+  ping: '',
 };
 const minute = 60;
 const hour = 60 * minute;
@@ -152,6 +156,13 @@ const mutations = {
     });
     state.fetchings = items;
   },
+  [PIKE_PING](state, data) {
+    if (data.disabled) {
+      state.ping = 'off';
+    } else {
+      state.ping = 'on';
+    }
+  },
 };
 
 // 获取系统性能统计相关信息
@@ -186,12 +197,24 @@ async function getFetching({commit}) {
   commit(PIKE_FETCHING, res.data);
 }
 
+async function getPingStatus({commit}) {
+  const res = await request.get(PING_IS_DISABLED);
+  commit(PIKE_PING, res.data);
+}
+
+async function togglePing({commit}) {
+  const res = await request.post(TOGGLE_PING);
+  commit(PIKE_PING, res.data);
+}
+
 export const actions = {
   getStats,
   getDirectors,
   getCached,
   clearCached,
   getFetching,
+  getPingStatus,
+  togglePing,
 };
 
 export default {

@@ -66,6 +66,8 @@ var (
 	ErrTargetURLNotInit = NewHTTPError(http.StatusNotImplemented, "target url is not init")
 	// ErrParseBackendURLFail 生成backend url失败
 	ErrParseBackendURLFail = NewHTTPError(http.StatusNotImplemented, "parse backend url fail")
+	// ErrDisableServer 服务器被禁用ping时返回
+	ErrDisableServer = NewHTTPError(http.StatusServiceUnavailable, "server is diabled")
 )
 
 type (

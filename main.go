@@ -28,6 +28,7 @@ import (
 
 // buildAt 构建时间
 var buildAt = "20180101.000000"
+var disabledPing int32 = 0
 
 const (
 	defaultExpiredClearInterval = 300 * time.Second
@@ -194,15 +195,17 @@ func main() {
 
 	// ping health check
 	p.Use(middleware.Ping(middleware.PingConfig{
-		URL: "/ping",
+		DisabledPing: &disabledPing,
+		URL:          "/ping",
 	}))
 
 	// admin管理后台
 	adminConfig := controller.AdminConfig{
-		Prefix:    dc.AdminPath,
-		Token:     dc.AdminToken,
-		Client:    client,
-		Directors: directors,
+		Prefix:       dc.AdminPath,
+		Token:        dc.AdminToken,
+		Client:       client,
+		Directors:    directors,
+		DisabledPing: &disabledPing,
 	}
 	p.Use(controller.AdminHandler(adminConfig))
 
