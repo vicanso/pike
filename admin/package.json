@@ -15,11 +15,13 @@
     "chart.js": "^2.7.2",
     "dayjs": "^1.5.17",
     "element-ui": "^2.2.2",
+    "eslint-plugin-vue-libs": "^3.0.0",
     "json-diff": "^0.5.2",
     "lodash": "^4.17.5",
     "node-sass": "^4.8.1",
     "prettier": "^1.11.1",
     "pug": "^2.0.3",
+    "pug-plain-loader": "^1.0.0",
     "sass-loader": "^6.0.7",
     "vue": "^2.5.13",
     "vue-router": "^3.0.1",
@@ -32,17 +34,6 @@
     "presets": [
       "@vue/app"
     ]
-  },
-  "eslintConfig": {
-    "root": true,
-    "extends": [
-      "plugin:vue/essential",
-      "eslint:recommended"
-    ],
-    "globals": {
-      "ENV": true,
-      "APP": true
-    }
   },
   "postcss": {
     "plugins": {

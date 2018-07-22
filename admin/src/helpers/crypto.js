@@ -31,7 +31,7 @@ const SHA256 = (function() {
         (g = (((b + 65) >>> 9) << 4) + 15), (e = 16);
       else throw Error('Unexpected error in SHA-2 implementation');
       for (; a.length <= g; ) a.push(0);
-      a[b >>> 5] |= 128 << (24 - b % 32);
+      a[b >>> 5] |= 128 << (24 - (b % 32));
       b = b + f;
       a[g] = b & 4294967295;
       a[g - 1] = (b / 4294967296) | 0;
@@ -176,7 +176,7 @@ const SHA256 = (function() {
         throw Error('String of HEX type contains invalid characters');
       h = (d >>> 1) + q;
       for (e = h >>> 2; a.length <= e; ) a.push(0);
-      a[e] |= f << (8 * (3 - h % 4));
+      a[e] |= f << (8 * (3 - (h % 4)));
     }
     return {
       value: a,
@@ -198,7 +198,7 @@ const SHA256 = (function() {
         (h = d + f),
         (e = h >>> 2),
         g.length <= e && g.push(0),
-        (g[e] |= a << (8 * (3 - h % 4)));
+        (g[e] |= a << (8 * (3 - (h % 4))));
     return {
       value: g,
       binLen: 8 * c.length + b,
@@ -233,7 +233,7 @@ const SHA256 = (function() {
       for (h = 0; h < m.length - 1; h += 1) {
         n = d + a;
         for (f = n >>> 2; g.length <= f; ) g.push(0);
-        g[f] |= ((q >>> (16 - 8 * h)) & 255) << (8 * (3 - n % 4));
+        g[f] |= ((q >>> (16 - 8 * h)) & 255) << (8 * (3 - (n % 4)));
         d += 1;
       }
     }
@@ -255,7 +255,7 @@ const SHA256 = (function() {
       (e = a + d),
         (f = e >>> 2),
         g.length <= f && g.push(0),
-        (g[f] |= c[a] << (8 * (3 - e % 4)));
+        (g[f] |= c[a] << (8 * (3 - (e % 4))));
     return {
       value: g,
       binLen: 8 * c.byteLength + b,
@@ -268,7 +268,7 @@ const SHA256 = (function() {
       d,
       f;
     for (d = 0; d < g; d += 1)
-      (f = c[d >>> 2] >>> (8 * (3 - d % 4))),
+      (f = c[d >>> 2] >>> (8 * (3 - (d % 4)))),
         (b +=
           '0123456789abcdef'.charAt((f >>> 4) & 15) +
           '0123456789abcdef'.charAt(f & 15));
@@ -288,9 +288,9 @@ const SHA256 = (function() {
           e = (d + 2) >>> 2,
           e = c.length <= e ? 0 : c[e],
           e =
-            (((c[d >>> 2] >>> (8 * (3 - d % 4))) & 255) << 16) |
-            (((f >>> (8 * (3 - (d + 1) % 4))) & 255) << 8) |
-            ((e >>> (8 * (3 - (d + 2) % 4))) & 255),
+            (((c[d >>> 2] >>> (8 * (3 - (d % 4)))) & 255) << 16) |
+            (((f >>> (8 * (3 - ((d + 1) % 4)))) & 255) << 8) |
+            ((e >>> (8 * (3 - ((d + 2) % 4)))) & 255),
           f = 0;
         4 > f;
         f += 1
@@ -309,7 +309,7 @@ const SHA256 = (function() {
       g,
       d;
     for (g = 0; g < b; g += 1)
-      (d = (c[g >>> 2] >>> (8 * (3 - g % 4))) & 255),
+      (d = (c[g >>> 2] >>> (8 * (3 - (g % 4)))) & 255),
         (a += String.fromCharCode(d));
     return a;
   }
@@ -318,7 +318,8 @@ const SHA256 = (function() {
     var a = 4 * c.length,
       b,
       g = new ArrayBuffer(a);
-    for (b = 0; b < a; b += 1) g[b] = (c[b >>> 2] >>> (8 * (3 - b % 4))) & 255;
+    for (b = 0; b < a; b += 1)
+      g[b] = (c[b >>> 2] >>> (8 * (3 - (b % 4)))) & 255;
     return g;
   }
 
@@ -395,7 +396,7 @@ const SHA256 = (function() {
               ) {
                 p = q + l;
                 for (k = p >>> 2; e.length <= k; ) e.push(0);
-                e[k] |= h[n] << (8 * (3 - p % 4));
+                e[k] |= h[n] << (8 * (3 - (p % 4)));
                 q += 1;
               }
           else if ('UTF16BE' === a || 'UTF16LE' === a)
@@ -404,7 +405,7 @@ const SHA256 = (function() {
               'UTF16LE' === a && ((n = f & 255), (f = (n << 8) | (f >>> 8)));
               p = q + l;
               for (k = p >>> 2; e.length <= k; ) e.push(0);
-              e[k] |= f << (8 * (2 - p % 4));
+              e[k] |= f << (8 * (2 - (p % 4)));
               q += 2;
             }
           return {

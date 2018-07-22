@@ -20,6 +20,7 @@ cd admin \
   && yarn \
   && yarn build \
   && rm ./dist/js/*.map \
+  && mv ./dist/fonts ./dist/css/ \
   && cd .. \
   && packr -z
 ```
