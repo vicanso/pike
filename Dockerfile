@@ -27,4 +27,4 @@ ADD ./config.yml /etc/pike/config.yml
 CMD ["pike", "-c", "/etc/pike/config.yml"]
 
 HEALTHCHECK --interval=10s --timeout=3s \
-  CMD ./pike -c /etc/pike/config.yml check || exit 1
+  CMD pike -c /etc/pike/config.yml check || exit 1
