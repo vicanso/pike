@@ -48,7 +48,7 @@ func startExpiredClearTask(client *cache.Client, interval time.Duration) {
 		interval = defaultExpiredClearInterval
 	}
 	ticker := time.NewTicker(interval)
-	for _ = range ticker.C {
+	for range ticker.C {
 		client.ClearExpired(60)
 	}
 }
@@ -99,6 +99,10 @@ func getBuildAtDesc() string {
 	return strings.Replace(str, " ", "T", 1)
 }
 
+func init() {
+	vars.BuildedAt = getBuildAtDesc()
+}
+
 func main() {
 	// 初始化日志输出级别
 	logLevel := os.Getenv("LVL")
@@ -112,7 +116,7 @@ func main() {
 	// }()
 	args := os.Args[1:]
 	if funk.ContainsString(args, "version") {
-		log.Infof("Pike version %s build at %s", vars.Version, getBuildAtDesc())
+		log.Infof("Pike version %s build at %s", vars.Version, vars.BuildedAt)
 		return
 	}
 	var configFile string
