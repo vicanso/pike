@@ -8,6 +8,24 @@
     span(
       v-if='statsInfo'
     ) ({{statsInfo.version}})
+  el-dropdown.pullRight.infos(
+    v-if='statsInfo'
+  )
+    span.el-dropdown-link
+      | Information
+      i.el-icon-arrow-down.el-icon--right
+    el-dropdown-menu(
+      slot="dropdown"
+    )
+      el-dropdown-item(
+        disabled
+      ) CPU: {{statsInfo.goMaxProcs}}
+      el-dropdown-item(
+        disabled
+      ) Go Version: {{statsInfo.goVersion}}
+      el-dropdown-item(
+        disabled
+      ) Started At: {{statsInfo.startedAt}}
   .pullRight.pingCtrl(
     v-if='ping'
   )
@@ -16,11 +34,6 @@
       v-model='pingEnabled'
       @change='changePingStatus'
     )
-  .pullRight(
-    v-if='statsInfo'
-  )
-    span.cpus CPU:{{statsInfo.goMaxProcs}}
-    span.startedAt {{statsInfo.startedAt}}
   ul.functions.pullLeft
     li(
       :class=`{
@@ -72,12 +85,12 @@
       display: block
     &.active a
       color: $COLOR_WHITE
-.startedAt, .cpus
-  color: rgba($COLOR_WHITE, 0.5)
+.infos
+  color: $COLOR_BLUE
   margin-right: 15px
 .pingCtrl
-  color: $COLOR_WHITE
-  margin-right: 15px
+  color: $COLOR_BLUE
+  margin-right: 30px
   span
     margin-right: 5px
 </style>

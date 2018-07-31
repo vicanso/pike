@@ -84,6 +84,10 @@ type (
 		RequestCount uint64 `json:"requestCount"`
 		// version版本号
 		Version string `json:"version"`
+		// 构建时间
+		BuildedAt string `json:"buildedAt"`
+		// 编译的go版本
+		GoVersion string `json:"goVersion"`
 		// FileSize db数据文件的大小
 		FileSize int `json:"fileSize"`
 	}
@@ -191,6 +195,8 @@ func GetStats(client *cache.Client) *Stats {
 		HitForPass:   result.HitForPass,
 		RequestCount: requestCount,
 		Version:      vars.Version,
+		BuildedAt:    vars.BuildedAt,
+		GoVersion:    runtime.Version(),
 		FileSize:     result.FileSize,
 	}
 	return stats

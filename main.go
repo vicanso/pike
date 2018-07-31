@@ -8,6 +8,7 @@ import (
 	"net/url"
 	"os"
 	"regexp"
+	"runtime"
 	"sort"
 	"strconv"
 	"strings"
@@ -116,7 +117,7 @@ func main() {
 	// }()
 	args := os.Args[1:]
 	if funk.ContainsString(args, "version") {
-		log.Infof("Pike version %s build at %s", vars.Version, vars.BuildedAt)
+		log.Infof("Pike version %s build at %s, %s", vars.Version, vars.BuildedAt, runtime.Version())
 		return
 	}
 	var configFile string
