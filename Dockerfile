@@ -1,4 +1,4 @@
-FROM golang:alpine as builder
+FROM golang:1.10-alpine as builder
 
 RUN apk update \
   && apk add git make g++ bash cmake \
