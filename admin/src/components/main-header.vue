@@ -25,6 +25,9 @@
       ) Go Version: {{statsInfo.goVersion}}
       el-dropdown-item(
         disabled
+      ) Commit ID: {{statsInfo.commitId}}
+      el-dropdown-item(
+        disabled
       ) Started At: {{statsInfo.startedAt}}
   .pullRight.pingCtrl(
     v-if='ping'

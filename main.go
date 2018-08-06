@@ -30,6 +30,7 @@ import (
 // buildAt 构建时间
 var buildAt = "20180101.000000"
 var disabledPing int32 = 0
+var commitID = ""
 
 const (
 	defaultExpiredClearInterval = 300 * time.Second
@@ -102,6 +103,7 @@ func getBuildAtDesc() string {
 
 func init() {
 	vars.BuildedAt = getBuildAtDesc()
+	vars.CommitID = commitID
 }
 
 func main() {

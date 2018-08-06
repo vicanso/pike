@@ -86,6 +86,8 @@ type (
 		Version string `json:"version"`
 		// 构建时间
 		BuildedAt string `json:"buildedAt"`
+		// 当前版本的git commit id
+		CommitID string `json:"commitId"`
 		// 编译的go版本
 		GoVersion string `json:"goVersion"`
 		// FileSize db数据文件的大小
@@ -196,6 +198,7 @@ func GetStats(client *cache.Client) *Stats {
 		RequestCount: requestCount,
 		Version:      vars.Version,
 		BuildedAt:    vars.BuildedAt,
+		CommitID:     vars.CommitID,
 		GoVersion:    runtime.Version(),
 		FileSize:     result.FileSize,
 	}

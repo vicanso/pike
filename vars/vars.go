@@ -8,4 +8,6 @@ const (
 var (
 	// BuildedAt 构建时间
 	BuildedAt = ""
+	// CommitID git commit id
+	CommitID = ""
 )
