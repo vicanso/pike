@@ -25,6 +25,7 @@ const (
 	togglePingURL    = "/toggle/ping"
 	pingIsDiabledURL = "/ping/is-disabled"
 	adminToken       = "X-Admin-Token"
+	defaultHTMLFile  = "/index.html"
 )
 
 var (
@@ -162,6 +163,14 @@ func AdminHandler(config AdminConfig) pike.Middleware {
 			return next()
 		}
 		uri = uri[len(prefix):]
+		if uri == "" {
+			c.Response.Committed = true
+			http.Redirect(c.ResponseWriter, c.Request, prefix+"/", http.StatusTemporaryRedirect)
+			return nil
+		}
+		if uri == "/" {
+			uri = defaultHTMLFile
+		}
 		ext := path.Ext(uri)
 		// 静态文件不校验token
 		if len(ext) != 0 {
