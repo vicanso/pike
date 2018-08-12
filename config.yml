@@ -48,13 +48,11 @@ requestHeader:
   - "X-Server:${SERVER}"
   - "X-Location:GZ"
 # 需要做rewrite的url列表
-# /old:/new
-# /api/*:/$1
-# /js/*":"/public/javascripts/$1
-# /users/*/orders/*:/user/$1/order/$2
 rewrites:
-  -
-    "/js/*:/public/javascripts/$1"
+  - "/old:/new"
+  - "/api/*:/$1"
+  - "/js/*:/public/javascripts/$1"
+  - "/users/*/orders/*:/user/$1/order/$2"
 directors:
   -
     # 名称
