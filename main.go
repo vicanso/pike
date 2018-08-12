@@ -270,6 +270,10 @@ func main() {
 		CompressLevel:     dc.CompressLevel,
 	}
 	p.Use(middleware.Dispatcher(dispatcherConfig, client))
-
-	p.ListenAndServe(dc.Listen)
+	listen := dc.Listen
+	if listen == "" {
+		listen = ":3015"
+	}
+	err := p.ListenAndServe(listen)
+	log.Panic("listen and serve fail, ", err)
 }

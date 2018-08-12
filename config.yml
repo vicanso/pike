@@ -1,5 +1,3 @@
-# HTTP response header 中的 Pike 
-name: Pike
 # 程序监听的端口，默认为 :3015
 listen: :3015
 # 数据缓存的db文件（必须指定）
