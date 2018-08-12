@@ -274,6 +274,6 @@ func main() {
 	if listen == "" {
 		listen = ":3015"
 	}
-	err := p.ListenAndServe(listen)
+	err = p.ListenAndServe(listen)
 	log.Panic("listen and serve fail, ", err)
 }
