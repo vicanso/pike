@@ -49,7 +49,7 @@ func Initialization(config InitializationConfig) pike.Middleware {
 
 	// 获取限制并发请求数
 	concurrency := uint32(defaultConcurrency)
-	if config.Concurrency != 0 {
+	if config.Concurrency > 0 {
 		concurrency = uint32(config.Concurrency)
 	}
 
