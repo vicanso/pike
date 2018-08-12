@@ -81,9 +81,6 @@ func (st *ServerTiming) Start(index int) func() {
 	startedAt := time.Now().UnixNano()
 	return func() {
 		st.useList[index] = time.Now().UnixNano() - startedAt
-		// if st.useList[index] > 10000000 {
-		// 	log.Infof("%s use %d", serverTimingDesList[index], st.useList[index])
-		// }
 	}
 }
 

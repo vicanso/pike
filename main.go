@@ -197,6 +197,7 @@ func main() {
 	sort.Sort(directors)
 
 	p := pike.New()
+	p.EnableServerTiming = dc.EnableServerTiming
 
 	p.ErrorHandler = middleware.CreateErrorHandler(client)
 

@@ -73,11 +73,12 @@ var (
 type (
 	// Pike app instance of pike
 	Pike struct {
-		middleware   []Middleware
-		server       *http.Server
-		ReadTimeout  time.Duration
-		WriteTimeout time.Duration
-		ErrorHandler ErrorHandler
+		middleware         []Middleware
+		server             *http.Server
+		ReadTimeout        time.Duration
+		WriteTimeout       time.Duration
+		ErrorHandler       ErrorHandler
+		EnableServerTiming bool
 	}
 
 	// Middleware middleware function
@@ -139,6 +140,7 @@ func (p *Pike) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		c.ResponseWriter = nil
 		contextPool.Put(c)
 	}()
+	c.ServerTiming.disabled = !p.EnableServerTiming
 	c.ResponseWriter = w
 	max := len(mids)
 	index := -1
