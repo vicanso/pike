@@ -2,7 +2,7 @@ language: go
 sudo: required
 
 go:
-  - 1.x
+  - 1.10
 
 install:
   - go get -u github.com/golang/dep/cmd/dep
