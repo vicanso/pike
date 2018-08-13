@@ -246,7 +246,10 @@ func Proxy(config ProxyConfig) pike.Middleware {
 
 		ttl := getCacheAge(headers)
 		body := writer.Bytes()
-		if config.ETag {
+		status := writer.Status()
+		// 如果是出错返回，则不需要生成ETag
+		// 因为出错的数据都不做缓存，提高性能
+		if config.ETag && (status >= http.StatusOK && status < http.StatusBadRequest) {
 			eTagValue := util.GetHeaderValue(headers, pike.HeaderETag)
 			if len(eTagValue) == 0 {
 				headers.Set(pike.HeaderETag, genETag(body))
@@ -255,7 +258,7 @@ func Proxy(config ProxyConfig) pike.Middleware {
 		cr := &cache.Response{
 			CreatedAt:  uint32(time.Now().Unix()),
 			TTL:        ttl,
-			StatusCode: uint16(writer.Status()),
+			StatusCode: uint16(status),
 			Header:     headers,
 		}
 		contentEncoding := headers.Get(pike.HeaderContentEncoding)
