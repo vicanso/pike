@@ -29,6 +29,9 @@
       el-dropdown-item(
         disabled
       ) Started At: {{statsInfo.startedAt}}
+      el-dropdown-item(
+        @click.native="logout"
+      ) Logout
   .pullRight.pingCtrl(
     v-if='ping'
   )
@@ -100,6 +103,9 @@
 
 <script>
 import {mapState} from 'vuex';
+import {
+  removeAdminToken,
+} from '../helpers/util';
 export default {
   data() {
     return {
@@ -145,6 +151,17 @@ export default {
         if (err === 'cancel') {
           this.pingEnabled = !pingEnabled;
           return;
+        }
+      }
+    },
+    async logout() {
+      try {
+        await this.$confirm(`Are you sure to logout?`);
+        removeAdminToken();
+        location.reload();
+      } catch (err) {
+        if (err !== 'cancel') {
+          this.$error(err);
         }
       }
     },

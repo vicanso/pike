@@ -25,7 +25,7 @@
 
 <script>
 import {
-  saveAdminToken
+  saveAdminToken,
 } from '../../helpers/util';
 export default {
   data() {

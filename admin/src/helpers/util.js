@@ -83,3 +83,10 @@ export function getAdminToken() {
   }
   return localStorage.getItem(token);
 }
+
+export function removeAdminToken() {
+  if (!window.localStorage) {
+    throw new Error('the browser is not support local storage');
+  }
+  localStorage.removeItem(token);
+}
