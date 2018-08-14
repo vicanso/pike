@@ -29,3 +29,4 @@ cd admin \
 
 - [为什么使用Pike](https://github.com/vicanso/pike/wiki/%E4%B8%BA%E4%BB%80%E4%B9%88%E4%BD%BF%E7%94%A8Pike)
 - [Pike配置详解](https://github.com/vicanso/pike/wiki/Pike%E9%85%8D%E7%BD%AE%E8%AF%A6%E8%A7%A3)
+- [自定义identity请求唯一标识](https://github.com/vicanso/pike/wiki/%E8%87%AA%E5%AE%9A%E4%B9%89identity%E8%AF%B7%E6%B1%82%E5%94%AF%E4%B8%80%E6%A0%87%E8%AF%86)
