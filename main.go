@@ -79,7 +79,14 @@ func getLogger(dc *config.Config) httplog.Writer {
 
 // check 检查程序是否正常运行
 func check(conf *config.Config) {
+	httpPrefix := "http://"
 	url := "http://127.0.0.1" + conf.Listen + "/ping"
+	if conf.Listen[0] != ':' {
+		url = conf.Listen + "/ping"
+	}
+	if !strings.HasPrefix(url, httpPrefix) {
+		url = httpPrefix + url
+	}
 	resp, err := http.Get(url)
 	if err != nil {
 		log.Error("health check fail, ", err)
