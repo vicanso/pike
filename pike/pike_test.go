@@ -104,5 +104,21 @@ func TestPike(t *testing.T) {
 			t.Fatalf("check the error response message fail")
 		}
 	})
+}
 
+func TestGetStatusCodeFromError(t *testing.T) {
+	t.Run("normal error", func(t *testing.T) {
+		if GetStatusCodeFromError(errors.New("abc")) != http.StatusInternalServerError {
+			t.Fatalf("get status from normal error fail")
+		}
+	})
+
+	t.Run("http error", func(t *testing.T) {
+		he := &HTTPError{
+			Code: http.StatusBadRequest,
+		}
+		if GetStatusCodeFromError(he) != http.StatusBadRequest {
+			t.Fatalf("get status from http error fail")
+		}
+	})
 }

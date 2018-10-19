@@ -7,11 +7,14 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"os/signal"
 	"regexp"
 	"runtime"
 	"sort"
 	"strconv"
 	"strings"
+	"sync/atomic"
+	"syscall"
 	"time"
 
 	// _ "net/http/pprof"
@@ -208,9 +211,13 @@ func main() {
 
 	p.ErrorHandler = middleware.CreateErrorHandler(client)
 
+	disabledPingValuePoint := &disabledPing
+	setPingDisabled := func() {
+		atomic.StoreInt32(disabledPingValuePoint, 1)
+	}
 	// ping health check
 	p.Use(middleware.Ping(middleware.PingConfig{
-		DisabledPing: &disabledPing,
+		DisabledPing: disabledPingValuePoint,
 		URL:          "/ping",
 	}))
 
@@ -220,7 +227,7 @@ func main() {
 		Token:        dc.AdminToken,
 		Client:       client,
 		Directors:    directors,
-		DisabledPing: &disabledPing,
+		DisabledPing: disabledPingValuePoint,
 	}
 	p.Use(controller.AdminHandler(adminConfig))
 
@@ -282,6 +289,22 @@ func main() {
 	if listen == "" {
 		listen = ":3015"
 	}
-	err = p.ListenAndServe(listen)
-	log.Panic("listen and serve fail, ", err)
+
+	exitSig := make(chan os.Signal, 1)
+	signal.Notify(exitSig, syscall.SIGINT, syscall.SIGTERM)
+
+	go func() {
+		err = p.ListenAndServe(listen)
+		log.Panic("listen and serve fail, ", err)
+		exitSig <- syscall.SIGINT
+	}()
+	defer p.Close()
+	<-exitSig
+	// 将ping设置为不可用，则检测不通过
+	setPingDisabled()
+	// 如果非开发环境
+	if os.Getenv("GO_ENV") != "dev" {
+		// 等待10秒后退出
+		time.Sleep(10 * time.Second)
+	}
 }

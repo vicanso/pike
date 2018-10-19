@@ -27,7 +27,7 @@ func Logger(config LoggerConfig) pike.Middleware {
 		}
 		startedAt := time.Now()
 		err = next()
-		str := httplog.Format(c, tags, startedAt)
+		str := httplog.Format(c, tags, startedAt, err)
 		go func() {
 			writer.Write([]byte(str))
 		}()

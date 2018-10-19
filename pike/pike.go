@@ -214,3 +214,12 @@ func (p *Pike) DefaultErrorHanddler(err error, c *Context) {
 	c.ResponseWriter.WriteHeader(code)
 	c.ResponseWriter.Write([]byte(msg))
 }
+
+// GetStatusCodeFromError 从error中获取status code
+func GetStatusCodeFromError(err error) int {
+	code := http.StatusInternalServerError
+	if he, ok := err.(*HTTPError); ok {
+		code = he.Code
+	}
+	return code
+}

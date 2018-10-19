@@ -257,7 +257,7 @@ func Parse(desc []byte) []*Tag {
 }
 
 // Format 格式化访问日志信息
-func Format(c *pike.Context, tags []*Tag, startedAt time.Time) string {
+func Format(c *pike.Context, tags []*Tag, startedAt time.Time, err error) string {
 	fn := func(tag *Tag) string {
 		switch tag.category {
 		case host:
@@ -308,7 +308,11 @@ func Format(c *pike.Context, tags []*Tag, startedAt time.Time) string {
 		case whenUnix:
 			return strconv.FormatInt(time.Now().Unix(), 10)
 		case status:
-			return strconv.Itoa(c.Response.Status())
+			status := c.Response.Status()
+			if err != nil {
+				status = pike.GetStatusCodeFromError(err)
+			}
+			return strconv.Itoa(status)
 		// case payloadSize:
 		// 	return []byte(strconv.Itoa(len(ctx.Request.Body())))
 		case size:

@@ -36,7 +36,7 @@ func TestParse(t *testing.T) {
 	c.Response.Header().Set("X-Response-Id", "responseId")
 	c.Response.Write([]byte("hello world"))
 
-	str := Format(c, tags, startedAt)
+	str := Format(c, tags, startedAt, nil)
 	fmt.Println(str)
 	if strings.Index(str, "{") != -1 {
 		t.Fatalf("the log of request fail")
