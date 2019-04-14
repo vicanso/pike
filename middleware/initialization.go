@@ -7,6 +7,7 @@ import (
 	"github.com/vicanso/hes"
 	"github.com/vicanso/pike/config"
 
+	"github.com/vicanso/pike/cache"
 	"github.com/vicanso/pike/df"
 	"github.com/vicanso/pike/performance"
 )
@@ -33,9 +34,9 @@ func NewInitialization() cod.Handler {
 
 		// 设置请求头
 		reqHeader := c.Request.Header
-		for k, value := range requestHeader {
-			for _, v := range value {
-				reqHeader.Add(k, v)
+		for key, values := range requestHeader {
+			for _, value := range values {
+				reqHeader.Add(key, value)
 			}
 		}
 
@@ -47,11 +48,13 @@ func NewInitialization() cod.Handler {
 
 		err = c.Next()
 		// 设置响应头 （最后再设置，避免在后续缓存中将全局响应头缓存）
-		for k, value := range header {
-			for _, v := range value {
-				c.AddHeader(k, v)
+		for key, values := range header {
+			for _, value := range values {
+				c.AddHeader(key, value)
 			}
 		}
+		v, _ := c.Get(df.Status).(int)
+		c.SetHeader(df.HeaderStatus, cache.GetStatusDesc(v))
 		return
 	}
 }

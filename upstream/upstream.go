@@ -21,7 +21,6 @@ import (
 )
 
 var (
-	upstreams          Upstreams
 	errNoMatchUpstream = &hes.Error{
 		StatusCode: http.StatusInternalServerError,
 		Category:   df.APP,
@@ -69,7 +68,7 @@ type (
 		Name          string
 		Header        http.Header
 		RequestHeader http.Header
-		server        up.HTTP
+		Server        up.HTTP
 		Hosts         []string
 		Prefixs       []string
 		Rewrites      []string
@@ -91,7 +90,51 @@ func (s Upstreams) Less(i, j int) bool {
 	return s[i].Priority < s[j].Priority
 }
 
-func init() {
+// Proxy do match upstream proxy
+func (s Upstreams) Proxy(c *cod.Context) (err error) {
+	var found *Upstream
+	for _, item := range s {
+		if item.Match(c) {
+			found = item
+			break
+		}
+	}
+	if found == nil {
+		return errNoMatchUpstream
+	}
+	// 设置请求头
+	for key, values := range found.RequestHeader {
+		for _, value := range values {
+			c.AddRequestHeader(key, value)
+		}
+	}
+	// 设置响应头
+	for key, values := range found.Header {
+		for _, value := range values {
+			c.AddHeader(key, value)
+		}
+	}
+
+	return found.Handler(c)
+}
+
+// Destroy destroy upstreams
+func (s Upstreams) Destroy() {
+	for _, up := range s {
+		up.Server.StopHealthCheck()
+	}
+}
+
+// StartHealthCheck start health check
+func (s Upstreams) StartHealthCheck() {
+	for _, up := range s {
+		up.Server.DoHealthCheck()
+		go up.Server.StartHealthCheck()
+	}
+}
+
+// NewUpstreamsFromConfig new upstreams from config
+func NewUpstreamsFromConfig() Upstreams {
 	backendConfig := &struct {
 		Director []Backend
 	}{
@@ -107,27 +150,13 @@ func init() {
 			}
 		}
 	}
-	upstreams = make(Upstreams, len(backendConfig.Director))
+
+	upstreams := make(Upstreams, len(backendConfig.Director))
 	for index, item := range backendConfig.Director {
-		up := NewUpstream(item)
-		upstreams[index] = up
+		upstreams[index] = New(item)
 	}
 	sort.Sort(upstreams)
-}
-
-// Proxy do match up stream proxy
-func Proxy(c *cod.Context) (err error) {
-	var found *Upstream
-	for _, item := range upstreams {
-		if item.Match(c) {
-			found = item
-			break
-		}
-	}
-	if found == nil {
-		return errNoMatchUpstream
-	}
-	return found.Handler(c)
+	return upstreams
 }
 
 // hash calculates a hash based on string s
@@ -137,8 +166,8 @@ func hash(s string) uint32 {
 	return h.Sum32()
 }
 
-// createProxyHandler create proxy handler
-func createProxyHandler(us *Upstream) cod.Handler {
+// createTargetPicker create target picker function
+func createTargetPicker(us *Upstream) proxy.TargetPicker {
 	isHeaderPolicy := false
 	isCookiePolicy := false
 	key := ""
@@ -150,7 +179,7 @@ func createProxyHandler(us *Upstream) cod.Handler {
 		key = policy[len(cookieHashPrefix):]
 		isCookiePolicy = true
 	}
-	server := &us.server
+	server := &us.Server
 	fn := func(c *cod.Context) (*url.URL, error) {
 		var result *up.HTTPUpstream
 		switch policy {
@@ -162,10 +191,12 @@ func createProxyHandler(us *Upstream) cod.Handler {
 			result = server.PolicyRoundRobin()
 		case policyLeastconn:
 			result = server.PolicyLeastconn()
-			// 连接数+1
-			result.Inc()
-			// 设置 callback
-			c.Set(df.ProxyDoneCallback, result.Dec)
+			if result != nil {
+				// 连接数+1
+				result.Inc()
+				// 设置 callback
+				c.Set(df.ProxyDoneCallback, result.Dec)
+			}
 		case policyIPHash:
 			result = server.GetAvailableUpstream(hash(c.RealIP()))
 		default:
@@ -185,6 +216,12 @@ func createProxyHandler(us *Upstream) cod.Handler {
 		}
 		return result.URL, nil
 	}
+	return fn
+}
+
+// createProxyHandler create proxy handler
+func createProxyHandler(us *Upstream) cod.Handler {
+	fn := createTargetPicker(us)
 
 	cfg := proxy.Config{
 		TargetPicker: fn,
@@ -224,7 +261,7 @@ func createUpstreamFromBackend(backend Backend) *Upstream {
 	us := Upstream{
 		Policy:   backend.Policy,
 		Name:     backend.Name,
-		server:   uh,
+		Server:   uh,
 		Prefixs:  backend.Prefixs,
 		Hosts:    backend.Hosts,
 		Rewrites: backend.Rewrites,
@@ -246,13 +283,10 @@ func createUpstreamFromBackend(backend Backend) *Upstream {
 	return &us
 }
 
-// NewUpstream new upstream
-func NewUpstream(backend Backend) *Upstream {
+// New new upstream
+func New(backend Backend) *Upstream {
 	us := createUpstreamFromBackend(backend)
-	server := &us.server
 	us.Handler = createProxyHandler(us)
-	server.DoHealthCheck()
-	go server.StartHealthCheck()
 	return us
 }
 
@@ -277,9 +311,9 @@ func (us *Upstream) Match(c *cod.Context) bool {
 	prefixs := us.Prefixs
 	if len(prefixs) != 0 {
 		found := false
-		url := c.Request.RequestURI
+		path := c.Request.URL.Path
 		for _, prefix := range prefixs {
-			if strings.HasPrefix(url, prefix) {
+			if strings.HasPrefix(path, prefix) {
 				found = true
 				break
 			}

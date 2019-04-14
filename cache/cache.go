@@ -43,6 +43,15 @@ const (
 	Cacheable
 )
 
+var (
+	statusDescMap = map[int]string{
+		Fetch:      "fetch",
+		Pass:       "pass",
+		HitForPass: "hitForPass",
+		Cacheable:  "cacheable",
+	}
+)
+
 type (
 	// Dispatcher dispatcher
 	Dispatcher struct {
@@ -97,6 +106,11 @@ func GetHTTPCache(key []byte) (hc *HTTPCache) {
 	index := (int(b[0]) | int(b[1])<<8) % dispatcherListLen
 	dsp := dispatcherList[index]
 	return dsp.GetHTTPCache(key)
+}
+
+// GetStatusDesc get status desc
+func GetStatusDesc(status int) string {
+	return statusDescMap[status]
 }
 
 // byteSliceToString converts a []byte to string without a heap allocation.

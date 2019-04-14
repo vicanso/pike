@@ -12,10 +12,11 @@ require (
 	github.com/vicanso/cod-etag v0.0.1
 	github.com/vicanso/cod-fresh v0.0.1
 	github.com/vicanso/cod-proxy v0.0.1
-	github.com/vicanso/cod-recover v0.0.1
+	github.com/vicanso/cod-recover v0.0.2
 	github.com/vicanso/hes v0.1.4
-	github.com/vicanso/upstream v0.0.0-20190406034141-1509b5727ba4
+	github.com/vicanso/upstream v0.0.0-20190414113121-7f1617e21339
 	go.uber.org/atomic v1.3.2 // indirect
 	go.uber.org/multierr v1.1.0 // indirect
 	go.uber.org/zap v1.9.1
+	gopkg.in/h2non/gock.v1 v1.0.14
 )

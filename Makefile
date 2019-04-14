@@ -1,10 +1,11 @@
+.PHONY: test
+
 export GO111MODULE = on
 
 # for dev
 dev:
 	fresh
 
-# for test
 test:
 	go test -race -cover ./...
 

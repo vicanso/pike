@@ -12,6 +12,8 @@ github.com/golang/groupcache v0.0.0-20190129154638-5b532d6fd5ef/go.mod h1:cIg4er
 github.com/golang/snappy v0.0.1 h1:Qgr9rKW7uDUkrbSmQeiDsGa8SjGyCOGtuasMWwvp2P4=
 github.com/golang/snappy v0.0.1/go.mod h1:/XxbfmMg8lxefKM7IXC3fBNl/7bRcc72aCRzEWrmP2Q=
 github.com/google/brotli v1.0.7/go.mod h1:XpGqLY1HgMKTQI5TU8iAKE/okaKqS9h1e6KRlRztlOU=
+github.com/h2non/parth v0.0.0-20190131123155-b4df798d6542 h1:2VTzZjLZBgl62/EtslCrtky5vbi9dd7HrQPQIx6wqiw=
+github.com/h2non/parth v0.0.0-20190131123155-b4df798d6542/go.mod h1:Ow0tF8D4Kplbc8s8sSb3V2oUCygFHVp8gC3Dn6U4MNI=
 github.com/hashicorp/hcl v1.0.0 h1:0Anlzjpi4vEasTeNFn2mLJgTSwt0+6sfsiTG8qcWGx4=
 github.com/hashicorp/hcl v1.0.0/go.mod h1:E5yfLk+7swimpb2L/Alb/PJmXilQ/rhwaUYs4T20WEQ=
 github.com/julienschmidt/httprouter v1.2.0 h1:TDTW5Yz1mjftljbcKqRcrYhd4XeOoI98t+9HbQbYf7g=
@@ -20,6 +22,7 @@ github.com/magiconair/properties v1.8.0 h1:LLgXmsheXeRoUOBOjtwPQCWIYqM/LU1ayDtDe
 github.com/magiconair/properties v1.8.0/go.mod h1:PppfXfuXeibc/6YijjN8zIbojt8czPbwD3XqdrwzmxQ=
 github.com/mitchellh/mapstructure v1.1.2 h1:fmNYVwqnSfB9mZU6OS2O6GsXM+wcskZDuKQzvN1EDeE=
 github.com/mitchellh/mapstructure v1.1.2/go.mod h1:FVVH3fgwuzCH5S8UJGiWEs2h04kUh9fWfEaFds41c1Y=
+github.com/nbio/st v0.0.0-20140626010706-e9e8d9816f32/go.mod h1:9wM+0iRr9ahx58uYLpLIr5fm8diHn0JbqRycJi6w0Ms=
 github.com/pelletier/go-toml v1.2.0 h1:T5zMGML61Wp+FlcbWjRDT7yAxhJNAiPPLOFECq181zc=
 github.com/pelletier/go-toml v1.2.0/go.mod h1:5z9KED0ma1S8pY6P1sdut58dfprrGBbd/94hg7ilaic=
 github.com/pmezard/go-difflib v1.0.0/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZNVY4sRDYZ/4=
@@ -46,8 +49,8 @@ github.com/vicanso/cod-fresh v0.0.1 h1:mDxt993K2Co7lmYrASibkY/NzkPXtCLCplIfD8UCT
 github.com/vicanso/cod-fresh v0.0.1/go.mod h1:FC1m1XtRd6gD3MahPJNrry1b0RMl/t/j7yzCXf2WLQw=
 github.com/vicanso/cod-proxy v0.0.1 h1:Gh40QtwrE9FH/cUXVUPG5Xp/+eiemv5InfDPBWKk0EA=
 github.com/vicanso/cod-proxy v0.0.1/go.mod h1:inpckG9hkcuaLxF/Nr062OMNCoTZb1EMoxnhlPZUItY=
-github.com/vicanso/cod-recover v0.0.1 h1:0cNeDgo3un8QXsP8JTHofVb56Dc41uD3A+r9/FR3Iog=
-github.com/vicanso/cod-recover v0.0.1/go.mod h1:QFYbdVPAQWaje9L9Ii0IAU0p0DcuD7daFjAMBWLlT4I=
+github.com/vicanso/cod-recover v0.0.2 h1:i7GPIjRDyLGcXGcbQBYNhFHPO+i93Mf2gvheir79c5k=
+github.com/vicanso/cod-recover v0.0.2/go.mod h1:GLl61l5HnvZ8Vq0OqAN5InNvagx4J0MgTN+fB3mFzXM=
 github.com/vicanso/fresh v0.1.1 h1:L3UX/g2uZ4pNFzjc7+PyeYOlIAs2/yUfhcFnK7E+JQU=
 github.com/vicanso/fresh v0.1.1/go.mod h1:gr1RKSFxQ1OnQHzUMBHCigifni7KrXveJjWCTlPjICA=
 github.com/vicanso/hes v0.1.3/go.mod h1:bG0UJ3EihDKObFcLLwJYjxHHr9saFllsFcepyDIvFlo=
@@ -55,8 +58,8 @@ github.com/vicanso/hes v0.1.4 h1:n8kG8krvNJF4Sj1PvZOEUzdUsmDSbCcGr8C1nYnoP+o=
 github.com/vicanso/hes v0.1.4/go.mod h1:bG0UJ3EihDKObFcLLwJYjxHHr9saFllsFcepyDIvFlo=
 github.com/vicanso/keygrip v0.1.0 h1:/zYzoVIbREAvaxSM7bo3/oSXuuYztaP71dPBfhRoNkM=
 github.com/vicanso/keygrip v0.1.0/go.mod h1:cI05iOjY00NJ7oH2Z9Zdm9eJPUkpoex3XnEubK78nho=
-github.com/vicanso/upstream v0.0.0-20190406034141-1509b5727ba4 h1:TllBZgfLYuJ9XU/nm7AkQIrfs+oKhgR2kPe1vCLRUQ4=
-github.com/vicanso/upstream v0.0.0-20190406034141-1509b5727ba4/go.mod h1:uKlIykBQ4GlY5hFDpAfJZWRx2Vge5adtm61K33qOzxI=
+github.com/vicanso/upstream v0.0.0-20190414113121-7f1617e21339 h1:sIq0Ti18VFMEcMASq+bkvx7bdZcMMf1FzF3ibcA7bG8=
+github.com/vicanso/upstream v0.0.0-20190414113121-7f1617e21339/go.mod h1:uKlIykBQ4GlY5hFDpAfJZWRx2Vge5adtm61K33qOzxI=
 github.com/xordataexchange/crypt v0.0.3-0.20170626215501-b2862e3d0a77/go.mod h1:aYKd//L2LvnjZzWKhF00oedf4jCCReLcmhLdhm1A27Q=
 go.uber.org/atomic v1.3.2 h1:2Oa65PReHzfn29GpvgsYwloV9AVFHPDk8tYxt2c2tr4=
 go.uber.org/atomic v1.3.2/go.mod h1:gD2HeocX3+yG+ygLZcrzQJaqmWj9AIm7n08wl/qW/PE=
@@ -70,5 +73,7 @@ golang.org/x/sys v0.0.0-20181205085412-a5c9d58dba9a/go.mod h1:STP8DvDyc/dI5b8T5h
 golang.org/x/text v0.3.0 h1:g61tztE5qeGQ89tm6NTjjM9VPIm088od1l6aSorWRWg=
 golang.org/x/text v0.3.0/go.mod h1:NqM8EUOU14njkJ3fqMW+pc6Ldnwhi/IjpwHt7yyuwOQ=
 gopkg.in/check.v1 v0.0.0-20161208181325-20d25e280405/go.mod h1:Co6ibVJAznAaIkqp8huTwlJQCZ016jof/cbN4VW5Yz0=
+gopkg.in/h2non/gock.v1 v1.0.14 h1:fTeu9fcUvSnLNacYvYI54h+1/XEteDyHvrVCZEEEYNM=
+gopkg.in/h2non/gock.v1 v1.0.14/go.mod h1:sX4zAkdYX1TRGJ2JY156cFspQn4yRWn6p9EMdODlynE=
 gopkg.in/yaml.v2 v2.2.2 h1:ZCJp+EgiOT7lHqUV2J862kp8Qj64Jo6az82+3Td9dZw=
 gopkg.in/yaml.v2 v2.2.2/go.mod h1:hI93XBmqTisBFMUTm0b8Fm+jr3Dg1NNxqwp+5A1VGuI=

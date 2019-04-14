@@ -76,7 +76,7 @@ func NewCacheIdentifier() cod.Handler {
 		key := fn(c.Request)
 		hc := cache.GetHTTPCache(key)
 		status := hc.Status
-		// 如果是 fetch 的，则需要写缓存
+		// 如果是 fetch 的，则需要写缓存，在获取时会调用写锁
 		if status == cache.Fetch {
 			defer hc.Unlock()
 		} else {
@@ -84,11 +84,11 @@ func NewCacheIdentifier() cod.Handler {
 		}
 		c.Set(df.Status, status)
 		c.Set(df.Cache, hc)
+		err = c.Next()
 		// 如果不是初始化状态，直接返回，无须处理后续
 		if status != cache.Fetch {
-			return c.Next()
+			return
 		}
-		err = c.Next()
 
 		maxAge := 0
 		if err == nil {

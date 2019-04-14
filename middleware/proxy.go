@@ -19,7 +19,7 @@ var (
 )
 
 // NewProxy create a proxy middleware
-func NewProxy() cod.Handler {
+func NewProxy(us upstream.Upstreams) cod.Handler {
 	return func(c *cod.Context) (err error) {
 		// 如果请求是从缓存读取Cacheable ，则直接跳过
 		status, ok := c.Get(df.Status).(int)
@@ -35,7 +35,7 @@ func NewProxy() cod.Handler {
 		var ifModifiedSince, ifNoneMatch, acceptEncoding string
 		reqHeader := c.Request.Header
 		// proxy时为了避免304的出现，因此调用时临时删除header
-		// 如果是 pass 则无需删除（因为此时无法确认数据是否可缓存）
+		// 如果是 pass 则无需删除，其它的需要删除（因为此时无法确认数据是否可缓存）
 		if status != cache.Pass &&
 			status != cache.HitForPass {
 			acceptEncoding = reqHeader.Get(cod.HeaderAcceptEncoding)
@@ -53,10 +53,9 @@ func NewProxy() cod.Handler {
 			} else {
 				reqHeader.Del(cod.HeaderAcceptEncoding)
 			}
-
 		}
 
-		err = upstream.Proxy(c)
+		err = us.Proxy(c)
 		callback := c.Get(df.ProxyDoneCallback)
 		if callback != nil {
 			fn, _ := callback.(func())
