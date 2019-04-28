@@ -110,8 +110,8 @@ func IncreaseRecoverCount() uint64 {
 	return atomic.AddUint64(&recoverCount, 1)
 }
 
-// GetRequstCount 获取处理请求数
-func GetRequstCount() uint64 {
+// GetRequestCount 获取处理请求数
+func GetRequestCount() uint64 {
 	return requestCount
 }
 

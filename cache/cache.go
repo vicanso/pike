@@ -10,25 +10,20 @@ import (
 	"time"
 	"unsafe"
 
-	"github.com/golang/groupcache/lru"
 	"github.com/vicanso/cod"
 	"github.com/vicanso/pike/config"
 	"github.com/vicanso/pike/df"
+	"github.com/vicanso/pike/log"
 	"github.com/vicanso/pike/util"
+
+	"go.uber.org/zap"
 )
 
 var (
-	dispatcherList    []*Dispatcher
-	dispatcherListLen int
-	hitForPassTTL     int64
-	compressLevel     int
-	compressMinLength int
-	textFilter        *regexp.Regexp
-
 	ignoreHeaderKeys = []string{
 		df.HeaderAge,
 		cod.HeaderContentEncoding,
-		df.HeaderContentLength,
+		cod.HeaderContentLength,
 	}
 )
 
@@ -55,13 +50,34 @@ var (
 type (
 	// Dispatcher dispatcher
 	Dispatcher struct {
+		list []*Cache
+		opts *Options
+	}
+	// Options dispatch options
+	Options struct {
+		// Size cache list's size
+		Size int
+		// ZoneSize cache zone's size
+		ZoneSize int
+		// CompressLevel compress level
+		CompressLevel int
+		// CompressMinLength compress min length
+		CompressMinLength int
+		// HitForPassTTL hit for pass ttl
+		HitForPassTTL int
+		// TextFilter text filter regexp
+		TextFilter *regexp.Regexp
+	}
+	// Cache cache dispatcher
+	Cache struct {
 		// 用于保证每个dispatcher的操作，避免同时操作lru cache
 		mu       sync.Mutex
-		lruCache *lru.Cache
+		lruCache *LRUCache
 	}
 	// HTTPCache http cache
 	HTTPCache struct {
-		rw sync.RWMutex
+		opts *Options
+		rw   sync.RWMutex
 		// wg sync.WaitGroup
 		// Status cache's status
 		Status int
@@ -84,28 +100,24 @@ type (
 	}
 )
 
-func init() {
-	compressLevel = config.GetCompressLevel()
-	compressMinLength = config.GetCompressMinLength()
-
-	textFilter = config.GetTextFilter()
-
-	hitForPassTTL = int64(config.GetHitForPassTTL())
-	size := config.GetCacheSize()
-	dispatcherList = make([]*Dispatcher, size)
-	zoneSize := config.GetCacheZoneSize()
-	for i := 0; i < size; i++ {
-		dispatcherList[i] = NewDispatcher(zoneSize)
-	}
-	dispatcherListLen = len(dispatcherList)
+// GetHTTPCacheStats get http cache stats
+func GetHTTPCacheStats() {
+	// for _, dsp := range dispatcherList {
+	// 	dsp.mu.Lock()
+	// 	dsp.mu.Unlock()
+	// }
 }
 
-// GetHTTPCache get http cache
-func GetHTTPCache(key []byte) (hc *HTTPCache) {
-	b := sha1.Sum(key)
-	index := (int(b[0]) | int(b[1])<<8) % dispatcherListLen
-	dsp := dispatcherList[index]
-	return dsp.GetHTTPCache(key)
+// GetOptionsFromConfig get options from config
+func GetOptionsFromConfig() Options {
+	return Options{
+		Size:              config.GetCacheZoneSize(),
+		ZoneSize:          config.GetCacheZoneSize(),
+		CompressLevel:     config.GetCompressLevel(),
+		CompressMinLength: config.GetCompressMinLength(),
+		HitForPassTTL:     config.GetHitForPassTTL(),
+		TextFilter:        config.GetTextFilter(),
+	}
 }
 
 // GetStatusDesc get status desc
@@ -119,21 +131,40 @@ func byteSliceToString(b []byte) string {
 }
 
 // NewDispatcher new dispatcher
-func NewDispatcher(size int) *Dispatcher {
+func NewDispatcher(opts Options) *Dispatcher {
+	size := opts.Size
+	if size <= 0 {
+		size = 10
+	}
+	zoneSize := opts.ZoneSize
+	if zoneSize <= 0 {
+		zoneSize = 1024
+	}
+	list := make([]*Cache, size)
+
+	for i := 0; i < size; i++ {
+		list[i] = &Cache{
+			lruCache: NewLRU(zoneSize),
+		}
+	}
 	return &Dispatcher{
-		lruCache: lru.New(size),
+		list: list,
+		opts: &opts,
 	}
 }
 
 // GetHTTPCache get http cache
 func (dsp *Dispatcher) GetHTTPCache(k []byte) (hc *HTTPCache) {
+	b := sha1.Sum(k)
+	index := (int(b[0]) | int(b[1])<<8) % len(dsp.list)
+	cache := dsp.list[index]
+
 	key := byteSliceToString(k)
-	lruCache := dsp.lruCache
+	lruCache := cache.lruCache
 	// 保证lru cache的并发安全
 	// 此锁需要快速释放，不能长期占用
-	dsp.mu.Lock()
-	if c, ok := lruCache.Get(key); ok {
-		v, _ := c.(*HTTPCache)
+	cache.mu.Lock()
+	if v, ok := lruCache.Get(key); ok {
 		if v != nil {
 			// 如果未过期或刚初始化，则使用此缓存
 			expiredAt := atomic.LoadInt64(&v.ExpiredAt)
@@ -144,19 +175,20 @@ func (dsp *Dispatcher) GetHTTPCache(k []byte) (hc *HTTPCache) {
 	}
 	// 如果获取到对应缓存，则直接返回
 	if hc != nil {
-		dsp.mu.Unlock()
 		// 后续使用到读数据，调用读锁
 		hc.rw.RLock()
+		cache.mu.Unlock()
 		return
 	}
 	hc = &HTTPCache{
 		Status: Fetch,
+		opts:   dsp.opts,
 	}
 	// 首次创建的http cache，需要写数据，因此调用写锁
 	hc.rw.Lock()
 
 	lruCache.Add(key, hc)
-	dsp.mu.Unlock()
+	cache.mu.Unlock()
 	return
 }
 
@@ -175,7 +207,11 @@ func (hc *HTTPCache) HitForPass() {
 	// 调用hit for pass函数前应该先获取写锁
 	hc.Status = HitForPass
 	hc.CreatedAt = time.Now().Unix()
-	atomic.StoreInt64(&hc.ExpiredAt, hc.CreatedAt+hitForPassTTL)
+	ttl := 0
+	if hc.opts != nil {
+		ttl = hc.opts.HitForPassTTL
+	}
+	atomic.StoreInt64(&hc.ExpiredAt, hc.CreatedAt+int64(ttl))
 }
 
 // Cacheable set status to bo cacheable
@@ -205,10 +241,32 @@ func (hc *HTTPCache) Cacheable(maxAge int, c *cod.Context) {
 	}
 	// 只针对文本并且大于等于最小尺寸数据压缩
 	var gzipBody, brBody []byte
-	if len(body) >= compressMinLength &&
+	var err error
+	var textFilter *regexp.Regexp
+	opts := hc.opts
+	compressMinLength := 0
+	if opts != nil {
+		textFilter = opts.TextFilter
+		compressMinLength = opts.CompressMinLength
+	}
+	if opts != nil &&
+		len(body) >= compressMinLength &&
+		textFilter != nil &&
 		textFilter.MatchString(header.Get(cod.HeaderContentType)) {
-		gzipBody, _ = doGzip(body)
-		brBody, _ = doBrotli(body)
+		gzipBody, err = doGzip(body, opts.CompressLevel)
+		if err != nil {
+			log.Default().Error("gzip fail",
+				zap.String("url", c.Request.RequestURI),
+				zap.Error(err),
+			)
+		}
+		brBody, err = doBrotli(body, opts.CompressLevel)
+		if err != nil {
+			log.Default().Error("brotli fail",
+				zap.String("url", c.Request.RequestURI),
+				zap.Error(err),
+			)
+		}
 	}
 
 	h := make(http.Header)

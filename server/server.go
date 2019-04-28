@@ -20,7 +20,7 @@ import (
 )
 
 // New create a cod server
-func New(us upstream.Upstreams) *cod.Cod {
+func New(director *upstream.Director, dsp *cache.Dispatcher) *cod.Cod {
 	d := cod.New()
 	d.EnableTrace = config.IsEnableServerTiming()
 	// 如果启动 server timing
@@ -55,7 +55,7 @@ func New(us upstream.Upstreams) *cod.Cod {
 	d.Use(fn)
 	d.SetFunctionName(fn, "Responder")
 
-	fn = middleware.NewCacheIdentifier()
+	fn = middleware.NewCacheIdentifier(dsp)
 	d.Use(fn)
 	d.SetFunctionName(fn, "CacheIdentifier")
 
@@ -63,7 +63,7 @@ func New(us upstream.Upstreams) *cod.Cod {
 	d.Use(fn)
 	d.SetFunctionName(fn, "ETag")
 
-	fn = middleware.NewProxy(us)
+	fn = middleware.NewProxy(director)
 	d.Use(fn)
 	d.SetFunctionName(fn, "Proxy")
 

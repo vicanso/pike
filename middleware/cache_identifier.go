@@ -59,7 +59,7 @@ func getCacheAge(header http.Header) int {
 }
 
 // NewCacheIdentifier create a cache identifier middleware
-func NewCacheIdentifier() cod.Handler {
+func NewCacheIdentifier(dsp *cache.Dispatcher) cod.Handler {
 	identify := config.GetIdentity()
 	fn := util.GetIdentity
 	if identify != "" {
@@ -67,14 +67,16 @@ func NewCacheIdentifier() cod.Handler {
 	}
 	return func(c *cod.Context) (err error) {
 		// 如果非 GET HEAD请求，直接跳过
+		// 如果请求头设置为 no cache，则pass
 		method := c.Request.Method
-		if method != http.MethodGet && method != http.MethodHead {
+		if (method != http.MethodGet && method != http.MethodHead) ||
+			c.GetRequestHeader(cod.HeaderCacheControl) == "no-cache" {
 			c.Set(df.Status, cache.Pass)
 			return c.Next()
 		}
 
 		key := fn(c.Request)
-		hc := cache.GetHTTPCache(key)
+		hc := dsp.GetHTTPCache(key)
 		status := hc.Status
 		// 如果是 fetch 的，则需要写缓存，在获取时会调用写锁
 		if status == cache.Fetch {
@@ -94,6 +96,10 @@ func NewCacheIdentifier() cod.Handler {
 		if err == nil {
 			maxAge = getCacheAge(c.Header())
 		}
+		// TODO 此处存在一种情况
+		// 如果一开始接口异常导致hit for pass
+		// 后续接口正常，可缓存也不再变化，只能等hit for pass过期
+		// 如果需要处理此情况，锁的判断会复杂，后续再确认是否有此需要调整
 		if maxAge <= 0 {
 			hc.HitForPass()
 		} else {

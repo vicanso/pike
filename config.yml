@@ -37,3 +37,11 @@ cache:
   size: 10240
   # 缓存hit for pass的时长
   hitForPass: 600
+
+# 超时的相关配置
+timeout:
+  idleConn: 90s
+  expectContinue: 1s
+  responseHeader: 10s
+  connect: 15s
+  tlsHandshake: 5s

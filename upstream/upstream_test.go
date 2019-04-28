@@ -33,6 +33,13 @@ func TestHash(t *testing.T) {
 	}
 }
 
+func TestNewDirector(t *testing.T) {
+	d := new(Director)
+	d.Fetch()
+	d.StartHealthCheck()
+	d.ClearUpstreams()
+}
+
 func TestCreateTargetPicker(t *testing.T) {
 	backends := []string{
 		"http://127.0.0.1:7001",
@@ -331,10 +338,14 @@ func TestProxy(t *testing.T) {
 	}
 	upstreams = append(upstreams, us)
 
+	d := Director{
+		Upstreams: upstreams,
+	}
+
 	req := httptest.NewRequest("GET", "/", nil)
 	resp := httptest.NewRecorder()
 	c := cod.NewContext(resp, req)
-	err := upstreams.Proxy(c)
+	err := d.Proxy(c)
 	if err != errNoMatchUpstream {
 		t.Fatalf("should return no match upstream")
 	}
@@ -353,7 +364,7 @@ func TestProxy(t *testing.T) {
 	c.Next = func() error {
 		return nil
 	}
-	err = upstreams.Proxy(c)
+	err = d.Proxy(c)
 	if err != nil ||
 		c.StatusCode != http.StatusOK ||
 		strings.TrimSpace(c.BodyBuffer.String()) != `{"foo":"bar"}` {

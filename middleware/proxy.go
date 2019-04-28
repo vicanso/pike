@@ -15,11 +15,12 @@ var (
 	clearHeaders = []string{
 		"Date",
 		"Connection",
+		cod.HeaderContentLength,
 	}
 )
 
 // NewProxy create a proxy middleware
-func NewProxy(us upstream.Upstreams) cod.Handler {
+func NewProxy(director *upstream.Director) cod.Handler {
 	return func(c *cod.Context) (err error) {
 		// 如果请求是从缓存读取Cacheable ，则直接跳过
 		status, ok := c.Get(df.Status).(int)
@@ -55,7 +56,7 @@ func NewProxy(us upstream.Upstreams) cod.Handler {
 			}
 		}
 
-		err = us.Proxy(c)
+		err = director.Proxy(c)
 		callback := c.Get(df.ProxyDoneCallback)
 		if callback != nil {
 			fn, _ := callback.(func())

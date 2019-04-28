@@ -88,8 +88,9 @@ func TestGetCacheAge(t *testing.T) {
 }
 
 func TestNewCacheIdentifier(t *testing.T) {
-	fn := NewCacheIdentifier()
-	t.Run("pass", func(t *testing.T) {
+	dsp := cache.NewDispatcher(cache.Options{})
+	fn := NewCacheIdentifier(dsp)
+	t.Run("pass(post)", func(t *testing.T) {
 		req := httptest.NewRequest("POST", "/", nil)
 		c := &cod.Context{
 			Request: req,
@@ -103,6 +104,24 @@ func TestNewCacheIdentifier(t *testing.T) {
 		}
 		if c.Get(df.Status).(int) != cache.Pass {
 			t.Fatalf("post request should pass")
+		}
+	})
+
+	t.Run("pass(no cache)", func(t *testing.T) {
+		req := httptest.NewRequest("GET", "/", nil)
+		req.Header.Set(cod.HeaderCacheControl, "no-cache")
+		c := &cod.Context{
+			Request: req,
+		}
+		c.Next = func() error {
+			return nil
+		}
+		err := fn(c)
+		if err != nil {
+			t.Fatalf("get request(no cache) pass fail, %v", err)
+		}
+		if c.Get(df.Status).(int) != cache.Pass {
+			t.Fatalf("get request(no cache) should pass")
 		}
 	})
 

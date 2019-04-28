@@ -6,6 +6,7 @@ require (
 	github.com/go-yaml/yaml v2.1.0+incompatible
 	github.com/golang/groupcache v0.0.0-20190129154638-5b532d6fd5ef
 	github.com/google/brotli v1.0.7
+	github.com/pkg/errors v0.8.1 // indirect
 	github.com/spf13/viper v1.3.2
 	github.com/vicanso/cod v0.0.6
 	github.com/vicanso/cod-compress v0.0.3
@@ -14,7 +15,7 @@ require (
 	github.com/vicanso/cod-proxy v0.0.1
 	github.com/vicanso/cod-recover v0.0.2
 	github.com/vicanso/hes v0.1.4
-	github.com/vicanso/upstream v0.0.0-20190414113121-7f1617e21339
+	github.com/vicanso/upstream v0.0.0-20190415130516-e5c27bf1e52d
 	go.uber.org/atomic v1.3.2 // indirect
 	go.uber.org/multierr v1.1.0 // indirect
 	go.uber.org/zap v1.9.1

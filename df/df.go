@@ -33,8 +33,6 @@ var (
 const (
 	// HeaderAge http age header
 	HeaderAge = "Age"
-	// HeaderContentLength http content length header
-	HeaderContentLength = "Content-Length"
 	// HeaderStatus http response status
 	HeaderStatus = "X-Status"
 )

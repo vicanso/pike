@@ -23,12 +23,11 @@ func Gunzip(buf []byte) ([]byte, error) {
 
 // Gzip gzip function
 func Gzip(buf []byte) ([]byte, error) {
-	return doGzip(buf)
+	return doGzip(buf, 0)
 }
 
 // doGzip gzip
-func doGzip(buf []byte) ([]byte, error) {
-	level := compressLevel
+func doGzip(buf []byte, level int) ([]byte, error) {
 	var b bytes.Buffer
 	if level <= 0 {
 		level = gzip.DefaultCompression

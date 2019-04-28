@@ -33,7 +33,9 @@ func TestNewProxy(t *testing.T) {
 	}
 	upstreams := make(upstream.Upstreams, 0)
 	upstreams = append(upstreams, us)
-	// upstream.Add(us)
+	director := &upstream.Director{
+		Upstreams: upstreams,
+	}
 
 	defer gock.Off()
 	gock.New("http://127.0.0.1:7001").
@@ -56,7 +58,7 @@ func TestNewProxy(t *testing.T) {
 	c.Set(df.ProxyDoneCallback, func() {
 		done = true
 	})
-	fn := NewProxy(upstreams)
+	fn := NewProxy(director)
 	err := fn(c)
 	if err != nil ||
 		c.StatusCode != http.StatusOK ||

@@ -3,23 +3,24 @@ package cache
 import (
 	"bytes"
 	"net/http"
+	"net/http/httptest"
 	"testing"
 	"time"
 
 	"github.com/vicanso/cod"
-	"github.com/vicanso/pike/df"
 )
 
 func TestGetHTTPCache(t *testing.T) {
+	dsp := NewDispatcher(GetOptionsFromConfig())
 	key := []byte("abc")
-	hc := GetHTTPCache(key)
+	hc := dsp.GetHTTPCache(key)
 	if hc == nil {
 		t.Fatalf("get http cache fail")
 	}
 }
 
 func TestDispatcher(t *testing.T) {
-	dsp := NewDispatcher(10)
+	dsp := NewDispatcher(Options{})
 	t.Run("get status(hit for pass)", func(t *testing.T) {
 		k1 := []byte("abc")
 		k2 := []byte("abc")
@@ -67,7 +68,10 @@ func TestDispatcher(t *testing.T) {
 }
 
 func TestHitForPass(t *testing.T) {
-	hc := HTTPCache{}
+	opts := GetOptionsFromConfig()
+	hc := HTTPCache{
+		opts: &opts,
+	}
 	hc.HitForPass()
 	if hc.CreatedAt == 0 ||
 		hc.ExpiredAt == 0 ||
@@ -77,24 +81,28 @@ func TestHitForPass(t *testing.T) {
 }
 
 func TestCacheable(t *testing.T) {
+	opts := GetOptionsFromConfig()
 	t.Run("cacheable", func(t *testing.T) {
 		header := make(http.Header)
 		header.Set(cod.HeaderContentType, "text/html")
-		header.Set(df.HeaderContentLength, "10")
+		header.Set(cod.HeaderContentLength, "10")
 		buf := make([]byte, 4096)
 		maxAge := 10
 		c := &cod.Context{
 			Headers:    header,
 			BodyBuffer: bytes.NewBuffer(buf),
 			StatusCode: 200,
+			Request:    httptest.NewRequest("GET", "/", nil),
 		}
-		hc := &HTTPCache{}
+		hc := &HTTPCache{
+			opts: &opts,
+		}
 		hc.Cacheable(maxAge, c)
 		if hc.Status != Cacheable ||
 			hc.Headers == nil ||
 			hc.Body != nil ||
 			hc.GzipBody == nil ||
-			hc.Headers.Get(df.HeaderContentLength) != "" {
+			hc.Headers.Get(cod.HeaderContentLength) != "" {
 			t.Fatalf("set cacheable fail")
 		}
 	})
@@ -104,14 +112,16 @@ func TestCacheable(t *testing.T) {
 		header.Set(cod.HeaderContentType, "text/html")
 		header.Set(cod.HeaderContentEncoding, "gzip")
 		data := []byte("abcd")
-		buf, _ := doGzip(data)
+		buf, _ := doGzip(data, 0)
 		maxAge := 10
 		c := &cod.Context{
 			Headers:    header,
 			BodyBuffer: bytes.NewBuffer(buf),
 			StatusCode: 200,
 		}
-		hc := &HTTPCache{}
+		hc := &HTTPCache{
+			opts: &opts,
+		}
 		hc.Cacheable(maxAge, c)
 		if hc.Status != Cacheable ||
 			!bytes.Equal(data, hc.Body.Bytes()) ||
@@ -131,7 +141,9 @@ func TestCacheable(t *testing.T) {
 			BodyBuffer: bytes.NewBuffer(buf),
 			StatusCode: 200,
 		}
-		hc := &HTTPCache{}
+		hc := &HTTPCache{
+			opts: &opts,
+		}
 		hc.Cacheable(maxAge, c)
 		if hc.Status != HitForPass {
 			t.Fatalf("gunzip fail should hit for pass")
@@ -149,7 +161,9 @@ func TestCacheable(t *testing.T) {
 			BodyBuffer: bytes.NewBuffer(buf),
 			StatusCode: 200,
 		}
-		hc := &HTTPCache{}
+		hc := &HTTPCache{
+			opts: &opts,
+		}
 		hc.Cacheable(maxAge, c)
 		if hc.Status != HitForPass {
 			t.Fatalf("not support encoding should hit for pass")

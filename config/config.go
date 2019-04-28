@@ -2,7 +2,9 @@ package config
 
 import (
 	"net/http"
+	"os"
 	"regexp"
+	"time"
 
 	"github.com/spf13/viper"
 	"github.com/vicanso/pike/df"
@@ -26,6 +28,11 @@ func init() {
 	if err != nil {
 		panic(err)
 	}
+}
+
+// IsTest is test mode
+func IsTest() bool {
+	return os.Getenv("GO_MODE") == "test"
 }
 
 // GetListenAddress get listen address
@@ -66,31 +73,28 @@ func IsEnableServerTiming() bool {
 	return viper.GetBool("enableServerTiming")
 }
 
-// GetCacheZoneSize get cache zone size
-func GetCacheZoneSize() int {
-	v := viper.GetInt("cache.zone")
+// getIntDefault get int default
+func getIntDefault(key string, defaultInt int) int {
+	v := viper.GetInt(key)
 	if v <= 0 {
-		return 1024
+		return defaultInt
 	}
 	return v
+}
+
+// GetCacheZoneSize get cache zone size
+func GetCacheZoneSize() int {
+	return getIntDefault("cache.zone", 1024)
 }
 
 // GetCacheSize get cache size
 func GetCacheSize() int {
-	v := viper.GetInt("cache.size")
-	if v <= 0 {
-		return 1024
-	}
-	return v
+	return getIntDefault("cache.size", 1024)
 }
 
 // GetHitForPassTTL get hit for pass ttl
 func GetHitForPassTTL() int {
-	v := viper.GetInt("cache.hitForPass")
-	if v <= 0 {
-		return 600
-	}
-	return v
+	return getIntDefault("cache.hitForPass", 300)
 }
 
 // GetCompressLevel get compress level
@@ -104,11 +108,7 @@ func GetCompressLevel() int {
 
 // GetCompressMinLength get compress min length
 func GetCompressMinLength() int {
-	v := viper.GetInt("compress.minLength")
-	if v <= 0 {
-		return 1024
-	}
-	return v
+	return getIntDefault("compress.minLength", 1024)
 }
 
 // GetTextFilter get text filter
@@ -118,4 +118,37 @@ func GetTextFilter() *regexp.Regexp {
 		v = "text|javascript|json"
 	}
 	return regexp.MustCompile(v)
+}
+
+func getDurationDefault(key string, defaultDuration time.Duration) time.Duration {
+	v := viper.GetDuration(key)
+	if v == 0 {
+		return defaultDuration
+	}
+	return v
+}
+
+// GetIdleConnTimeout get idle conn timeout
+func GetIdleConnTimeout() time.Duration {
+	return getDurationDefault("timeout.idleConn", 90*time.Second)
+}
+
+// GetExpectContinueTimeout get expect continue timeout
+func GetExpectContinueTimeout() time.Duration {
+	return getDurationDefault("timeout.expectContinue", 1*time.Second)
+}
+
+// GetResponseHeaderTimeout get response header timeout
+func GetResponseHeaderTimeout() time.Duration {
+	return getDurationDefault("timeout.responseHeader", 10*time.Second)
+}
+
+// GetConnectTimeout get connect timeout
+func GetConnectTimeout() time.Duration {
+	return getDurationDefault("timeout.connect", 15*time.Second)
+}
+
+// GetTLSHandshakeTimeout get tls hand shake timeout
+func GetTLSHandshakeTimeout() time.Duration {
+	return getDurationDefault("timeout.tlsHandshake", 5*time.Second)
 }

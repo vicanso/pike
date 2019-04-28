@@ -10,8 +10,7 @@ const (
 	maxQuality = 11
 )
 
-func doBrotli(buf []byte) ([]byte, error) {
-	level := compressLevel
+func doBrotli(buf []byte, level int) ([]byte, error) {
 	if level == 0 {
 		level = 9
 	}

@@ -2,6 +2,7 @@ package middleware
 
 import (
 	"net/http"
+	"time"
 
 	"github.com/vicanso/cod"
 	"github.com/vicanso/hes"
@@ -28,6 +29,7 @@ func NewInitialization() cod.Handler {
 	requestHeader := config.GetRequestHeader()
 
 	return func(c *cod.Context) (err error) {
+		startedAt := time.Now()
 		defer performance.DecreaseConcurrency()
 		performance.IncreaseRequestCount()
 		count := performance.IncreaseConcurrency()
@@ -55,6 +57,22 @@ func NewInitialization() cod.Handler {
 		}
 		v, _ := c.Get(df.Status).(int)
 		c.SetHeader(df.HeaderStatus, cache.GetStatusDesc(v))
+
+		use := time.Since(startedAt).Nanoseconds() / 10e6
+		statusCode := c.StatusCode
+		if statusCode == 0 {
+			statusCode = http.StatusOK
+		}
+		if err != nil {
+			he, _ := err.(*hes.Error)
+			if he != nil {
+				statusCode = he.StatusCode
+			} else {
+				statusCode = http.StatusInternalServerError
+			}
+		}
+		performance.AddRequestStats(statusCode, int(use))
+
 		return
 	}
 }

@@ -3,16 +3,22 @@ package upstream
 import (
 	"hash/fnv"
 	"io/ioutil"
+	"net"
 	"net/http"
 	"net/url"
 	"path/filepath"
 	"sort"
 	"strings"
+	"sync"
+	"time"
 
 	"github.com/vicanso/cod"
 	"github.com/vicanso/hes"
+	"github.com/vicanso/pike/config"
+	"github.com/vicanso/pike/log"
 	"github.com/vicanso/pike/util"
-	up "github.com/vicanso/upstream"
+	UP "github.com/vicanso/upstream"
+	"go.uber.org/zap"
 
 	"github.com/go-yaml/yaml"
 	"github.com/vicanso/pike/df"
@@ -33,6 +39,7 @@ var (
 		Message:    "no available upstream",
 		Exception:  true,
 	}
+	defaultTransport *http.Transport
 )
 
 const (
@@ -68,32 +75,49 @@ type (
 		Name          string
 		Header        http.Header
 		RequestHeader http.Header
-		Server        up.HTTP
+		Server        UP.HTTP
 		Hosts         []string
 		Prefixs       []string
 		Rewrites      []string
 		Handler       cod.Handler
 	}
+	// Director director
+	Director struct {
+		sync.RWMutex
+		URI       string
+		Upstreams Upstreams
+	}
 	// Upstreams upstream list
 	Upstreams []*Upstream
 )
 
-func (s Upstreams) Len() int {
-	return len(s)
+func init() {
+	defaultTransport = &http.Transport{
+		DialContext: (&net.Dialer{
+			Timeout:   config.GetConnectTimeout(),
+			KeepAlive: 30 * time.Second,
+		}).DialContext,
+		MaxIdleConns:          100,
+		IdleConnTimeout:       config.GetIdleConnTimeout(),
+		TLSHandshakeTimeout:   config.GetTLSHandshakeTimeout(),
+		ExpectContinueTimeout: config.GetExpectContinueTimeout(),
+		ResponseHeaderTimeout: config.GetResponseHeaderTimeout(),
+	}
 }
 
-func (s Upstreams) Swap(i, j int) {
-	s[i], s[j] = s[j], s[i]
+// Fetch fetch upstreams
+func (d *Director) Fetch() {
+	d.Lock()
+	defer d.Unlock()
+	d.Upstreams = NewUpstreamsFromConfig()
 }
 
-func (s Upstreams) Less(i, j int) bool {
-	return s[i].Priority < s[j].Priority
-}
-
-// Proxy do match upstream proxy
-func (s Upstreams) Proxy(c *cod.Context) (err error) {
+// Proxy proxy
+func (d *Director) Proxy(c *cod.Context) (err error) {
+	d.RLock()
+	defer d.RUnlock()
 	var found *Upstream
-	for _, item := range s {
+	for _, item := range d.Upstreams {
 		if item.Match(c) {
 			found = item
 			break
@@ -118,19 +142,39 @@ func (s Upstreams) Proxy(c *cod.Context) (err error) {
 	return found.Handler(c)
 }
 
-// Destroy destroy upstreams
-func (s Upstreams) Destroy() {
-	for _, up := range s {
+// ClearUpstreams clear upstreams
+func (d *Director) ClearUpstreams() {
+	for _, up := range d.Upstreams {
 		up.Server.StopHealthCheck()
 	}
+	d.Upstreams = nil
 }
 
 // StartHealthCheck start health check
-func (s Upstreams) StartHealthCheck() {
-	for _, up := range s {
+func (d *Director) StartHealthCheck() {
+	logger := log.Default()
+	for _, up := range d.Upstreams {
 		up.Server.DoHealthCheck()
+		up.Server.OnStatus(func(status int32, upstream *UP.HTTPUpstream) {
+			logger.Info("upstream status change",
+				zap.String("uri", upstream.URL.String()),
+				zap.Int32("status", status),
+			)
+		})
 		go up.Server.StartHealthCheck()
 	}
+}
+
+func (s Upstreams) Len() int {
+	return len(s)
+}
+
+func (s Upstreams) Swap(i, j int) {
+	s[i], s[j] = s[j], s[i]
+}
+
+func (s Upstreams) Less(i, j int) bool {
+	return s[i].Priority < s[j].Priority
 }
 
 // NewUpstreamsFromConfig new upstreams from config
@@ -181,7 +225,7 @@ func createTargetPicker(us *Upstream) proxy.TargetPicker {
 	}
 	server := &us.Server
 	fn := func(c *cod.Context) (*url.URL, error) {
-		var result *up.HTTPUpstream
+		var result *UP.HTTPUpstream
 		switch policy {
 		case policyFirst:
 			result = server.PolicyFirst()
@@ -224,7 +268,13 @@ func createProxyHandler(us *Upstream) cod.Handler {
 	fn := createTargetPicker(us)
 
 	cfg := proxy.Config{
+		// Transport http transport
+		Transport:    defaultTransport,
 		TargetPicker: fn,
+	}
+	// 如果测试，则清除transport，方便测试
+	if config.IsTest() {
+		cfg.Transport = nil
 	}
 	if len(us.Rewrites) != 0 {
 		cfg.Rewrites = us.Rewrites
@@ -240,7 +290,7 @@ func createUpstreamFromBackend(backend Backend) *Upstream {
 	if len(backend.Prefixs) != 0 {
 		priority -= 2
 	}
-	uh := up.HTTP{
+	uh := UP.HTTP{
 		// use http request check
 		Ping: backend.Ping,
 	}

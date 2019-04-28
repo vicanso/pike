@@ -31,15 +31,20 @@ func TestNewServer(t *testing.T) {
 	})
 	up.Server.DoHealthCheck()
 
-	us := make(upstream.Upstreams, 0)
-	us = append(us, up)
+	upstreams := make(upstream.Upstreams, 0)
+	upstreams = append(upstreams, up)
+	director := &upstream.Director{
+		Upstreams: upstreams,
+	}
 
 	passStatus := cache.GetStatusDesc(cache.Pass)
 	cacheableStatus := cache.GetStatusDesc(cache.Cacheable)
 	fetchStatus := cache.GetStatusDesc(cache.Fetch)
 	hitForPassStatus := cache.GetStatusDesc(cache.HitForPass)
 
-	d := New(us)
+	dsp := cache.NewDispatcher(cache.GetOptionsFromConfig())
+
+	d := New(director, dsp)
 
 	newRequest := func(method, url string) *http.Request {
 		req := httptest.NewRequest(method, url, nil)
