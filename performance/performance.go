@@ -1,8 +1,10 @@
 package performance
 
 import (
+	"runtime"
 	"sync/atomic"
-	"time"
+
+	"github.com/vicanso/pike/df"
 )
 
 const (
@@ -14,8 +16,6 @@ var (
 	spdyList = []int{30, 300, 1000, 3000}
 	// 并发请求数
 	concurrency uint32
-	// 程序启动时间
-	startedAt = time.Now().UTC().Format(time.RFC3339)
 	// 记录当前处理的请求数
 	requestCount uint64
 	// 1xx状态汇总
@@ -154,48 +154,49 @@ func AddRequestStats(status, use int) {
 	}
 }
 
-// // GetStats 获取系统的使用
-// func GetStats(client *cache.Client) *Stats {
-// 	var mb uint64 = 1024 * 1024
-// 	m := &runtime.MemStats{}
-// 	runtime.ReadMemStats(m)
+// GetStats 获取系统的使用
+func GetStats() *Stats {
+	var mb uint64 = 1024 * 1024
+	m := &runtime.MemStats{}
+	runtime.ReadMemStats(m)
 
-// 	result := client.GetStats()
+	// 	result := client.GetStats()
 
-// 	stats := &Stats{
-// 		Status: map[string]uint64{
-// 			"1": status1Count,
-// 			"2": status2Count,
-// 			"3": status3Count,
-// 			"4": status4Count,
-// 			"5": status5Count,
-// 		},
-// 		Spdy: map[string]uint64{
-// 			"0": spdy0Count,
-// 			"1": spdy1Count,
-// 			"2": spdy2Count,
-// 			"3": spdy3Count,
-// 			"4": spdy4Count,
-// 		},
-// 		GoMaxProcs:   runtime.GOMAXPROCS(0),
-// 		Concurrency:  GetConcurrency(),
-// 		Sys:          int(m.Sys / mb),
-// 		HeapSys:      int(m.HeapSys / mb),
-// 		HeapInuse:    int(m.HeapInuse / mb),
-// 		StartedAt:    startedAt,
-// 		RoutineCount: runtime.NumGoroutine(),
-// 		CacheCount:   client.Size(),
-// 		RecoverCount: recoverCount,
-// 		Fetching:     result.Fetching,
-// 		Waiting:      result.Waiting,
-// 		Cacheable:    result.Cacheable,
-// 		HitForPass:   result.HitForPass,
-// 		RequestCount: requestCount,
-// 		Version:      df.Version,
-// 		BuildedAt:    df.BuildedAt,
-// 		CommitID:     df.CommitID,
-// 		GoVersion:    runtime.Version(),
-// 		FileSize:     result.FileSize,
-// 	}
-// 	return stats
-// }
+	stats := &Stats{
+		Status: map[string]uint64{
+			"1": status1Count,
+			"2": status2Count,
+			"3": status3Count,
+			"4": status4Count,
+			"5": status5Count,
+		},
+		Spdy: map[string]uint64{
+			"0": spdy0Count,
+			"1": spdy1Count,
+			"2": spdy2Count,
+			"3": spdy3Count,
+			"4": spdy4Count,
+		},
+
+		GoMaxProcs:   runtime.GOMAXPROCS(0),
+		Concurrency:  GetConcurrency(),
+		Sys:          int(m.Sys / mb),
+		HeapSys:      int(m.HeapSys / mb),
+		HeapInuse:    int(m.HeapInuse / mb),
+		StartedAt:    df.StartedAt,
+		RoutineCount: runtime.NumGoroutine(),
+		// CacheCount:   client.Size(),
+		// RecoverCount: recoverCount,
+		// Fetching:     result.Fetching,
+		// Waiting:      result.Waiting,
+		// Cacheable:    result.Cacheable,
+		// HitForPass:   result.HitForPass,
+		RequestCount: requestCount,
+		Version:      df.Version,
+		BuildedAt:    df.BuildedAt,
+		CommitID:     df.CommitID,
+		GoVersion:    runtime.Version(),
+		// FileSize:  result.FileSize,
+	}
+	return stats
+}

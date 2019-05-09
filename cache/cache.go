@@ -76,8 +76,10 @@ type (
 	}
 	// HTTPCache http cache
 	HTTPCache struct {
-		opts *Options
-		rw   sync.RWMutex
+		// 是否写锁(仅首次创建使用)
+		writeLock bool
+		opts      *Options
+		rw        sync.RWMutex
 		// wg sync.WaitGroup
 		// Status cache's status
 		Status int
@@ -181,8 +183,9 @@ func (dsp *Dispatcher) GetHTTPCache(k []byte) (hc *HTTPCache) {
 		return
 	}
 	hc = &HTTPCache{
-		Status: Fetch,
-		opts:   dsp.opts,
+		writeLock: true,
+		Status:    Fetch,
+		opts:      dsp.opts,
 	}
 	// 首次创建的http cache，需要写数据，因此调用写锁
 	hc.rw.Lock()
@@ -192,14 +195,15 @@ func (dsp *Dispatcher) GetHTTPCache(k []byte) (hc *HTTPCache) {
 	return
 }
 
-// Unlock unlock
-func (hc *HTTPCache) Unlock() {
-	hc.rw.Unlock()
-}
-
-// RUnlock r unlock
-func (hc *HTTPCache) RUnlock() {
-	hc.rw.RUnlock()
+// Done use http cache done
+func (hc *HTTPCache) Done() {
+	// 如果是首次创建使用的写锁，则设置为false并解锁
+	if hc.writeLock {
+		hc.writeLock = false
+		hc.rw.Unlock()
+	} else {
+		hc.rw.RUnlock()
+	}
 }
 
 // HitForPass set status to be hit for pass

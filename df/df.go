@@ -1,8 +1,10 @@
 package df
 
+import "time"
+
 const (
 	// Version application's version
-	Version = "1.0.0"
+	Version = "2.0.0"
 	// APP application's name
 	APP = "pike"
 
@@ -42,4 +44,6 @@ var (
 	BuildedAt = ""
 	// CommitID git commit id
 	CommitID = ""
+	// StartedAt application started at ???
+	StartedAt = time.Now().Format(time.RFC3339)
 )

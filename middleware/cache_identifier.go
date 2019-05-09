@@ -78,12 +78,8 @@ func NewCacheIdentifier(dsp *cache.Dispatcher) cod.Handler {
 		key := fn(c.Request)
 		hc := dsp.GetHTTPCache(key)
 		status := hc.Status
-		// 如果是 fetch 的，则需要写缓存，在获取时会调用写锁
-		if status == cache.Fetch {
-			defer hc.Unlock()
-		} else {
-			defer hc.RUnlock()
-		}
+		defer hc.Done()
+
 		c.Set(df.Status, status)
 		c.Set(df.Cache, hc)
 		err = c.Next()
@@ -97,7 +93,8 @@ func NewCacheIdentifier(dsp *cache.Dispatcher) cod.Handler {
 			maxAge = getCacheAge(c.Header())
 		}
 		// TODO 此处存在一种情况
-		// 如果一开始接口异常导致hit for pass
+		// 由于非fetch状态的请求都不会执行下面代码
+		// 如果一开始接口异常(假设upstream都针对出错请求设置不可缓存）导致hit for pass
 		// 后续接口正常，可缓存也不再变化，只能等hit for pass过期
 		// 如果需要处理此情况，锁的判断会复杂，后续再确认是否有此需要调整
 		if maxAge <= 0 {

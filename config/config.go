@@ -152,3 +152,8 @@ func GetConnectTimeout() time.Duration {
 func GetTLSHandshakeTimeout() time.Duration {
 	return getDurationDefault("timeout.tlsHandshake", 5*time.Second)
 }
+
+// GetAdminPath get admin path
+func GetAdminPath() string {
+	return viper.GetString("admin.prefix")
+}

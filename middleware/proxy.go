@@ -28,9 +28,10 @@ func NewProxy(director *upstream.Director) cod.Handler {
 			return c.Next()
 		}
 		originalNext := c.Next
+		// 由于proxy中间件会调用next，因此直接覆盖，
+		// 避免导致先执行了后续的中间件
 		c.Next = func() error {
-			c.Next = originalNext
-			return c.Next()
+			return nil
 		}
 
 		var ifModifiedSince, ifNoneMatch, acceptEncoding string
@@ -58,12 +59,15 @@ func NewProxy(director *upstream.Director) cod.Handler {
 
 		err = director.Proxy(c)
 		callback := c.Get(df.ProxyDoneCallback)
+		// 如果有设置callback函数，则调用（如使用最少连接数的选择策略）
 		if callback != nil {
 			fn, _ := callback.(func())
 			if fn != nil {
 				fn()
 			}
 		}
+
+		// 将原有的请求头恢复
 		if acceptEncoding != "" {
 			reqHeader.Set(cod.HeaderAcceptEncoding, acceptEncoding)
 		}
@@ -73,6 +77,7 @@ func NewProxy(director *upstream.Director) cod.Handler {
 		if ifNoneMatch != "" {
 			reqHeader.Set(cod.HeaderIfNoneMatch, ifNoneMatch)
 		}
+
 		if err != nil {
 			return
 		}
@@ -81,6 +86,6 @@ func NewProxy(director *upstream.Director) cod.Handler {
 			// 清除header
 			c.SetHeader(key, "")
 		}
-		return c.Next()
+		return originalNext()
 	}
 }

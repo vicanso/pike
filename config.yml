@@ -1,6 +1,13 @@
 # 程序监听的端口，默认为 :3015
 listen: :3015
 
+# 管理后台配置
+admin:
+  # 管理后台前缀
+  prefix: /pike
+  # 管理后台认证token
+  token: abcd
+
 # 程序限制并发请求量
 # concurrency: 256000
 

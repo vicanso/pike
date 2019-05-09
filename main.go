@@ -9,6 +9,7 @@ import (
 	"github.com/vicanso/pike/config"
 	"github.com/vicanso/pike/df"
 	"github.com/vicanso/pike/log"
+	"github.com/vicanso/pike/performance"
 	"github.com/vicanso/pike/server"
 	"github.com/vicanso/pike/upstream"
 	"github.com/vicanso/pike/util"
@@ -40,7 +41,7 @@ func main() {
 		he := hes.Wrap(err)
 		// 如果是recover，记录统计
 		if he.Category == recover.ErrCategory {
-
+			performance.IncreaseRecoverCount()
 		}
 		logger.Error(he.Message,
 			zap.String("category", he.Category),

@@ -1,10 +1,7 @@
 package server
 
 import (
-	"bytes"
-	"net"
-	"strconv"
-	"sync/atomic"
+	"strings"
 
 	"github.com/vicanso/cod"
 	"github.com/vicanso/pike/cache"
@@ -29,6 +26,19 @@ func New(director *upstream.Director, dsp *cache.Dispatcher) *cod.Cod {
 		prefix := df.APP + "-"
 		d.OnTrace(func(c *cod.Context, traceInfos cod.TraceInfos) {
 			c.SetHeader(cod.HeaderServerTiming, string(traceInfos.ServerTiming(prefix)))
+		})
+	}
+
+	// 如果有配置admin，则添加管理后台处理
+	adminPath := config.GetAdminPath()
+	if adminPath != "" {
+		adminServer := NewAdminServer(adminPath)
+		d.Use(func(c *cod.Context) error {
+			if strings.HasPrefix(c.Request.RequestURI, adminPath) {
+				c.Pass(adminServer)
+				return nil
+			}
+			return c.Next()
 		})
 	}
 
@@ -73,92 +83,4 @@ func New(director *upstream.Director, dsp *cache.Dispatcher) *cod.Cod {
 	d.ALL("/*url", noop)
 	d.SetFunctionName(noop, "-")
 	return d
-}
-
-func newTestServer() (ln net.Listener, err error) {
-	ln, err = net.Listen("tcp", "127.0.0.1:")
-	if err != nil {
-		return
-	}
-
-	d := cod.New()
-
-	inc := func(p *int32) *bytes.Buffer {
-		v := atomic.AddInt32(p, 1)
-		return bytes.NewBufferString(strconv.Itoa(int(v)))
-	}
-
-	genBuffer := func(size int) *bytes.Buffer {
-		buf := new(bytes.Buffer)
-		for i := 0; i < size; i++ {
-			buf.WriteString("a")
-		}
-		return buf
-	}
-
-	// 响应未压缩
-	notCompressHandler := func(c *cod.Context) error {
-		c.SetHeader("Content-Type", "text/html")
-		c.BodyBuffer = genBuffer(4096)
-		return nil
-	}
-	// 响应数据已压缩
-	compressHandler := func(c *cod.Context) error {
-		c.SetHeader("Content-Type", "text/html")
-		c.SetHeader("Content-Encoding", "gzip")
-		buf, _ := cache.Gzip(genBuffer(4096).Bytes())
-
-		c.BodyBuffer = bytes.NewBuffer(buf)
-		return nil
-	}
-
-	setCacheNext := func(c *cod.Context) error {
-		c.CacheMaxAge("10s")
-		return c.Next()
-	}
-
-	d.GET("/ping", func(c *cod.Context) error {
-		c.BodyBuffer = bytes.NewBufferString("pong")
-		return nil
-	})
-
-	var postResponseID int32
-	d.POST("/post", func(c *cod.Context) error {
-		c.BodyBuffer = inc(&postResponseID)
-		return nil
-	})
-
-	// 非文本类数据
-	d.GET("/image-cache", func(c *cod.Context) error {
-		c.CacheMaxAge("10s")
-		c.SetHeader("Content-Type", "image/png")
-		c.BodyBuffer = genBuffer(4096)
-		return nil
-	})
-
-	d.POST("/post-not-compress", notCompressHandler)
-	d.GET("/get-not-compress", notCompressHandler)
-
-	d.POST("/post-compress", compressHandler)
-	d.POST("/get-compress", compressHandler)
-
-	d.GET("/get-cache-not-compress", setCacheNext, notCompressHandler)
-	d.GET("/get-cache-compress", setCacheNext, compressHandler)
-
-	d.GET("/get-without-etag", notCompressHandler)
-
-	d.GET("/get-with-etag", func(c *cod.Context) error {
-		c.SetHeader("ETag", `"123"`)
-		return notCompressHandler(c)
-	})
-
-	var noCacheResponseID int32
-	d.GET("/no-cache", func(c *cod.Context) error {
-		c.BodyBuffer = inc(&noCacheResponseID)
-		return nil
-	})
-
-	go d.Serve(ln)
-
-	return
 }

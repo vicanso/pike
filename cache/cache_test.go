@@ -29,12 +29,12 @@ func TestDispatcher(t *testing.T) {
 		go func() {
 			time.Sleep(time.Millisecond)
 			hc1.HitForPass()
-			hc1.Unlock()
+			hc1.Done()
 		}()
 		hc2 := dsp.GetHTTPCache(k2)
-		defer hc2.RUnlock()
+		defer hc2.Done()
 		hc3 := dsp.GetHTTPCache(k3)
-		defer hc3.RUnlock()
+		defer hc3.Done()
 		if hc2.Status != HitForPass ||
 			hc3.Status != HitForPass ||
 			hc2 != hc3 {
@@ -53,12 +53,12 @@ func TestDispatcher(t *testing.T) {
 				Headers:    make(http.Header),
 				BodyBuffer: bytes.NewBufferString("abcd"),
 			})
-			hc1.Unlock()
+			hc1.Done()
 		}()
 		hc2 := dsp.GetHTTPCache(k2)
-		defer hc2.RUnlock()
+		defer hc2.Done()
 		hc3 := dsp.GetHTTPCache(k3)
-		defer hc3.RUnlock()
+		defer hc3.Done()
 		if hc2.Status != Cacheable ||
 			hc3.Status != Cacheable ||
 			hc2 != hc3 {

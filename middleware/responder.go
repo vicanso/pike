@@ -43,6 +43,7 @@ func NewResponder() cod.Handler {
 		if hc.Status != cache.Cacheable {
 			return
 		}
+		// 获取客户端可接受的 encoding
 		acceptEncoding := c.GetRequestHeader(cod.HeaderAcceptEncoding)
 
 		for k, value := range hc.Headers {
@@ -53,19 +54,23 @@ func NewResponder() cod.Handler {
 		var encoding string
 		var buf *bytes.Buffer
 		c.StatusCode = hc.StatusCode
+		// 计算缓存已存在时长
 		age := time.Now().Unix() - hc.CreatedAt
 		if age > 0 {
 			c.SetHeader(df.HeaderAge, strconv.Itoa(int(age)))
 		}
+		// 如果有br压缩数据，而且客户端接受br
 		if hc.BrBody != nil &&
 			strings.Contains(acceptEncoding, df.BR) {
 			buf = hc.BrBody
 			encoding = df.BR
 		} else if hc.GzipBody != nil && strings.Contains(acceptEncoding, df.GZIP) {
+			// 如果有gzip压缩数据，而且客户端接受gzip
 			buf = hc.GzipBody
 			encoding = df.GZIP
 		} else if hc.GzipBody != nil {
 			// 缓存了压缩数据，但是客户端不支持，需要解压
+			// 因为如果数据可压缩，缓存中只缓存压缩数据
 			rawData, e := cache.Gunzip(hc.GzipBody.Bytes())
 			if e != nil {
 				err = hes.NewWithError(e)
