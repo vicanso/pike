@@ -7,9 +7,15 @@ dev:
 	fresh
 
 test:
+	mkdir -p ~/.pike
+	cp ./test_config.yml ~/.pike/config.yml
+	cp ./director.yml ~/.pike/director.yml
 	GO_MODE=test go test -race -cover ./...
 
 test-all:
+	mkdir -p ~/.pike
+	cp ./test_config.yml ~/.pike/config.yml
+	cp ./director.yml ~/.pike/director.yml
 	GO_MODE=test go test -race -cover -tags brotli ./...
 
 test-cover:

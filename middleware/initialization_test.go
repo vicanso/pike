@@ -5,20 +5,22 @@ import (
 	"testing"
 	"time"
 
-	"github.com/spf13/viper"
 	"github.com/vicanso/cod"
 	"github.com/vicanso/pike/config"
+	"github.com/vicanso/pike/stats"
 )
 
 func TestNewInitialization(t *testing.T) {
-	viper.Set("header", []string{
+	cfg := config.New()
+	cfg.Viper.Set("header", []string{
 		"X-Response-ID:456",
 	})
-	viper.Set("requestHeader", []string{
+	cfg.Viper.Set("requestHeader", []string{
 		"X-Token:ab",
 		"X-Request-ID:123",
 	})
-	fn := NewInitialization()
+
+	fn := NewInitialization(cfg, stats.New())
 	resp := httptest.NewRecorder()
 	req := httptest.NewRequest("GET", "/", nil)
 	c := cod.NewContext(resp, req)
@@ -43,10 +45,11 @@ func TestNewInitialization(t *testing.T) {
 }
 
 func TestTooManyRequest(t *testing.T) {
-	max := config.GetConcurrency()
-	viper.Set("concurrency", 1)
-	defer viper.Set("concurrency", max)
-	fn := NewInitialization()
+	cfg := config.New()
+	max := cfg.GetConcurrency()
+	cfg.Viper.Set("concurrency", 1)
+	defer cfg.Viper.Set("concurrency", max)
+	fn := NewInitialization(cfg, stats.New())
 
 	c1 := cod.NewContext(httptest.NewRecorder(), httptest.NewRequest("GET", "/", nil))
 	c1.Next = func() error {

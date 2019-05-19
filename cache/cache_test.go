@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"net/http"
 	"net/http/httptest"
+	"regexp"
 	"testing"
 	"time"
 
@@ -11,7 +12,7 @@ import (
 )
 
 func TestGetHTTPCache(t *testing.T) {
-	dsp := NewDispatcher(GetOptionsFromConfig())
+	dsp := NewDispatcher(Options{})
 	key := []byte("abc")
 	hc := dsp.GetHTTPCache(key)
 	if hc == nil {
@@ -65,10 +66,17 @@ func TestDispatcher(t *testing.T) {
 			t.Fatalf("get http cache fail")
 		}
 	})
+
+	t.Run("get all cache status", func(t *testing.T) {
+		cacheList := dsp.GetCacheList()
+		if len(cacheList) == 0 {
+			t.Fatalf("get all cache status fail")
+		}
+	})
 }
 
 func TestHitForPass(t *testing.T) {
-	opts := GetOptionsFromConfig()
+	opts := Options{}
 	hc := HTTPCache{
 		opts: &opts,
 	}
@@ -81,7 +89,12 @@ func TestHitForPass(t *testing.T) {
 }
 
 func TestCacheable(t *testing.T) {
-	opts := GetOptionsFromConfig()
+	opts := Options{
+		Size:              10,
+		ZoneSize:          10,
+		TextFilter:        regexp.MustCompile("text|javascript|json"),
+		CompressMinLength: 1024,
+	}
 	t.Run("cacheable", func(t *testing.T) {
 		header := make(http.Header)
 		header.Set(cod.HeaderContentType, "text/html")

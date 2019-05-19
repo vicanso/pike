@@ -272,7 +272,7 @@ func TestCreateProxyHandler(t *testing.T) {
 	for _, item := range us.Server.GetUpstreamList() {
 		item.Healthy()
 	}
-	fn := createProxyHandler(us)
+	fn := createProxyHandler(us, nil)
 	req := httptest.NewRequest("GET", "http://aslant.site/", nil)
 	resp := httptest.NewRecorder()
 	c := cod.NewContext(resp, req)
@@ -332,7 +332,7 @@ func TestProxy(t *testing.T) {
 		RequestHeader: []string{
 			"X-Request-ID:123",
 		},
-	})
+	}, nil)
 	for _, item := range us.Server.GetUpstreamList() {
 		item.Healthy()
 	}
@@ -369,5 +369,26 @@ func TestProxy(t *testing.T) {
 		c.StatusCode != http.StatusOK ||
 		strings.TrimSpace(c.BodyBuffer.String()) != `{"foo":"bar"}` {
 		t.Fatalf("proxy fail, %v", err)
+	}
+}
+
+func TestGetDirectorStats(t *testing.T) {
+	us := createUpstreamFromBackend(Backend{
+		Backends: []string{
+			"http://127.0.0.1:7001|backup",
+			"http://127.0.0.1:7002",
+		},
+	})
+	for _, item := range us.Server.GetUpstreamList() {
+		item.Healthy()
+	}
+	usList := make(Upstreams, 0)
+	usList = append(usList, us)
+	director := Director{
+		Upstreams: usList,
+	}
+	infoList := director.GetUpstreamInfos()
+	if len(infoList) == 0 {
+		t.Fatalf("get update stream in")
 	}
 }

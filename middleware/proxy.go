@@ -58,14 +58,6 @@ func NewProxy(director *upstream.Director) cod.Handler {
 		}
 
 		err = director.Proxy(c)
-		callback := c.Get(df.ProxyDoneCallback)
-		// 如果有设置callback函数，则调用（如使用最少连接数的选择策略）
-		if callback != nil {
-			fn, _ := callback.(func())
-			if fn != nil {
-				fn()
-			}
-		}
 
 		// 将原有的请求头恢复
 		if acceptEncoding != "" {

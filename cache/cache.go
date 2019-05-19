@@ -11,7 +11,6 @@ import (
 	"unsafe"
 
 	"github.com/vicanso/cod"
-	"github.com/vicanso/pike/config"
 	"github.com/vicanso/pike/df"
 	"github.com/vicanso/pike/log"
 	"github.com/vicanso/pike/util"
@@ -100,27 +99,14 @@ type (
 		// BrBody http br response's body
 		BrBody *bytes.Buffer
 	}
-)
-
-// GetHTTPCacheStats get http cache stats
-func GetHTTPCacheStats() {
-	// for _, dsp := range dispatcherList {
-	// 	dsp.mu.Lock()
-	// 	dsp.mu.Unlock()
-	// }
-}
-
-// GetOptionsFromConfig get options from config
-func GetOptionsFromConfig() Options {
-	return Options{
-		Size:              config.GetCacheZoneSize(),
-		ZoneSize:          config.GetCacheZoneSize(),
-		CompressLevel:     config.GetCompressLevel(),
-		CompressMinLength: config.GetCompressMinLength(),
-		HitForPassTTL:     config.GetHitForPassTTL(),
-		TextFilter:        config.GetTextFilter(),
+	// HTTPCacheInfo http cache info
+	HTTPCacheInfo struct {
+		Key       string `json:"key,omitempty"`
+		MaxAge    int    `json:"maxAge,omitempty"`
+		ExpiredAt int64  `json:"expiredAt,omitempty"`
+		Status    int    `json:"status,omitempty"`
 	}
-}
+)
 
 // GetStatusDesc get status desc
 func GetStatusDesc(status int) string {
@@ -153,6 +139,24 @@ func NewDispatcher(opts Options) *Dispatcher {
 		list: list,
 		opts: &opts,
 	}
+}
+
+// GetCacheList 获取缓存数据列表
+func (dsp *Dispatcher) GetCacheList() (cacheList []*HTTPCacheInfo) {
+	cacheList = make([]*HTTPCacheInfo, 0, 100)
+	for _, cache := range dsp.list {
+		cache.mu.Lock()
+		cache.lruCache.ForEach(func(key string, value *HTTPCache) {
+			cacheList = append(cacheList, &HTTPCacheInfo{
+				Key:       key,
+				MaxAge:    value.MaxAge,
+				ExpiredAt: value.ExpiredAt,
+				Status:    value.Status,
+			})
+		})
+		cache.mu.Unlock()
+	}
+	return
 }
 
 // GetHTTPCache get http cache

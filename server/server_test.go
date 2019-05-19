@@ -5,6 +5,7 @@ import (
 	"net"
 	"net/http"
 	"net/http/httptest"
+	"regexp"
 	"sort"
 	"strconv"
 	"sync"
@@ -14,7 +15,9 @@ import (
 	"github.com/vicanso/cod"
 
 	"github.com/vicanso/pike/cache"
+	"github.com/vicanso/pike/config"
 	"github.com/vicanso/pike/df"
+	"github.com/vicanso/pike/stats"
 	"github.com/vicanso/pike/upstream"
 )
 
@@ -107,6 +110,7 @@ func newTestServer() (ln net.Listener, err error) {
 }
 
 func TestNewServer(t *testing.T) {
+
 	ln, err := newTestServer()
 	if err != nil {
 		t.Fatalf("new test server fail, %v", err)
@@ -119,7 +123,7 @@ func TestNewServer(t *testing.T) {
 		Backends: []string{
 			"http://" + ln.Addr().String(),
 		},
-	})
+	}, nil)
 	up.Server.DoHealthCheck()
 
 	upstreams := make(upstream.Upstreams, 0)
@@ -133,9 +137,14 @@ func TestNewServer(t *testing.T) {
 	fetchStatus := cache.GetStatusDesc(cache.Fetch)
 	hitForPassStatus := cache.GetStatusDesc(cache.HitForPass)
 
-	dsp := cache.NewDispatcher(cache.GetOptionsFromConfig())
+	dsp := cache.NewDispatcher(cache.Options{
+		Size:              10,
+		ZoneSize:          10,
+		CompressMinLength: 1024,
+		TextFilter:        regexp.MustCompile("text|javascript|json"),
+	})
 
-	d := New(director, dsp)
+	d := New(config.New(), director, dsp, stats.New())
 
 	newRequest := func(method, url string) *http.Request {
 		req := httptest.NewRequest(method, url, nil)

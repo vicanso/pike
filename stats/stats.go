@@ -1,4 +1,4 @@
-package performance
+package stats
 
 import (
 	"runtime"
@@ -14,37 +14,11 @@ const (
 
 var (
 	spdyList = []int{30, 300, 1000, 3000}
-	// 并发请求数
-	concurrency uint32
-	// 记录当前处理的请求数
-	requestCount uint64
-	// 1xx状态汇总
-	status1Count uint64
-	// 2xx状态汇总
-	status2Count uint64
-	// 3xx状态汇总
-	status3Count uint64
-	// 4xx状态汇总
-	status4Count uint64
-	// 5xx状态汇总
-	status5Count uint64
-	// 少于30ms的处理汇总
-	spdy0Count uint64
-	// 少于300ms的处理汇总
-	spdy1Count uint64
-	// 少于1000ms的处理汇总
-	spdy2Count uint64
-	// 少于3000ms的处理汇总
-	spdy3Count uint64
-	// 大于3000ms的处理汇总
-	spdy4Count uint64
-	// 出现recover的次数
-	recoverCount uint64
 )
 
 type (
-	// Stats 性能的统计
-	Stats struct {
+	// Info 性能的统计
+	Info struct {
 		// 状态码汇总
 		Status map[string]uint64 `json:"status"`
 		// spdy 汇总
@@ -88,40 +62,74 @@ type (
 		// FileSize db数据文件的大小
 		FileSize int `json:"fileSize"`
 	}
+	// Stats application stats
+	Stats struct {
+		// 并发请求数
+		concurrency uint32
+		// 记录当前处理的请求数
+		requestCount uint64
+		// 1xx状态汇总
+		status1Count uint64
+		// 2xx状态汇总
+		status2Count uint64
+		// 3xx状态汇总
+		status3Count uint64
+		// 4xx状态汇总
+		status4Count uint64
+		// 5xx状态汇总
+		status5Count uint64
+		// 少于30ms的处理汇总
+		spdy0Count uint64
+		// 少于300ms的处理汇总
+		spdy1Count uint64
+		// 少于1000ms的处理汇总
+		spdy2Count uint64
+		// 少于3000ms的处理汇总
+		spdy3Count uint64
+		// 大于3000ms的处理汇总
+		spdy4Count uint64
+		// 出现recover的次数
+		recoverCount uint64
+	}
 )
 
+// New create a new stats instance
+func New() *Stats {
+	return &Stats{}
+}
+
 // IncreaseConcurrency concurrency 加一
-func IncreaseConcurrency() uint32 {
-	return atomic.AddUint32(&concurrency, 1)
+func (s *Stats) IncreaseConcurrency() uint32 {
+	return atomic.AddUint32(&s.concurrency, 1)
 }
 
 // DecreaseConcurrency concurrency 减一
-func DecreaseConcurrency() uint32 {
-	return atomic.AddUint32(&concurrency, ^uint32(0))
+func (s *Stats) DecreaseConcurrency() uint32 {
+	return atomic.AddUint32(&s.concurrency, ^uint32(0))
 }
 
 // IncreaseRequestCount 处理请求数加一
-func IncreaseRequestCount() uint64 {
-	return atomic.AddUint64(&requestCount, 1)
+func (s *Stats) IncreaseRequestCount() uint64 {
+	return atomic.AddUint64(&s.requestCount, 1)
 }
 
 // IncreaseRecoverCount recover的次数加一
-func IncreaseRecoverCount() uint64 {
-	return atomic.AddUint64(&recoverCount, 1)
+func (s *Stats) IncreaseRecoverCount() uint64 {
+	return atomic.AddUint64(&s.recoverCount, 1)
 }
 
 // GetRequestCount 获取处理请求数
-func GetRequestCount() uint64 {
-	return requestCount
+func (s *Stats) GetRequestCount() uint64 {
+	return atomic.LoadUint64(&s.requestCount)
 }
 
 // GetConcurrency 获取 concurrency
-func GetConcurrency() uint32 {
-	return concurrency
+func (s *Stats) GetConcurrency() uint32 {
+	return atomic.LoadUint32(&s.concurrency)
 }
 
 // AddRequestStats 设置性能统计
-func AddRequestStats(status, use int) {
+func (s *Stats) AddRequestStats(status, use int) {
 	spdy := 0
 	for i, v := range spdyList {
 		if use > v {
@@ -130,56 +138,54 @@ func AddRequestStats(status, use int) {
 	}
 	switch spdy {
 	case 0:
-		atomic.AddUint64(&spdy0Count, 1)
+		atomic.AddUint64(&s.spdy0Count, 1)
 	case 1:
-		atomic.AddUint64(&spdy1Count, 1)
+		atomic.AddUint64(&s.spdy1Count, 1)
 	case 2:
-		atomic.AddUint64(&spdy2Count, 1)
+		atomic.AddUint64(&s.spdy2Count, 1)
 	case 3:
-		atomic.AddUint64(&spdy3Count, 1)
+		atomic.AddUint64(&s.spdy3Count, 1)
 	case 4:
-		atomic.AddUint64(&spdy4Count, 1)
+		atomic.AddUint64(&s.spdy4Count, 1)
 	}
 	switch status / 100 {
 	case 1:
-		atomic.AddUint64(&status1Count, 1)
+		atomic.AddUint64(&s.status1Count, 1)
 	case 2:
-		atomic.AddUint64(&status2Count, 1)
+		atomic.AddUint64(&s.status2Count, 1)
 	case 3:
-		atomic.AddUint64(&status3Count, 1)
+		atomic.AddUint64(&s.status3Count, 1)
 	case 4:
-		atomic.AddUint64(&status4Count, 1)
+		atomic.AddUint64(&s.status4Count, 1)
 	case 5:
-		atomic.AddUint64(&status5Count, 1)
+		atomic.AddUint64(&s.status5Count, 1)
 	}
 }
 
-// GetStats 获取系统的使用
-func GetStats() *Stats {
+// GetInfo 获取系统的使用
+func (s *Stats) GetInfo() *Info {
 	var mb uint64 = 1024 * 1024
 	m := &runtime.MemStats{}
 	runtime.ReadMemStats(m)
 
-	// 	result := client.GetStats()
-
-	stats := &Stats{
+	stats := &Info{
 		Status: map[string]uint64{
-			"1": status1Count,
-			"2": status2Count,
-			"3": status3Count,
-			"4": status4Count,
-			"5": status5Count,
+			"1": atomic.LoadUint64(&s.status1Count),
+			"2": atomic.LoadUint64(&s.status2Count),
+			"3": atomic.LoadUint64(&s.status3Count),
+			"4": atomic.LoadUint64(&s.status4Count),
+			"5": atomic.LoadUint64(&s.status5Count),
 		},
 		Spdy: map[string]uint64{
-			"0": spdy0Count,
-			"1": spdy1Count,
-			"2": spdy2Count,
-			"3": spdy3Count,
-			"4": spdy4Count,
+			"0": atomic.LoadUint64(&s.spdy0Count),
+			"1": atomic.LoadUint64(&s.spdy1Count),
+			"2": atomic.LoadUint64(&s.spdy2Count),
+			"3": atomic.LoadUint64(&s.spdy3Count),
+			"4": atomic.LoadUint64(&s.spdy4Count),
 		},
 
 		GoMaxProcs:   runtime.GOMAXPROCS(0),
-		Concurrency:  GetConcurrency(),
+		Concurrency:  s.GetConcurrency(),
 		Sys:          int(m.Sys / mb),
 		HeapSys:      int(m.HeapSys / mb),
 		HeapInuse:    int(m.HeapInuse / mb),
@@ -191,7 +197,7 @@ func GetStats() *Stats {
 		// Waiting:      result.Waiting,
 		// Cacheable:    result.Cacheable,
 		// HitForPass:   result.HitForPass,
-		RequestCount: requestCount,
+		RequestCount: atomic.LoadUint64(&s.requestCount),
 		Version:      df.Version,
 		BuildedAt:    df.BuildedAt,
 		CommitID:     df.CommitID,

@@ -14,6 +14,7 @@ import (
 )
 
 func TestNewProxy(t *testing.T) {
+
 	us := upstream.New(upstream.Backend{
 		Backends: []string{
 			"http://127.0.0.1:7001",
@@ -27,7 +28,7 @@ func TestNewProxy(t *testing.T) {
 		RequestHeader: []string{
 			"X-Request-ID:123",
 		},
-	})
+	}, nil)
 	for _, item := range us.Server.GetUpstreamList() {
 		item.Healthy()
 	}

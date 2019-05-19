@@ -10,6 +10,7 @@ import (
 
 	"github.com/vicanso/cod"
 	"github.com/vicanso/pike/cache"
+	"github.com/vicanso/pike/config"
 	"github.com/vicanso/pike/df"
 )
 
@@ -89,7 +90,7 @@ func TestGetCacheAge(t *testing.T) {
 
 func TestNewCacheIdentifier(t *testing.T) {
 	dsp := cache.NewDispatcher(cache.Options{})
-	fn := NewCacheIdentifier(dsp)
+	fn := NewCacheIdentifier(config.New(), dsp)
 	t.Run("pass(post)", func(t *testing.T) {
 		req := httptest.NewRequest("POST", "/", nil)
 		c := &cod.Context{

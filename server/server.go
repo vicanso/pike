@@ -8,6 +8,7 @@ import (
 	"github.com/vicanso/pike/config"
 	"github.com/vicanso/pike/df"
 	"github.com/vicanso/pike/middleware"
+	"github.com/vicanso/pike/stats"
 	"github.com/vicanso/pike/upstream"
 
 	compress "github.com/vicanso/cod-compress"
@@ -17,9 +18,9 @@ import (
 )
 
 // New create a cod server
-func New(director *upstream.Director, dsp *cache.Dispatcher) *cod.Cod {
+func New(cfg *config.Config, director *upstream.Director, dsp *cache.Dispatcher, insStats *stats.Stats) *cod.Cod {
 	d := cod.New()
-	d.EnableTrace = config.IsEnableServerTiming()
+	d.EnableTrace = cfg.GetEnableServerTiming()
 	// 如果启动 server timing
 	// 则在回调中调整响应头
 	if d.EnableTrace {
@@ -30,11 +31,13 @@ func New(director *upstream.Director, dsp *cache.Dispatcher) *cod.Cod {
 	}
 
 	// 如果有配置admin，则添加管理后台处理
-	adminPath := config.GetAdminPath()
+	adminPath := cfg.GetAdminPath()
 	if adminPath != "" {
-		adminServer := NewAdminServer(adminPath)
+		adminServer := NewAdminServer(cfg, director, dsp, insStats)
 		d.Use(func(c *cod.Context) error {
-			if strings.HasPrefix(c.Request.RequestURI, adminPath) {
+			path := c.Request.URL.Path
+			if strings.HasPrefix(path, adminPath) {
+				c.Request.URL.Path = path[len(adminPath):]
 				c.Pass(adminServer)
 				return nil
 			}
@@ -44,7 +47,7 @@ func New(director *upstream.Director, dsp *cache.Dispatcher) *cod.Cod {
 
 	d.Use(recover.New())
 
-	fn := middleware.NewInitialization()
+	fn := middleware.NewInitialization(cfg, insStats)
 	d.Use(fn)
 	d.SetFunctionName(fn, "Initialization")
 
@@ -54,9 +57,9 @@ func New(director *upstream.Director, dsp *cache.Dispatcher) *cod.Cod {
 
 	// 可缓存数据在缓存时会生成gzip 与br
 	fn = compress.NewWithDefaultCompressor(compress.Config{
-		MinLength: config.GetCompressMinLength(),
-		Level:     config.GetCompressLevel(),
-		Checker:   config.GetTextFilter(),
+		MinLength: cfg.GetCompressMinLength(),
+		Level:     cfg.GetCompressLevel(),
+		Checker:   cfg.GetTextFilter(),
 	})
 	d.Use(fn)
 	d.SetFunctionName(fn, "Compress")
@@ -65,7 +68,7 @@ func New(director *upstream.Director, dsp *cache.Dispatcher) *cod.Cod {
 	d.Use(fn)
 	d.SetFunctionName(fn, "Responder")
 
-	fn = middleware.NewCacheIdentifier(dsp)
+	fn = middleware.NewCacheIdentifier(cfg, dsp)
 	d.Use(fn)
 	d.SetFunctionName(fn, "CacheIdentifier")
 

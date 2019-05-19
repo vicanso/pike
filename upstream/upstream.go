@@ -3,14 +3,12 @@ package upstream
 import (
 	"hash/fnv"
 	"io/ioutil"
-	"net"
 	"net/http"
 	"net/url"
 	"path/filepath"
 	"sort"
 	"strings"
 	"sync"
-	"time"
 
 	"github.com/vicanso/cod"
 	"github.com/vicanso/hes"
@@ -81,41 +79,44 @@ type (
 		Rewrites      []string
 		Handler       cod.Handler
 	}
+	// ServerInfo upstream server's information
+	ServerInfo struct {
+		URL    string `json:"url,omitempty"`
+		Backup bool   `json:"backup,omitempty"`
+		Status string `json:"status,omitempty"`
+	}
+	// Info upstream's information
+	Info struct {
+		Policy        string       `json:"policy,omitempty"`
+		Priority      int          `json:"priority,omitempty"`
+		Name          string       `json:"name,omitempty"`
+		Header        http.Header  `json:"header,omitempty"`
+		RequestHeader http.Header  `json:"requestHeader,omitempty"`
+		Hosts         []string     `json:"hosts,omitempty"`
+		Prefixs       []string     `json:"prefixs,omitempty"`
+		Rewrites      []string     `json:"rewrites,omitempty"`
+		Servers       []ServerInfo `json:"servers,omitempty"`
+	}
 	// Director director
 	Director struct {
 		sync.RWMutex
-		URI       string
+		Transport *http.Transport
 		Upstreams Upstreams
 	}
 	// Upstreams upstream list
 	Upstreams []*Upstream
 )
 
-func init() {
-	defaultTransport = &http.Transport{
-		DialContext: (&net.Dialer{
-			Timeout:   config.GetConnectTimeout(),
-			KeepAlive: 30 * time.Second,
-		}).DialContext,
-		MaxIdleConns:          100,
-		IdleConnTimeout:       config.GetIdleConnTimeout(),
-		TLSHandshakeTimeout:   config.GetTLSHandshakeTimeout(),
-		ExpectContinueTimeout: config.GetExpectContinueTimeout(),
-		ResponseHeaderTimeout: config.GetResponseHeaderTimeout(),
-	}
-}
-
 // Fetch fetch upstreams
 func (d *Director) Fetch() {
 	d.Lock()
 	defer d.Unlock()
-	d.Upstreams = NewUpstreamsFromConfig()
+	d.Upstreams = NewUpstreamsFromConfig(d.Transport)
 }
 
 // Proxy proxy
 func (d *Director) Proxy(c *cod.Context) (err error) {
 	d.RLock()
-	defer d.RUnlock()
 	var found *Upstream
 	for _, item := range d.Upstreams {
 		if item.Match(c) {
@@ -123,6 +124,7 @@ func (d *Director) Proxy(c *cod.Context) (err error) {
 			break
 		}
 	}
+	d.RUnlock()
 	if found == nil {
 		return errNoMatchUpstream
 	}
@@ -153,6 +155,8 @@ func (d *Director) ClearUpstreams() {
 // StartHealthCheck start health check
 func (d *Director) StartHealthCheck() {
 	logger := log.Default()
+	// TODO 如果 upstreams 可以动态变化，
+	// 则 health check 也需要调整
 	for _, up := range d.Upstreams {
 		up.Server.DoHealthCheck()
 		up.Server.OnStatus(func(status int32, upstream *UP.HTTPUpstream) {
@@ -163,6 +167,36 @@ func (d *Director) StartHealthCheck() {
 		})
 		go up.Server.StartHealthCheck()
 	}
+}
+
+// GetUpstreamInfos get upstream information of director
+func (d *Director) GetUpstreamInfos() []Info {
+	d.Lock()
+	defer d.Unlock()
+	statsInfo := make([]Info, len(d.Upstreams))
+	for index, up := range d.Upstreams {
+		servers := make([]ServerInfo, 0)
+		for _, item := range up.Server.GetUpstreamList() {
+			servers = append(servers, ServerInfo{
+				URL:    item.URL.String(),
+				Backup: item.Backup,
+				Status: item.StatusDesc(),
+			})
+		}
+		info := Info{
+			Policy:        up.Policy,
+			Priority:      up.Priority,
+			Name:          up.Name,
+			Header:        up.Header,
+			RequestHeader: up.RequestHeader,
+			Hosts:         up.Hosts,
+			Prefixs:       up.Prefixs,
+			Rewrites:      up.Rewrites,
+			Servers:       servers,
+		}
+		statsInfo[index] = info
+	}
+	return statsInfo
 }
 
 func (s Upstreams) Len() int {
@@ -178,7 +212,7 @@ func (s Upstreams) Less(i, j int) bool {
 }
 
 // NewUpstreamsFromConfig new upstreams from config
-func NewUpstreamsFromConfig() Upstreams {
+func NewUpstreamsFromConfig(transport *http.Transport) Upstreams {
 	backendConfig := &struct {
 		Director []Backend
 	}{
@@ -197,7 +231,7 @@ func NewUpstreamsFromConfig() Upstreams {
 
 	upstreams := make(Upstreams, len(backendConfig.Director))
 	for index, item := range backendConfig.Director {
-		upstreams[index] = New(item)
+		upstreams[index] = New(item, transport)
 	}
 	sort.Sort(upstreams)
 	return upstreams
@@ -224,8 +258,9 @@ func createTargetPicker(us *Upstream) proxy.TargetPicker {
 		isCookiePolicy = true
 	}
 	server := &us.Server
-	fn := func(c *cod.Context) (*url.URL, error) {
+	fn := func(c *cod.Context) (*url.URL, proxy.Done, error) {
 		var result *UP.HTTPUpstream
+		var done proxy.Done
 		switch policy {
 		case policyFirst:
 			result = server.PolicyFirst()
@@ -238,8 +273,9 @@ func createTargetPicker(us *Upstream) proxy.TargetPicker {
 			if result != nil {
 				// 连接数+1
 				result.Inc()
-				// 设置 callback
-				c.Set(df.ProxyDoneCallback, result.Dec)
+				done = func(_ *cod.Context) {
+					result.Dec()
+				}
 			}
 		case policyIPHash:
 			result = server.GetAvailableUpstream(hash(c.RealIP()))
@@ -256,20 +292,20 @@ func createTargetPicker(us *Upstream) proxy.TargetPicker {
 			result = server.GetAvailableUpstream(index)
 		}
 		if result == nil {
-			return nil, errNoAvailableUpstream
+			return nil, done, errNoAvailableUpstream
 		}
-		return result.URL, nil
+		return result.URL, done, nil
 	}
 	return fn
 }
 
 // createProxyHandler create proxy handler
-func createProxyHandler(us *Upstream) cod.Handler {
+func createProxyHandler(us *Upstream, transport *http.Transport) cod.Handler {
 	fn := createTargetPicker(us)
 
 	cfg := proxy.Config{
 		// Transport http transport
-		Transport:    defaultTransport,
+		Transport:    transport,
 		TargetPicker: fn,
 	}
 	// 如果测试，则清除transport，方便测试
@@ -334,9 +370,9 @@ func createUpstreamFromBackend(backend Backend) *Upstream {
 }
 
 // New new upstream
-func New(backend Backend) *Upstream {
+func New(backend Backend, transport *http.Transport) *Upstream {
 	us := createUpstreamFromBackend(backend)
-	us.Handler = createProxyHandler(us)
+	us.Handler = createProxyHandler(us, transport)
 	return us
 }
 

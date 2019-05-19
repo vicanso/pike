@@ -7,10 +7,11 @@ import (
 	"github.com/vicanso/cod"
 	"github.com/vicanso/hes"
 	"github.com/vicanso/pike/config"
+	"github.com/vicanso/pike/stats"
+	"github.com/vicanso/pike/util"
 
 	"github.com/vicanso/pike/cache"
 	"github.com/vicanso/pike/df"
-	"github.com/vicanso/pike/performance"
 )
 
 var (
@@ -23,16 +24,16 @@ var (
 )
 
 // NewInitialization create an initialization middleware
-func NewInitialization() cod.Handler {
-	maxConcurrency := config.GetConcurrency()
-	header := config.GetHeader()
-	requestHeader := config.GetRequestHeader()
+func NewInitialization(cfg *config.Config, insStats *stats.Stats) cod.Handler {
+	maxConcurrency := cfg.GetConcurrency()
+	header := util.ConvertToHTTPHeader(cfg.GetHeader())
+	requestHeader := util.ConvertToHTTPHeader(cfg.GetRequestHeader())
 
 	return func(c *cod.Context) (err error) {
 		startedAt := time.Now()
-		defer performance.DecreaseConcurrency()
-		performance.IncreaseRequestCount()
-		count := performance.IncreaseConcurrency()
+		defer insStats.DecreaseConcurrency()
+		insStats.IncreaseRequestCount()
+		count := insStats.IncreaseConcurrency()
 
 		// 设置请求头
 		reqHeader := c.Request.Header
@@ -71,7 +72,7 @@ func NewInitialization() cod.Handler {
 				statusCode = http.StatusInternalServerError
 			}
 		}
-		performance.AddRequestStats(statusCode, int(use))
+		insStats.AddRequestStats(statusCode, int(use))
 
 		return
 	}
