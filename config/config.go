@@ -43,6 +43,17 @@ const (
 	adminPasswordKey         = "admin.password"
 )
 
+const (
+	backendPolicyKey        = "policy"
+	backendPingKey          = "ping"
+	backendRequestHeaderKey = "requestHeader"
+	backendHeaderKey        = "header"
+	backendPrefixsKey       = "prefixs"
+	backendHostsKey         = "hosts"
+	backendBackendsKey      = "backends"
+	backendRewritesKey      = "rewrites"
+)
+
 type (
 	// Config config struct
 	Config struct {
@@ -327,8 +338,8 @@ func (c *Config) GetConnectTimeout() time.Duration {
 	return c.getDurationDefault(timeoutConnectKey, 15*time.Second)
 }
 
-// SetConnnectTimeout set connect timeout
-func (c *Config) SetConnnectTimeout(value time.Duration) {
+// SetConnectTimeout set connect timeout
+func (c *Config) SetConnectTimeout(value time.Duration) {
 	c.set(timeoutConnectKey, value)
 }
 
@@ -374,8 +385,9 @@ func (c *Config) SetAdminPassword(value string) {
 
 // GetBackends get backends
 func (c *Config) GetBackends() []Backend {
+	vp := c.Viper
 	backends := make([]Backend, 0)
-	keys := c.Viper.AllKeys()
+	keys := vp.AllKeys()
 	nameList := []string{}
 	for _, key := range keys {
 		name := strings.Split(key, ".")[0]
@@ -390,18 +402,37 @@ func (c *Config) GetBackends() []Backend {
 		}
 	}
 	sort.Sort(sort.StringSlice(nameList))
-	for _, name := range nameList {
-		backends = append(backends, Backend{
+	fn := func(name string) Backend {
+		return Backend{
 			Name:          name,
-			Policy:        c.Viper.GetString(name + ".policy"),
-			Ping:          c.Viper.GetString(name + ".ping"),
-			RequestHeader: c.Viper.GetStringSlice(name + ".requestHeader"),
-			Header:        c.Viper.GetStringSlice(name + ".header"),
-			Prefixs:       c.Viper.GetStringSlice(name + ".prefixs"),
-			Hosts:         c.Viper.GetStringSlice(name + ".hosts"),
-			Backends:      c.Viper.GetStringSlice(name + ".backends"),
-			Rewrites:      c.Viper.GetStringSlice(name + ".rewrites"),
-		})
+			Policy:        vp.GetString(name + "." + backendPolicyKey),
+			Ping:          vp.GetString(name + "." + backendPingKey),
+			RequestHeader: vp.GetStringSlice(name + "." + backendRequestHeaderKey),
+			Header:        vp.GetStringSlice(name + "." + backendHeaderKey),
+			Prefixs:       vp.GetStringSlice(name + "." + backendPrefixsKey),
+			Hosts:         vp.GetStringSlice(name + "." + backendHostsKey),
+			Backends:      vp.GetStringSlice(name + "." + backendBackendsKey),
+			Rewrites:      vp.GetStringSlice(name + "." + backendRewritesKey),
+		}
+	}
+	for _, name := range nameList {
+		backends = append(backends, fn(name))
 	}
 	return backends
+}
+
+// SetBackend set backend
+func (c *Config) SetBackend(backed Backend) {
+	name := backed.Name
+	if name == "" {
+		return
+	}
+	c.set(name+"."+backendPolicyKey, backed.Policy)
+	c.set(name+"."+backendPingKey, backed.Ping)
+	c.set(name+"."+backendRequestHeaderKey, backed.RequestHeader)
+	c.set(name+"."+backendHeaderKey, backed.Header)
+	c.set(name+"."+backendPrefixsKey, backed.Prefixs)
+	c.set(name+"."+backendHostsKey, backed.Hosts)
+	c.set(name+"."+backendBackendsKey, backed.Backends)
+	c.set(name+"."+backendRewritesKey, backed.Rewrites)
 }
