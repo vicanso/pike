@@ -8,21 +8,22 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/assert"
 	"github.com/vicanso/cod"
 )
 
 func TestGetHTTPCache(t *testing.T) {
+	assert := assert.New(t)
 	dsp := NewDispatcher(Options{})
 	key := []byte("abc")
 	hc := dsp.GetHTTPCache(key)
-	if hc == nil {
-		t.Fatalf("get http cache fail")
-	}
+	assert.NotNil(hc, "get http cache should not be nil")
 }
 
 func TestDispatcher(t *testing.T) {
 	dsp := NewDispatcher(Options{})
 	t.Run("get status(hit for pass)", func(t *testing.T) {
+		assert := assert.New(t)
 		k1 := []byte("abc")
 		k2 := []byte("abc")
 		k3 := []byte("abc")
@@ -36,14 +37,13 @@ func TestDispatcher(t *testing.T) {
 		defer hc2.Done()
 		hc3 := dsp.GetHTTPCache(k3)
 		defer hc3.Done()
-		if hc2.Status != HitForPass ||
-			hc3.Status != HitForPass ||
-			hc2 != hc3 {
-			t.Fatalf("get http cache fail")
-		}
+		assert.Equal(hc2.Status, HitForPass, "status should be hit for pass")
+		assert.Equal(hc3.Status, HitForPass, "status should be hit for pass")
+		assert.Equal(hc2, hc3, "these two caches should be same")
 	})
 
 	t.Run("get status(cacheable)", func(t *testing.T) {
+		assert := assert.New(t)
 		k1 := []byte("def")
 		k2 := []byte("def")
 		k3 := []byte("def")
@@ -60,32 +60,27 @@ func TestDispatcher(t *testing.T) {
 		defer hc2.Done()
 		hc3 := dsp.GetHTTPCache(k3)
 		defer hc3.Done()
-		if hc2.Status != Cacheable ||
-			hc3.Status != Cacheable ||
-			hc2 != hc3 {
-			t.Fatalf("get http cache fail")
-		}
+		assert.Equal(hc2.Status, Cacheable, "status should be cacheable")
+		assert.Equal(hc3.Status, Cacheable, "status should be cacheable")
+		assert.Equal(hc2, hc3, "these two caches should be same")
 	})
 
 	t.Run("get all cache status", func(t *testing.T) {
 		cacheList := dsp.GetCacheList()
-		if len(cacheList) == 0 {
-			t.Fatalf("get all cache status fail")
-		}
+		assert.NotEqual(t, len(cacheList), 0)
 	})
 }
 
 func TestHitForPass(t *testing.T) {
+	assert := assert.New(t)
 	opts := Options{}
 	hc := HTTPCache{
 		opts: &opts,
 	}
 	hc.HitForPass()
-	if hc.CreatedAt == 0 ||
-		hc.ExpiredAt == 0 ||
-		hc.Status != HitForPass {
-		t.Fatalf("set hit for pass fail")
-	}
+	assert.NotEqual(hc.CreatedAt, 0, "createdAt shouldn't be 0")
+	assert.NotEqual(hc.ExpiredAt, 0, "expiredAt shouldn't be 0")
+	assert.Equal(hc.Status, HitForPass, "status should be hit for pass")
 }
 
 func TestCacheable(t *testing.T) {
@@ -96,6 +91,7 @@ func TestCacheable(t *testing.T) {
 		CompressMinLength: 1024,
 	}
 	t.Run("cacheable", func(t *testing.T) {
+		assert := assert.New(t)
 		header := make(http.Header)
 		header.Set(cod.HeaderContentType, "text/html")
 		header.Set(cod.HeaderContentLength, "10")
@@ -111,16 +107,15 @@ func TestCacheable(t *testing.T) {
 			opts: &opts,
 		}
 		hc.Cacheable(maxAge, c)
-		if hc.Status != Cacheable ||
-			hc.Headers == nil ||
-			hc.Body != nil ||
-			hc.GzipBody == nil ||
-			hc.Headers.Get(cod.HeaderContentLength) != "" {
-			t.Fatalf("set cacheable fail")
-		}
+		assert.Equal(hc.Status, Cacheable, "status should be cacheable")
+		assert.NotNil(hc.Headers, "headers shouldn't be nil")
+		assert.Nil(hc.Body, "original body should be nil")
+		assert.NotNil(hc.GzipBody, "gzip body shouldn't be nil")
+		assert.Equal(hc.Headers.Get(cod.HeaderContentLength), "", "Content-Length should be empty")
 	})
 
 	t.Run("cacheable(gunzip success)", func(t *testing.T) {
+		assert := assert.New(t)
 		header := make(http.Header)
 		header.Set(cod.HeaderContentType, "text/html")
 		header.Set(cod.HeaderContentEncoding, "gzip")
@@ -136,14 +131,13 @@ func TestCacheable(t *testing.T) {
 			opts: &opts,
 		}
 		hc.Cacheable(maxAge, c)
-		if hc.Status != Cacheable ||
-			!bytes.Equal(data, hc.Body.Bytes()) ||
-			hc.GzipBody != nil {
-			t.Fatalf("gunzip success should cacheable")
-		}
+		assert.Equal(hc.Status, Cacheable, "status should be cacheable")
+		assert.Equal(hc.Body.Bytes(), data, "body should be the smae as original")
+		assert.Nil(hc.GzipBody, "gzip data should be nil")
 	})
 
 	t.Run("gunzip fail should hit for pass", func(t *testing.T) {
+		assert := assert.New(t)
 		header := make(http.Header)
 		header.Set(cod.HeaderContentType, "text/html")
 		header.Set(cod.HeaderContentEncoding, "gzip")
@@ -158,12 +152,11 @@ func TestCacheable(t *testing.T) {
 			opts: &opts,
 		}
 		hc.Cacheable(maxAge, c)
-		if hc.Status != HitForPass {
-			t.Fatalf("gunzip fail should hit for pass")
-		}
+		assert.Equal(hc.Status, HitForPass, "status should be hit for pass")
 	})
 
 	t.Run("not support encoding should hit for pass", func(t *testing.T) {
+		assert := assert.New(t)
 		header := make(http.Header)
 		header.Set(cod.HeaderContentType, "text/html")
 		header.Set(cod.HeaderContentEncoding, "xx")
@@ -178,8 +171,6 @@ func TestCacheable(t *testing.T) {
 			opts: &opts,
 		}
 		hc.Cacheable(maxAge, c)
-		if hc.Status != HitForPass {
-			t.Fatalf("not support encoding should hit for pass")
-		}
+		assert.Equal(hc.Status, HitForPass, "status should be hit for pass")
 	})
 }

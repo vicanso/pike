@@ -2,10 +2,8 @@ package upstream
 
 import (
 	"hash/fnv"
-	"io/ioutil"
 	"net/http"
 	"net/url"
-	"path/filepath"
 	"sort"
 	"strings"
 	"sync"
@@ -18,7 +16,6 @@ import (
 	UP "github.com/vicanso/upstream"
 	"go.uber.org/zap"
 
-	"github.com/go-yaml/yaml"
 	"github.com/vicanso/pike/df"
 
 	proxy "github.com/vicanso/cod-proxy"
@@ -54,18 +51,6 @@ const (
 )
 
 type (
-	// Backend backend config
-	Backend struct {
-		Name          string
-		Policy        string
-		Ping          string
-		RequestHeader []string `yaml:"requestHeader"`
-		Header        []string
-		Prefixs       []string
-		Hosts         []string
-		Backends      []string
-		Rewrites      []string
-	}
 	// Upstream Upstream
 	Upstream struct {
 		Policy        string
@@ -107,11 +92,14 @@ type (
 	Upstreams []*Upstream
 )
 
-// Fetch fetch upstreams
-func (d *Director) Fetch() {
-	d.Lock()
-	defer d.Unlock()
-	d.Upstreams = NewUpstreamsFromConfig(d.Transport)
+// SetBackends set backends
+func (d *Director) SetBackends(backends []config.Backend) {
+	upstreams := make(Upstreams, len(backends))
+	for index, item := range backends {
+		upstreams[index] = New(item, d.Transport)
+	}
+	sort.Sort(upstreams)
+	d.Upstreams = upstreams
 }
 
 // Proxy proxy
@@ -211,32 +199,6 @@ func (s Upstreams) Less(i, j int) bool {
 	return s[i].Priority < s[j].Priority
 }
 
-// NewUpstreamsFromConfig new upstreams from config
-func NewUpstreamsFromConfig(transport *http.Transport) Upstreams {
-	backendConfig := &struct {
-		Director []Backend
-	}{
-		make([]Backend, 0),
-	}
-	for _, path := range df.ConfigPathList {
-		file := filepath.Join(path, "backends.yml")
-		buf, _ := ioutil.ReadFile(file)
-		if len(buf) != 0 {
-			err := yaml.Unmarshal(buf, backendConfig)
-			if err != nil {
-				break
-			}
-		}
-	}
-
-	upstreams := make(Upstreams, len(backendConfig.Director))
-	for index, item := range backendConfig.Director {
-		upstreams[index] = New(item, transport)
-	}
-	sort.Sort(upstreams)
-	return upstreams
-}
-
 // hash calculates a hash based on string s
 func hash(s string) uint32 {
 	h := fnv.New32a()
@@ -318,7 +280,7 @@ func createProxyHandler(us *Upstream, transport *http.Transport) cod.Handler {
 	return proxy.New(cfg)
 }
 
-func createUpstreamFromBackend(backend Backend) *Upstream {
+func createUpstreamFromBackend(backend config.Backend) *Upstream {
 	priority := 8
 	if len(backend.Hosts) != 0 {
 		priority -= 4
@@ -370,7 +332,7 @@ func createUpstreamFromBackend(backend Backend) *Upstream {
 }
 
 // New new upstream
-func New(backend Backend, transport *http.Transport) *Upstream {
+func New(backend config.Backend, transport *http.Transport) *Upstream {
 	us := createUpstreamFromBackend(backend)
 	us.Handler = createProxyHandler(us, transport)
 	return us

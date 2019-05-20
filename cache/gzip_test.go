@@ -1,19 +1,19 @@
 package cache
 
 import (
-	"bytes"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestGzip(t *testing.T) {
+	assert := assert.New(t)
 	buf := []byte("abcd")
 	gzipBuf, err := Gzip(buf)
-	if err != nil || len(gzipBuf) == 0 {
-		t.Fatalf("gzip data fail, %v", err)
-	}
+	assert.Nil(err)
+	assert.NotEqual(len(gzipBuf), 0)
 
 	gunzipBuf, err := Gunzip(gzipBuf)
-	if err != nil || !bytes.Equal(gunzipBuf, buf) {
-		t.Fatalf("gunzip data fail, %v", err)
-	}
+	assert.Nil(err)
+	assert.Equal(gunzipBuf, buf)
 }

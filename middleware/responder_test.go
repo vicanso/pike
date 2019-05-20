@@ -7,6 +7,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/assert"
 	"github.com/vicanso/cod"
 	"github.com/vicanso/pike/cache"
 	"github.com/vicanso/pike/df"
@@ -16,38 +17,35 @@ func TestNewResponder(t *testing.T) {
 	fn := NewResponder()
 
 	t.Run("response body has been set", func(t *testing.T) {
+		assert := assert.New(t)
 		c := cod.NewContext(nil, nil)
 		c.Next = func() error {
 			return nil
 		}
 		c.BodyBuffer = bytes.NewBufferString("abc")
 		err := fn(c)
-		if err != nil {
-			t.Fatalf("fail, %v", err)
-		}
+		assert.Nil(err, "response middleware fail")
 	})
 
 	t.Run("no http cache", func(t *testing.T) {
+		assert := assert.New(t)
 		c := cod.NewContext(nil, nil)
 		c.Next = func() error {
 			return nil
 		}
 		err := fn(c)
-		if err != nil {
-			t.Fatalf("fail, %v", err)
-		}
+		assert.Nil(err, "response middleware fail")
 	})
 
 	t.Run("invalid cache", func(t *testing.T) {
+		assert := assert.New(t)
 		c := cod.NewContext(nil, nil)
 		c.Set(df.Cache, "1")
 		c.Next = func() error {
 			return nil
 		}
 		err := fn(c)
-		if err != errCacheInvalid {
-			t.Fatalf("invalid cache should return error")
-		}
+		assert.Equal(err, errCacheInvalid, "invalid cache should return error")
 	})
 
 	h := make(http.Header)
@@ -69,6 +67,7 @@ func TestNewResponder(t *testing.T) {
 	}
 
 	t.Run("brotli cache", func(t *testing.T) {
+		assert := assert.New(t)
 		req := httptest.NewRequest("GET", "/", nil)
 		resp := httptest.NewRecorder()
 		req.Header.Set(cod.HeaderAcceptEncoding, "gzip, deflate, br")
@@ -78,19 +77,16 @@ func TestNewResponder(t *testing.T) {
 			return nil
 		}
 		err := fn(c)
-		if err != nil {
-			t.Fatalf("brotli cache fail, %v", err)
-		}
-		if !bytes.Equal(brBody, c.BodyBuffer.Bytes()) ||
-			c.StatusCode != 200 ||
-			c.GetHeader(df.HeaderAge) == "" ||
-			c.GetHeader(responseIDKey) != responseID ||
-			c.GetHeader(cod.HeaderContentEncoding) != "br" {
-			t.Fatalf("brotli cache fail")
-		}
+		assert.Nil(err, "brotli cache fail")
+		assert.Equal(brBody, c.BodyBuffer.Bytes())
+		assert.Equal(c.StatusCode, 200)
+		assert.NotEqual(c.GetHeader(df.HeaderAge), "")
+		assert.Equal(c.GetHeader(responseIDKey), responseID)
+		assert.Equal(c.GetHeader(cod.HeaderContentEncoding), "br")
 	})
 
 	t.Run("gzip cache", func(t *testing.T) {
+		assert := assert.New(t)
 		req := httptest.NewRequest("GET", "/", nil)
 		resp := httptest.NewRecorder()
 		req.Header.Set(cod.HeaderAcceptEncoding, "gzip, deflate")
@@ -100,19 +96,16 @@ func TestNewResponder(t *testing.T) {
 			return nil
 		}
 		err := fn(c)
-		if err != nil {
-			t.Fatalf("gzip cache fail, %v", err)
-		}
-		if !bytes.Equal(gzipBody, c.BodyBuffer.Bytes()) ||
-			c.StatusCode != 200 ||
-			c.GetHeader(df.HeaderAge) == "" ||
-			c.GetHeader(responseIDKey) != responseID ||
-			c.GetHeader(cod.HeaderContentEncoding) != "gzip" {
-			t.Fatalf("gzip cache fail")
-		}
+		assert.Nil(err, "gzip cache fail")
+		assert.Equal(gzipBody, c.BodyBuffer.Bytes())
+		assert.Equal(c.StatusCode, 200)
+		assert.NotEqual(c.GetHeader(df.HeaderAge), "")
+		assert.Equal(c.GetHeader(responseIDKey), responseID)
+		assert.Equal(c.GetHeader(cod.HeaderContentEncoding), "gzip")
 	})
 
 	t.Run("gunzip cache", func(t *testing.T) {
+		assert := assert.New(t)
 		req := httptest.NewRequest("GET", "/", nil)
 		resp := httptest.NewRecorder()
 		c := cod.NewContext(resp, req)
@@ -121,19 +114,16 @@ func TestNewResponder(t *testing.T) {
 			return nil
 		}
 		err := fn(c)
-		if err != nil {
-			t.Fatalf("gunzip cache fail, %v", err)
-		}
-		if !bytes.Equal(buf, c.BodyBuffer.Bytes()) ||
-			c.StatusCode != 200 ||
-			c.GetHeader(df.HeaderAge) == "" ||
-			c.GetHeader(responseIDKey) != responseID ||
-			c.GetHeader(cod.HeaderContentEncoding) != "" {
-			t.Fatalf("gunzip cache fail")
-		}
+		assert.Nil(err, "gunzip cache fail")
+		assert.Equal(buf, c.BodyBuffer.Bytes())
+		assert.Equal(c.StatusCode, 200)
+		assert.NotEqual(c.GetHeader(df.HeaderAge), "")
+		assert.Equal(c.GetHeader(responseIDKey), responseID)
+		assert.Equal(c.GetHeader(cod.HeaderContentEncoding), "")
 	})
 
 	t.Run("raw body cache", func(t *testing.T) {
+		assert := assert.New(t)
 		hc.GzipBody = nil
 		hc.BrBody = nil
 		hc.Body = bytes.NewBuffer(buf)
@@ -145,15 +135,11 @@ func TestNewResponder(t *testing.T) {
 			return nil
 		}
 		err := fn(c)
-		if err != nil {
-			t.Fatalf("raw body cache fail, %v", err)
-		}
-		if !bytes.Equal(buf, c.BodyBuffer.Bytes()) ||
-			c.StatusCode != 200 ||
-			c.GetHeader(df.HeaderAge) == "" ||
-			c.GetHeader(responseIDKey) != responseID ||
-			c.GetHeader(cod.HeaderContentEncoding) != "" {
-			t.Fatalf("raw body cache fail")
-		}
+		assert.Nil(err, "raw body cache fail")
+		assert.Equal(buf, c.BodyBuffer.Bytes())
+		assert.Equal(c.StatusCode, 200)
+		assert.NotEqual(c.GetHeader(df.HeaderAge), "")
+		assert.Equal(c.GetHeader(responseIDKey), responseID)
+		assert.Equal(c.GetHeader(cod.HeaderContentEncoding), "")
 	})
 }

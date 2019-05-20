@@ -4,11 +4,13 @@ package cache
 
 import (
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestBrotliCompress(t *testing.T) {
+	assert := assert.New(t)
 	buf, err := doBrotli([]byte("abcd"))
-	if err != nil || len(buf) == 0 {
-		t.Fatalf("br fail, %v", err)
-	}
+	assert.Nil(err, "brotli compress fail")
+	assert.NotEqual(len(buf), 0, "brotli compress fail")
 }

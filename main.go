@@ -3,6 +3,7 @@ package main
 import (
 	"net"
 	"net/http"
+	"regexp"
 	"time"
 
 	"github.com/vicanso/cod"
@@ -41,13 +42,14 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+	textFilter := regexp.MustCompile(cfg.GetTextFilter())
 	dsp := cache.NewDispatcher(cache.Options{
 		Size:              cfg.GetCacheZoneSize(),
 		ZoneSize:          cfg.GetCacheZoneSize(),
 		CompressLevel:     cfg.GetCompressLevel(),
 		CompressMinLength: cfg.GetCompressMinLength(),
 		HitForPassTTL:     cfg.GetHitForPassTTL(),
-		TextFilter:        cfg.GetTextFilter(),
+		TextFilter:        textFilter,
 	})
 	director := &upstream.Director{
 		Transport: &http.Transport{
@@ -62,7 +64,13 @@ func main() {
 			ResponseHeaderTimeout: cfg.GetResponseHeaderTimeout(),
 		},
 	}
-	director.Fetch()
+	backendConfig := config.NewFileConfig("backends")
+	err = backendConfig.Fetch()
+	if err != nil {
+		panic(err)
+	}
+	director.SetBackends(backendConfig.GetBackends())
+
 	director.StartHealthCheck()
 
 	d := server.New(cfg, director, dsp, insStats)

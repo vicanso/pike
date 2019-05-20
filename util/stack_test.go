@@ -1,10 +1,12 @@
 package util
 
-import "testing"
+import (
+	"testing"
+
+	"github.com/stretchr/testify/assert"
+)
 
 func TestGetStack(t *testing.T) {
 	stack := GetStack(0, 5)
-	if len(stack) == 0 {
-		t.Fatalf("get stack fail")
-	}
+	assert.Equal(t, len(stack), 5)
 }

@@ -1,8 +1,13 @@
 package cache
 
-import "testing"
+import (
+	"testing"
+
+	"github.com/stretchr/testify/assert"
+)
 
 func TestLRU(t *testing.T) {
+	assert := assert.New(t)
 	lru := NewLRU(10)
 	key1 := "abcd"
 	value1 := &HTTPCache{}
@@ -13,38 +18,26 @@ func TestLRU(t *testing.T) {
 	lru.Add(key1, value1)
 	lru.Add(key2, value2)
 	v, ok := lru.Get(key1)
-	if !ok || v != value1 {
-		t.Fatalf("add lru cache fail")
-	}
+	assert.True(ok)
+	assert.Equal(v, value1)
 
 	lru.RemoveOldest()
 	v, _ = lru.Get(key2)
-	if v != nil {
-		t.Fatalf("remove oldest lru cache fail")
-	}
+	assert.Nil(v, "oldest cache should be removed")
 
 	lru.Remove(key1)
 	v, ok = lru.Get(key1)
-	if v != nil {
-		t.Fatalf("remove lru cache fail")
-	}
+	assert.Nil(v, "remove cache fail")
 
 	lru.Add(key1, value1)
-
-	if lru.Len() != 1 {
-		t.Fatalf("get lru len fail")
-	}
+	assert.Equal(lru.Len(), 1, "get lru len fail")
 
 	count := 0
 	lru.ForEach(func(key string, value *HTTPCache) {
 		count++
 	})
-	if count != lru.Len() {
-		t.Fatalf("lru for each fail")
-	}
+	assert.Equal(count, lru.Len(), "lru forEach fail")
 
 	lru.Clear()
-	if lru.Len() != 0 {
-		t.Fatalf("lru clear fail")
-	}
+	assert.Equal(lru.Len(), 0, "lru clear fail")
 }

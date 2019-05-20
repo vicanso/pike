@@ -8,6 +8,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/assert"
 	"github.com/vicanso/cod"
 	"github.com/vicanso/pike/cache"
 	"github.com/vicanso/pike/config"
@@ -26,65 +27,49 @@ func TestGetCacheAge(t *testing.T) {
 	t.Run("set cookie", func(t *testing.T) {
 		h := make(http.Header)
 		h.Add(cod.HeaderSetCookie, "abc")
-		if getCacheAge(h) != 0 {
-			t.Fatalf("set cookie header's age should be 0")
-		}
+		assert.Equal(t, getCacheAge(h), 0, "set cookie response's max age should be 0")
 	})
 
 	t.Run("not set cache control", func(t *testing.T) {
 		h := make(http.Header)
-		if getCacheAge(h) != 0 {
-			t.Fatalf("not set cache control header's age should be 0")
-		}
+		assert.Equal(t, getCacheAge(h), 0, "not set cache control header's age should be 0")
 	})
 
 	t.Run("no-cache", func(t *testing.T) {
 		h := make(http.Header)
 		h.Add(cod.HeaderCacheControl, "no-cache")
-		if getCacheAge(h) != 0 {
-			t.Fatalf("no cache header's age should be 0")
-		}
+		assert.Equal(t, getCacheAge(h), 0, "no cache header's age should be 0")
 	})
 
 	t.Run("no-store", func(t *testing.T) {
 		h := make(http.Header)
 		h.Add(cod.HeaderCacheControl, "no-store")
-		if getCacheAge(h) != 0 {
-			t.Fatalf("no store header's age should be 0")
-		}
+		assert.Equal(t, getCacheAge(h), 0, "no store header's age should be 0")
 	})
 
 	t.Run("private", func(t *testing.T) {
 		h := make(http.Header)
 		h.Add(cod.HeaderCacheControl, "private, max-age=10")
-		if getCacheAge(h) != 0 {
-			t.Fatalf("private max age header's age should be 0")
-		}
+		assert.Equal(t, getCacheAge(h), 0, "private max age header's age should be 0")
 	})
 
 	t.Run("s-maxage", func(t *testing.T) {
 		h := make(http.Header)
 		h.Add(cod.HeaderCacheControl, "s-maxage=10, max-age=300")
-		if getCacheAge(h) != 10 {
-			t.Fatalf("get s-maxage fail")
-		}
+		assert.Equal(t, getCacheAge(h), 10, "max age should get s-maxage first")
 	})
 
 	t.Run("max-age", func(t *testing.T) {
 		h := make(http.Header)
 		h.Add(cod.HeaderCacheControl, "max-age=300")
-		if getCacheAge(h) != 300 {
-			t.Fatalf("get max-age fail")
-		}
+		assert.Equal(t, getCacheAge(h), 300, "max age should get max-age field")
 	})
 
 	t.Run("max-age with age", func(t *testing.T) {
 		h := make(http.Header)
 		h.Add(cod.HeaderCacheControl, "max-age=300")
 		h.Add(df.HeaderAge, "10")
-		if getCacheAge(h) != 290 {
-			t.Fatalf("get max-age fail")
-		}
+		assert.Equal(t, getCacheAge(h), 290, "max age should minus age field")
 	})
 }
 
@@ -92,6 +77,7 @@ func TestNewCacheIdentifier(t *testing.T) {
 	dsp := cache.NewDispatcher(cache.Options{})
 	fn := NewCacheIdentifier(config.New(), dsp)
 	t.Run("pass(post)", func(t *testing.T) {
+		assert := assert.New(t)
 		req := httptest.NewRequest("POST", "/", nil)
 		c := &cod.Context{
 			Request: req,
@@ -100,15 +86,12 @@ func TestNewCacheIdentifier(t *testing.T) {
 			return nil
 		}
 		err := fn(c)
-		if err != nil {
-			t.Fatalf("post request pass fail, %v", err)
-		}
-		if c.Get(df.Status).(int) != cache.Pass {
-			t.Fatalf("post request should pass")
-		}
+		assert.Nil(err)
+		assert.Equal(c.Get(df.Status).(int), cache.Pass, "post request should pass")
 	})
 
 	t.Run("pass(no cache)", func(t *testing.T) {
+		assert := assert.New(t)
 		req := httptest.NewRequest("GET", "/", nil)
 		req.Header.Set(cod.HeaderCacheControl, "no-cache")
 		c := &cod.Context{
@@ -118,15 +101,12 @@ func TestNewCacheIdentifier(t *testing.T) {
 			return nil
 		}
 		err := fn(c)
-		if err != nil {
-			t.Fatalf("get request(no cache) pass fail, %v", err)
-		}
-		if c.Get(df.Status).(int) != cache.Pass {
-			t.Fatalf("get request(no cache) should pass")
-		}
+		assert.Nil(err)
+		assert.Equal(c.Get(df.Status).(int), cache.Pass, "get request(no cache) should pass")
 	})
 
 	t.Run("hit for pass", func(t *testing.T) {
+		assert := assert.New(t)
 		url := "/" + randomString(20)
 		c1 := cod.NewContext(httptest.NewRecorder(), httptest.NewRequest("GET", url, nil))
 		done := make(chan bool)
@@ -136,12 +116,8 @@ func TestNewCacheIdentifier(t *testing.T) {
 				return nil
 			}
 			err := fn(c2)
-			if err != nil {
-				t.Fatalf("the second hit for pass request fail, %v", err)
-			}
-			if c2.Get(df.Status).(int) != cache.HitForPass {
-				t.Fatalf("the second request should hit for pass")
-			}
+			assert.Nil(err)
+			assert.Equal(c2.Get(df.Status).(int), cache.HitForPass, "the second request should hit for pass")
 			done <- true
 		}()
 		c1.Next = func() error {
@@ -150,16 +126,13 @@ func TestNewCacheIdentifier(t *testing.T) {
 			return nil
 		}
 		err := fn(c1)
-		if err != nil {
-			t.Fatalf("handle hit for pass request fail, %v", err)
-		}
-		if c1.Get(df.Status).(int) != cache.Fetch {
-			t.Fatalf("the first request should be fetch")
-		}
+		assert.Nil(err)
+		assert.Equal(c1.Get(df.Status).(int), cache.Fetch, "the first request should fetch")
 		<-done
 	})
 
 	t.Run("cacheable", func(t *testing.T) {
+		assert := assert.New(t)
 		url := "/" + randomString(20)
 		c1 := cod.NewContext(httptest.NewRecorder(), httptest.NewRequest("GET", url, nil))
 		done := make(chan bool)
@@ -169,12 +142,8 @@ func TestNewCacheIdentifier(t *testing.T) {
 				return nil
 			}
 			err := fn(c2)
-			if err != nil {
-				t.Fatalf("the second request fail, %v", err)
-			}
-			if c2.Get(df.Status).(int) != cache.Cacheable {
-				t.Fatalf("the second request should cacheable")
-			}
+			assert.Nil(err)
+			assert.Equal(c2.Get(df.Status).(int), cache.Cacheable, "the second request should cacheable")
 			done <- true
 		}()
 		c1.Next = func() error {
@@ -184,16 +153,13 @@ func TestNewCacheIdentifier(t *testing.T) {
 			return nil
 		}
 		err := fn(c1)
-		if err != nil {
-			t.Fatalf("handle cacheable request fail, %v", err)
-		}
-		if c1.Get(df.Status).(int) != cache.Fetch {
-			t.Fatalf("the first request should be fetch")
-		}
+		assert.Nil(err)
+		assert.Equal(c1.Get(df.Status).(int), cache.Fetch, "the first request should fetch")
 		<-done
 	})
 
 	t.Run("set max-age but cache fail", func(t *testing.T) {
+		assert := assert.New(t)
 		url := "/" + randomString(20)
 		c1 := cod.NewContext(httptest.NewRecorder(), httptest.NewRequest("GET", url, nil))
 		done := make(chan bool)
@@ -203,12 +169,8 @@ func TestNewCacheIdentifier(t *testing.T) {
 				return nil
 			}
 			err := fn(c2)
-			if err != nil {
-				panic("the second request fail, " + err.Error())
-			}
-			if c2.Get(df.Status).(int) != cache.HitForPass {
-				panic("the second request should be hit for pass")
-			}
+			assert.Nil(err)
+			assert.Equal(c2.Get(df.Status).(int), cache.HitForPass, "the second request should hit for pass")
 			done <- true
 		}()
 		c1.Next = func() error {
@@ -219,12 +181,8 @@ func TestNewCacheIdentifier(t *testing.T) {
 			return nil
 		}
 		err := fn(c1)
-		if err != nil {
-			t.Fatalf("handle cacheable request fail, %v", err)
-		}
-		if c1.Get(df.Status).(int) != cache.Fetch {
-			t.Fatalf("the first request should be fetch")
-		}
+		assert.Nil(err)
+		assert.Equal(c1.Get(df.Status).(int), cache.Fetch, "the first request should fetch")
 		<-done
 	})
 }

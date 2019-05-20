@@ -5,32 +5,31 @@ import (
 	"net/http/httptest"
 	"os"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestCheckAndGetValueFromEnv(t *testing.T) {
+	assert := assert.New(t)
 	key := "_pike"
 	value := "1"
 	result := CheckAndGetValueFromEnv("$" + key)
-	if result != "" {
-		t.Fatalf("get not exists key from env should return nil")
-	}
+	assert.Equal(result, "", "get not exists key from env should return nil")
 	os.Setenv(key, value)
 	result = CheckAndGetValueFromEnv("$" + key)
-	if result != value {
-		t.Fatalf("get value from env fail")
-	}
+	assert.Equal(result, value)
 }
 
 func TestGetIdentity(t *testing.T) {
+	assert := assert.New(t)
 	req := &http.Request{
 		Method:     "GET",
 		Host:       "aslant.site",
 		RequestURI: "/users/me",
 	}
 	id := GetIdentity(req)
-	if len(id) != 25 || string(id) != "GET aslant.site /users/me" {
-		t.Fatalf("get identity fail")
-	}
+	assert.Equal(len(id), 25)
+	assert.Equal(string(id), "GET aslant.site /users/me")
 
 	req = &http.Request{
 		Method:     "GET",
@@ -38,12 +37,12 @@ func TestGetIdentity(t *testing.T) {
 		RequestURI: "/中文",
 	}
 	id = GetIdentity(req)
-	if len(id) != 23 || string(id) != "GET aslant.site /中文" {
-		t.Fatalf("get identity(include chinese) fail")
-	}
+	assert.Equal(len(id), 23)
+	assert.Equal(string(id), "GET aslant.site /中文")
 }
 
 func TestGenerateGetIdentity(t *testing.T) {
+	assert := assert.New(t)
 	c := &http.Cookie{
 		Name:  "jt",
 		Value: "HJxX4OOoX7",
@@ -55,40 +54,32 @@ func TestGenerateGetIdentity(t *testing.T) {
 	req.AddCookie(c)
 	buf := fn(req)
 	expectID := "example.com GET /users/me HTTP/1.1 HTTP /users/me?cache=no-cache&id=1 golang-http cache=no-cache&id=1 HJxX4OOoX7 ABCD 1"
-	if string(buf) != expectID {
-		t.Fatalf("get identity fail")
-	}
+	assert.Equal(string(buf), expectID)
 }
 
 func TestContainString(t *testing.T) {
-	if !ContainString([]string{
+	assert := assert.New(t)
+	assert.True(ContainString([]string{
 		"1",
 		"2",
-	}, "2") {
-		t.Fatalf("contain string fail")
-	}
-	if ContainString([]string{
+	}, "2"))
+	assert.False(ContainString([]string{
 		"1",
 		"2",
-	}, "3") {
-		t.Fatalf("contain string fail")
-	}
+	}, "3"))
 }
 
 func TestConvertToHTTPHeader(t *testing.T) {
-	if ConvertToHTTPHeader(nil) != nil ||
-		ConvertToHTTPHeader([]string{}) != nil {
-		t.Fatalf("convert nil string array should return nil")
-	}
+	assert := assert.New(t)
+	assert.Nil(ConvertToHTTPHeader(nil))
+	assert.Nil(ConvertToHTTPHeader([]string{}))
 	h := ConvertToHTTPHeader([]string{
 		"X-Token:1",
 		"X-Request-ID:1234",
 	})
-	if len(h) != 2 ||
-		h.Get("X-Token") != "1" ||
-		h.Get("X-Request-ID") != "1234" {
-		t.Fatalf("convert to http header fail")
-	}
+	assert.Equal(len(h), 2)
+	assert.Equal(h.Get("X-Token"), "1")
+	assert.Equal(h.Get("X-Request-ID"), "1234")
 }
 
 func BenchmarkGetIdentity(b *testing.B) {

@@ -7,12 +7,16 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
 	"github.com/vicanso/cod"
+	"github.com/vicanso/pike/config"
 
 	gock "gopkg.in/h2non/gock.v1"
 )
 
 func TestUpstreams(t *testing.T) {
+	assert := assert.New(t)
+
 	us := make(Upstreams, 0)
 	us = append(us, &Upstream{
 		Priority: 9,
@@ -22,20 +26,15 @@ func TestUpstreams(t *testing.T) {
 		Priority: 1,
 	})
 	sort.Sort(us)
-	if us[0].Priority != 1 {
-		t.Fatalf("sort upstream fail")
-	}
+	assert.Equal(us[0].Priority, 1, "upstream should be sorted by priority")
 }
 
 func TestHash(t *testing.T) {
-	if hash("abc") != 440920331 {
-		t.Fatalf("hash fail")
-	}
+	assert.Equal(t, hash("abc"), uint32(440920331))
 }
 
 func TestNewDirector(t *testing.T) {
 	d := new(Director)
-	d.Fetch()
 	d.StartHealthCheck()
 	d.ClearUpstreams()
 }
@@ -47,7 +46,7 @@ func TestCreateTargetPicker(t *testing.T) {
 		"http://127.0.0.1:7003",
 	}
 	create := func() *Upstream {
-		us := createUpstreamFromBackend(Backend{
+		us := createUpstreamFromBackend(config.Backend{
 			Backends: backends,
 		})
 		for _, item := range us.Server.GetUpstreamList() {
@@ -57,7 +56,8 @@ func TestCreateTargetPicker(t *testing.T) {
 	}
 
 	t.Run("convert http header", func(t *testing.T) {
-		us := createUpstreamFromBackend(Backend{
+		assert := assert.New(t)
+		us := createUpstreamFromBackend(config.Backend{
 			Backends: []string{
 				"http://127.0.0.1:7001|backup",
 				"http://127.0.0.1:7002",
@@ -70,29 +70,25 @@ func TestCreateTargetPicker(t *testing.T) {
 				"X-Request-ID:123",
 			},
 		})
-		if us.Header.Get("X-Server") != "test" ||
-			us.RequestHeader.Get("X-Request-ID") != "123" {
-			t.Fatalf("set header fail")
-		}
+		assert.Equal(us.Header.Get("X-Server"), "test")
+		assert.Equal(us.RequestHeader.Get("X-Request-ID"), "123")
 	})
 
 	t.Run("first", func(t *testing.T) {
+		assert := assert.New(t)
 		us := create()
 		us.Policy = policyFirst
 		fn := createTargetPicker(us)
 		for i := 0; i < 100; i++ {
-			info, err := fn(nil)
-			if err != nil {
-				t.Fatalf("first policy fail, %v", err)
-			}
-			if info.String() != backends[0] {
-				t.Fatalf("first policy should be always get the first backend")
-			}
+			info, _, err := fn(nil)
+			assert.Nil(err, "first policy fail")
+			assert.Equal(info.String(), backends[0], "first policy should always get the first backend")
 		}
 	})
 
 	t.Run("first with backup", func(t *testing.T) {
-		us := createUpstreamFromBackend(Backend{
+		assert := assert.New(t)
+		us := createUpstreamFromBackend(config.Backend{
 			Backends: []string{
 				"http://127.0.0.1:7001|backup",
 				"http://127.0.0.1:7002",
@@ -104,18 +100,15 @@ func TestCreateTargetPicker(t *testing.T) {
 		us.Policy = policyFirst
 		fn := createTargetPicker(us)
 		for i := 0; i < 100; i++ {
-			info, err := fn(nil)
-			if err != nil {
-				t.Fatalf("first policy fail, %v", err)
-			}
-			if info.String() != "http://127.0.0.1:7002" {
-				t.Fatalf("first policy(with backup and all healthy) should be always get the first backend")
-			}
+			info, _, err := fn(nil)
+			assert.Nil(err, "first policy fail")
+			assert.Equal(info.String(), "http://127.0.0.1:7002", "first policy(with backup and all healthy) should always get the first backend")
 		}
 	})
 
 	t.Run("first with backup", func(t *testing.T) {
-		us := createUpstreamFromBackend(Backend{
+		assert := assert.New(t)
+		us := createUpstreamFromBackend(config.Backend{
 			Backends: []string{
 				"http://127.0.0.1:7001|backup",
 				"http://127.0.0.1:7002",
@@ -125,17 +118,14 @@ func TestCreateTargetPicker(t *testing.T) {
 		us.Policy = policyFirst
 		fn := createTargetPicker(us)
 		for i := 0; i < 100; i++ {
-			info, err := fn(nil)
-			if err != nil {
-				t.Fatalf("first policy fail, %v", err)
-			}
-			if info.String() != "http://127.0.0.1:7001" {
-				t.Fatalf("first policy(with backup and only backup healthy) should be always get the first backend")
-			}
+			info, _, err := fn(nil)
+			assert.Nil(err, "first policy fail")
+			assert.Equal(info.String(), "http://127.0.0.1:7001", "first policy(with backup and only backup healthy) should always get the first backend")
 		}
 	})
 
 	t.Run("random", func(t *testing.T) {
+		assert := assert.New(t)
 		us := create()
 		us.Policy = policyRandom
 		firstUP := us.Server.GetUpstreamList()[0]
@@ -143,41 +133,41 @@ func TestCreateTargetPicker(t *testing.T) {
 		defer firstUP.Healthy()
 		fn := createTargetPicker(us)
 		for i := 0; i < 100; i++ {
-			info, err := fn(nil)
-			if err != nil || info == nil || info.String() == backends[0] {
-				t.Fatalf("random policy fail, %v", err)
-			}
+			info, _, err := fn(nil)
+			assert.Nil(err, "random policy fail")
+			assert.NotEqual(info.String(), backends[0], "sick backend shouldn't be got be random policy")
 		}
 	})
 
 	t.Run("round robin", func(t *testing.T) {
+		assert := assert.New(t)
 		us := create()
 		us.Policy = policyRoundRobin
 		fn := createTargetPicker(us)
 		for i := 0; i < 100; i++ {
-			info, err := fn(nil)
+			info, _, err := fn(nil)
 			index := (i + 1) % len(backends)
-			if err != nil || info == nil || info.String() != backends[index] {
-				t.Fatalf("round robin policy fail, %v", err)
-			}
+			assert.Nil(err, "round robin fail")
+			assert.Equal(info.String(), backends[index], "round robin should get backend round")
 		}
 	})
 
 	t.Run("least conn", func(t *testing.T) {
+		assert := assert.New(t)
 		us := create()
 		us.Policy = policyLeastconn
 		fn := createTargetPicker(us)
 		c := cod.NewContext(nil, nil)
 		for i := 0; i < 100; i++ {
-			info, err := fn(c)
+			info, _, err := fn(c)
 			index := i % len(backends)
-			if err != nil || info == nil || info.String() != backends[index] {
-				t.Fatalf("least conn policy fail, %v", err)
-			}
+			assert.Nil(err, "least conn policy fail")
+			assert.Equal(info.String(), backends[index], "least conn should always get least conn backend")
 		}
 	})
 
 	t.Run("ip hash", func(t *testing.T) {
+		assert := assert.New(t)
 		us := create()
 		us.Policy = policyIPHash
 		fn := createTargetPicker(us)
@@ -186,14 +176,14 @@ func TestCreateTargetPicker(t *testing.T) {
 		c.SetRequestHeader(cod.HeaderXForwardedFor, "1.1.1.1")
 		index := hash(c.RealIP()) % uint32(len(backends))
 		for i := 0; i < 100; i++ {
-			info, err := fn(c)
-			if err != nil || info == nil || info.String() != backends[index] {
-				t.Fatalf("ip hash policy fail, %v", err)
-			}
+			info, _, err := fn(c)
+			assert.Nil(err, "ip hash policy fail")
+			assert.Equal(info.String(), backends[index], "ip hash should get backend by hash ip")
 		}
 	})
 
 	t.Run("header field", func(t *testing.T) {
+		assert := assert.New(t)
 		us := create()
 		key := "X-Request-ID"
 		us.Policy = headerHashPrefix + key
@@ -203,14 +193,14 @@ func TestCreateTargetPicker(t *testing.T) {
 		c.SetRequestHeader(key, "123")
 		index := hash(c.GetRequestHeader(key)) % uint32(len(backends))
 		for i := 0; i < 100; i++ {
-			info, err := fn(c)
-			if err != nil || info == nil || info.String() != backends[index] {
-				t.Fatalf("header field policy fail, %v", err)
-			}
+			info, _, err := fn(c)
+			assert.Nil(err, "header field policy fail")
+			assert.Equal(info.String(), backends[index], "header field should get backned by hash header field")
 		}
 	})
 
 	t.Run("cookie field", func(t *testing.T) {
+		assert := assert.New(t)
 		us := create()
 		key := "jt"
 		us.Policy = cookieHashPrefix + key
@@ -219,15 +209,13 @@ func TestCreateTargetPicker(t *testing.T) {
 		c := cod.NewContext(nil, req)
 		c.SetRequestHeader("Cookie", key+"="+"123")
 		cookie, err := c.Cookie(key)
-		if err != nil || cookie == nil || cookie.Value == "" {
-			t.Fatalf("get cookie fail, %v", err)
-		}
+		assert.Nil(err, "get cookie fail")
+		assert.Equal(cookie.Value, "123")
 		index := hash(cookie.Value) % uint32(len(backends))
 		for i := 0; i < 100; i++ {
-			info, err := fn(c)
-			if err != nil || info == nil || info.String() != backends[index] {
-				t.Fatalf("cookie field policy fail, %v", err)
-			}
+			info, _, err := fn(c)
+			assert.Nil(err)
+			assert.Equal(info.String(), backends[index], "cookie policy should get backend by hash cookie value")
 		}
 	})
 
@@ -239,21 +227,20 @@ func TestCreateTargetPicker(t *testing.T) {
 		fn := createTargetPicker(us)
 		req := httptest.NewRequest("GET", "/", nil)
 		c := cod.NewContext(nil, req)
-		_, err := fn(c)
-		if err != errNoAvailableUpstream {
-			t.Fatalf("should return no available upstream")
-		}
+		_, _, err := fn(c)
+		assert.Equal(t, err, errNoAvailableUpstream)
 	})
 
 }
 
 func TestCreateProxyHandler(t *testing.T) {
+	assert := assert.New(t)
 	defer gock.Off()
 	gock.New("http://127.0.0.1:7001").
 		Get("/").
 		Reply(200)
 
-	us := createUpstreamFromBackend(Backend{
+	us := createUpstreamFromBackend(config.Backend{
 		Policy: policyLeastconn,
 		Ping:   "/ping",
 		Hosts: []string{
@@ -280,15 +267,12 @@ func TestCreateProxyHandler(t *testing.T) {
 		return nil
 	}
 	err := fn(c)
-	if err != nil {
-		t.Fatalf("proxy fail, %v", err)
-	}
-	if c.StatusCode != 200 {
-		t.Fatalf("proxy response invalid")
-	}
+	assert.Nil(err, "proxy fail")
+	assert.Equal(c.StatusCode, 200)
 }
 
 func TestUpstream(t *testing.T) {
+	assert := assert.New(t)
 	up := Upstream{
 		Hosts: []string{
 			"aslant.site",
@@ -300,26 +284,21 @@ func TestUpstream(t *testing.T) {
 
 	req := httptest.NewRequest("GET", "http://aslant.site/api/users/me", nil)
 	c := cod.NewContext(nil, req)
-	if !up.Match(c) {
-		t.Fatalf("should match upstream")
-	}
+	assert.True(up.Match(c), "should match the upstream")
 
 	req = httptest.NewRequest("GET", "http://aslant.site/", nil)
 	c = cod.NewContext(nil, req)
-	if up.Match(c) {
-		t.Fatalf("should not match upstream, prefix is not match")
-	}
+	assert.False(up.Match(c), "should not match upstream, prefix is not match")
 
 	req = httptest.NewRequest("GET", "http://127.0.0.1/api/users/me", nil)
 	c = cod.NewContext(nil, req)
-	if up.Match(c) {
-		t.Fatalf("should not match upstream, host is not match")
-	}
+	assert.False(up.Match(c), "should not match upstream, host is not match")
 }
 
 func TestProxy(t *testing.T) {
+	assert := assert.New(t)
 	upstreams := make(Upstreams, 0)
-	us := New(Backend{
+	us := New(config.Backend{
 		Backends: []string{
 			"http://127.0.0.1:7001",
 		},
@@ -346,9 +325,7 @@ func TestProxy(t *testing.T) {
 	resp := httptest.NewRecorder()
 	c := cod.NewContext(resp, req)
 	err := d.Proxy(c)
-	if err != errNoMatchUpstream {
-		t.Fatalf("should return no match upstream")
-	}
+	assert.Equal(err, errNoMatchUpstream)
 
 	defer gock.Off()
 	gock.New("http://127.0.0.1:7001").
@@ -365,15 +342,13 @@ func TestProxy(t *testing.T) {
 		return nil
 	}
 	err = d.Proxy(c)
-	if err != nil ||
-		c.StatusCode != http.StatusOK ||
-		strings.TrimSpace(c.BodyBuffer.String()) != `{"foo":"bar"}` {
-		t.Fatalf("proxy fail, %v", err)
-	}
+	assert.Nil(err)
+	assert.Equal(c.StatusCode, http.StatusOK)
+	assert.Equal(strings.TrimSpace(c.BodyBuffer.String()), `{"foo":"bar"}`)
 }
 
 func TestGetDirectorStats(t *testing.T) {
-	us := createUpstreamFromBackend(Backend{
+	us := createUpstreamFromBackend(config.Backend{
 		Backends: []string{
 			"http://127.0.0.1:7001|backup",
 			"http://127.0.0.1:7002",
@@ -388,7 +363,5 @@ func TestGetDirectorStats(t *testing.T) {
 		Upstreams: usList,
 	}
 	infoList := director.GetUpstreamInfos()
-	if len(infoList) == 0 {
-		t.Fatalf("get update stream in")
-	}
+	assert.NotEqual(t, len(infoList), 0)
 }

@@ -183,6 +183,7 @@ func (dsp *Dispatcher) GetHTTPCache(k []byte) (hc *HTTPCache) {
 	if hc != nil {
 		// 后续使用到读数据，调用读锁
 		hc.rw.RLock()
+		// hc锁成功之后，再解除cache的锁（此顺序不可调换）
 		cache.mu.Unlock()
 		return
 	}
@@ -195,6 +196,7 @@ func (dsp *Dispatcher) GetHTTPCache(k []byte) (hc *HTTPCache) {
 	hc.rw.Lock()
 
 	lruCache.Add(key, hc)
+	// hc锁成功之后，再解除cache的锁（此顺序不可调换）
 	cache.mu.Unlock()
 	return
 }

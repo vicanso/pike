@@ -1,6 +1,7 @@
 package server
 
 import (
+	"regexp"
 	"strings"
 
 	"github.com/vicanso/cod"
@@ -56,10 +57,11 @@ func New(cfg *config.Config, director *upstream.Director, dsp *cache.Dispatcher,
 	d.SetFunctionName(fn, "Fresh")
 
 	// 可缓存数据在缓存时会生成gzip 与br
+	textFilter := regexp.MustCompile(cfg.GetTextFilter())
 	fn = compress.NewWithDefaultCompressor(compress.Config{
 		MinLength: cfg.GetCompressMinLength(),
 		Level:     cfg.GetCompressLevel(),
-		Checker:   cfg.GetTextFilter(),
+		Checker:   textFilter,
 	})
 	d.Use(fn)
 	d.SetFunctionName(fn, "Compress")

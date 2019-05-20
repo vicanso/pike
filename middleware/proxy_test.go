@@ -6,7 +6,9 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
 	"github.com/vicanso/cod"
+	"github.com/vicanso/pike/config"
 	"github.com/vicanso/pike/df"
 	"github.com/vicanso/pike/upstream"
 
@@ -14,8 +16,8 @@ import (
 )
 
 func TestNewProxy(t *testing.T) {
-
-	us := upstream.New(upstream.Backend{
+	assert := assert.New(t)
+	us := upstream.New(config.Backend{
 		Backends: []string{
 			"http://127.0.0.1:7001",
 		},
@@ -55,17 +57,9 @@ func TestNewProxy(t *testing.T) {
 	c.Next = func() error {
 		return nil
 	}
-	done := false
-	c.Set(df.ProxyDoneCallback, func() {
-		done = true
-	})
 	fn := NewProxy(director)
 	err := fn(c)
-	if err != nil ||
-		c.StatusCode != http.StatusOK ||
-		strings.TrimSpace(c.BodyBuffer.String()) != `{"foo":"bar"}` ||
-		!done {
-		t.Fatalf("proxy handler fail, %v", err)
-	}
-
+	assert.Nil(err, "proxy middleware fail")
+	assert.Equal(c.StatusCode, http.StatusOK, "proxy should be 200")
+	assert.Equal(strings.TrimSpace(c.BodyBuffer.String()), `{"foo":"bar"}`)
 }

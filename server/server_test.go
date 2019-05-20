@@ -14,6 +14,7 @@ import (
 
 	"github.com/vicanso/cod"
 
+	"github.com/stretchr/testify/assert"
 	"github.com/vicanso/pike/cache"
 	"github.com/vicanso/pike/config"
 	"github.com/vicanso/pike/df"
@@ -111,13 +112,13 @@ func newTestServer() (ln net.Listener, err error) {
 
 func TestNewServer(t *testing.T) {
 
+	assert := assert.New(t)
+
 	ln, err := newTestServer()
-	if err != nil {
-		t.Fatalf("new test server fail, %v", err)
-	}
+	assert.Nil(err)
 	defer ln.Close()
 
-	up := upstream.New(upstream.Backend{
+	up := upstream.New(config.Backend{
 		Name: "test",
 		Ping: "/ping",
 		Backends: []string{
@@ -177,9 +178,8 @@ func TestNewServer(t *testing.T) {
 				t.Fatalf("unexpected status:%s", status)
 			}
 		}
-		if onceCount != 1 || otherCount != len(statusList)-1 {
-			t.Fatalf("status is invalid")
-		}
+		assert.Equal(onceCount, 1, onceStatus+" should appear once")
+		assert.Equal(otherCount, len(statusList)-1, otherStatus+" should appear "+strconv.Itoa(len(statusList)-1))
 	}
 
 	t.Run("post", func(t *testing.T) {
@@ -189,10 +189,8 @@ func TestNewServer(t *testing.T) {
 			d.ServeHTTP(resp, req)
 			h := resp.Header()
 
-			if resp.Code != 200 ||
-				h.Get(df.HeaderStatus) != passStatus {
-				panic("post proxy fail")
-			}
+			assert.Equal(resp.Code, 200)
+			assert.Equal(h.Get(df.HeaderStatus), passStatus)
 		})
 	})
 
@@ -210,12 +208,11 @@ func TestNewServer(t *testing.T) {
 			defer mu.Unlock()
 			statusList = append(statusList, status)
 
-			if resp.Code != 200 ||
-				resp.Body.Len() != 4096 ||
-				h.Get(cod.HeaderContentEncoding) != "" ||
-				h.Get(cod.HeaderCacheControl) != "public, max-age=10" {
-				panic("image cache proxy fail")
-			}
+			assert.Equal(resp.Code, 200)
+			assert.Equal(resp.Body.Len(), 4096)
+			assert.Equal(h.Get(cod.HeaderContentEncoding), "")
+			assert.Equal(h.Get(cod.HeaderCacheControl), "public, max-age=10")
+
 		})
 		checkStatusList(t, statusList, fetchStatus, cacheableStatus)
 	})
@@ -226,13 +223,12 @@ func TestNewServer(t *testing.T) {
 			resp := httptest.NewRecorder()
 			d.ServeHTTP(resp, req)
 			h := resp.Header()
-			if resp.Code != 200 ||
-				h.Get(df.HeaderStatus) != passStatus ||
-				resp.Body.Len() != 43 ||
-				h.Get(cod.HeaderETag) == "" ||
-				h.Get(cod.HeaderContentEncoding) != "gzip" {
-				panic("post not compress proxy fail")
-			}
+
+			assert.Equal(resp.Code, 200)
+			assert.Equal(resp.Body.Len(), 43)
+			assert.NotEqual(h.Get(cod.HeaderETag), "")
+			assert.Equal(h.Get(cod.HeaderContentEncoding), "gzip")
+
 		})
 	})
 
@@ -248,12 +244,11 @@ func TestNewServer(t *testing.T) {
 			defer mu.Unlock()
 			status := h.Get(df.HeaderStatus)
 			statusList = append(statusList, status)
-			if resp.Code != 200 ||
-				resp.Body.Len() != 43 ||
-				h.Get(cod.HeaderETag) == "" ||
-				h.Get(cod.HeaderContentEncoding) != "gzip" {
-				panic("get not compress proxy fail")
-			}
+
+			assert.Equal(resp.Code, 200)
+			assert.Equal(resp.Body.Len(), 43)
+			assert.NotEqual(h.Get(cod.HeaderETag), "")
+			assert.Equal(h.Get(cod.HeaderContentEncoding), "gzip")
 		})
 		checkStatusList(t, statusList, fetchStatus, hitForPassStatus)
 	})
@@ -270,12 +265,11 @@ func TestNewServer(t *testing.T) {
 			mu.Lock()
 			defer mu.Unlock()
 			statusList = append(statusList, status)
-			if resp.Code != 200 ||
-				resp.Body.Len() != 43 ||
-				h.Get(cod.HeaderETag) == "" ||
-				h.Get(cod.HeaderContentEncoding) != "gzip" {
-				panic("get cache not compress proxy fail")
-			}
+
+			assert.Equal(resp.Code, 200)
+			assert.Equal(resp.Body.Len(), 43)
+			assert.NotEqual(h.Get(cod.HeaderETag), "")
+			assert.Equal(h.Get(cod.HeaderContentEncoding), "gzip")
 		})
 		checkStatusList(t, statusList, fetchStatus, cacheableStatus)
 	})
@@ -292,12 +286,10 @@ func TestNewServer(t *testing.T) {
 			mu.Lock()
 			defer mu.Unlock()
 			statusList = append(statusList, status)
-			if resp.Code != 200 ||
-				resp.Body.Len() != 43 ||
-				h.Get(cod.HeaderETag) == "" ||
-				h.Get(cod.HeaderContentEncoding) != "gzip" {
-				panic("get cache compress proxy fail")
-			}
+			assert.Equal(resp.Code, 200)
+			assert.Equal(resp.Body.Len(), 43)
+			assert.NotEqual(h.Get(cod.HeaderETag), "")
+			assert.Equal(h.Get(cod.HeaderContentEncoding), "gzip")
 		})
 		checkStatusList(t, statusList, fetchStatus, cacheableStatus)
 	})
@@ -308,10 +300,8 @@ func TestNewServer(t *testing.T) {
 			resp := httptest.NewRecorder()
 			d.ServeHTTP(resp, req)
 			h := resp.Header()
-			if resp.Code != 200 ||
-				h.Get(cod.HeaderETag) == "" {
-				panic("generate etag fail")
-			}
+			assert.Equal(resp.Code, 200)
+			assert.NotEqual(h.Get(cod.HeaderETag), "")
 		})
 	})
 
@@ -321,10 +311,8 @@ func TestNewServer(t *testing.T) {
 			resp := httptest.NewRecorder()
 			d.ServeHTTP(resp, req)
 			h := resp.Header()
-			if resp.Code != 200 ||
-				h.Get(cod.HeaderETag) != `"123"` {
-				panic("get request response with etag fail")
-			}
+			assert.Equal(resp.Code, 200)
+			assert.Equal(h.Get(cod.HeaderETag), `"123"`)
 		})
 	})
 
@@ -342,24 +330,18 @@ func TestNewServer(t *testing.T) {
 			defer mu.Unlock()
 			statusList = append(statusList, status)
 			respList = append(respList, resp.Body.String())
-			if resp.Code != 200 {
-				panic("get request response with etag fail")
-			}
+			assert.Equal(resp.Code, 200)
 		})
 		checkStatusList(t, statusList, fetchStatus, hitForPassStatus)
 		iRespList := make([]int, 0)
 		for _, value := range respList {
 			v, err := strconv.Atoi(value)
-			if err != nil {
-				t.Fatalf("atoi fail, %v", err)
-			}
+			assert.Nil(err, "atoi fail")
 			iRespList = append(iRespList, v)
 		}
 		sort.Sort(sort.IntSlice(iRespList))
 		for index, value := range iRespList {
-			if value != index+1 {
-				t.Fatalf("response data is invalid")
-			}
+			assert.Equal(value, index+1)
 		}
 	})
 }
