@@ -64,16 +64,22 @@ func main() {
 			ResponseHeaderTimeout: cfg.GetResponseHeaderTimeout(),
 		},
 	}
-	backendConfig := config.NewFileConfig("backends")
-	err = backendConfig.Fetch()
+	directorConfig := config.NewFileConfig("director")
+	err = directorConfig.Fetch()
 	if err != nil {
 		panic(err)
 	}
-	director.SetBackends(backendConfig.GetBackends())
+	director.SetBackends(directorConfig.GetBackends())
 
 	director.StartHealthCheck()
 
-	d := server.New(cfg, director, dsp, insStats)
+	d := server.New(server.Options{
+		Config:         cfg,
+		DirectorConfig: directorConfig,
+		Director:       director,
+		Dispatcher:     dsp,
+		Stats:          insStats,
+	})
 
 	// 出错时输出相关出错日志
 	d.OnError(func(c *cod.Context, err error) {

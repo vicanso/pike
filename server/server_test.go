@@ -145,7 +145,12 @@ func TestNewServer(t *testing.T) {
 		TextFilter:        regexp.MustCompile("text|javascript|json"),
 	})
 
-	d := New(config.New(), director, dsp, stats.New())
+	d := New(Options{
+		Config:     config.New(),
+		Director:   director,
+		Dispatcher: dsp,
+		Stats:      stats.New(),
+	})
 
 	newRequest := func(method, url string) *http.Request {
 		req := httptest.NewRequest(method, url, nil)

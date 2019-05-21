@@ -37,18 +37,8 @@ type (
 		StartedAt string `json:"startedAt"`
 		// routine数量
 		RoutineCount int `json:"routine"`
-		// 缓存数量（包括hit for pass 与 cacheable）
-		CacheCount int `json:"cacheCount"`
 		// recover的数量
 		RecoverCount uint64 `json:"recoverCount"`
-		// 正在请求的数量（请求backend）
-		Fetching int `json:"fetching"`
-		// 等待中的请求数量（由于有相同的请求为fetching）
-		Waiting int `json:"waiting"`
-		// 可缓存的请求数量
-		Cacheable int `json:"cacheable"`
-		// hit for pass的缓存数量
-		HitForPass int `json:"hitForPass"`
 		// 总的处理请求量
 		RequestCount uint64 `json:"requestCount"`
 		// version版本号
@@ -59,8 +49,6 @@ type (
 		CommitID string `json:"commitId"`
 		// 编译的go版本
 		GoVersion string `json:"goVersion"`
-		// FileSize db数据文件的大小
-		FileSize int `json:"fileSize"`
 	}
 	// Stats application stats
 	Stats struct {
@@ -191,18 +179,11 @@ func (s *Stats) GetInfo() *Info {
 		HeapInuse:    int(m.HeapInuse / mb),
 		StartedAt:    df.StartedAt,
 		RoutineCount: runtime.NumGoroutine(),
-		// CacheCount:   client.Size(),
-		// RecoverCount: recoverCount,
-		// Fetching:     result.Fetching,
-		// Waiting:      result.Waiting,
-		// Cacheable:    result.Cacheable,
-		// HitForPass:   result.HitForPass,
 		RequestCount: atomic.LoadUint64(&s.requestCount),
 		Version:      df.Version,
 		BuildedAt:    df.BuildedAt,
 		CommitID:     df.CommitID,
 		GoVersion:    runtime.Version(),
-		// FileSize:  result.FileSize,
 	}
 	return stats
 }

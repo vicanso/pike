@@ -6,13 +6,17 @@ import (
 	recover "github.com/vicanso/cod-recover"
 	responder "github.com/vicanso/cod-responder"
 	"github.com/vicanso/pike/cache"
-	"github.com/vicanso/pike/config"
 	"github.com/vicanso/pike/stats"
 	"github.com/vicanso/pike/upstream"
 )
 
 // NewAdminServer create an admin server
-func NewAdminServer(cfg *config.Config, director *upstream.Director, dsp *cache.Dispatcher, insStats *stats.Stats) *cod.Cod {
+func NewAdminServer(opts Options) *cod.Cod {
+	cfg := opts.Config
+	insStats := opts.Stats
+	director := opts.Director
+	dsp := opts.Dispatcher
+
 	d := cod.New()
 	d.Use(recover.New())
 	d.Use(responder.NewDefault())
@@ -21,6 +25,7 @@ func NewAdminServer(cfg *config.Config, director *upstream.Director, dsp *cache.
 
 	adminUser := cfg.GetAdminUser()
 	adminPwd := cfg.GetAdminPassword()
+	// 设置 basic auth 认证
 	if adminUser != "" && adminPwd != "" {
 		adminHandlerList = append(adminHandlerList, basicauth.New(basicauth.Config{
 			Validate: func(account, pwd string, _ *cod.Context) (bool, error) {
@@ -33,16 +38,16 @@ func NewAdminServer(cfg *config.Config, director *upstream.Director, dsp *cache.
 	}
 
 	g := cod.NewGroup("", adminHandlerList...)
+	// 获取系统状态统计
 	g.GET("/stats", func(c *cod.Context) error {
 		c.Body = &struct {
-			Stats  *stats.Info            `json:"stats,omitempty"`
-			Caches []*cache.HTTPCacheInfo `json:"caches,omitempty"`
+			Stats *stats.Info `json:"stats,omitempty"`
 		}{
 			insStats.GetInfo(),
-			dsp.GetCacheList(),
 		}
 		return nil
 	})
+	// 获取 upstream 列表
 	g.GET("/upstreams", func(c *cod.Context) error {
 		c.Body = &struct {
 			Upstreams []upstream.Info `json:"upstreams,omitempty"`
@@ -51,6 +56,29 @@ func NewAdminServer(cfg *config.Config, director *upstream.Director, dsp *cache.
 		}
 		return nil
 	})
+
+	// 获取缓存列表
+	g.GET("/caches", func(c *cod.Context) error {
+		c.Body = &struct {
+			Caches []*cache.HTTPCacheInfo `json:"caches,omitempty"`
+		}{
+			dsp.GetCacheList(),
+		}
+		return nil
+	})
+
+	// 获取配置列表
+	g.GET("/configs", func(c *cod.Context) (err error) {
+		c.Body = &struct {
+			Basic    map[string]interface{} `json:"basic,omitempty"`
+			Director map[string]interface{} `json:"director,omitempty"`
+		}{
+			opts.Config.Viper.AllSettings(),
+			opts.DirectorConfig.Viper.AllSettings(),
+		}
+		return
+	})
+
 	d.AddGroup(g)
 	return d
 }

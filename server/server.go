@@ -18,9 +18,25 @@ import (
 	recover "github.com/vicanso/cod-recover"
 )
 
+type (
+	// Options server options
+	Options struct {
+		Config         *config.Config
+		DirectorConfig *config.Config
+		Director       *upstream.Director
+		Dispatcher     *cache.Dispatcher
+		Stats          *stats.Stats
+	}
+)
+
 // New create a cod server
-func New(cfg *config.Config, director *upstream.Director, dsp *cache.Dispatcher, insStats *stats.Stats) *cod.Cod {
+func New(opts Options) *cod.Cod {
 	d := cod.New()
+	cfg := opts.Config
+	insStats := opts.Stats
+	director := opts.Director
+	dsp := opts.Dispatcher
+
 	d.EnableTrace = cfg.GetEnableServerTiming()
 	// 如果启动 server timing
 	// 则在回调中调整响应头
@@ -34,7 +50,7 @@ func New(cfg *config.Config, director *upstream.Director, dsp *cache.Dispatcher,
 	// 如果有配置admin，则添加管理后台处理
 	adminPath := cfg.GetAdminPath()
 	if adminPath != "" {
-		adminServer := NewAdminServer(cfg, director, dsp, insStats)
+		adminServer := NewAdminServer(opts)
 		d.Use(func(c *cod.Context) error {
 			path := c.Request.URL.Path
 			if strings.HasPrefix(path, adminPath) {

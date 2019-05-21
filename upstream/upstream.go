@@ -34,7 +34,6 @@ var (
 		Message:    "no available upstream",
 		Exception:  true,
 	}
-	defaultTransport *http.Transport
 )
 
 const (

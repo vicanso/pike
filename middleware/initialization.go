@@ -35,18 +35,18 @@ func NewInitialization(cfg *config.Config, insStats *stats.Stats) cod.Handler {
 		insStats.IncreaseRequestCount()
 		count := insStats.IncreaseConcurrency()
 
+		// 如果请求数超过最大限制
+		if count > maxConcurrency {
+			err = errTooManyRequest
+			return
+		}
+
 		// 设置请求头
 		reqHeader := c.Request.Header
 		for key, values := range requestHeader {
 			for _, value := range values {
 				reqHeader.Add(key, value)
 			}
-		}
-
-		// 如果请求数超过最大限制
-		if count > maxConcurrency {
-			err = errTooManyRequest
-			return
 		}
 
 		err = c.Next()

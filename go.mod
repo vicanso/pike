@@ -3,7 +3,6 @@ module github.com/vicanso/pike
 go 1.12
 
 require (
-	github.com/go-yaml/yaml v2.1.0+incompatible
 	github.com/golang/groupcache v0.0.0-20190129154638-5b532d6fd5ef
 	github.com/google/brotli v1.0.7
 	github.com/pkg/errors v0.8.1 // indirect
