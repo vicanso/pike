@@ -21,7 +21,6 @@ const (
 )
 
 const (
-	listenKey                = "listen"
 	identityKey              = "identity"
 	headerKey                = "header"
 	requestHeaderKey         = "request_header"
@@ -148,20 +147,6 @@ func (c *Config) readInConfig() (err error) {
 func (c *Config) set(key string, value interface{}) {
 	c.modified = true
 	c.Viper.Set(key, value)
-}
-
-// GetListenAddress get listen address
-func (c *Config) GetListenAddress() string {
-	addr := c.Viper.GetString(listenKey)
-	if addr == "" {
-		return ":3015"
-	}
-	return addr
-}
-
-// SetListenAddress set listen address
-func (c *Config) SetListenAddress(value string) {
-	c.set(listenKey, value)
 }
 
 // GetIdentity get identity

@@ -3,6 +3,7 @@ package main
 import (
 	"net"
 	"net/http"
+	"os"
 	"regexp"
 	"time"
 
@@ -31,6 +32,14 @@ var (
 func init() {
 	df.BuildedAt = BuildedAt
 	df.CommitID = CommitID
+}
+
+func getListen() string {
+	v := os.Getenv("LISTEN")
+	if v == "" {
+		v = ":3015"
+	}
+	return v
 }
 
 func main() {
@@ -97,7 +106,8 @@ func main() {
 		)
 	})
 
-	listen := cfg.GetListenAddress()
+	listen := getListen()
+
 	logger.Info("pike is starting",
 		zap.String("listen", listen),
 	)

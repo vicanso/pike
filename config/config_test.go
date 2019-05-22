@@ -23,7 +23,6 @@ func TestFetchConfig(t *testing.T) {
 	err := cfg.Fetch()
 	assert.Nil(err)
 
-	assert.Equal(cfg.GetListenAddress(), "127.0.0.1:3015")
 	assert.Equal(cfg.GetIdentity(), "host method path proto scheme uri userAgent query ~jt >X-Token ?id")
 	assert.Equal(converHeader(cfg.GetHeader()), "X-Location:GZ\nX-Server:$SERVER")
 	assert.Equal(converHeader(cfg.GetRequestHeader()), "X-Location:GD\nX-Server:$CLIENT")
