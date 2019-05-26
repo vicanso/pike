@@ -1,0 +1,16 @@
+body
+  background-color: #262931
+  color: #333
+  font-family: Open Sans,Helvetica Neue,Arial,Verdana,sans-serif
+  margin: 0
+
+*
+  box-sizing: border-box
+  &:before, &:after
+    box-sizing: border-box
+
+.clearfix:before, .clearfix:after
+  display: table
+  content: " "
+.clearfix:after
+  clear: both

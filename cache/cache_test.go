@@ -65,6 +65,20 @@ func TestDispatcher(t *testing.T) {
 		assert.Equal(hc2, hc3, "these two caches should be same")
 	})
 
+	t.Run("expire cache", func(t *testing.T) {
+		assert := assert.New(t)
+		k := []byte("def")
+		cache := dsp.getCache(k)
+
+		key := byteSliceToString(k)
+		lruCache := cache.lruCache
+		v, ok := lruCache.Get(key)
+		assert.True(ok)
+		assert.NotEqual(v.ExpiredAt, int64(1))
+		dsp.Expire(k)
+		assert.Equal(v.ExpiredAt, int64(1))
+	})
+
 	t.Run("get all cache status", func(t *testing.T) {
 		cacheList := dsp.GetCacheList()
 		assert.NotEqual(t, len(cacheList), 0)

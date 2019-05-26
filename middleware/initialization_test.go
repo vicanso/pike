@@ -17,7 +17,7 @@ func TestNewInitialization(t *testing.T) {
 	cfg.Viper.Set("header", []string{
 		"X-Response-ID:456",
 	})
-	cfg.Viper.Set("requestHeader", []string{
+	cfg.Viper.Set("request_header", []string{
 		"X-Request-ID:123",
 	})
 

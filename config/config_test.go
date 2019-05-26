@@ -72,10 +72,6 @@ func TestSetGetConfig(t *testing.T) {
 		Viper: viper.New(),
 	}
 
-	listenAddr := ":1234"
-	cfg.SetListenAddress(listenAddr)
-	assert.Equal(cfg.GetListenAddress(), listenAddr)
-
 	identity := ":method :url"
 	cfg.SetIdentity(identity)
 	assert.Equal(cfg.GetIdentity(), identity)

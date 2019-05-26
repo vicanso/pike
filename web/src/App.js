@@ -1,0 +1,32 @@
+import React from "react";
+import { Route } from "react-router-dom";
+
+import AppHeader from "./components/app_header";
+import Director from "./components/director";
+import Caches from "./components/caches";
+import Performance from "./components/performance";
+import Config from "./components/config";
+import {
+  DIRECTOR_PATH,
+  CACHES_PATH,
+  PERFORMANCE_PATH,
+  CONFIG_PATH
+} from "./paths";
+
+class App extends React.Component {
+  render() {
+    return (
+      <div className="App">
+        <AppHeader />
+        <div>
+          <Route path={CACHES_PATH} component={Caches} />
+          <Route path={PERFORMANCE_PATH} component={Performance} />
+          <Route path={CONFIG_PATH} component={Config} />
+          <Route exact path={DIRECTOR_PATH} component={Director} />
+        </div>
+      </div>
+    );
+  }
+}
+
+export default App;

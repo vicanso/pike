@@ -6,6 +6,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/go-yaml/yaml"
 	"github.com/spf13/viper"
 	"github.com/vicanso/pike/df"
 )
@@ -420,4 +421,10 @@ func (c *Config) SetBackend(backed Backend) {
 	c.set(name+"."+backendHostsKey, backed.Hosts)
 	c.set(name+"."+backendBackendsKey, backed.Backends)
 	c.set(name+"."+backendRewritesKey, backed.Rewrites)
+}
+
+// ToYAML config to yaml
+func (c *Config) ToYAML() ([]byte, error) {
+	settings := c.Viper.AllSettings()
+	return yaml.Marshal(settings)
 }

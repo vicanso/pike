@@ -144,9 +144,13 @@ func NewDispatcher(opts Options) *Dispatcher {
 // GetCacheList 获取缓存数据列表
 func (dsp *Dispatcher) GetCacheList() (cacheList []*HTTPCacheInfo) {
 	cacheList = make([]*HTTPCacheInfo, 0, 100)
+	now := time.Now().Unix()
 	for _, cache := range dsp.list {
 		cache.mu.Lock()
 		cache.lruCache.ForEach(func(key string, value *HTTPCache) {
+			if value.ExpiredAt < now {
+				return
+			}
 			cacheList = append(cacheList, &HTTPCacheInfo{
 				Key:       key,
 				MaxAge:    value.MaxAge,
@@ -159,11 +163,37 @@ func (dsp *Dispatcher) GetCacheList() (cacheList []*HTTPCacheInfo) {
 	return
 }
 
-// GetHTTPCache get http cache
-func (dsp *Dispatcher) GetHTTPCache(k []byte) (hc *HTTPCache) {
+func (dsp *Dispatcher) getCache(k []byte) *Cache {
 	b := sha1.Sum(k)
 	index := (int(b[0]) | int(b[1])<<8) % len(dsp.list)
-	cache := dsp.list[index]
+	return dsp.list[index]
+}
+
+// Expire expire the cache
+func (dsp *Dispatcher) Expire(k []byte) {
+	cache := dsp.getCache(k)
+
+	key := byteSliceToString(k)
+	lruCache := cache.lruCache
+	// 保证lru cache的并发安全
+	// 此锁需要快速释放，不能长期占用
+	cache.mu.Lock()
+	if v, ok := lruCache.Get(key); ok {
+		if v != nil {
+			// 设置为过期
+			expiredAt := atomic.LoadInt64(&v.ExpiredAt)
+			// 0 为fetching，不设置过期
+			if expiredAt != 0 {
+				atomic.StoreInt64(&v.ExpiredAt, 1)
+			}
+		}
+	}
+	cache.mu.Unlock()
+}
+
+// GetHTTPCache get http cache
+func (dsp *Dispatcher) GetHTTPCache(k []byte) (hc *HTTPCache) {
+	cache := dsp.getCache(k)
 
 	key := byteSliceToString(k)
 	lruCache := cache.lruCache
@@ -228,6 +258,7 @@ func (hc *HTTPCache) HitForPass() {
 func (hc *HTTPCache) Cacheable(maxAge int, c *cod.Context) {
 	hc.Status = Cacheable
 	hc.CreatedAt = time.Now().Unix()
+	hc.MaxAge = maxAge
 	atomic.StoreInt64(&hc.ExpiredAt, hc.CreatedAt+int64(maxAge))
 
 	header := c.Header()

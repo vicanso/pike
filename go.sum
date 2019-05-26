@@ -7,6 +7,8 @@ github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/fsnotify/fsnotify v1.4.7 h1:IXs+QLmnXW2CcXuY+8Mzv/fWEsPGWxqefPtCP5CnV9I=
 github.com/fsnotify/fsnotify v1.4.7/go.mod h1:jwhsz4b93w/PPRr/qN1Yymfu8t87LnFCMoQvtojpjFo=
+github.com/go-yaml/yaml v2.1.0+incompatible h1:RYi2hDdss1u4YE7GwixGzWwVo47T8UQwnTLB6vQiq+o=
+github.com/go-yaml/yaml v2.1.0+incompatible/go.mod h1:w2MrLa16VYP0jy6N7M5kHaCkaLENm+P+Tv+MfurjSw0=
 github.com/golang/groupcache v0.0.0-20190129154638-5b532d6fd5ef/go.mod h1:cIg4eruTrX1D+g88fzRXU5OdNfaM+9IcxsU14FzY7Hc=
 github.com/golang/snappy v0.0.1 h1:Qgr9rKW7uDUkrbSmQeiDsGa8SjGyCOGtuasMWwvp2P4=
 github.com/golang/snappy v0.0.1/go.mod h1:/XxbfmMg8lxefKM7IXC3fBNl/7bRcc72aCRzEWrmP2Q=
@@ -57,6 +59,8 @@ github.com/vicanso/cod-basic-auth v0.0.2 h1:SFEQI21VDusVQXAAOAqeIq0dxJwBlzphpwmz
 github.com/vicanso/cod-basic-auth v0.0.2/go.mod h1:NtZ4jwj8GpcjQV5pXk+W+gdQ2Y1TqpAVdWZz6/Gjao0=
 github.com/vicanso/cod-compress v0.0.3 h1:UTF1TrtE2vFfSKXzXKhY8JMiS7l82VKZXXFhNHB8ewQ=
 github.com/vicanso/cod-compress v0.0.3/go.mod h1:4yKc7Kg4lwMC2jQiH4Vh3kvqTHyLPIcJ4ZJjaQXTZus=
+github.com/vicanso/cod-error-handler v0.0.3 h1:Y4Z6dwRkK4o55Kwyy/mcg1Ys/b8LdnY24bD4whV6XVM=
+github.com/vicanso/cod-error-handler v0.0.3/go.mod h1:4cVNzZdYrJ+ml3NqGSX7TQVshwr8uiNz7rcLt3D93Oc=
 github.com/vicanso/cod-etag v0.0.1 h1:GRAc8znlDVQgpifG2rTK58bz6FSWpx/G1SjPiPh7QVY=
 github.com/vicanso/cod-etag v0.0.1/go.mod h1:704QHYa2V6KHvCqBU66w0V1WEA16IRZK4BPUHN11mmM=
 github.com/vicanso/cod-fresh v0.0.1 h1:mDxt993K2Co7lmYrASibkY/NzkPXtCLCplIfD8UCToE=

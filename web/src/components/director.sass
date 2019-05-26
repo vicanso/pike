@@ -1,0 +1,49 @@
+@import "../variables"
+
+.Director
+  width: $MAIN_CONTENT_WIDTH
+  margin: 30px auto 0
+  .noUpstreams
+    i
+      margin-right: 5px
+  .upstream, .noUpstreams
+    background-color: $COLOR_WHITE
+    box-shadow: 0 2px 12px 0 rgba(0,0,0,.1)
+    padding: 20px
+    border-radius: 4px
+  .upstream
+    margin-bottom: 20px
+    h4
+      font-size: 18px
+      line-height: 2.5em
+    .priority
+      float: right
+      font-size: 14px
+    .policy
+      margin-left: 5px
+      font-size: 14px
+      color: $COLOR_GRAY
+      i
+        margin-left: 3px
+    h5
+      background-color: #262931
+      color: $COLOR_WHITE
+      margin: 0
+      padding: 10px
+      font-size: 14px
+    ul
+      margin: 20px 0
+      padding: 0 0 0 10px
+      list-style: inside;
+    li
+      line-height: 1.6em
+    .status
+      margin-left: 3px
+      color: #26a2ff
+      &.sick
+        color: #e74759
+    .backup
+      color: $COLOR_GRAY
+      margin-left: 3px
+
+

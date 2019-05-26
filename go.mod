@@ -3,6 +3,7 @@ module github.com/vicanso/pike
 go 1.12
 
 require (
+	github.com/go-yaml/yaml v2.1.0+incompatible
 	github.com/golang/groupcache v0.0.0-20190129154638-5b532d6fd5ef
 	github.com/google/brotli v1.0.7
 	github.com/pkg/errors v0.8.1 // indirect
@@ -11,6 +12,7 @@ require (
 	github.com/vicanso/cod v0.1.1
 	github.com/vicanso/cod-basic-auth v0.0.2
 	github.com/vicanso/cod-compress v0.0.3
+	github.com/vicanso/cod-error-handler v0.0.3
 	github.com/vicanso/cod-etag v0.0.1
 	github.com/vicanso/cod-fresh v0.0.1
 	github.com/vicanso/cod-proxy v0.0.4
