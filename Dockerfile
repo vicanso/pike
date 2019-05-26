@@ -19,7 +19,7 @@ RUN apk update \
   && apk add git make g++ bash cmake \
   && go get -u github.com/gobuffalo/packr/v2/packr2 \
   && git clone --depth=1 https://github.com/google/brotli /brotli \
-  cd /brotli \
+  && cd /brotli \
   && ./configure-cmake \
   && make && make install \
   && cd /pike \
