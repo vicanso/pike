@@ -1,16 +1,50 @@
 package server
 
 import (
+	"bytes"
+	"os"
+
+	"github.com/gobuffalo/packr/v2"
 	"github.com/vicanso/cod"
 	basicauth "github.com/vicanso/cod-basic-auth"
 	errorhandler "github.com/vicanso/cod-error-handler"
 	recover "github.com/vicanso/cod-recover"
 	responder "github.com/vicanso/cod-responder"
+	staticServe "github.com/vicanso/cod-static-serve"
 
 	"github.com/vicanso/pike/cache"
 	"github.com/vicanso/pike/stats"
 	"github.com/vicanso/pike/upstream"
 )
+
+type (
+	staticFile struct {
+		box *packr.Box
+	}
+)
+
+var (
+	box = packr.New("asset", "../web/build")
+)
+
+func (sf *staticFile) Exists(file string) bool {
+	return sf.box.Has(file)
+}
+func (sf *staticFile) Get(file string) ([]byte, error) {
+	return sf.box.Find(file)
+}
+func (sf *staticFile) Stat(file string) os.FileInfo {
+	return nil
+}
+func sendFile(c *cod.Context, file string) (err error) {
+	buf, err := box.Find(file)
+	if err != nil {
+		return
+	}
+	c.SetContentTypeByExt(file)
+	c.BodyBuffer = bytes.NewBuffer(buf)
+	return
+}
 
 // NewAdminServer create an admin server
 func NewAdminServer(opts Options) *cod.Cod {
@@ -100,6 +134,25 @@ func NewAdminServer(opts Options) *cod.Cod {
 		}
 		return
 	})
+
+	sf := &staticFile{
+		box: box,
+	}
+	// 静态文件
+
+	g.GET("/", func(c *cod.Context) error {
+		c.CacheMaxAge("10s")
+		return sendFile(c, "index.html")
+	})
+	g.GET("/static/*file", staticServe.New(sf, staticServe.Config{
+		Path: "/static",
+		// 客户端缓存一年
+		MaxAge: 365 * 24 * 3600,
+		// 缓存服务器缓存一个小时
+		SMaxAge:             60 * 60,
+		DenyQueryString:     true,
+		DisableLastModified: true,
+	}))
 
 	d.AddGroup(g)
 	return d

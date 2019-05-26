@@ -25,6 +25,7 @@ test-cover-all:
 	GO_MODE=test go test -race -tags brotli -coverprofile=test.out ./... && go tool cover --html=test.out
 
 build:
+	packr2
 	go build -tags 'brotli netgo' -ldflags "-X main.BuildedAt=`date -u +%Y%m%d.%H%M%S` -X main.CommitID=`git rev-parse --short HEAD`" -o pike
 
 bench:

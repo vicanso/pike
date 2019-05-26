@@ -4,9 +4,9 @@ go 1.12
 
 require (
 	github.com/go-yaml/yaml v2.1.0+incompatible
+	github.com/gobuffalo/packr/v2 v2.2.0
 	github.com/golang/groupcache v0.0.0-20190129154638-5b532d6fd5ef
 	github.com/google/brotli v1.0.7
-	github.com/pkg/errors v0.8.1 // indirect
 	github.com/spf13/viper v1.3.2
 	github.com/stretchr/testify v1.3.0
 	github.com/vicanso/cod v0.1.1
@@ -18,6 +18,7 @@ require (
 	github.com/vicanso/cod-proxy v0.0.4
 	github.com/vicanso/cod-recover v0.0.2
 	github.com/vicanso/cod-responder v0.0.3
+	github.com/vicanso/cod-static-serve v0.0.2
 	github.com/vicanso/hes v0.1.4
 	github.com/vicanso/upstream v0.0.2
 	go.uber.org/atomic v1.3.2 // indirect
