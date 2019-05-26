@@ -2,7 +2,7 @@ FROM node:10-alpine as webbuilder
 
 RUN apk update \
   && apk add git \
-  && git clone --depth=1 https://github.com/vicanso/pike.git /diving \
+  && git clone --depth=1 https://github.com/vicanso/pike.git /pike \
   && cd /pike/web \
   && npm i \
   && npm run build \
