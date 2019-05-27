@@ -5,4 +5,5 @@ go:
   - "1.12"
 
 script:
+  - make test
   - docker build -t pike .

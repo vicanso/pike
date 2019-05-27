@@ -4,8 +4,8 @@ RUN apk update \
   && apk add git \
   && git clone --depth=1 https://github.com/vicanso/pike.git /pike \
   && cd /pike/web \
-  && npm i \
-  && npm run build \
+  && yarn \
+  && yarn build \
   && rm -rf node_module
 
 FROM golang:1.12-alpine as builder
@@ -23,5 +23,4 @@ RUN apk update \
   && ./configure-cmake \
   && make && make install \
   && cd /pike \
-  && make test-all \
   && make build
