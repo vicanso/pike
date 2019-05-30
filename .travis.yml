@@ -7,3 +7,9 @@ go:
 script:
   - make test
   - docker build -t pike .
+
+after_success:
+  - export VERSION=2.0.0
+  - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
+  - docker tag pike $DOCKER_USERNAME/pike:$VERSION
+  - docker images
