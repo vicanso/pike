@@ -32,6 +32,6 @@ RUN apk add --no-cache ca-certificates
 COPY --from=builder /usr/local/lib/libbrotlicommon.so.1 /usr/lib/
 COPY --from=builder /usr/local/lib/libbrotlienc.so.1 /usr/lib/
 COPY --from=builder /usr/local/lib/libbrotlidec.so.1 /usr/lib/
-COPY --from=builder /pike/pike-linux /usr/local/bin/pike
+COPY --from=builder /pike/pike /usr/local/bin/pike
 
 CMD ["pike"]
