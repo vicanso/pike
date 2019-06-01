@@ -19,6 +19,7 @@ const (
 const (
 	defaultConfigName = "config"
 	defaultConfigType = "yml"
+	defaultAdminPath  = "/pike"
 )
 
 const (
@@ -148,6 +149,15 @@ func (c *Config) readInConfig() (err error) {
 func (c *Config) set(key string, value interface{}) {
 	c.modified = true
 	c.Viper.Set(key, value)
+}
+
+// getStringDefault get string default
+func (c *Config) getStringDefault(key string, defaultString string) string {
+	v := c.Viper.GetString(key)
+	if v == "" {
+		return defaultString
+	}
+	return v
 }
 
 // GetIdentity get identity
@@ -341,7 +351,7 @@ func (c *Config) SetTLSHandshakeTimeout(value time.Duration) {
 
 // GetAdminPath get admin path
 func (c *Config) GetAdminPath() string {
-	return c.Viper.GetString(adminPrefixKey)
+	return c.getStringDefault(adminPrefixKey, defaultAdminPath)
 }
 
 // SetAdminPath set admin path

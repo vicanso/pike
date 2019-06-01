@@ -49,7 +49,7 @@ func New(opts Options) *cod.Cod {
 
 	// 如果有配置admin，则添加管理后台处理
 	adminPath := cfg.GetAdminPath()
-	if adminPath != "" {
+	if adminPath != "none" {
 		adminServer := NewAdminServer(opts)
 		d.Use(func(c *cod.Context) error {
 			path := c.Request.URL.Path

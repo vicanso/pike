@@ -34,4 +34,6 @@ COPY --from=builder /usr/local/lib/libbrotlienc.so.1 /usr/lib/
 COPY --from=builder /usr/local/lib/libbrotlidec.so.1 /usr/lib/
 COPY --from=builder /pike/pike /usr/local/bin/pike
 
+EXPOSE 3015
+
 CMD ["pike"]
