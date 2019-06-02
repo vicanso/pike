@@ -341,6 +341,10 @@ func (c *Config) SetTLSHandshakeTimeout(value time.Duration) {
 
 // GetAdminPath get admin path
 func (c *Config) GetAdminPath() string {
+	v := os.Getenv("ADMIN_PATH")
+	if v != "" {
+		return v
+	}
 	return c.Viper.GetString(adminPrefixKey)
 }
 
