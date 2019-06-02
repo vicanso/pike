@@ -1,8 +1,10 @@
 import React from "react";
 import request from "axios";
-import { Spin, message, Icon } from "antd";
+import { Link } from "react-router-dom";
+import { Spin, message, Icon, Button } from "antd";
 
 import { UPSTREAMS } from "../urls";
+import { ADD_UPSTREAM_PATH } from "../paths";
 import "./director.sass";
 
 function createList(data, key, name) {
@@ -75,7 +77,7 @@ class Director extends React.Component {
           </a>
         );
       }
-      const moreInfos = [];
+      let moreInfos = null;
       if (!shrinked) {
         const servers = item.servers.map(server => {
           let icon = <Icon className="status" type="check-circle" />;
@@ -90,19 +92,28 @@ class Director extends React.Component {
             </li>
           );
         });
-        moreInfos.push(<h5>servers</h5>);
-        moreInfos.push(<ul>{servers}</ul>);
-        moreInfos.push(createList(item, "hosts"));
-        moreInfos.push(createList(item, "prefixs"));
-        moreInfos.push(createList(item, "rewrites"));
-        moreInfos.push(createList(item, "header"));
-        moreInfos.push(createList(item, "requestHeader", "request header"));
+        moreInfos = (
+          <div>
+            <h5>servers</h5>
+            <ul>{servers}</ul>
+            {createList(item, "hosts")}
+            {createList(item, "prefixs")}
+            {createList(item, "rewrites")}
+            {createList(item, "header")}
+            {createList(item, "requestHeader", "request header")}
+          </div>
+        );
       }
 
       return (
         <div className="upstream" key={name}>
           <h4>
-            <div className="functions">{expandShrinke}</div>
+            <div className="functions">
+              {expandShrinke}
+              <a
+                href="/delete"
+              ><Icon type="delete" /></a>
+            </div>
             {name}
             {policy && (
               <span className="policy" title="policy">
@@ -130,6 +141,11 @@ class Director extends React.Component {
           </div>
         )}
         {this.renderUpstreams()}
+        <Link to={ADD_UPSTREAM_PATH}>
+          <Button type="link" className="addUpstream" icon="plus-circle">
+            Add Upstream
+          </Button>
+        </Link>
       </div>
     );
   }

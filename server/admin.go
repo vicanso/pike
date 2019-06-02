@@ -100,6 +100,11 @@ func NewAdminServer(opts Options) *cod.Cod {
 		return nil
 	})
 
+	// 增加upstream
+	g.POST("/upstreams", func(c *cod.Context) error {
+		return nil
+	})
+
 	// 获取缓存列表
 	g.GET("/caches", func(c *cod.Context) error {
 		c.Body = &struct {

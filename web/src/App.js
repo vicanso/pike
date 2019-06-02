@@ -6,11 +6,13 @@ import Director from "./components/director";
 import Caches from "./components/caches";
 import Performance from "./components/performance";
 import Config from "./components/config";
+import AddUpstream from "./components/add_upstream";
 import {
   DIRECTOR_PATH,
   CACHES_PATH,
   PERFORMANCE_PATH,
-  CONFIG_PATH
+  CONFIG_PATH,
+  ADD_UPSTREAM_PATH
 } from "./paths";
 
 class App extends React.Component {
@@ -22,6 +24,7 @@ class App extends React.Component {
           <Route path={CACHES_PATH} component={Caches} />
           <Route path={PERFORMANCE_PATH} component={Performance} />
           <Route path={CONFIG_PATH} component={Config} />
+          <Route path={ADD_UPSTREAM_PATH} component={AddUpstream} />
           <Route exact path={DIRECTOR_PATH} component={Director} />
         </div>
       </div>
