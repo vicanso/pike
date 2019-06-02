@@ -14,7 +14,7 @@ const day = 24 * hour;
 
 export function getExpiredDesc(seconds) {
   if (seconds >= day) {
-    return Math.ceil(seconds / day, 2) + " D";
+    return Math.ceil(seconds / day, 2) + " d";
   }
   if (seconds >= hour) {
     return Math.ceil(seconds / hour, 2) + " h";
