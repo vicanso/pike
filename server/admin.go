@@ -7,7 +7,10 @@ import (
 	"github.com/gobuffalo/packr/v2"
 	"github.com/vicanso/cod"
 	basicauth "github.com/vicanso/cod-basic-auth"
+	compress "github.com/vicanso/cod-compress"
 	errorhandler "github.com/vicanso/cod-error-handler"
+	etag "github.com/vicanso/cod-etag"
+	fresh "github.com/vicanso/cod-fresh"
 	recover "github.com/vicanso/cod-recover"
 	responder "github.com/vicanso/cod-responder"
 	staticServe "github.com/vicanso/cod-static-serve"
@@ -57,6 +60,9 @@ func NewAdminServer(opts Options) *cod.Cod {
 	d.Use(recover.New())
 	d.Use(errorhandler.NewDefault())
 	d.Use(responder.NewDefault())
+	d.Use(fresh.NewDefault())
+	d.Use(etag.NewDefault())
+	d.Use(compress.NewDefault())
 
 	adminHandlerList := make([]cod.Handler, 0)
 
