@@ -33,10 +33,11 @@ function createList(data, key, name) {
 class Director extends React.Component {
   state = {
     loading: false,
+    shrinks: {},
     upstreams: null
   };
   renderUpstreams() {
-    const { loading, upstreams } = this.state;
+    const { loading, upstreams, shrinks } = this.state;
     if (loading || !upstreams) {
       return;
     }
@@ -49,34 +50,67 @@ class Director extends React.Component {
       );
     }
     return upstreams.map(item => {
-      const servers = item.servers.map(server => {
-        let icon = <Icon className="status" type="check-circle" />;
-        if (server.status !== "healthy") {
-          icon = <Icon className="status sick" type="close-circle" />;
-        }
-        return (
-          <li key={server.url}>
-            {server.url}
-            {icon}
-            {server.backup && <span className="backup">backup</span>}
-          </li>
+      const { name, policy } = item;
+      const shrinked = shrinks[name];
+
+      let expandShrinke = null;
+      const toggle = e => {
+        e.preventDefault();
+        const data = {};
+        data[name] = !shrinks[name];
+        this.setState({
+          shrinks: Object.assign(shrinks, data)
+        });
+      };
+      if (shrinked) {
+        expandShrinke = (
+          <a href="/expand" title="expand" onClick={e => toggle(e)}>
+            <Icon type="arrows-alt" />
+          </a>
         );
-      });
+      } else {
+        expandShrinke = (
+          <a href="/shrink" title="shrink" onClick={e => toggle(e)}>
+            <Icon type="shrink" />
+          </a>
+        );
+      }
+      const moreInfos = [];
+      if (!shrinked) {
+        const servers = item.servers.map(server => {
+          let icon = <Icon className="status" type="check-circle" />;
+          if (server.status !== "healthy") {
+            icon = <Icon className="status sick" type="close-circle" />;
+          }
+          return (
+            <li key={server.url}>
+              {server.url}
+              {icon}
+              {server.backup && <span className="backup">backup</span>}
+            </li>
+          );
+        });
+        moreInfos.push(<h5>servers</h5>);
+        moreInfos.push(<ul>{servers}</ul>);
+        moreInfos.push(createList(item, "hosts"));
+        moreInfos.push(createList(item, "prefixs"));
+        moreInfos.push(createList(item, "rewrites"));
+        moreInfos.push(createList(item, "header"));
+        moreInfos.push(createList(item, "requestHeader", "request header"));
+      }
 
       return (
-        <div className="upstream" key={item.name}>
+        <div className="upstream" key={name}>
           <h4>
-            <div className="priority">priority:{item.priority}</div>
-            {item.name}
-            {item.policy && <span className="policy">{item.policy}</span>}
+            <div className="functions">{expandShrinke}</div>
+            {name}
+            {policy && (
+              <span className="policy" title="policy">
+                {policy}
+              </span>
+            )}
           </h4>
-          <h5>servers</h5>
-          <ul>{servers}</ul>
-          {createList(item, "hosts")}
-          {createList(item, "prefixs")}
-          {createList(item, "rewrites")}
-          {createList(item, "header")}
-          {createList(item, "requestHeader", "request header")}
+          {moreInfos}
         </div>
       );
     });

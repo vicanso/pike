@@ -66,15 +66,15 @@ type (
 	}
 	// Backend backend config
 	Backend struct {
-		Name          string
-		Policy        string
-		Ping          string
-		RequestHeader []string `yaml:"requestHeader"`
-		Header        []string
-		Prefixs       []string
-		Hosts         []string
-		Backends      []string
-		Rewrites      []string
+		Name          string   `json:"name,omitempty"`
+		Policy        string   `json:"policy,omitempty"`
+		Ping          string   `json:"ping,omitempty"`
+		RequestHeader []string `yaml:"requestHeader" json:"requestHeader,omitempty"`
+		Header        []string `json:"header,omitempty"`
+		Prefixs       []string `json:"prefixs,omitempty"`
+		Hosts         []string `json:"hosts,omitempty"`
+		Backends      []string `json:"backends,omitempty"`
+		Rewrites      []string `json:"rewrites,omitempty"`
 	}
 )
 

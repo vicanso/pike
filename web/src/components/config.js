@@ -42,7 +42,7 @@ class Config extends React.Component {
             <Spin tip="Loading..." />
           </div>
         )}
-        {this.renderConfig()}
+        {!loading && this.renderConfig()}
       </div>
     );
   }
