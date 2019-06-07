@@ -1,8 +1,15 @@
-import React from "react";
+import request from "axios";
 
-class AddUpstream extends React.Component {
-  render() {
-    return <div className="AddUpstream" />;
+import AddUpdateUpstream from "./add_update_upstream";
+import { UPSTREAMS } from "../urls";
+
+class AddUpstream extends AddUpdateUpstream {
+  constructor() {
+    super();
+    this.state.type = "add";
+  }
+  submit(data) {
+    request.post(UPSTREAMS, data);
   }
 }
 

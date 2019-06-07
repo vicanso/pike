@@ -11,6 +11,7 @@ require (
 	github.com/stretchr/testify v1.3.0
 	github.com/vicanso/cod v0.1.1
 	github.com/vicanso/cod-basic-auth v0.0.2
+	github.com/vicanso/cod-body-parser v0.0.3
 	github.com/vicanso/cod-compress v0.0.3
 	github.com/vicanso/cod-error-handler v0.0.3
 	github.com/vicanso/cod-etag v0.0.1

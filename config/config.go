@@ -1,6 +1,7 @@
 package config
 
 import (
+	"bytes"
 	"os"
 	"sort"
 	"strings"
@@ -425,6 +426,31 @@ func (c *Config) SetBackend(backed Backend) {
 	c.set(name+"."+backendHostsKey, backed.Hosts)
 	c.set(name+"."+backendBackendsKey, backed.Backends)
 	c.set(name+"."+backendRewritesKey, backed.Rewrites)
+}
+
+// RemoveBackend remove backend
+func (c *Config) RemoveBackend(name string) (err error) {
+	if name == "" {
+		return
+	}
+	data := c.Viper.AllSettings()
+	delete(data, name)
+
+	encodedConfig, _ := yaml.Marshal(data)
+	err = c.Viper.ReadConfig(bytes.NewReader(encodedConfig))
+	return
+}
+
+// BackendExists check backend exists
+func (c *Config) BackendExists(name string) bool {
+	exists := false
+	backends := c.GetBackends()
+	for _, backend := range backends {
+		if !exists && backend.Name == name {
+			exists = true
+		}
+	}
+	return exists
 }
 
 // ToYAML config to yaml

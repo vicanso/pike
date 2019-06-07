@@ -1,7 +1,7 @@
 import React from "react";
 import request from "axios";
 import { Link } from "react-router-dom";
-import { Spin, message, Icon, Button } from "antd";
+import { Spin, message, Icon, Button, Popconfirm } from "antd";
 
 import { UPSTREAMS } from "../urls";
 import { ADD_UPSTREAM_PATH } from "../paths";
@@ -38,6 +38,19 @@ class Director extends React.Component {
     shrinks: {},
     upstreams: null
   };
+  async removeUpstream(name) {
+    const { upstreams } = this.state;
+    try {
+      await request.delete(`${UPSTREAMS}/${name}`);
+      const arr = upstreams.filter(item => item.name !== name);
+      this.setState({
+        upstreams: arr
+      });
+      message.info("delete upstream success");
+    } catch (err) {
+      message.error(err.message);
+    }
+  }
   renderUpstreams() {
     const { loading, upstreams, shrinks } = this.state;
     if (loading || !upstreams) {
@@ -110,9 +123,16 @@ class Director extends React.Component {
           <h4>
             <div className="functions">
               {expandShrinke}
-              <a
-                href="/delete"
-              ><Icon type="delete" /></a>
+              <Popconfirm
+                title="Are you sure delete this upstream?"
+                onConfirm={() => {
+                  this.removeUpstream(name);
+                }}
+              >
+                <a href="/delete">
+                  <Icon type="delete" />
+                </a>
+              </Popconfirm>
             </div>
             {name}
             {policy && (

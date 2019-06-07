@@ -2,11 +2,15 @@ package server
 
 import (
 	"bytes"
+	"encoding/json"
 	"os"
+
+	"github.com/vicanso/hes"
 
 	"github.com/gobuffalo/packr/v2"
 	"github.com/vicanso/cod"
 	basicauth "github.com/vicanso/cod-basic-auth"
+	bodyparser "github.com/vicanso/cod-body-parser"
 	compress "github.com/vicanso/cod-compress"
 	errorhandler "github.com/vicanso/cod-error-handler"
 	etag "github.com/vicanso/cod-etag"
@@ -16,6 +20,7 @@ import (
 	staticServe "github.com/vicanso/cod-static-serve"
 
 	"github.com/vicanso/pike/cache"
+	"github.com/vicanso/pike/config"
 	"github.com/vicanso/pike/stats"
 	"github.com/vicanso/pike/upstream"
 )
@@ -55,6 +60,7 @@ func NewAdminServer(opts Options) *cod.Cod {
 	insStats := opts.Stats
 	director := opts.Director
 	dsp := opts.Dispatcher
+	directorConfig := opts.DirectorConfig
 
 	d := cod.New()
 	d.Use(recover.New())
@@ -63,6 +69,7 @@ func NewAdminServer(opts Options) *cod.Cod {
 	d.Use(fresh.NewDefault())
 	d.Use(etag.NewDefault())
 	d.Use(compress.NewDefault())
+	d.Use(bodyparser.NewDefault())
 
 	adminHandlerList := make([]cod.Handler, 0)
 
@@ -102,6 +109,37 @@ func NewAdminServer(opts Options) *cod.Cod {
 
 	// 增加upstream
 	g.POST("/upstreams", func(c *cod.Context) error {
+		backend := config.Backend{}
+		err := json.Unmarshal(c.RequestBody, &backend)
+		if err != nil {
+			return hes.Wrap(err)
+		}
+		if backend.Name == "" || len(backend.Backends) == 0 {
+			return hes.New("name and backends can't be nil")
+		}
+		if directorConfig.BackendExists(backend.Name) {
+			return hes.New("backend is already exists")
+		}
+		directorConfig.SetBackend(backend)
+		err = directorConfig.WriteConfig()
+		if err != nil {
+			return hes.Wrap(err)
+		}
+		c.Created(backend)
+		return nil
+	})
+
+	// 删除upstream
+	g.DELETE("/upstreams/:name", func(c *cod.Context) error {
+		err := directorConfig.RemoveBackend(c.Param("name"))
+		if err != nil {
+			return hes.Wrap(err)
+		}
+		err = directorConfig.WriteConfig()
+		if err != nil {
+			return hes.Wrap(err)
+		}
+		c.NoContent()
 		return nil
 	})
 

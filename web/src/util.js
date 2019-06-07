@@ -1,5 +1,8 @@
 export function getURLPrefix() {
   let prefix = "";
+  if (window.ENV === "development") {
+    return prefix;
+  }
   const { pathname } = window.location;
   if (pathname !== "/") {
     const arr = pathname.split("/");
