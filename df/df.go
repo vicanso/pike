@@ -18,17 +18,6 @@ const (
 const (
 	Status = "status"
 	Cache  = "cache"
-
-	ProxyDoneCallback = "proxyDoneCallback"
-)
-
-var (
-	// ConfigPathList config path list
-	ConfigPathList = []string{
-		".",
-		"$HOME/.pike",
-		"/etc/pike",
-	}
 )
 
 // HTTP header

@@ -56,7 +56,7 @@ func sendFile(c *cod.Context, file string) (err error) {
 
 // NewAdminServer create an admin server
 func NewAdminServer(opts Options) *cod.Cod {
-	cfg := opts.Config
+	cfg := opts.BasicConfig
 	insStats := opts.Stats
 	director := opts.Director
 	dsp := opts.Dispatcher
@@ -73,8 +73,9 @@ func NewAdminServer(opts Options) *cod.Cod {
 
 	adminHandlerList := make([]cod.Handler, 0)
 
-	adminUser := cfg.GetAdminUser()
-	adminPwd := cfg.GetAdminPassword()
+	adminConfig := cfg.Data.Admin
+	adminUser := adminConfig.User
+	adminPwd := adminConfig.Password
 	// 设置 basic auth 认证
 	if adminUser != "" && adminPwd != "" {
 		adminHandlerList = append(adminHandlerList, basicauth.New(basicauth.Config{
@@ -107,37 +108,71 @@ func NewAdminServer(opts Options) *cod.Cod {
 		return nil
 	})
 
+	// 获取单个upstream信息
+	g.GET("/upstreams/:name", func(c *cod.Context) error {
+		name := c.Param("name")
+		infos := director.GetUpstreamInfos()
+		for _, item := range infos {
+			if item.Name == name {
+				c.Body = item
+			}
+		}
+		if c.Body == nil {
+			return hes.New("upstream's name is invalid")
+		}
+		return nil
+	})
+
 	// 增加upstream
-	g.POST("/upstreams", func(c *cod.Context) error {
-		backend := config.Backend{}
-		err := json.Unmarshal(c.RequestBody, &backend)
+	g.POST("/upstreams", func(c *cod.Context) (err error) {
+		backend := config.BackendConfig{}
+		err = json.Unmarshal(c.RequestBody, &backend)
 		if err != nil {
-			return hes.Wrap(err)
+			err = hes.Wrap(err)
+			return
 		}
 		if backend.Name == "" || len(backend.Backends) == 0 {
-			return hes.New("name and backends can't be nil")
+			err = hes.New("name and backends can't be nil")
+			return
 		}
-		if directorConfig.BackendExists(backend.Name) {
-			return hes.New("backend is already exists")
+		err = directorConfig.AddBackend(backend)
+		if err != nil {
+			return
 		}
-		directorConfig.SetBackend(backend)
 		err = directorConfig.WriteConfig()
 		if err != nil {
-			return hes.Wrap(err)
+			return
 		}
 		c.Created(backend)
 		return nil
 	})
 
-	// 删除upstream
-	g.DELETE("/upstreams/:name", func(c *cod.Context) error {
-		err := directorConfig.RemoveBackend(c.Param("name"))
+	g.PATCH("/upstreams/:name", func(c *cod.Context) (err error) {
+		backend := config.BackendConfig{}
+		err = json.Unmarshal(c.RequestBody, &backend)
 		if err != nil {
-			return hes.Wrap(err)
+			err = hes.Wrap(err)
+			return
+		}
+		backend.Name = c.Param("name")
+		err = directorConfig.UpdateBackend(backend)
+		if err != nil {
+			return
 		}
 		err = directorConfig.WriteConfig()
 		if err != nil {
-			return hes.Wrap(err)
+			return
+		}
+		c.NoContent()
+		return nil
+	})
+
+	// 删除upstream
+	g.DELETE("/upstreams/:name", func(c *cod.Context) (err error) {
+		directorConfig.RemoveBackend(c.Param("name"))
+		err = directorConfig.WriteConfig()
+		if err != nil {
+			return
 		}
 		c.NoContent()
 		return nil
@@ -162,25 +197,52 @@ func NewAdminServer(opts Options) *cod.Cod {
 
 	// 获取配置列表
 	g.GET("/configs", func(c *cod.Context) (err error) {
-		basicYaml, err := opts.Config.ToYAML()
+		basicYaml, err := opts.BasicConfig.YAML()
 		if err != nil {
 			return
 		}
-		directorYaml, err := opts.DirectorConfig.ToYAML()
+		directorYaml, err := opts.DirectorConfig.YAML()
 		if err != nil {
 			return
 		}
 		c.Body = &struct {
-			Basic        map[string]interface{} `json:"basic,omitempty"`
+			Basic        *config.Config         `json:"basic,omitempty"`
 			BasicYaml    string                 `json:"basicYaml,omitempty"`
-			Director     map[string]interface{} `json:"director,omitempty"`
+			Director     *config.DirectorConfig `json:"director,omitempty"`
 			DirectorYaml string                 `json:"directorYaml,omitempty"`
 		}{
-			opts.Config.Viper.AllSettings(),
+			opts.BasicConfig,
 			string(basicYaml),
-			opts.DirectorConfig.Viper.AllSettings(),
+			opts.DirectorConfig,
 			string(directorYaml),
 		}
+		return
+	})
+
+	// 获取基础配置信息
+	g.GET("/configs/:name", func(c *cod.Context) (err error) {
+		if c.Param("name") != "basic" {
+			err = hes.New("Only support to get basic config")
+			return
+		}
+		c.Body = opts.BasicConfig.Data
+		return
+	})
+
+	// 更新基础配置信息
+	g.PATCH("/configs/basic", func(c *cod.Context) (err error) {
+		data := config.BasicConfig{}
+		err = json.Unmarshal(c.RequestBody, &data)
+		if err != nil {
+			err = hes.Wrap(err)
+			return
+		}
+		opts.BasicConfig.Data = data
+		err = opts.BasicConfig.WriteConfig()
+		if err != nil {
+			return
+		}
+		c.NoContent()
 		return
 	})
 

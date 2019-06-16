@@ -1,6 +1,7 @@
 package server
 
 import (
+	"bytes"
 	"regexp"
 	"strings"
 
@@ -21,23 +22,23 @@ import (
 type (
 	// Options server options
 	Options struct {
-		Config         *config.Config
-		DirectorConfig *config.Config
+		BasicConfig    *config.Config
+		DirectorConfig *config.DirectorConfig
 		Director       *upstream.Director
 		Dispatcher     *cache.Dispatcher
 		Stats          *stats.Stats
 	}
 )
 
-// New create a cod server
-func New(opts Options) *cod.Cod {
-	d := cod.New()
-	cfg := opts.Config
+// NewServer create a cod server
+func NewServer(opts Options) *cod.Cod {
+	d := cod.NewWithoutServer()
+	cfg := opts.BasicConfig
 	insStats := opts.Stats
 	director := opts.Director
 	dsp := opts.Dispatcher
 
-	d.EnableTrace = cfg.GetEnableServerTiming()
+	d.EnableTrace = cfg.Data.EnableServerTiming
 	// 如果启动 server timing
 	// 则在回调中调整响应头
 	if d.EnableTrace {
@@ -48,7 +49,7 @@ func New(opts Options) *cod.Cod {
 	}
 
 	// 如果有配置admin，则添加管理后台处理
-	adminPath := cfg.GetAdminPath()
+	adminPath := cfg.Data.Admin.Prefix
 	if adminPath != "" {
 		adminServer := NewAdminServer(opts)
 		d.Use(func(c *cod.Context) error {
@@ -64,7 +65,17 @@ func New(opts Options) *cod.Cod {
 
 	d.Use(recover.New())
 
-	fn := middleware.NewInitialization(cfg, insStats)
+	ping := func(c *cod.Context) error {
+		if c.Request.RequestURI == "/ping" {
+			c.BodyBuffer = bytes.NewBufferString("pong")
+			return nil
+		}
+		return c.Next()
+	}
+	d.Use(ping)
+	d.SetFunctionName(ping, "-")
+
+	fn := middleware.NewInitialization(cfg.Data, insStats)
 	d.Use(fn)
 	d.SetFunctionName(fn, "Initialization")
 
@@ -73,10 +84,11 @@ func New(opts Options) *cod.Cod {
 	d.SetFunctionName(fn, "Fresh")
 
 	// 可缓存数据在缓存时会生成gzip 与br
-	textFilter := regexp.MustCompile(cfg.GetTextFilter())
+	compressConfig := cfg.Data.Compress
+	textFilter := regexp.MustCompile(compressConfig.Filter)
 	fn = compress.NewWithDefaultCompressor(compress.Config{
-		MinLength: cfg.GetCompressMinLength(),
-		Level:     cfg.GetCompressLevel(),
+		MinLength: compressConfig.MinLength,
+		Level:     compressConfig.Level,
 		Checker:   textFilter,
 	})
 	d.Use(fn)
@@ -86,7 +98,7 @@ func New(opts Options) *cod.Cod {
 	d.Use(fn)
 	d.SetFunctionName(fn, "Responder")
 
-	fn = middleware.NewCacheIdentifier(cfg, dsp)
+	fn = middleware.NewCacheIdentifier(cfg.Data, dsp)
 	d.Use(fn)
 	d.SetFunctionName(fn, "CacheIdentifier")
 

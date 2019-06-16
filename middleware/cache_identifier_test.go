@@ -75,7 +75,8 @@ func TestGetCacheAge(t *testing.T) {
 
 func TestNewCacheIdentifier(t *testing.T) {
 	dsp := cache.NewDispatcher(cache.Options{})
-	fn := NewCacheIdentifier(config.New(), dsp)
+	bc := config.BasicConfig{}
+	fn := NewCacheIdentifier(bc, dsp)
 	t.Run("pass(post)", func(t *testing.T) {
 		assert := assert.New(t)
 		req := httptest.NewRequest("POST", "/", nil)

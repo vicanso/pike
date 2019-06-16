@@ -21,6 +21,7 @@ const needFiledPolicyList = ["header", "cookie"];
 
 class AddUpdateUpstream extends React.Component {
   state = {
+    inited: false,
     type: "",
     spinning: false,
     spinTips: "",
@@ -62,6 +63,9 @@ class AddUpdateUpstream extends React.Component {
       if (!name || !backends.length) {
         throw new Error("name and backends can't be null");
       }
+      if (name.indexOf(".") !== -1) {
+        throw new Error("name can't include '.'");
+      }
       const backendList = [];
       backends.forEach(item => {
         if (!item || !item.url) {
@@ -69,7 +73,7 @@ class AddUpdateUpstream extends React.Component {
         }
         const reg = new RegExp("^http(s)?://[a-zA-Z0-9][-a-zA-Z0-9]{0,62}");
         if (!reg.test(item.url)) {
-          throw new Error(`backend(${item}) is invalid`);
+          throw new Error(`backend(${item.url}) is invalid`);
         }
         let url = item.url;
         if (item.backup) {
@@ -121,10 +125,7 @@ class AddUpdateUpstream extends React.Component {
         );
       }
       await this.submit(data);
-      message.info("success");
-      await new Promise(resolve => {
-        setTimeout(resolve, 1000);
-      });
+      message.info("add/update upstream successful");
       router.back();
     } catch (err) {
       message.error(err.message);
@@ -165,6 +166,7 @@ class AddUpdateUpstream extends React.Component {
     return (
       <Form.Item label="Policy">
         <Select
+          defaultValue={policy}
           placeholder="Select the policy for upstream"
           onChange={value => {
             this.setState({
@@ -179,7 +181,7 @@ class AddUpdateUpstream extends React.Component {
     );
   }
   renderHeader(name) {
-    const values = this.state[name] || {};
+    const values = this.state[name] || [];
     const getRow = (headerValue, index) => {
       if (!headerValue) {
         return null;
@@ -257,6 +259,7 @@ class AddUpdateUpstream extends React.Component {
     return (
       <Form.Item label="Prefixs">
         <Select
+          defaultValue={prefixs}
           placeholder="Input the prefix of upstream, e.g.: /api"
           mode="tags"
           onChange={value => {
@@ -276,6 +279,7 @@ class AddUpdateUpstream extends React.Component {
     return (
       <Form.Item label="Hosts">
         <Select
+          defaultValue={hosts}
           placeholder="Input the hosts of upstream, e.g.: aslant.site"
           mode="tags"
           onChange={value => {
@@ -295,6 +299,7 @@ class AddUpdateUpstream extends React.Component {
     return (
       <Form.Item label="Rewrites">
         <Select
+          defaultValue={rewrites}
           placeholder="Input the rewrite of upstream, e.g.: /api/*:/$1"
           mode="tags"
           onChange={value => {
@@ -321,8 +326,9 @@ class AddUpdateUpstream extends React.Component {
           <Row gutter={8}>
             <Col span={20}>
               <Input
+                defaultValue={item.url}
                 type="text"
-                placeholder="Input the url of backend"
+                placeholder="Input the url of backend, e.g.: http://127.0.0.1:3000"
                 onChange={e => {
                   const arr = this.state.backends.slice(0);
                   if (!arr[index]) {
@@ -337,6 +343,7 @@ class AddUpdateUpstream extends React.Component {
             </Col>
             <Col span={3}>
               <Switch
+                defaultChecked={item.backup}
                 onChange={value => {
                   const arr = this.state.backends.slice(0);
                   if (!arr[index]) {
@@ -376,7 +383,12 @@ class AddUpdateUpstream extends React.Component {
     appendBackend({}, backends.length);
     return <Form.Item label="Backends">{arr}</Form.Item>;
   }
-  render() {
+  renderForm() {
+    const { inited, name, ping, type } = this.state;
+
+    if (!inited) {
+      return <div />;
+    }
     const formItemLayout = {
       labelCol: {
         xs: { span: 24 },
@@ -399,48 +411,55 @@ class AddUpdateUpstream extends React.Component {
         }
       }
     };
+    return (
+      <Form {...formItemLayout} onSubmit={this.handleSubmit.bind(this)}>
+        <Form.Item label="Name">
+          <Input
+            defaultValue={name}
+            type="text"
+            onChange={e => {
+              this.setState({
+                name: e.target.value
+              });
+            }}
+            placeholder="Input the name of upstream"
+          />
+        </Form.Item>
+        {this.renderBackends()}
+        {this.renderPolicySelector()}
+        <Form.Item label="Ping">
+          <Input
+            defaultValue={ping}
+            type="text"
+            placeholder="Input the health check url, e.g.: /ping"
+            onChange={e => {
+              this.setState({
+                ping: e.target.value
+              });
+            }}
+          />
+        </Form.Item>
+        <Form.Item label="Request Header">
+          {this.renderHeader("requestHeader")}
+        </Form.Item>
+        <Form.Item label="Header">{this.renderHeader("header")}</Form.Item>
+        {this.renderPrefixs()}
+        {this.renderHosts()}
+        {this.renderWrites()}
+        <Form.Item {...tailFormItemLayout}>
+          <Button className="submit" type="primary" htmlType="submit">
+            {type.toUpperCase()}
+          </Button>
+        </Form.Item>
+      </Form>
+    );
+  }
+  render() {
     const { spinning, spinTips } = this.state;
     return (
       <div className="AddUpdateUpstream">
         <Spin spinning={spinning} tip={spinTips}>
-          <Form {...formItemLayout} onSubmit={this.handleSubmit.bind(this)}>
-            <Form.Item label="Name">
-              <Input
-                type="text"
-                onChange={e => {
-                  this.setState({
-                    name: e.target.value
-                  });
-                }}
-                placeholder="Input the name of upstream"
-              />
-            </Form.Item>
-            {this.renderBackends()}
-            {this.renderPolicySelector()}
-            <Form.Item label="Ping">
-              <Input
-                type="text"
-                placeholder="Input the health check url, e.g.: /ping"
-                onChange={e => {
-                  this.setState({
-                    ping: e.target.value
-                  });
-                }}
-              />
-            </Form.Item>
-            <Form.Item label="Request Header">
-              {this.renderHeader("requestHeader")}
-            </Form.Item>
-            <Form.Item label="Header">{this.renderHeader("header")}</Form.Item>
-            {this.renderPrefixs()}
-            {this.renderHosts()}
-            {this.renderWrites()}
-            <Form.Item {...tailFormItemLayout}>
-              <Button className="submit" type="primary" htmlType="submit">
-                ADD
-              </Button>
-            </Form.Item>
-          </Form>
+          {this.renderForm()}
         </Spin>
       </div>
     );

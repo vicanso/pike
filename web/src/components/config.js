@@ -1,9 +1,10 @@
 import React from "react";
 import request from "axios";
-
-import { Spin, message } from "antd";
+import { Link } from "react-router-dom";
+import { Spin, message, Icon } from "antd";
 
 import { CONFIGS } from "../urls";
+import { UPDATE_CONFIG_PATH } from "../paths";
 import "./config.sass";
 
 class Config extends React.Component {
@@ -14,11 +15,21 @@ class Config extends React.Component {
   };
   renderConfig() {
     const { basicConfig, directorConfig } = this.state;
+    const updateBasicPath = UPDATE_CONFIG_PATH.replace(":name", "basic");
 
     return (
       <div>
         <div className="yaml">
-          <h3>Basic Config</h3>
+          <h3>
+            Basic Config
+            <Link
+              className="update"
+              to={updateBasicPath}
+              title="update the config"
+            >
+              <Icon type="edit" />
+            </Link>
+          </h3>
           <pre>{basicConfig}</pre>
         </div>
         <div className="yaml">

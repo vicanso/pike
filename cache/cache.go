@@ -251,6 +251,7 @@ func (hc *HTTPCache) HitForPass() {
 	if hc.opts != nil {
 		ttl = hc.opts.HitForPassTTL
 	}
+	hc.MaxAge = ttl
 	atomic.StoreInt64(&hc.ExpiredAt, hc.CreatedAt+int64(ttl))
 }
 

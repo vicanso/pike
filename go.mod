@@ -3,6 +3,7 @@ module github.com/vicanso/pike
 go 1.12
 
 require (
+	github.com/fsnotify/fsnotify v1.4.7
 	github.com/go-yaml/yaml v2.1.0+incompatible
 	github.com/gobuffalo/packr/v2 v2.2.0
 	github.com/golang/groupcache v0.0.0-20190129154638-5b532d6fd5ef

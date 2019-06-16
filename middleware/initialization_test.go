@@ -13,15 +13,17 @@ import (
 
 func TestNewInitialization(t *testing.T) {
 	assert := assert.New(t)
-	cfg := config.New()
-	cfg.Viper.Set("header", []string{
-		"X-Response-ID:456",
-	})
-	cfg.Viper.Set("request_header", []string{
-		"X-Request-ID:123",
-	})
+	bc := config.BasicConfig{
+		Concurrency: 100,
+		Header: []string{
+			"X-Response-ID:456",
+		},
+		RequestHeader: []string{
+			"X-Request-ID:123",
+		},
+	}
 
-	fn := NewInitialization(cfg, stats.New())
+	fn := NewInitialization(bc, stats.New())
 	resp := httptest.NewRecorder()
 	req := httptest.NewRequest("GET", "/", nil)
 	c := cod.NewContext(resp, req)
@@ -37,11 +39,10 @@ func TestNewInitialization(t *testing.T) {
 
 func TestTooManyRequest(t *testing.T) {
 	assert := assert.New(t)
-	cfg := config.New()
-	max := cfg.GetConcurrency()
-	cfg.Viper.Set("concurrency", 1)
-	defer cfg.Viper.Set("concurrency", max)
-	fn := NewInitialization(cfg, stats.New())
+	bc := config.BasicConfig{
+		Concurrency: 1,
+	}
+	fn := NewInitialization(bc, stats.New())
 
 	c1 := cod.NewContext(httptest.NewRecorder(), httptest.NewRequest("GET", "/", nil))
 	c1.Next = func() error {

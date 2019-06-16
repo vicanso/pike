@@ -4,6 +4,7 @@ import (
 	"hash/fnv"
 	"net/http"
 	"net/url"
+	"os"
 	"sort"
 	"strings"
 	"sync"
@@ -34,6 +35,7 @@ var (
 		Message:    "no available upstream",
 		Exception:  true,
 	}
+	isTestMode = os.Getenv("GO_MODE") == "test"
 )
 
 const (
@@ -74,6 +76,7 @@ type (
 		Policy        string       `json:"policy,omitempty"`
 		Priority      int          `json:"priority,omitempty"`
 		Name          string       `json:"name,omitempty"`
+		Ping          string       `json:"ping,omitempty"`
 		Header        http.Header  `json:"header,omitempty"`
 		RequestHeader http.Header  `json:"requestHeader,omitempty"`
 		Hosts         []string     `json:"hosts,omitempty"`
@@ -92,7 +95,7 @@ type (
 )
 
 // SetBackends set backends
-func (d *Director) SetBackends(backends []config.Backend) {
+func (d *Director) SetBackends(backends []config.BackendConfig) {
 	upstreams := make(Upstreams, len(backends))
 	for index, item := range backends {
 		upstreams[index] = New(item, d.Transport)
@@ -174,6 +177,7 @@ func (d *Director) GetUpstreamInfos() []Info {
 			Policy:        up.Policy,
 			Priority:      up.Priority,
 			Name:          up.Name,
+			Ping:          up.Server.Ping,
 			Header:        up.Header,
 			RequestHeader: up.RequestHeader,
 			Hosts:         up.Hosts,
@@ -270,7 +274,7 @@ func createProxyHandler(us *Upstream, transport *http.Transport) cod.Handler {
 		TargetPicker: fn,
 	}
 	// 如果测试，则清除transport，方便测试
-	if config.IsTest() {
+	if isTestMode {
 		cfg.Transport = nil
 	}
 	if len(us.Rewrites) != 0 {
@@ -279,7 +283,7 @@ func createProxyHandler(us *Upstream, transport *http.Transport) cod.Handler {
 	return proxy.New(cfg)
 }
 
-func createUpstreamFromBackend(backend config.Backend) *Upstream {
+func createUpstreamFromBackend(backend config.BackendConfig) *Upstream {
 	priority := 8
 	if len(backend.Hosts) != 0 {
 		priority -= 4
@@ -331,7 +335,7 @@ func createUpstreamFromBackend(backend config.Backend) *Upstream {
 }
 
 // New new upstream
-func New(backend config.Backend, transport *http.Transport) *Upstream {
+func New(backend config.BackendConfig, transport *http.Transport) *Upstream {
 	us := createUpstreamFromBackend(backend)
 	us.Handler = createProxyHandler(us, transport)
 	return us

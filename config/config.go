@@ -1,15 +1,12 @@
 package config
 
 import (
-	"bytes"
 	"os"
-	"sort"
-	"strings"
 	"time"
 
+	"github.com/vicanso/hes"
+
 	"github.com/go-yaml/yaml"
-	"github.com/spf13/viper"
-	"github.com/vicanso/pike/df"
 )
 
 const (
@@ -18,443 +15,261 @@ const (
 )
 
 const (
-	defaultConfigName = "config"
-	defaultConfigType = "yml"
-)
+	basicConfigFile    = "config"
+	directorConfigFile = "director"
+	configType         = "yml"
 
-const (
-	identityKey              = "identity"
-	headerKey                = "header"
-	requestHeaderKey         = "request_header"
-	concurrencyKey           = "concurrency"
-	enableServerTimingKey    = "enable_server_timing"
-	cacheZoneKey             = "cache.zone"
-	cacheSizeKey             = "cache.size"
-	hitForPassKey            = "cache.hit_for_pass"
-	compressLevelKey         = "compress.level"
-	compressMinLengthKey     = "compress.min_length"
-	compressFilterKey        = "compress.filter"
-	timeoutIdleConnKey       = "timeout.idle_conn"
-	timeoutExpectContinueKey = "timeout.expect_continue"
-	timeoutResponseHeaderKey = "timeout.response_header"
-	timeoutConnectKey        = "timeout.connect"
-	timeoutTLSHandshakeKey   = "timeout.tls_handshake"
-	adminPrefixKey           = "admin.prefix"
-	adminUserKey             = "admin.user"
-	adminPasswordKey         = "admin.password"
-)
-
-const (
-	backendPolicyKey        = "policy"
-	backendPingKey          = "ping"
-	backendRequestHeaderKey = "request_header"
-	backendHeaderKey        = "header"
-	backendPrefixsKey       = "prefixs"
-	backendHostsKey         = "hosts"
-	backendBackendsKey      = "backends"
-	backendRewritesKey      = "rewrites"
+	defaultConcurrency           = 256 * 1000
+	defaultZoneSize              = 1024
+	defaultCacheSize             = 1024
+	defaultHitForPass            = 5 * time.Minute
+	defaultCompressMinLength     = 1024
+	defaultCompressFilter        = "text|javascript|json"
+	defaultIdelConnTimeout       = 90 * time.Second
+	defaultExpectContinueTimeout = 3 * time.Second
+	defaultResponseHeaderTimeout = 10 * time.Second
+	defaultConnectTimeout        = 15 * time.Second
+	defaultTLSHandshakeTimeout   = 5 * time.Second
 )
 
 type (
-	// Config config struct
-	Config struct {
-		modified bool
-		Viper    *viper.Viper
-		// Name config's name
-		Name string
-		// Type config's type
-		Type int
+	// BasicConfig basic config data
+	BasicConfig struct {
+		Admin struct {
+			Prefix   string `yaml:"prefix,omitempty" json:"prefix,omitempty"`
+			User     string `yaml:"user,omitempty" json:"user,omitempty"`
+			Password string `yaml:"password,omitempty" json:"password,omitempty"`
+		} `yaml:"admin,omitempty" json:"admin,omitempty"`
+		Concurrency        int      `yaml:"concurrency,omitempty" json:"concurrency,omitempty"`
+		EnableServerTiming bool     `yaml:"enable_server_timing,omitempty" json:"enableServerTiming,omitempty"`
+		Identity           string   `yaml:"identity,omitempty" json:"identity,omitempty"`
+		ResponseHeader     []string `yaml:"response_header,omitempty" json:"responseHeader,omitempty"`
+		RequestHeader      []string `yaml:"request_header,omitempty" json:"requestHeader,omitempty"`
+		Compress           struct {
+			Level     int    `yaml:"level,omitempty" json:"level,omitempty"`
+			MinLength int    `yaml:"min_length,omitempty" json:"minLength,omitempty"`
+			Filter    string `yaml:"filter,omitempty" json:"filter,omitempty"`
+		} `yaml:"compress,omitempty" json:"compress,omitempty"`
+		Cache struct {
+			Zone       int           `yaml:"zone,omitempty" json:"zone,omitempty"`
+			Size       int           `yaml:"size,omitempty" json:"size,omitempty"`
+			HitForPass time.Duration `yaml:"hit_for_pass,omitempty" json:"hitForPass,omitempty"`
+		} `yaml:"cache,omitempty" json:"cache,omitempty"`
+		Timeout struct {
+			IdleConn       time.Duration `yaml:"idle_conn,omitempty" json:"idleConn,omitempty"`
+			ExpectContinue time.Duration `yaml:"expect_continue,omitempty" json:"expectContinue,omitempty"`
+			ResponseHeader time.Duration `yaml:"response_header,omitempty" json:"responseHeader,omitempty"`
+			Connect        time.Duration `yaml:"connect,omitempty" json:"connect,omitempty"`
+			TLSHandshake   time.Duration `yaml:"tls_handshake,omitempty" json:"tlsHandshake,omitempty"`
+		} `yaml:"timeout,omitempty" json:"timeout,omitempty"`
 	}
-	// Backend backend config
-	Backend struct {
-		Name          string   `json:"name,omitempty"`
-		Policy        string   `json:"policy,omitempty"`
-		Ping          string   `json:"ping,omitempty"`
-		RequestHeader []string `yaml:"requestHeader" json:"requestHeader,omitempty"`
-		Header        []string `json:"header,omitempty"`
-		Prefixs       []string `json:"prefixs,omitempty"`
-		Hosts         []string `json:"hosts,omitempty"`
-		Backends      []string `json:"backends,omitempty"`
-		Rewrites      []string `json:"rewrites,omitempty"`
+	// BackendConfig backend config
+	BackendConfig struct {
+		Name          string   `yaml:"-" json:"name,omitempty"`
+		Policy        string   `yaml:"policy,omitempty" json:"policy,omitempty"`
+		Ping          string   `yaml:"ping,omitempty" json:"ping,omitempty"`
+		Prefixs       []string `yaml:"prefixs,omitempty" json:"prefixs,omitempty"`
+		Rewrites      []string `yaml:"rewrites,omitempty" json:"rewrites,omitempty"`
+		Hosts         []string `yaml:"hosts,omitempty" json:"hosts,omitempty"`
+		Header        []string `yaml:"header,omitempty" json:"header,omitempty"`
+		RequestHeader []string `yaml:"request_header,omitempty" json:"requestHeader,omitempty"`
+		Backends      []string `yaml:"backends,omitempty" json:"backends,omitempty"`
+	}
+	// BackendConfigs upstream backend config data
+	BackendConfigs map[string]BackendConfig
+	// Config basic config of pike
+	Config struct {
+		Data BasicConfig
+		rw   ReadWriter
+	}
+	// DirectorConfig director config
+	DirectorConfig struct {
+		Data BackendConfigs
+		rw   ReadWriter
+	}
+	// ReadWriter config reader writer
+	ReadWriter interface {
+		ReadConfig() ([]byte, error)
+		WriteConfig([]byte) error
+		Watch(func())
 	}
 )
 
-// IsTest is test mode
-func IsTest() bool {
-	return os.Getenv("GO_MODE") == "test"
+func readConfig(rw ReadWriter, v interface{}) (err error) {
+	buf, err := rw.ReadConfig()
+	// 配置文件
+	if err != nil && os.IsNotExist(err) {
+		err = nil
+	}
+	if err != nil {
+		return
+	}
+	err = yaml.Unmarshal(buf, v)
+	return
 }
 
-// New create a config instance
-func New() *Config {
-	return NewFileConfig(defaultConfigName)
+func writeConfig(rw ReadWriter, v interface{}) (err error) {
+	buf, err := yaml.Marshal(v)
+	if err != nil {
+		return
+	}
+	return rw.WriteConfig(buf)
 }
 
-// NewFileConfig create a file config instance
-func NewFileConfig(name string) *Config {
-	v := viper.New()
-	v.SetConfigType(defaultConfigType)
-	for _, value := range df.ConfigPathList {
-		v.AddConfigPath(value)
+// fillDefault fill the config with default
+func (bc *Config) fillDefault() {
+	data := &bc.Data
+	if data.Concurrency <= 0 {
+		data.Concurrency = defaultConcurrency
 	}
-	c := &Config{
-		Viper: v,
-		Name:  name,
+
+	cache := &data.Cache
+	if cache.Zone <= 0 {
+		cache.Zone = defaultZoneSize
 	}
-	return c
+	if cache.Size <= 0 {
+		cache.Size = defaultCacheSize
+	}
+	if cache.HitForPass < time.Second {
+		cache.HitForPass = defaultHitForPass
+	}
+
+	compress := &data.Compress
+	if compress.Level < 0 {
+		compress.Level = 0
+	}
+	if compress.MinLength == 0 {
+		compress.MinLength = defaultCompressMinLength
+	}
+	if compress.Filter == "" {
+		compress.Filter = defaultCompressFilter
+	}
+
+	timeout := &data.Timeout
+	if timeout.Connect == 0 {
+		timeout.Connect = defaultIdelConnTimeout
+	}
+	if timeout.ExpectContinue == 0 {
+		timeout.ExpectContinue = defaultExpectContinueTimeout
+	}
+	if timeout.IdleConn == 0 {
+		timeout.IdleConn = defaultIdelConnTimeout
+	}
+	if timeout.ResponseHeader == 0 {
+		timeout.ResponseHeader = defaultResponseHeaderTimeout
+	}
+	if timeout.TLSHandshake == 0 {
+		timeout.TLSHandshake = defaultTLSHandshakeTimeout
+	}
+
+	admin := &data.Admin
+	if admin.Prefix == "" {
+		admin.Prefix = os.Getenv("ADMIN_PATH")
+	}
 }
 
-// Fetch fetch config
-func (c *Config) Fetch() error {
-	if c.Type == FileType {
-		return c.readInConfig()
+// ReadConfig read config
+func (bc *Config) ReadConfig() (err error) {
+	err = readConfig(bc.rw, &bc.Data)
+	if err != nil {
+		return
 	}
-	return nil
+	bc.fillDefault()
+	return
 }
 
 // WriteConfig write config
-func (c *Config) WriteConfig() (err error) {
-	if c.Type == FileType {
-		err = c.Viper.WriteConfig()
-		_, ok := err.(viper.ConfigFileNotFoundError)
-		// 如果是找不到配置文件，则先创建
-		if ok {
-			file := df.ConfigPathList[0] + "/" + c.Name + "." + defaultConfigType
-			_, err = os.Stat(file)
-			if os.IsNotExist(err) {
-				_, err = os.Create(file)
-			}
-			if err != nil {
-				return
-			}
-			err = c.Viper.WriteConfig()
-		}
+func (bc *Config) WriteConfig() (err error) {
+	return writeConfig(bc.rw, &bc.Data)
+}
+
+// OnConfigChange watch config change
+func (bc *Config) OnConfigChange(fn func()) {
+	bc.rw.Watch(fn)
+}
+
+// YAML to yaml
+func (bc *Config) YAML() ([]byte, error) {
+	return yaml.Marshal(&bc.Data)
+}
+
+// ReadConfig read config
+func (dc *DirectorConfig) ReadConfig() (err error) {
+	err = readConfig(dc.rw, &dc.Data)
+	if err != nil {
 		return
 	}
 	return
-}
-
-// readInConfig read config from file
-func (c *Config) readInConfig() (err error) {
-	v := c.Viper
-	v.SetConfigName(c.Name)
-	err = v.ReadInConfig()
-	_, ok := err.(viper.ConfigFileNotFoundError)
-	// 如果是找不到配置文件，则不需抛出异常
-	if ok {
-		err = nil
-	}
-	return
-}
-
-func (c *Config) set(key string, value interface{}) {
-	c.modified = true
-	c.Viper.Set(key, value)
-}
-
-// GetIdentity get identity
-func (c *Config) GetIdentity() string {
-	return c.Viper.GetString(identityKey)
-}
-
-// SetIdentity set identity
-func (c *Config) SetIdentity(value string) {
-	c.set(identityKey, value)
-}
-
-// GetHeader get response's header
-func (c *Config) GetHeader() []string {
-	return c.Viper.GetStringSlice(headerKey)
-}
-
-// SetHeader set response's header
-func (c *Config) SetHeader(value []string) {
-	c.set(headerKey, value)
-}
-
-// GetRequestHeader get request's header
-func (c *Config) GetRequestHeader() []string {
-	return c.Viper.GetStringSlice(requestHeaderKey)
-}
-
-// SetRequestHeader set request's header
-func (c *Config) SetRequestHeader(value []string) {
-	c.set(requestHeaderKey, value)
-}
-
-// GetConcurrency get concurrency limit
-func (c *Config) GetConcurrency() uint32 {
-	v := c.Viper.GetInt32(concurrencyKey)
-	if v <= 0 {
-		return 256 * 1000
-	}
-	return uint32(v)
-}
-
-// SetConcurrency set concurrency limit
-func (c *Config) SetConcurrency(value uint32) {
-	c.set(concurrencyKey, value)
-}
-
-// GetEnableServerTiming get enable server timing flag
-func (c *Config) GetEnableServerTiming() bool {
-	return c.Viper.GetBool(enableServerTimingKey)
-}
-
-// SetEnableServerTiming set enable server timing flag
-func (c *Config) SetEnableServerTiming(value bool) {
-	c.set(enableServerTimingKey, value)
-}
-
-// getIntDefault get int default
-func (c *Config) getIntDefault(key string, defaultInt int) int {
-	v := c.Viper.GetInt(key)
-	if v <= 0 {
-		return defaultInt
-	}
-	return v
-}
-
-// GetCacheZoneSize get cache zone size
-func (c *Config) GetCacheZoneSize() int {
-	return c.getIntDefault(cacheZoneKey, 1024)
-}
-
-// SetCacheZoneSize set cache zone size
-func (c *Config) SetCacheZoneSize(value int) {
-	c.set(cacheZoneKey, value)
-}
-
-// GetCacheSize get cache size
-func (c *Config) GetCacheSize() int {
-	return c.getIntDefault(cacheSizeKey, 1024)
-}
-
-// SetCacheSzie set cache size
-func (c *Config) SetCacheSzie(value int) {
-	c.set(cacheSizeKey, value)
-}
-
-// GetHitForPassTTL get hit for pass ttl
-func (c *Config) GetHitForPassTTL() int {
-	return c.getIntDefault(hitForPassKey, 300)
-}
-
-// SetHitForPassTTL set hit for pass ttl
-func (c *Config) SetHitForPassTTL(value int) {
-	c.set(hitForPassKey, value)
-}
-
-// GetCompressLevel get compress level
-func (c *Config) GetCompressLevel() int {
-	v := c.Viper.GetInt(compressLevelKey)
-	if v < 0 {
-		return 0
-	}
-	return v
-}
-
-// SetCompressLevel set compress level
-func (c *Config) SetCompressLevel(value int) {
-	c.set(compressLevelKey, value)
-}
-
-// GetCompressMinLength get compress min length
-func (c *Config) GetCompressMinLength() int {
-	return c.getIntDefault(compressMinLengthKey, 1024)
-}
-
-// SetCompressMinLength set compress min length
-func (c *Config) SetCompressMinLength(value int) {
-	c.set(compressMinLengthKey, value)
-}
-
-// GetTextFilter get text filter
-func (c *Config) GetTextFilter() string {
-	v := c.Viper.GetString(compressFilterKey)
-	if v == "" {
-		v = "text|javascript|json"
-	}
-	return v
-}
-
-// SetTextFilter set text filter
-func (c *Config) SetTextFilter(value string) {
-	c.set(compressFilterKey, value)
-}
-
-func (c *Config) getDurationDefault(key string, defaultDuration time.Duration) time.Duration {
-	v := c.Viper.GetDuration(key)
-	if v == 0 {
-		return defaultDuration
-	}
-	return v
-}
-
-// GetIdleConnTimeout get idle conn timeout
-func (c *Config) GetIdleConnTimeout() time.Duration {
-	return c.getDurationDefault(timeoutIdleConnKey, 90*time.Second)
-}
-
-// SetIdleConnTimeout set idle conn timeout
-func (c *Config) SetIdleConnTimeout(value time.Duration) {
-	c.set(timeoutIdleConnKey, value)
-}
-
-// GetExpectContinueTimeout get expect continue timeout
-func (c *Config) GetExpectContinueTimeout() time.Duration {
-	return c.getDurationDefault(timeoutExpectContinueKey, 1*time.Second)
-}
-
-// SetExpectContinueTimeout set expect continue timeout
-func (c *Config) SetExpectContinueTimeout(value time.Duration) {
-	c.set(timeoutExpectContinueKey, value)
-}
-
-// GetResponseHeaderTimeout get response header timeout
-func (c *Config) GetResponseHeaderTimeout() time.Duration {
-	return c.getDurationDefault(timeoutResponseHeaderKey, 10*time.Second)
-}
-
-// SetResponseHeaderTimeout set response header timeout
-func (c *Config) SetResponseHeaderTimeout(value time.Duration) {
-	c.set(timeoutResponseHeaderKey, value)
-}
-
-// GetConnectTimeout get connect timeout
-func (c *Config) GetConnectTimeout() time.Duration {
-	return c.getDurationDefault(timeoutConnectKey, 15*time.Second)
-}
-
-// SetConnectTimeout set connect timeout
-func (c *Config) SetConnectTimeout(value time.Duration) {
-	c.set(timeoutConnectKey, value)
-}
-
-// GetTLSHandshakeTimeout get tls hand shake timeout
-func (c *Config) GetTLSHandshakeTimeout() time.Duration {
-	return c.getDurationDefault(timeoutTLSHandshakeKey, 5*time.Second)
-}
-
-// SetTLSHandshakeTimeout set tls handshake timeout
-func (c *Config) SetTLSHandshakeTimeout(value time.Duration) {
-	c.set(timeoutTLSHandshakeKey, value)
-}
-
-// GetAdminPath get admin path
-func (c *Config) GetAdminPath() string {
-	v := os.Getenv("ADMIN_PATH")
-	if v != "" {
-		return v
-	}
-	return c.Viper.GetString(adminPrefixKey)
-}
-
-// SetAdminPath set admin path
-func (c *Config) SetAdminPath(value string) {
-	c.set(adminPrefixKey, value)
-}
-
-// GetAdminUser get admin user
-func (c *Config) GetAdminUser() string {
-	return c.Viper.GetString(adminUserKey)
-}
-
-// SetAdminUser set admin user
-func (c *Config) SetAdminUser(value string) {
-	c.set(adminUserKey, value)
-}
-
-// GetAdminPassword get admin password
-func (c *Config) GetAdminPassword() string {
-	return c.Viper.GetString(adminPasswordKey)
-}
-
-// SetAdminPassword set admin password
-func (c *Config) SetAdminPassword(value string) {
-	c.set(adminPasswordKey, value)
 }
 
 // GetBackends get backends
-func (c *Config) GetBackends() []Backend {
-	vp := c.Viper
-	backends := make([]Backend, 0)
-	keys := vp.AllKeys()
-	nameList := []string{}
-	for _, key := range keys {
-		name := strings.Split(key, ".")[0]
-		found := false
-		for _, item := range nameList {
-			if item == name {
-				found = true
-			}
-		}
-		if !found {
-			nameList = append(nameList, name)
-		}
+func (dc *DirectorConfig) GetBackends() []BackendConfig {
+	result := make([]BackendConfig, 0)
+	for key := range dc.Data {
+		value := dc.Data[key]
+		value.Name = key
+		result = append(result, value)
 	}
-	sort.Sort(sort.StringSlice(nameList))
-	fn := func(name string) Backend {
-		return Backend{
-			Name:          name,
-			Policy:        vp.GetString(name + "." + backendPolicyKey),
-			Ping:          vp.GetString(name + "." + backendPingKey),
-			RequestHeader: vp.GetStringSlice(name + "." + backendRequestHeaderKey),
-			Header:        vp.GetStringSlice(name + "." + backendHeaderKey),
-			Prefixs:       vp.GetStringSlice(name + "." + backendPrefixsKey),
-			Hosts:         vp.GetStringSlice(name + "." + backendHostsKey),
-			Backends:      vp.GetStringSlice(name + "." + backendBackendsKey),
-			Rewrites:      vp.GetStringSlice(name + "." + backendRewritesKey),
-		}
-	}
-	for _, name := range nameList {
-		backends = append(backends, fn(name))
-	}
-	return backends
+	return result
 }
 
-// SetBackend set backend
-func (c *Config) SetBackend(backed Backend) {
-	name := backed.Name
-	if name == "" {
-		return
-	}
-	c.set(name+"."+backendPolicyKey, backed.Policy)
-	c.set(name+"."+backendPingKey, backed.Ping)
-	c.set(name+"."+backendRequestHeaderKey, backed.RequestHeader)
-	c.set(name+"."+backendHeaderKey, backed.Header)
-	c.set(name+"."+backendPrefixsKey, backed.Prefixs)
-	c.set(name+"."+backendHostsKey, backed.Hosts)
-	c.set(name+"."+backendBackendsKey, backed.Backends)
-	c.set(name+"."+backendRewritesKey, backed.Rewrites)
+// YAML to yaml
+func (dc *DirectorConfig) YAML() ([]byte, error) {
+	return yaml.Marshal(&dc.Data)
 }
 
-// RemoveBackend remove backend
-func (c *Config) RemoveBackend(name string) (err error) {
-	if name == "" {
-		return
-	}
-	data := c.Viper.AllSettings()
-	delete(data, name)
+// WriteConfig write config
+func (dc *DirectorConfig) WriteConfig() (err error) {
+	return writeConfig(dc.rw, &dc.Data)
+}
 
-	encodedConfig, _ := yaml.Marshal(data)
-	err = c.Viper.ReadConfig(bytes.NewReader(encodedConfig))
+// OnConfigChange watch config change
+func (dc *DirectorConfig) OnConfigChange(fn func()) {
+	dc.rw.Watch(fn)
+}
+
+// AddBackend add backend
+func (dc *DirectorConfig) AddBackend(backend BackendConfig) (err error) {
+	_, exists := dc.Data[backend.Name]
+	if exists {
+		err = hes.New("backend is already exists")
+	}
+	dc.Data[backend.Name] = backend
 	return
 }
 
-// BackendExists check backend exists
-func (c *Config) BackendExists(name string) bool {
-	exists := false
-	backends := c.GetBackends()
-	for _, backend := range backends {
-		if !exists && backend.Name == name {
-			exists = true
-		}
+// UpdateBackend update backend
+func (dc *DirectorConfig) UpdateBackend(backend BackendConfig) (err error) {
+	_, exists := dc.Data[backend.Name]
+	if !exists {
+		err = hes.New("backend isn't exists")
 	}
-	return exists
+	dc.Data[backend.Name] = backend
+	return
 }
 
-// ToYAML config to yaml
-func (c *Config) ToYAML() ([]byte, error) {
-	settings := c.Viper.AllSettings()
-	return yaml.Marshal(settings)
+// RemoveBackend remove backend
+func (dc *DirectorConfig) RemoveBackend(name string) {
+
+	delete(dc.Data, name)
+}
+
+// NewFileConfig new file basic config
+func NewFileConfig() *Config {
+	return &Config{
+		rw: &FileConfig{
+			Type: configType,
+			Name: basicConfigFile,
+		},
+	}
+}
+
+// NewFileDirectorConfig new director config
+func NewFileDirectorConfig() *DirectorConfig {
+	return &DirectorConfig{
+		rw: &FileConfig{
+			Type: configType,
+			Name: directorConfigFile,
+		},
+	}
 }

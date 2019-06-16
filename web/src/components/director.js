@@ -4,7 +4,7 @@ import { Link } from "react-router-dom";
 import { Spin, message, Icon, Button, Popconfirm } from "antd";
 
 import { UPSTREAMS } from "../urls";
-import { ADD_UPSTREAM_PATH } from "../paths";
+import { ADD_UPSTREAM_PATH, UPDATE_UPSTREAM_PATH } from "../paths";
 import "./director.sass";
 
 function createList(data, key, name) {
@@ -123,6 +123,9 @@ class Director extends React.Component {
           <h4>
             <div className="functions">
               {expandShrinke}
+              <Link to={UPDATE_UPSTREAM_PATH.replace(":name", name)}>
+                <Icon type="edit" />
+              </Link>
               <Popconfirm
                 title="Are you sure delete this upstream?"
                 onConfirm={() => {

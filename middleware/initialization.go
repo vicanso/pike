@@ -24,10 +24,10 @@ var (
 )
 
 // NewInitialization create an initialization middleware
-func NewInitialization(cfg *config.Config, insStats *stats.Stats) cod.Handler {
-	maxConcurrency := cfg.GetConcurrency()
-	header := util.ConvertToHTTPHeader(cfg.GetHeader())
-	requestHeader := util.ConvertToHTTPHeader(cfg.GetRequestHeader())
+func NewInitialization(cfg config.BasicConfig, insStats *stats.Stats) cod.Handler {
+	maxConcurrency := uint32(cfg.Concurrency)
+	responseHeader := util.ConvertToHTTPHeader(cfg.ResponseHeader)
+	requestHeader := util.ConvertToHTTPHeader(cfg.RequestHeader)
 
 	return func(c *cod.Context) (err error) {
 		startedAt := time.Now()
@@ -51,7 +51,7 @@ func NewInitialization(cfg *config.Config, insStats *stats.Stats) cod.Handler {
 
 		err = c.Next()
 		// 设置响应头 （最后再设置，避免在后续缓存中将全局响应头缓存）
-		for key, values := range header {
+		for key, values := range responseHeader {
 			for _, value := range values {
 				c.AddHeader(key, value)
 			}

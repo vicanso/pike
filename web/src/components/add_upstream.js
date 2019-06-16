@@ -7,9 +7,10 @@ class AddUpstream extends AddUpdateUpstream {
   constructor() {
     super();
     this.state.type = "add";
+    this.state.inited = true;
   }
   submit(data) {
-    request.post(UPSTREAMS, data);
+    return request.post(UPSTREAMS, data);
   }
 }
 

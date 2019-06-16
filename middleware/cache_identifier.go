@@ -59,8 +59,8 @@ func getCacheAge(header http.Header) int {
 }
 
 // NewCacheIdentifier create a cache identifier middleware
-func NewCacheIdentifier(cfg *config.Config, dsp *cache.Dispatcher) cod.Handler {
-	identify := cfg.GetIdentity()
+func NewCacheIdentifier(cfg config.BasicConfig, dsp *cache.Dispatcher) cod.Handler {
+	identify := cfg.Identity
 	fn := util.GetIdentity
 	if identify != "" {
 		fn = util.GenerateGetIdentity(identify)

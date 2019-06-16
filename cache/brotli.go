@@ -11,7 +11,7 @@ const (
 )
 
 func doBrotli(buf []byte, level int) ([]byte, error) {
-	if level == 0 {
+	if level <= 0 {
 		level = 9
 	}
 	if level > maxQuality {

@@ -8,7 +8,7 @@ import {
   DIRECTOR_PATH,
   CACHES_PATH,
   PERFORMANCE_PATH,
-  CONFIG_PATH
+  CONFIGS_PATH
 } from "../paths";
 
 const paths = [
@@ -25,8 +25,8 @@ const paths = [
     path: PERFORMANCE_PATH
   },
   {
-    name: "Config",
-    path: CONFIG_PATH
+    name: "Configs",
+    path: CONFIGS_PATH
   }
 ];
 

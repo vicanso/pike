@@ -17,7 +17,7 @@ import (
 
 func TestNewProxy(t *testing.T) {
 	assert := assert.New(t)
-	us := upstream.New(config.Backend{
+	us := upstream.New(config.BackendConfig{
 		Backends: []string{
 			"http://127.0.0.1:7001",
 		},

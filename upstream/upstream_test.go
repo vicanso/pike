@@ -46,7 +46,7 @@ func TestCreateTargetPicker(t *testing.T) {
 		"http://127.0.0.1:7003",
 	}
 	create := func() *Upstream {
-		us := createUpstreamFromBackend(config.Backend{
+		us := createUpstreamFromBackend(config.BackendConfig{
 			Backends: backends,
 		})
 		for _, item := range us.Server.GetUpstreamList() {
@@ -57,7 +57,7 @@ func TestCreateTargetPicker(t *testing.T) {
 
 	t.Run("convert http header", func(t *testing.T) {
 		assert := assert.New(t)
-		us := createUpstreamFromBackend(config.Backend{
+		us := createUpstreamFromBackend(config.BackendConfig{
 			Backends: []string{
 				"http://127.0.0.1:7001|backup",
 				"http://127.0.0.1:7002",
@@ -88,7 +88,7 @@ func TestCreateTargetPicker(t *testing.T) {
 
 	t.Run("first with backup", func(t *testing.T) {
 		assert := assert.New(t)
-		us := createUpstreamFromBackend(config.Backend{
+		us := createUpstreamFromBackend(config.BackendConfig{
 			Backends: []string{
 				"http://127.0.0.1:7001|backup",
 				"http://127.0.0.1:7002",
@@ -108,7 +108,7 @@ func TestCreateTargetPicker(t *testing.T) {
 
 	t.Run("first with backup", func(t *testing.T) {
 		assert := assert.New(t)
-		us := createUpstreamFromBackend(config.Backend{
+		us := createUpstreamFromBackend(config.BackendConfig{
 			Backends: []string{
 				"http://127.0.0.1:7001|backup",
 				"http://127.0.0.1:7002",
@@ -240,7 +240,7 @@ func TestCreateProxyHandler(t *testing.T) {
 		Get("/").
 		Reply(200)
 
-	us := createUpstreamFromBackend(config.Backend{
+	us := createUpstreamFromBackend(config.BackendConfig{
 		Policy: policyLeastconn,
 		Ping:   "/ping",
 		Hosts: []string{
@@ -298,7 +298,7 @@ func TestUpstream(t *testing.T) {
 func TestProxy(t *testing.T) {
 	assert := assert.New(t)
 	upstreams := make(Upstreams, 0)
-	us := New(config.Backend{
+	us := New(config.BackendConfig{
 		Backends: []string{
 			"http://127.0.0.1:7001",
 		},
@@ -348,7 +348,7 @@ func TestProxy(t *testing.T) {
 }
 
 func TestGetDirectorStats(t *testing.T) {
-	us := createUpstreamFromBackend(config.Backend{
+	us := createUpstreamFromBackend(config.BackendConfig{
 		Backends: []string{
 			"http://127.0.0.1:7001|backup",
 			"http://127.0.0.1:7002",

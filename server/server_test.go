@@ -118,7 +118,7 @@ func TestNewServer(t *testing.T) {
 	assert.Nil(err)
 	defer ln.Close()
 
-	up := upstream.New(config.Backend{
+	up := upstream.New(config.BackendConfig{
 		Name: "test",
 		Ping: "/ping",
 		Backends: []string{
@@ -145,11 +145,14 @@ func TestNewServer(t *testing.T) {
 		TextFilter:        regexp.MustCompile("text|javascript|json"),
 	})
 
-	d := New(Options{
-		Config:     config.New(),
-		Director:   director,
-		Dispatcher: dsp,
-		Stats:      stats.New(),
+	basicConfig := config.NewFileConfig()
+	err = basicConfig.ReadConfig()
+	assert.Nil(err)
+	d := NewServer(Options{
+		BasicConfig: basicConfig,
+		Director:    director,
+		Dispatcher:  dsp,
+		Stats:       stats.New(),
 	})
 
 	newRequest := func(method, url string) *http.Request {
