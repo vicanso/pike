@@ -30,7 +30,7 @@ func TestLRU(t *testing.T) {
 	assert.Nil(v, "remove cache fail")
 
 	lru.Add(key1, value1)
-	assert.Equal(lru.Len(), 1, "get lru len fail")
+	assert.Equal(1, lru.Len(), "get lru len fail")
 
 	count := 0
 	lru.ForEach(func(key string, value *HTTPCache) {
@@ -39,5 +39,5 @@ func TestLRU(t *testing.T) {
 	assert.Equal(count, lru.Len(), "lru forEach fail")
 
 	lru.Clear()
-	assert.Equal(lru.Len(), 0, "lru clear fail")
+	assert.Equal(0, lru.Len(), "lru clear fail")
 }

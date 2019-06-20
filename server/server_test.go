@@ -145,7 +145,8 @@ func TestNewServer(t *testing.T) {
 		TextFilter:        regexp.MustCompile("text|javascript|json"),
 	})
 
-	basicConfig := config.NewFileConfig()
+	basicConfig, err := config.NewBasicConfig("")
+	assert.Nil(err)
 	err = basicConfig.ReadConfig()
 	assert.Nil(err)
 	d := NewServer(Options{
@@ -186,8 +187,8 @@ func TestNewServer(t *testing.T) {
 				t.Fatalf("unexpected status:%s", status)
 			}
 		}
-		assert.Equal(onceCount, 1, onceStatus+" should appear once")
-		assert.Equal(otherCount, len(statusList)-1, otherStatus+" should appear "+strconv.Itoa(len(statusList)-1))
+		assert.Equal(1, onceCount, onceStatus+" should appear once")
+		assert.Equal(len(statusList)-1, otherCount, otherStatus+" should appear "+strconv.Itoa(len(statusList)-1))
 	}
 
 	t.Run("post", func(t *testing.T) {

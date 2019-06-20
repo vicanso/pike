@@ -10,6 +10,7 @@ import (
 type (
 	// FileConfig file config
 	FileConfig struct {
+		Path     string
 		Name     string
 		Type     string
 		OnChange func()
@@ -31,17 +32,25 @@ var (
 
 func (fc *FileConfig) getFile() (file string, err error) {
 	files := []string{}
-	for _, item := range configPathList {
-		name := fc.Name
-		if fc.Type != "" {
-			name += ("." + fc.Type)
-		}
-		s := filepath.Join(item, name)
-		if strings.HasPrefix(s, homeENV) {
-			s = strings.Replace(s, homeENV, os.Getenv(homeENV[1:]), 1)
-		}
-		files = append(files, s)
+	name := fc.Name
+
+	if fc.Type != "" {
+		name += ("." + fc.Type)
 	}
+
+	if fc.Path != "" {
+		s := filepath.Join(fc.Path, name)
+		files = append(files, s)
+	} else {
+		for _, item := range configPathList {
+			s := filepath.Join(item, name)
+			if strings.HasPrefix(s, homeENV) {
+				s = strings.Replace(s, homeENV, os.Getenv(homeENV[1:]), 1)
+			}
+			files = append(files, s)
+		}
+	}
+
 	file = files[0]
 	for _, item := range files {
 		_, err := os.Stat(item)
@@ -80,4 +89,9 @@ func (fc *FileConfig) WriteConfig(data []byte) (err error) {
 // Watch watch the config file change
 func (fc *FileConfig) Watch(fn func()) {
 	fc.OnChange = fn
+}
+
+// Close close
+func (fc *FileConfig) Close() error {
+	return nil
 }

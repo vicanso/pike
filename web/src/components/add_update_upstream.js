@@ -33,7 +33,7 @@ class AddUpdateUpstream extends React.Component {
     hosts: [],
     rewrites: [],
     backends: [],
-    header: [],
+    responseHeader: [],
     requestHeader: []
   };
   async handleSubmit(e) {
@@ -51,7 +51,7 @@ class AddUpdateUpstream extends React.Component {
       hosts,
       rewrites,
       backends,
-      header,
+      responseHeader,
       requestHeader
     } = this.state;
 
@@ -110,11 +110,13 @@ class AddUpdateUpstream extends React.Component {
       if (rewrites.length) {
         data.rewrites = rewrites;
       }
-      const filterHeader = header.filter(
+      const filterResponseHeader = responseHeader.filter(
         item => item && item.key && item.value
       );
-      if (filterHeader.length) {
-        data.header = filterHeader.map(item => `${item.key}:${item.value}`);
+      if (filterResponseHeader.length) {
+        data.responseHeader = filterResponseHeader.map(
+          item => `${item.key}:${item.value}`
+        );
       }
       const filterRequestHeader = requestHeader.filter(
         item => item && item.key && item.value
@@ -442,7 +444,9 @@ class AddUpdateUpstream extends React.Component {
         <Form.Item label="Request Header">
           {this.renderHeader("requestHeader")}
         </Form.Item>
-        <Form.Item label="Header">{this.renderHeader("header")}</Form.Item>
+        <Form.Item label="Response Header">
+          {this.renderHeader("responseHeader")}
+        </Form.Item>
         {this.renderPrefixs()}
         {this.renderHosts()}
         {this.renderWrites()}

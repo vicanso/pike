@@ -3,6 +3,7 @@ package server
 import (
 	"net"
 	"net/http"
+	"os"
 	"regexp"
 	"sync"
 	"sync/atomic"
@@ -19,6 +20,7 @@ import (
 	"github.com/vicanso/pike/stats"
 	"github.com/vicanso/pike/upstream"
 	"github.com/vicanso/pike/util"
+	UP "github.com/vicanso/upstream"
 	"go.uber.org/zap"
 )
 
@@ -36,11 +38,6 @@ type (
 		Director *upstream.Director
 		Server   *cod.Cod
 	}
-)
-
-const (
-	basicConfigKey    = "config"
-	directorConfigKey = "director"
 )
 
 // Destroy destroy instance
@@ -65,6 +62,12 @@ func NewInstance(basicConfig *config.Config, directorConfig *config.DirectorConf
 			TLSHandshakeTimeout:   timeoutConfig.TLSHandshake,
 			ExpectContinueTimeout: timeoutConfig.ExpectContinue,
 			ResponseHeaderTimeout: timeoutConfig.ResponseHeader,
+		},
+		OnStatusChange: func(upstream *UP.HTTPUpstream, status string) {
+			logger.Info("upstream status change",
+				zap.String("uri", upstream.URL.String()),
+				zap.String("status", status),
+			)
 		},
 	}
 
@@ -156,7 +159,7 @@ func (cls *Cluster) ToggleInstance(updateConfig string) (err error) {
 		}()
 	}()
 	switch updateConfig {
-	case basicConfigKey:
+	case config.BasicConfigName:
 		err = cls.basicConfig.ReadConfig()
 	default:
 		err = cls.directorConfig.ReadConfig()
@@ -168,7 +171,7 @@ func (cls *Cluster) ToggleInstance(updateConfig string) (err error) {
 		return
 	}
 	// 如果是更新了基本配置，则需要更新缓存
-	if updateConfig == basicConfigKey {
+	if updateConfig == config.BasicConfigName {
 		cls.dsp = cls.newDispatcher()
 	}
 	ins := cls.newInstance()
@@ -184,10 +187,10 @@ func (cls *Cluster) ToggleInstance(updateConfig string) (err error) {
 // Watch watch config file change
 func (cls *Cluster) Watch() {
 	go cls.basicConfig.OnConfigChange(func() {
-		cls.ToggleInstance(basicConfigKey)
+		cls.ToggleInstance(config.BasicConfigName)
 	})
 	go cls.directorConfig.OnConfigChange(func() {
-		cls.ToggleInstance(directorConfigKey)
+		cls.ToggleInstance(config.DirectorConfigName)
 	})
 }
 
@@ -204,12 +207,22 @@ func (cls *Cluster) ServeHTTP(resp http.ResponseWriter, req *http.Request) {
 
 // NewCluster create a new cluster
 func NewCluster() (cluster *Cluster, err error) {
-	basicConfig := config.NewFileConfig()
+
+	configURI := os.Getenv("CONFIG")
+
+	basicConfig, err := config.NewBasicConfig(configURI)
+	if err != nil {
+		return
+	}
+	directorConfig, err := config.NewDirectorConfig(configURI)
+	if err != nil {
+		return
+	}
+
 	err = basicConfig.ReadConfig()
 	if err != nil {
 		return
 	}
-	directorConfig := config.NewFileDirectorConfig()
 	err = directorConfig.ReadConfig()
 	if err != nil {
 		return

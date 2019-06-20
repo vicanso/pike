@@ -28,7 +28,7 @@ tiny:
   # 请求头，单独设置至此director（和全局header的配置方式一样）
   request_header:
     - "X-Version:${VERSION}" 
-  header:
+  response_header:
   # 响应头，单独设置至此director（和全局header的配置方式一样）
     - "X-Powered-By:koa"
   # backend列表

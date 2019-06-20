@@ -24,7 +24,7 @@ func TestNewProxy(t *testing.T) {
 		Hosts: []string{
 			"aslant.site",
 		},
-		Header: []string{
+		ResponseHeader: []string{
 			"X-Server:test",
 		},
 		RequestHeader: []string{
@@ -60,6 +60,6 @@ func TestNewProxy(t *testing.T) {
 	fn := NewProxy(director)
 	err := fn(c)
 	assert.Nil(err, "proxy middleware fail")
-	assert.Equal(c.StatusCode, http.StatusOK, "proxy should be 200")
-	assert.Equal(strings.TrimSpace(c.BodyBuffer.String()), `{"foo":"bar"}`)
+	assert.Equal(http.StatusOK, c.StatusCode, "proxy should be 200")
+	assert.Equal(`{"foo":"bar"}`, strings.TrimSpace(c.BodyBuffer.String()))
 }

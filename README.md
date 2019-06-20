@@ -15,3 +15,15 @@ HTTP cache server like `varnish`.
 - [ ] 后端返回数据未添加ETag
 - [ ] 后端返回数据已添加ETag
 - [ ] 304的处理
+
+
+## ETCD
+
+```bash
+docker run -d --restart=always \
+  -p 2379:2379 \
+  --name etcd \
+  vicanso/etcd etcd \
+  --listen-client-urls 'http://0.0.0.0:2379' \
+  --advertise-client-urls 'http://0.0.0.0:2379'
+```

@@ -1,6 +1,6 @@
 import React from "react";
 import request from "axios";
-import { Spin, message, Row, Col } from "antd";
+import { Spin, message, Row, Col, Card } from "antd";
 
 import "./performance.sass";
 import { STATS } from "../urls";
@@ -58,10 +58,9 @@ class Performance extends React.Component {
       );
     });
     return (
-      <div>
-        <h3>Basic Informations</h3>
+      <Card title="Basic Informations">
         <Row>{arr}</Row>
-      </div>
+      </Card>
     );
   }
   render() {

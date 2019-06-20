@@ -1,13 +1,17 @@
 import React from "react";
 import request from "axios";
-import { Spin, Form, Card, message, Input, Select, Button } from "antd";
+import { Spin, Form, Card, message, Input, Select, Button, Switch } from "antd";
 
 import "./update_config.sass";
 import { CONFIGS } from "../urls";
 import * as router from "../router";
 
-function convertNsToSecnods(value) {
+function convertNsToSecnod(value) {
   return Math.round(value / (1000 * 1000 * 1000));
+}
+
+function convertSecondToNs(value) {
+  return value * (1000 * 1000 * 1000);
 }
 
 class UpdateConfig extends React.Component {
@@ -25,12 +29,12 @@ class UpdateConfig extends React.Component {
     try {
       const { data } = await request.get(`${CONFIGS}/${name}`);
       if (data.cache) {
-        data.cache.hitForPass = convertNsToSecnods(data.cache.hitForPass);
+        data.cache.hitForPass = convertNsToSecnod(data.cache.hitForPass);
       }
       if (data.timeout) {
         const keys = Object.keys(data.timeout);
         keys.forEach(key => {
-          data.timeout[key] = convertNsToSecnods(data.timeout[key]);
+          data.timeout[key] = convertNsToSecnod(data.timeout[key]);
         });
       }
       this.setState({
@@ -57,7 +61,22 @@ class UpdateConfig extends React.Component {
     });
     // TODO 做转换以及类型转换
     try {
-      await request.patch(`${CONFIGS}/${name}`, data);
+      const updateData = Object.assign({}, data);
+      const { cache, timeout } = updateData;
+      if (cache && cache.hitForPass) {
+        cache.hitForPass = convertSecondToNs(cache.hitForPass);
+      }
+      if (timeout) {
+        const keys = Object.keys(timeout);
+        keys.forEach(key => {
+          timeout[key] = convertSecondToNs(timeout[key]);
+        });
+      }
+      if (data.compress.filter) {
+        // 测试是否正则
+        new RegExp(data.compress.filter);
+      }
+      await request.patch(`${CONFIGS}/${name}`, updateData);
       message.info("update config successful");
       router.back();
     } catch (err) {
@@ -268,16 +287,30 @@ class UpdateConfig extends React.Component {
               onChange={this.createInputOnChagne("concurrency")}
             />
           </Form.Item>
+          <Form.Item label="ServerTiming">
+            <Switch
+              defaultChecked={data.enableServerTiming}
+              onChange={checked => {
+                this.setState({
+                  data: Object.assign(data, {
+                    enableServerTiming: checked
+                  })
+                });
+              }}
+            />
+          </Form.Item>
         </Card>
         {this.renderHeaderConfig({
           name: "responseHeader",
           title: "Response Header Config",
-          placeholder: "Input the header will be add to response"
+          placeholder:
+            "Input the header will be add to response, e.g.: key:value"
         })}
         {this.renderHeaderConfig({
           name: "requestHeader",
           title: "Request Header Config",
-          placeholder: "Input the header will be add to request"
+          placeholder:
+            "Input the header will be add to request, e.g.: key:value"
         })}
         {this.renderTimeoutConfig()}
         {this.renderCacheConfig()}

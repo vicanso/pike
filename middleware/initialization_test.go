@@ -15,7 +15,7 @@ func TestNewInitialization(t *testing.T) {
 	assert := assert.New(t)
 	bc := config.BasicConfig{
 		Concurrency: 100,
-		Header: []string{
+		ResponseHeader: []string{
 			"X-Response-ID:456",
 		},
 		RequestHeader: []string{
@@ -28,13 +28,13 @@ func TestNewInitialization(t *testing.T) {
 	req := httptest.NewRequest("GET", "/", nil)
 	c := cod.NewContext(resp, req)
 	c.Next = func() error {
-		assert.Equal(c.GetHeader("X-Response-ID"), "")
-		assert.Equal(c.GetRequestHeader("X-Request-ID"), "123", "X-Request-ID should be set")
+		assert.Equal("", c.GetHeader("X-Response-ID"))
+		assert.Equal("123", c.GetRequestHeader("X-Request-ID"), "X-Request-ID should be set")
 		return nil
 	}
 	err := fn(c)
 	assert.Nil(err, "init middleware fail")
-	assert.Equal(c.GetHeader("X-Response-ID"), "456", "X-Response-ID should be set")
+	assert.Equal("456", c.GetHeader("X-Response-ID"), "X-Response-ID should be set")
 }
 
 func TestTooManyRequest(t *testing.T) {
@@ -56,5 +56,5 @@ func TestTooManyRequest(t *testing.T) {
 	c2 := cod.NewContext(httptest.NewRecorder(), httptest.NewRequest("GET", "/", nil))
 	time.Sleep(time.Millisecond)
 	err := fn(c2)
-	assert.Equal(err, errTooManyRequest)
+	assert.Equal(errTooManyRequest, err)
 }

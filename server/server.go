@@ -52,7 +52,7 @@ func NewServer(opts Options) *cod.Cod {
 	adminPath := cfg.Data.Admin.Prefix
 	if adminPath != "" {
 		adminServer := NewAdminServer(opts)
-		d.Use(func(c *cod.Context) error {
+		adminFn := func(c *cod.Context) error {
 			path := c.Request.URL.Path
 			if strings.HasPrefix(path, adminPath) {
 				c.Request.URL.Path = path[len(adminPath):]
@@ -60,10 +60,14 @@ func NewServer(opts Options) *cod.Cod {
 				return nil
 			}
 			return c.Next()
-		})
+		}
+		d.Use(adminFn)
+		d.SetFunctionName(adminFn, "-")
 	}
 
-	d.Use(recover.New())
+	fn := recover.New()
+	d.Use(fn)
+	d.SetFunctionName(fn, "-")
 
 	ping := func(c *cod.Context) error {
 		if c.Request.RequestURI == "/ping" {
@@ -75,7 +79,7 @@ func NewServer(opts Options) *cod.Cod {
 	d.Use(ping)
 	d.SetFunctionName(ping, "-")
 
-	fn := middleware.NewInitialization(cfg.Data, insStats)
+	fn = middleware.NewInitialization(cfg.Data, insStats)
 	d.Use(fn)
 	d.SetFunctionName(fn, "Initialization")
 

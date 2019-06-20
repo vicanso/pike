@@ -37,8 +37,8 @@ func TestDispatcher(t *testing.T) {
 		defer hc2.Done()
 		hc3 := dsp.GetHTTPCache(k3)
 		defer hc3.Done()
-		assert.Equal(hc2.Status, HitForPass, "status should be hit for pass")
-		assert.Equal(hc3.Status, HitForPass, "status should be hit for pass")
+		assert.Equal(HitForPass, hc2.Status, "status should be hit for pass")
+		assert.Equal(HitForPass, hc3.Status, "status should be hit for pass")
 		assert.Equal(hc2, hc3, "these two caches should be same")
 	})
 
@@ -60,8 +60,8 @@ func TestDispatcher(t *testing.T) {
 		defer hc2.Done()
 		hc3 := dsp.GetHTTPCache(k3)
 		defer hc3.Done()
-		assert.Equal(hc2.Status, Cacheable, "status should be cacheable")
-		assert.Equal(hc3.Status, Cacheable, "status should be cacheable")
+		assert.Equal(Cacheable, hc2.Status, "status should be cacheable")
+		assert.Equal(Cacheable, hc3.Status, "status should be cacheable")
 		assert.Equal(hc2, hc3, "these two caches should be same")
 	})
 
@@ -74,14 +74,36 @@ func TestDispatcher(t *testing.T) {
 		lruCache := cache.lruCache
 		v, ok := lruCache.Get(key)
 		assert.True(ok)
-		assert.NotEqual(v.ExpiredAt, int64(1))
+		assert.NotEqual(int64(1), v.ExpiredAt)
 		dsp.Expire(k)
-		assert.Equal(v.ExpiredAt, int64(1))
+		assert.Equal(int64(1), v.ExpiredAt)
 	})
 
 	t.Run("get all cache status", func(t *testing.T) {
 		cacheList := dsp.GetCacheList()
-		assert.NotEqual(t, len(cacheList), 0)
+		assert.NotEqual(t, 0, len(cacheList))
+	})
+
+	t.Run("different key create http cache", func(t *testing.T) {
+		assert := assert.New(t)
+		key1 := []byte("different1")
+		key2 := []byte("different2")
+		// 所有的缓存都命中同一个cache
+		oneCacheDsp := NewDispatcher(Options{
+			Size: 1,
+		})
+
+		hc1 := oneCacheDsp.GetHTTPCache(key1)
+		go func() {
+			time.Sleep(5 * time.Millisecond)
+			// key1 有等待读的处理，此时key1可正常
+			oneCacheDsp.GetHTTPCache(key2)
+			hc1.HitForPass()
+			hc1.Done()
+		}()
+		// 无法成功，等待中
+		hc1Read := oneCacheDsp.GetHTTPCache(key1)
+		assert.Equal(HitForPass, hc1Read.Status)
 	})
 }
 
@@ -92,9 +114,9 @@ func TestHitForPass(t *testing.T) {
 		opts: &opts,
 	}
 	hc.HitForPass()
-	assert.NotEqual(hc.CreatedAt, 0, "createdAt shouldn't be 0")
-	assert.NotEqual(hc.ExpiredAt, 0, "expiredAt shouldn't be 0")
-	assert.Equal(hc.Status, HitForPass, "status should be hit for pass")
+	assert.NotEqual(0, hc.CreatedAt, "createdAt shouldn't be 0")
+	assert.NotEqual(0, hc.ExpiredAt, "expiredAt shouldn't be 0")
+	assert.Equal(HitForPass, hc.Status, "status should be hit for pass")
 }
 
 func TestCacheable(t *testing.T) {
@@ -121,11 +143,11 @@ func TestCacheable(t *testing.T) {
 			opts: &opts,
 		}
 		hc.Cacheable(maxAge, c)
-		assert.Equal(hc.Status, Cacheable, "status should be cacheable")
+		assert.Equal(Cacheable, hc.Status, "status should be cacheable")
 		assert.NotNil(hc.Headers, "headers shouldn't be nil")
 		assert.Nil(hc.Body, "original body should be nil")
 		assert.NotNil(hc.GzipBody, "gzip body shouldn't be nil")
-		assert.Equal(hc.Headers.Get(cod.HeaderContentLength), "", "Content-Length should be empty")
+		assert.Equal("", hc.Headers.Get(cod.HeaderContentLength), "Content-Length should be empty")
 	})
 
 	t.Run("cacheable(gunzip success)", func(t *testing.T) {
@@ -145,8 +167,8 @@ func TestCacheable(t *testing.T) {
 			opts: &opts,
 		}
 		hc.Cacheable(maxAge, c)
-		assert.Equal(hc.Status, Cacheable, "status should be cacheable")
-		assert.Equal(hc.Body.Bytes(), data, "body should be the smae as original")
+		assert.Equal(Cacheable, hc.Status, "status should be cacheable")
+		assert.Equal(data, hc.Body.Bytes(), "body should be the smae as original")
 		assert.Nil(hc.GzipBody, "gzip data should be nil")
 	})
 
@@ -166,7 +188,7 @@ func TestCacheable(t *testing.T) {
 			opts: &opts,
 		}
 		hc.Cacheable(maxAge, c)
-		assert.Equal(hc.Status, HitForPass, "status should be hit for pass")
+		assert.Equal(HitForPass, hc.Status, "status should be hit for pass")
 	})
 
 	t.Run("not support encoding should hit for pass", func(t *testing.T) {
@@ -185,6 +207,6 @@ func TestCacheable(t *testing.T) {
 			opts: &opts,
 		}
 		hc.Cacheable(maxAge, c)
-		assert.Equal(hc.Status, HitForPass, "status should be hit for pass")
+		assert.Equal(HitForPass, hc.Status, "status should be hit for pass")
 	})
 }

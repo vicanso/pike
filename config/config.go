@@ -2,6 +2,7 @@ package config
 
 import (
 	"os"
+	"strings"
 	"time"
 
 	"github.com/vicanso/hes"
@@ -10,14 +11,13 @@ import (
 )
 
 const (
-	// FileType file type
-	FileType = iota
-)
-
-const (
-	basicConfigFile    = "config"
-	directorConfigFile = "director"
+	// BasicConfigName basic config's name
+	BasicConfigName = "config"
+	// DirectorConfigName director config's name
+	DirectorConfigName = "director"
 	configType         = "yml"
+
+	etcdPrefix = "etcd"
 
 	defaultConcurrency           = 256 * 1000
 	defaultZoneSize              = 1024
@@ -30,6 +30,11 @@ const (
 	defaultResponseHeaderTimeout = 10 * time.Second
 	defaultConnectTimeout        = 15 * time.Second
 	defaultTLSHandshakeTimeout   = 5 * time.Second
+)
+
+var (
+	errBackendExists    = hes.New("backend is already exists")
+	errBackendNotExists = hes.New("backend isn't exists")
 )
 
 type (
@@ -65,15 +70,15 @@ type (
 	}
 	// BackendConfig backend config
 	BackendConfig struct {
-		Name          string   `yaml:"-" json:"name,omitempty"`
-		Policy        string   `yaml:"policy,omitempty" json:"policy,omitempty"`
-		Ping          string   `yaml:"ping,omitempty" json:"ping,omitempty"`
-		Prefixs       []string `yaml:"prefixs,omitempty" json:"prefixs,omitempty"`
-		Rewrites      []string `yaml:"rewrites,omitempty" json:"rewrites,omitempty"`
-		Hosts         []string `yaml:"hosts,omitempty" json:"hosts,omitempty"`
-		Header        []string `yaml:"header,omitempty" json:"header,omitempty"`
-		RequestHeader []string `yaml:"request_header,omitempty" json:"requestHeader,omitempty"`
-		Backends      []string `yaml:"backends,omitempty" json:"backends,omitempty"`
+		Name           string   `yaml:"-" json:"name,omitempty"`
+		Policy         string   `yaml:"policy,omitempty" json:"policy,omitempty"`
+		Ping           string   `yaml:"ping,omitempty" json:"ping,omitempty"`
+		Prefixs        []string `yaml:"prefixs,omitempty" json:"prefixs,omitempty"`
+		Rewrites       []string `yaml:"rewrites,omitempty" json:"rewrites,omitempty"`
+		Hosts          []string `yaml:"hosts,omitempty" json:"hosts,omitempty"`
+		ResponseHeader []string `yaml:"response_header,omitempty" json:"responseHeader,omitempty"`
+		RequestHeader  []string `yaml:"request_header,omitempty" json:"requestHeader,omitempty"`
+		Backends       []string `yaml:"backends,omitempty" json:"backends,omitempty"`
 	}
 	// BackendConfigs upstream backend config data
 	BackendConfigs map[string]BackendConfig
@@ -92,6 +97,7 @@ type (
 		ReadConfig() ([]byte, error)
 		WriteConfig([]byte) error
 		Watch(func())
+		Close() error
 	}
 )
 
@@ -138,6 +144,7 @@ func (bc *Config) fillDefault() {
 	if compress.Level < 0 {
 		compress.Level = 0
 	}
+	// 允许设置为小于0，表示所有都压缩
 	if compress.MinLength == 0 {
 		compress.MinLength = defaultCompressMinLength
 	}
@@ -163,8 +170,9 @@ func (bc *Config) fillDefault() {
 	}
 
 	admin := &data.Admin
-	if admin.Prefix == "" {
-		admin.Prefix = os.Getenv("ADMIN_PATH")
+	adminPath := os.Getenv("ADMIN_PATH")
+	if adminPath != "" {
+		admin.Prefix = adminPath
 	}
 }
 
@@ -195,16 +203,15 @@ func (bc *Config) YAML() ([]byte, error) {
 
 // ReadConfig read config
 func (dc *DirectorConfig) ReadConfig() (err error) {
-	err = readConfig(dc.rw, &dc.Data)
-	if err != nil {
-		return
-	}
-	return
+	return readConfig(dc.rw, &dc.Data)
 }
 
 // GetBackends get backends
 func (dc *DirectorConfig) GetBackends() []BackendConfig {
 	result := make([]BackendConfig, 0)
+	if dc.Data == nil {
+		return result
+	}
 	for key := range dc.Data {
 		value := dc.Data[key]
 		value.Name = key
@@ -230,9 +237,12 @@ func (dc *DirectorConfig) OnConfigChange(fn func()) {
 
 // AddBackend add backend
 func (dc *DirectorConfig) AddBackend(backend BackendConfig) (err error) {
+	if dc.Data == nil {
+		dc.Data = make(BackendConfigs)
+	}
 	_, exists := dc.Data[backend.Name]
 	if exists {
-		err = hes.New("backend is already exists")
+		err = errBackendExists
 	}
 	dc.Data[backend.Name] = backend
 	return
@@ -242,7 +252,7 @@ func (dc *DirectorConfig) AddBackend(backend BackendConfig) (err error) {
 func (dc *DirectorConfig) UpdateBackend(backend BackendConfig) (err error) {
 	_, exists := dc.Data[backend.Name]
 	if !exists {
-		err = hes.New("backend isn't exists")
+		err = errBackendNotExists
 	}
 	dc.Data[backend.Name] = backend
 	return
@@ -250,26 +260,49 @@ func (dc *DirectorConfig) UpdateBackend(backend BackendConfig) (err error) {
 
 // RemoveBackend remove backend
 func (dc *DirectorConfig) RemoveBackend(name string) {
-
 	delete(dc.Data, name)
 }
 
-// NewFileConfig new file basic config
-func NewFileConfig() *Config {
-	return &Config{
-		rw: &FileConfig{
+// createReadWriter create reader writer
+func createReadWriter(uri, name string) (rw ReadWriter, err error) {
+	if strings.HasPrefix(uri, etcdPrefix) {
+		etcdConfig, e := NewEtcdConfig(uri)
+		if e != nil {
+			err = e
+			return
+		}
+		etcdConfig.Name = name
+		rw = etcdConfig
+	} else {
+		rw = &FileConfig{
+			Path: uri,
 			Type: configType,
-			Name: basicConfigFile,
-		},
+			Name: name,
+		}
 	}
+	return
 }
 
-// NewFileDirectorConfig new director config
-func NewFileDirectorConfig() *DirectorConfig {
-	return &DirectorConfig{
-		rw: &FileConfig{
-			Type: configType,
-			Name: directorConfigFile,
-		},
+// NewBasicConfig create a basic config
+func NewBasicConfig(uri string) (conf *Config, err error) {
+	rw, err := createReadWriter(uri, BasicConfigName)
+	if err != nil {
+		return
 	}
+	conf = &Config{
+		rw: rw,
+	}
+	return
+}
+
+// NewDirectorConfig create a new director config
+func NewDirectorConfig(uri string) (conf *DirectorConfig, err error) {
+	rw, err := createReadWriter(uri, DirectorConfigName)
+	if err != nil {
+		return
+	}
+	conf = &DirectorConfig{
+		rw: rw,
+	}
+	return
 }

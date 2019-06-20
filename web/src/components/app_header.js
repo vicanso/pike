@@ -13,7 +13,7 @@ import {
 
 const paths = [
   {
-    name: "Director",
+    name: "Directors",
     path: DIRECTOR_PATH
   },
   {

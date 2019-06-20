@@ -7,15 +7,12 @@ import (
 	"os"
 	"sort"
 	"strings"
-	"sync"
 
 	"github.com/vicanso/cod"
 	"github.com/vicanso/hes"
 	"github.com/vicanso/pike/config"
-	"github.com/vicanso/pike/log"
 	"github.com/vicanso/pike/util"
 	UP "github.com/vicanso/upstream"
-	"go.uber.org/zap"
 
 	"github.com/vicanso/pike/df"
 
@@ -84,11 +81,13 @@ type (
 		Rewrites      []string     `json:"rewrites,omitempty"`
 		Servers       []ServerInfo `json:"servers,omitempty"`
 	}
+	// OnStatusChange on status change
+	OnStatusChange func(up *UP.HTTPUpstream, status string)
 	// Director director
 	Director struct {
-		sync.RWMutex
-		Transport *http.Transport
-		Upstreams Upstreams
+		Transport      *http.Transport
+		Upstreams      Upstreams
+		OnStatusChange OnStatusChange
 	}
 	// Upstreams upstream list
 	Upstreams []*Upstream
@@ -106,7 +105,6 @@ func (d *Director) SetBackends(backends []config.BackendConfig) {
 
 // Proxy proxy
 func (d *Director) Proxy(c *cod.Context) (err error) {
-	d.RLock()
 	var found *Upstream
 	for _, item := range d.Upstreams {
 		if item.Match(c) {
@@ -114,7 +112,6 @@ func (d *Director) Proxy(c *cod.Context) (err error) {
 			break
 		}
 	}
-	d.RUnlock()
 	if found == nil {
 		return errNoMatchUpstream
 	}
@@ -144,25 +141,20 @@ func (d *Director) ClearUpstreams() {
 
 // StartHealthCheck start health check
 func (d *Director) StartHealthCheck() {
-	logger := log.Default()
-	// TODO 如果 upstreams 可以动态变化，
 	// 则 health check 也需要调整
 	for _, up := range d.Upstreams {
-		up.Server.DoHealthCheck()
 		up.Server.OnStatus(func(status int32, upstream *UP.HTTPUpstream) {
-			logger.Info("upstream status change",
-				zap.String("uri", upstream.URL.String()),
-				zap.Int32("status", status),
-			)
+			if d.OnStatusChange != nil {
+				d.OnStatusChange(upstream, UP.ConvertStatusToString(status))
+			}
 		})
+		up.Server.DoHealthCheck()
 		go up.Server.StartHealthCheck()
 	}
 }
 
 // GetUpstreamInfos get upstream information of director
 func (d *Director) GetUpstreamInfos() []Info {
-	d.Lock()
-	defer d.Unlock()
 	statsInfo := make([]Info, len(d.Upstreams))
 	for index, up := range d.Upstreams {
 		servers := make([]ServerInfo, 0)
@@ -323,7 +315,7 @@ func createUpstreamFromBackend(backend config.BackendConfig) *Upstream {
 		us.Policy = policyRoundRobin
 	}
 
-	h := util.ConvertToHTTPHeader(backend.Header)
+	h := util.ConvertToHTTPHeader(backend.ResponseHeader)
 	if h != nil {
 		us.Header = h
 	}

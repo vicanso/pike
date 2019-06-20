@@ -79,7 +79,6 @@ type (
 		writeLock bool
 		opts      *Options
 		rw        sync.RWMutex
-		// wg sync.WaitGroup
 		// Status cache's status
 		Status int
 		// CreatedAt create time
@@ -211,10 +210,11 @@ func (dsp *Dispatcher) GetHTTPCache(k []byte) (hc *HTTPCache) {
 	}
 	// 如果获取到对应缓存，则直接返回
 	if hc != nil {
-		// 后续使用到读数据，调用读锁
-		hc.rw.RLock()
-		// hc锁成功之后，再解除cache的锁（此顺序不可调换）
+		// 解除cache的锁，此时其它不同类型的key则可获取锁
+		// 此条件下cache的解锁必须前置，不然有可能因为此key的读锁获取不到而导致其它的key也无法操作
 		cache.mu.Unlock()
+		// 后续使用到读数据，调用读锁，如果此缓存有写锁，则需等待
+		hc.rw.RLock()
 		return
 	}
 	hc = &HTTPCache{

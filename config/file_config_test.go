@@ -16,7 +16,7 @@ func TestFileConfig(t *testing.T) {
 		assert := assert.New(t)
 		file, err := fc.getFile()
 		assert.Nil(err)
-		assert.Equal(file, "basic.yml")
+		assert.Equal("basic.yml", file)
 	})
 
 	t.Run("read/write config file", func(t *testing.T) {
@@ -24,9 +24,9 @@ func TestFileConfig(t *testing.T) {
 		assert := assert.New(t)
 		_, err := fc.ReadConfig()
 		done := false
-		fc.OnChange = func() {
+		fc.Watch(func() {
 			done = true
-		}
+		})
 		assert.True(os.IsNotExist(err))
 
 		file, err := fc.getFile()
@@ -40,5 +40,7 @@ func TestFileConfig(t *testing.T) {
 		buf, err := fc.ReadConfig()
 		assert.Nil(err)
 		assert.Equal(buf, data)
+
+		assert.Nil(fc.Close())
 	})
 }

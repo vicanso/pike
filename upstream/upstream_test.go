@@ -26,11 +26,11 @@ func TestUpstreams(t *testing.T) {
 		Priority: 1,
 	})
 	sort.Sort(us)
-	assert.Equal(us[0].Priority, 1, "upstream should be sorted by priority")
+	assert.Equal(1, us[0].Priority, "upstream should be sorted by priority")
 }
 
 func TestHash(t *testing.T) {
-	assert.Equal(t, hash("abc"), uint32(440920331))
+	assert.Equal(t, uint32(440920331), hash("abc"))
 }
 
 func TestNewDirector(t *testing.T) {
@@ -63,15 +63,15 @@ func TestCreateTargetPicker(t *testing.T) {
 				"http://127.0.0.1:7002",
 				"http://127.0.0.1:7003",
 			},
-			Header: []string{
+			ResponseHeader: []string{
 				"X-Server:test",
 			},
 			RequestHeader: []string{
 				"X-Request-ID:123",
 			},
 		})
-		assert.Equal(us.Header.Get("X-Server"), "test")
-		assert.Equal(us.RequestHeader.Get("X-Request-ID"), "123")
+		assert.Equal("test", us.Header.Get("X-Server"))
+		assert.Equal("123", us.RequestHeader.Get("X-Request-ID"))
 	})
 
 	t.Run("first", func(t *testing.T) {
@@ -82,7 +82,7 @@ func TestCreateTargetPicker(t *testing.T) {
 		for i := 0; i < 100; i++ {
 			info, _, err := fn(nil)
 			assert.Nil(err, "first policy fail")
-			assert.Equal(info.String(), backends[0], "first policy should always get the first backend")
+			assert.Equal(backends[0], info.String(), "first policy should always get the first backend")
 		}
 	})
 
@@ -102,7 +102,7 @@ func TestCreateTargetPicker(t *testing.T) {
 		for i := 0; i < 100; i++ {
 			info, _, err := fn(nil)
 			assert.Nil(err, "first policy fail")
-			assert.Equal(info.String(), "http://127.0.0.1:7002", "first policy(with backup and all healthy) should always get the first backend")
+			assert.Equal("http://127.0.0.1:7002", info.String(), "first policy(with backup and all healthy) should always get the first backend")
 		}
 	})
 
@@ -120,7 +120,7 @@ func TestCreateTargetPicker(t *testing.T) {
 		for i := 0; i < 100; i++ {
 			info, _, err := fn(nil)
 			assert.Nil(err, "first policy fail")
-			assert.Equal(info.String(), "http://127.0.0.1:7001", "first policy(with backup and only backup healthy) should always get the first backend")
+			assert.Equal("http://127.0.0.1:7001", info.String(), "first policy(with backup and only backup healthy) should always get the first backend")
 		}
 	})
 
@@ -135,7 +135,7 @@ func TestCreateTargetPicker(t *testing.T) {
 		for i := 0; i < 100; i++ {
 			info, _, err := fn(nil)
 			assert.Nil(err, "random policy fail")
-			assert.NotEqual(info.String(), backends[0], "sick backend shouldn't be got be random policy")
+			assert.NotEqual(backends[0], info.String(), "sick backend shouldn't be got be random policy")
 		}
 	})
 
@@ -148,7 +148,7 @@ func TestCreateTargetPicker(t *testing.T) {
 			info, _, err := fn(nil)
 			index := (i + 1) % len(backends)
 			assert.Nil(err, "round robin fail")
-			assert.Equal(info.String(), backends[index], "round robin should get backend round")
+			assert.Equal(backends[index], info.String(), "round robin should get backend round")
 		}
 	})
 
@@ -162,7 +162,7 @@ func TestCreateTargetPicker(t *testing.T) {
 			info, _, err := fn(c)
 			index := i % len(backends)
 			assert.Nil(err, "least conn policy fail")
-			assert.Equal(info.String(), backends[index], "least conn should always get least conn backend")
+			assert.Equal(backends[index], info.String(), "least conn should always get least conn backend")
 		}
 	})
 
@@ -178,7 +178,7 @@ func TestCreateTargetPicker(t *testing.T) {
 		for i := 0; i < 100; i++ {
 			info, _, err := fn(c)
 			assert.Nil(err, "ip hash policy fail")
-			assert.Equal(info.String(), backends[index], "ip hash should get backend by hash ip")
+			assert.Equal(backends[index], info.String(), "ip hash should get backend by hash ip")
 		}
 	})
 
@@ -195,7 +195,7 @@ func TestCreateTargetPicker(t *testing.T) {
 		for i := 0; i < 100; i++ {
 			info, _, err := fn(c)
 			assert.Nil(err, "header field policy fail")
-			assert.Equal(info.String(), backends[index], "header field should get backned by hash header field")
+			assert.Equal(backends[index], info.String(), "header field should get backned by hash header field")
 		}
 	})
 
@@ -215,7 +215,7 @@ func TestCreateTargetPicker(t *testing.T) {
 		for i := 0; i < 100; i++ {
 			info, _, err := fn(c)
 			assert.Nil(err)
-			assert.Equal(info.String(), backends[index], "cookie policy should get backend by hash cookie value")
+			assert.Equal(backends[index], info.String(), "cookie policy should get backend by hash cookie value")
 		}
 	})
 
@@ -228,7 +228,7 @@ func TestCreateTargetPicker(t *testing.T) {
 		req := httptest.NewRequest("GET", "/", nil)
 		c := cod.NewContext(nil, req)
 		_, _, err := fn(c)
-		assert.Equal(t, err, errNoAvailableUpstream)
+		assert.Equal(t, errNoAvailableUpstream, err)
 	})
 
 }
@@ -268,7 +268,7 @@ func TestCreateProxyHandler(t *testing.T) {
 	}
 	err := fn(c)
 	assert.Nil(err, "proxy fail")
-	assert.Equal(c.StatusCode, 200)
+	assert.Equal(200, c.StatusCode)
 }
 
 func TestUpstream(t *testing.T) {
@@ -305,7 +305,7 @@ func TestProxy(t *testing.T) {
 		Hosts: []string{
 			"aslant.site",
 		},
-		Header: []string{
+		ResponseHeader: []string{
 			"X-Server:test",
 		},
 		RequestHeader: []string{
@@ -343,8 +343,8 @@ func TestProxy(t *testing.T) {
 	}
 	err = d.Proxy(c)
 	assert.Nil(err)
-	assert.Equal(c.StatusCode, http.StatusOK)
-	assert.Equal(strings.TrimSpace(c.BodyBuffer.String()), `{"foo":"bar"}`)
+	assert.Equal(http.StatusOK, c.StatusCode)
+	assert.Equal(`{"foo":"bar"}`, strings.TrimSpace(c.BodyBuffer.String()))
 }
 
 func TestGetDirectorStats(t *testing.T) {
@@ -363,5 +363,5 @@ func TestGetDirectorStats(t *testing.T) {
 		Upstreams: usList,
 	}
 	infoList := director.GetUpstreamInfos()
-	assert.NotEqual(t, len(infoList), 0)
+	assert.NotEqual(t, 0, len(infoList))
 }
