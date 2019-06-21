@@ -3,6 +3,8 @@ package main
 import (
 	"net/http"
 	"os"
+	"strings"
+	"time"
 
 	"github.com/vicanso/pike/df"
 	"github.com/vicanso/pike/log"
@@ -18,8 +20,11 @@ var (
 )
 
 func init() {
-	df.BuildedAt = BuildedAt
-	df.CommitID = CommitID
+	if BuildedAt != "" {
+		t, _ := time.Parse("20060102.150405", BuildedAt)
+		df.BuildedAt = t.Format(time.RFC3339)
+	}
+	df.CommitID = strings.ToUpper(CommitID)
 }
 
 func getListen() string {

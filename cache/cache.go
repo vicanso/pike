@@ -5,10 +5,13 @@ import (
 	"crypto/sha1"
 	"net/http"
 	"regexp"
+	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
 	"unsafe"
+
+	"github.com/vicanso/hes"
 
 	"github.com/vicanso/cod"
 	"github.com/vicanso/pike/df"
@@ -336,4 +339,30 @@ func (hc *HTTPCache) Cacheable(maxAge int, c *cod.Context) {
 	if len(brBody) != 0 {
 		hc.BrBody = bytes.NewBuffer(brBody)
 	}
+}
+
+// Response get the response data
+func (hc *HTTPCache) Response(acceptEncoding string) (buf *bytes.Buffer, encoding string, err error) {
+	// 如果有br压缩数据，而且客户端接受br
+	if hc.BrBody != nil &&
+		strings.Contains(acceptEncoding, df.BR) {
+		buf = hc.BrBody
+		encoding = df.BR
+	} else if hc.GzipBody != nil && strings.Contains(acceptEncoding, df.GZIP) {
+		// 如果有gzip压缩数据，而且客户端接受gzip
+		buf = hc.GzipBody
+		encoding = df.GZIP
+	} else if hc.GzipBody != nil {
+		// 缓存了压缩数据，但是客户端不支持，需要解压
+		// 因为如果数据可压缩，缓存中只缓存压缩数据
+		rawData, e := Gunzip(hc.GzipBody.Bytes())
+		if e != nil {
+			err = hes.NewWithError(e)
+			return
+		}
+		buf = bytes.NewBuffer(rawData)
+	} else {
+		buf = hc.Body
+	}
+	return
 }

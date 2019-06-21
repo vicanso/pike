@@ -4,6 +4,13 @@ sudo: required
 go:
   - "1.12"
 
+services:
+  - docker
+
+before_install:
+  - docker pull vicanso/etcd 
+  - docker run -p 2379:2379 -d vicanso/etcd etcd --listen-client-urls 'http://0.0.0.0:2379' --advertise-client-urls 'http://0.0.0.0:2379'
+
 script:
   - make test
   - docker build -t pike .

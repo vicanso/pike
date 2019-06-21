@@ -27,11 +27,15 @@ RUN apk update \
 
 FROM alpine
 
-RUN apk add --no-cache ca-certificates
+RUN addgroup -g 1000 pike \
+  && adduser -u 1000 -G pike -s /bin/sh -D pike \
+  apk add --no-cache ca-certificates
 
 COPY --from=builder /usr/local/lib/libbrotlicommon.so.1 /usr/lib/
 COPY --from=builder /usr/local/lib/libbrotlienc.so.1 /usr/lib/
 COPY --from=builder /usr/local/lib/libbrotlidec.so.1 /usr/lib/
 COPY --from=builder /pike/pike /usr/local/bin/pike
+
+USER pike
 
 CMD ["pike"]

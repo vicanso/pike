@@ -38,7 +38,7 @@ type (
 		// routine数量
 		RoutineCount int `json:"routine"`
 		// recover的数量
-		RecoverCount uint64 `json:"recoverCount"`
+		RecoverCount uint32 `json:"recoverCount"`
 		// 总的处理请求量
 		RequestCount uint64 `json:"requestCount"`
 		// version版本号
@@ -77,7 +77,7 @@ type (
 		// 大于3000ms的处理汇总
 		spdy4Count uint64
 		// 出现recover的次数
-		recoverCount uint64
+		recoverCount uint32
 	}
 )
 
@@ -102,8 +102,8 @@ func (s *Stats) IncreaseRequestCount() uint64 {
 }
 
 // IncreaseRecoverCount recover的次数加一
-func (s *Stats) IncreaseRecoverCount() uint64 {
-	return atomic.AddUint64(&s.recoverCount, 1)
+func (s *Stats) IncreaseRecoverCount() uint32 {
+	return atomic.AddUint32(&s.recoverCount, 1)
 }
 
 // GetRequestCount 获取处理请求数

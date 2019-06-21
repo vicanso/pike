@@ -209,4 +209,40 @@ func TestCacheable(t *testing.T) {
 		hc.Cacheable(maxAge, c)
 		assert.Equal(HitForPass, hc.Status, "status should be hit for pass")
 	})
+
+	t.Run("response for accept encoding", func(t *testing.T) {
+		assert := assert.New(t)
+		rawData := bytes.NewBufferString("abcd")
+		brBody := rawData
+		gzipData, err := Gzip([]byte("abcd"))
+		assert.Nil(err)
+		gzipBody := bytes.NewBuffer(gzipData)
+		hc := &HTTPCache{
+			BrBody:   brBody,
+			GzipBody: gzipBody,
+		}
+
+		buf, encoding, err := hc.Response("br")
+		assert.Nil(err)
+		assert.Equal("br", encoding, "should return br enconding")
+		assert.Equal(brBody, buf, "should return br data")
+
+		buf, encoding, err = hc.Response("gzip")
+		assert.Nil(err)
+		assert.Equal("gzip", encoding, "should return gzip enconding")
+		assert.Equal(gzipBody, buf, "should return gzip data")
+
+		buf, encoding, err = hc.Response("")
+		assert.Nil(err)
+		assert.Equal("", encoding, "should return empty enconding")
+		assert.Equal(rawData, buf, "should return raw data")
+
+		body := bytes.NewBufferString("a")
+		hc.Body = body
+		hc.GzipBody = nil
+		buf, encoding, err = hc.Response("")
+		assert.Nil(err)
+		assert.Equal("", encoding, "should return empty enconding")
+		assert.Equal(body, buf, "should return body data")
+	})
 }

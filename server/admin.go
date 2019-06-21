@@ -63,6 +63,10 @@ func NewAdminServer(opts Options) *cod.Cod {
 	directorConfig := opts.DirectorConfig
 
 	d := cod.New()
+	d.Use(func(c *cod.Context) error {
+		c.NoCache()
+		return c.Next()
+	})
 	d.Use(recover.New())
 	d.Use(errorhandler.NewDefault())
 	d.Use(responder.NewDefault())

@@ -44,7 +44,7 @@ func NewServer(opts Options) *cod.Cod {
 	if d.EnableTrace {
 		prefix := df.APP + "-"
 		d.OnTrace(func(c *cod.Context, traceInfos cod.TraceInfos) {
-			c.SetHeader(cod.HeaderServerTiming, string(traceInfos.ServerTiming(prefix)))
+			c.AddHeader(cod.HeaderServerTiming, string(traceInfos.ServerTiming(prefix)))
 		})
 	}
 
