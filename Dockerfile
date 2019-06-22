@@ -42,4 +42,4 @@ USER pike
 
 WORKDIR /usr/local/pike
 
-CMD ["pike"]
+CMD ["./pike"]
