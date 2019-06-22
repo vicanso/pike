@@ -62,10 +62,20 @@ class UpdateConfig extends React.Component {
     // TODO 做转换以及类型转换
     try {
       const updateData = Object.assign({}, data);
+      // 因为有数据转换，因此先复制
+      if (updateData.cache) {
+        updateData.cache = Object.assign({}, updateData.cache);
+      }
+      if (updateData.timeout) {
+        updateData.timeout = Object.assign({}, updateData.timeout);
+      }
+
       const { cache, timeout } = updateData;
+
       if (cache && cache.hitForPass) {
         cache.hitForPass = convertSecondToNs(cache.hitForPass);
       }
+
       if (timeout) {
         const keys = Object.keys(timeout);
         keys.forEach(key => {

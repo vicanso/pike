@@ -78,6 +78,11 @@ func (fc *FileConfig) WriteConfig(data []byte) (err error) {
 	if err != nil {
 		return
 	}
+	path := filepath.Dir(file)
+	err = os.MkdirAll(path, 0600)
+	if err != nil {
+		return
+	}
 	err = ioutil.WriteFile(file, data, 0600)
 	// 只简单在修改时触发，并不监听文件变化
 	if err == nil && fc.OnChange != nil {
