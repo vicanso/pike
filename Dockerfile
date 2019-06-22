@@ -40,4 +40,6 @@ COPY --from=builder /pike/pike /usr/local/pike/pike
 
 USER pike
 
-CMD ["/usr/local/pike/pike"]
+WORKDIR /usr/local/pike
+
+CMD ["pike"]
