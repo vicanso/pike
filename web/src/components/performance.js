@@ -39,14 +39,6 @@ class Performance extends React.Component {
       {
         name: "Memory(heapInuse)",
         key: "heapInuse"
-      },
-      {
-        name: "Version",
-        key: "version"
-      },
-      {
-        name: "Go Version",
-        key: "goVersion"
       }
     ];
     const arr = cols.map(item => {

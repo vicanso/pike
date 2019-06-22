@@ -1,6 +1,4 @@
-import { getURLPrefix } from "./util";
-
-const prefix = getURLPrefix();
+const prefix = "";
 
 export const DIRECTOR_PATH = `${prefix}/`;
 export const CACHES_PATH = `${prefix}/caches`;

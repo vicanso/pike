@@ -53,6 +53,5 @@ func TestStats(t *testing.T) {
 		assert := assert.New(t)
 		info := s.GetInfo()
 		assert.NotNil(info.Status)
-		assert.NotEmpty(info.Version)
 	})
 }

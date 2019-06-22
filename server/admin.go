@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"os"
+	"runtime"
 
 	"github.com/vicanso/hes"
 
@@ -21,6 +22,7 @@ import (
 
 	"github.com/vicanso/pike/cache"
 	"github.com/vicanso/pike/config"
+	"github.com/vicanso/pike/df"
 	"github.com/vicanso/pike/stats"
 	"github.com/vicanso/pike/upstream"
 )
@@ -28,6 +30,19 @@ import (
 type (
 	staticFile struct {
 		box *packr.Box
+	}
+	// ApplicationInfo applicatin information
+	ApplicationInfo struct {
+		// version版本号
+		Version string `json:"version"`
+		// 程序启动时间
+		StartedAt string `json:"startedAt"`
+		// 构建时间
+		BuildedAt string `json:"buildedAt"`
+		// 当前版本的git commit id
+		CommitID string `json:"commitId"`
+		// 编译的go版本
+		GoVersion string `json:"goVersion"`
 	}
 )
 
@@ -210,11 +225,19 @@ func NewAdminServer(opts Options) *cod.Cod {
 			return
 		}
 		c.Body = &struct {
-			Basic        *config.Config         `json:"basic,omitempty"`
-			BasicYaml    string                 `json:"basicYaml,omitempty"`
-			Director     *config.DirectorConfig `json:"director,omitempty"`
-			DirectorYaml string                 `json:"directorYaml,omitempty"`
+			ApplicationInfo *ApplicationInfo       `json:"applicationInfo,omitempty"`
+			Basic           *config.Config         `json:"basic,omitempty"`
+			BasicYaml       string                 `json:"basicYaml,omitempty"`
+			Director        *config.DirectorConfig `json:"director,omitempty"`
+			DirectorYaml    string                 `json:"directorYaml,omitempty"`
 		}{
+			&ApplicationInfo{
+				Version:   df.Version,
+				BuildedAt: df.BuildedAt,
+				StartedAt: df.StartedAt,
+				CommitID:  df.CommitID,
+				GoVersion: runtime.Version(),
+			},
 			opts.BasicConfig,
 			string(basicYaml),
 			opts.DirectorConfig,

@@ -1,7 +1,7 @@
 import React from "react";
 import request from "axios";
 import { Link } from "react-router-dom";
-import { Spin, message, Icon } from "antd";
+import { Spin, message, Icon, Card, Col, Row } from "antd";
 
 import { CONFIGS } from "../urls";
 import { UPDATE_CONFIG_PATH } from "../paths";
@@ -11,31 +11,73 @@ class Config extends React.Component {
   state = {
     loading: false,
     basicConfig: null,
+    applicationInfo: null,
     directorConfig: null
   };
   renderConfig() {
-    const { basicConfig, directorConfig } = this.state;
+    const { basicConfig, directorConfig, applicationInfo } = this.state;
+    console.dir(applicationInfo);
     const updateBasicPath = UPDATE_CONFIG_PATH.replace(":name", "basic");
+
+    const cols = [
+      {
+        name: "Go Version",
+        key: "goVersion"
+      },
+      {
+        name: "Started At",
+        key: "startedAt"
+      },
+      {
+        name: "Builded At",
+        key: "buildedAt"
+      },
+      {
+        name: "Version",
+        key: "version"
+      },
+      {
+        name: "CommitId",
+        key: "commitId"
+      }
+    ];
+    const arr = cols.map(item => {
+      if (!applicationInfo) {
+        return null;
+      }
+      return (
+        <Col span={8} className="info" key={item.key}>
+          <span className="name">{item.name}</span>
+          <span className="value">{applicationInfo[item.key]}</span>
+        </Col>
+      );
+    });
 
     return (
       <div>
-        <div className="yaml">
-          <h3>
-            Basic Config
-            <Link
-              className="update"
-              to={updateBasicPath}
-              title="update the config"
-            >
-              <Icon type="edit" />
-            </Link>
-          </h3>
+        <Card size="small" title="Application Information">
+          <Row>{arr}</Row>
+        </Card>
+        <Card
+          size="small"
+          title={
+            <div>
+              Basic Config
+              <Link
+                className="update"
+                to={updateBasicPath}
+                title="update the config"
+              >
+                <Icon type="edit" />
+              </Link>
+            </div>
+          }
+        >
           <pre>{basicConfig}</pre>
-        </div>
-        <div className="yaml">
-          <h3>Director Config</h3>
+        </Card>
+        <Card size="small" title="Director Config">
           <pre>{directorConfig}</pre>
-        </div>
+        </Card>
       </div>
     );
   }
@@ -63,7 +105,15 @@ class Config extends React.Component {
     });
     try {
       const { data } = await request.get(CONFIGS);
+      const keys = ["buildedAt", "startedAt"];
+      keys.forEach(key => {
+        const v = data.applicationInfo[key];
+        if (v) {
+          data.applicationInfo[key] = new Date(v).toLocaleString();
+        }
+      });
       this.setState({
+        applicationInfo: data.applicationInfo,
         basicConfig: data.basicYaml,
         directorConfig: data.directorYaml
       });

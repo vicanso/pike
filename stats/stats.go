@@ -3,8 +3,6 @@ package stats
 import (
 	"runtime"
 	"sync/atomic"
-
-	"github.com/vicanso/pike/df"
 )
 
 const (
@@ -33,22 +31,12 @@ type (
 		HeapSys int `json:"heapSys"`
 		// heap使用内存
 		HeapInuse int `json:"heapInuse"`
-		// 程序启动时间
-		StartedAt string `json:"startedAt"`
 		// routine数量
 		RoutineCount int `json:"routine"`
 		// recover的数量
 		RecoverCount uint32 `json:"recoverCount"`
 		// 总的处理请求量
 		RequestCount uint64 `json:"requestCount"`
-		// version版本号
-		Version string `json:"version"`
-		// 构建时间
-		BuildedAt string `json:"buildedAt"`
-		// 当前版本的git commit id
-		CommitID string `json:"commitId"`
-		// 编译的go版本
-		GoVersion string `json:"goVersion"`
 	}
 	// Stats application stats
 	Stats struct {
@@ -177,13 +165,8 @@ func (s *Stats) GetInfo() *Info {
 		Sys:          int(m.Sys / mb),
 		HeapSys:      int(m.HeapSys / mb),
 		HeapInuse:    int(m.HeapInuse / mb),
-		StartedAt:    df.StartedAt,
 		RoutineCount: runtime.NumGoroutine(),
 		RequestCount: atomic.LoadUint64(&s.requestCount),
-		Version:      df.Version,
-		BuildedAt:    df.BuildedAt,
-		CommitID:     df.CommitID,
-		GoVersion:    runtime.Version(),
 	}
 	return stats
 }

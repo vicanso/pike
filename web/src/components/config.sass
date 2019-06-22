@@ -3,15 +3,27 @@
 .Config
   width: $MAIN_CONTENT_WIDTH
   margin: 30px auto 0
-  h3
-    border-bottom: $GRAY_BORDER
-    padding-bottom: 10px
-    .update
-      float: right
-  .yaml
+  .update
+    float: right
+  .ant-card
     background-color: $COLOR_WHITE
     box-shadow: 0 2px 12px 0 rgba(0,0,0,.1)
     padding: 20px
     border-radius: 4px
     display: block
     margin-bottom: 20px
+  .info
+    color: rgba(0,0,0,.85)
+    line-height: 40px
+  .name
+    display: table-cell
+    white-space: nowrap
+    padding-right: 3px
+    &:after
+      position: relative
+      top: -.5px
+      margin: 0 8px 0 2px
+      content: ":"
+  .value
+    display: table-cell
+    width: 100%
