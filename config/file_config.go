@@ -24,7 +24,6 @@ const (
 var (
 	// configPathList config path list
 	configPathList = []string{
-		".",
 		homeENV + "/.pike",
 		"/etc/pike",
 	}
