@@ -29,7 +29,7 @@ FROM alpine
 
 RUN addgroup -g 1000 pike \
   && adduser -u 1000 -G pike -s /bin/sh -D pike \
-  apk add --no-cache ca-certificates
+  && apk add --no-cache ca-certificates
 
 COPY --from=builder /usr/local/lib/libbrotlicommon.so.1 /usr/lib/
 COPY --from=builder /usr/local/lib/libbrotlienc.so.1 /usr/lib/
