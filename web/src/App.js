@@ -1,5 +1,5 @@
 import React from "react";
-import { Route } from "react-router-dom";
+import { Route, HashRouter } from "react-router-dom";
 
 import AppHeader from "./components/app_header";
 import Director from "./components/director";
@@ -23,16 +23,18 @@ class App extends React.Component {
   render() {
     return (
       <div className="App">
-        <AppHeader />
-        <div>
-          <Route path={CACHES_PATH} component={Caches} />
-          <Route path={PERFORMANCE_PATH} component={Performance} />
-          <Route path={ADD_UPSTREAM_PATH} component={AddUpstream} />
-          <Route path={UPDATE_UPSTREAM_PATH} component={UpdateUpstream} />
-          <Route exact path={CONFIGS_PATH} component={Config} />
-          <Route path={UPDATE_CONFIG_PATH} component={UpdateConfig} />
-          <Route exact path={DIRECTOR_PATH} component={Director} />
-        </div>
+        <HashRouter>
+          <AppHeader />
+          <div>
+            <Route path={CACHES_PATH} component={Caches} />
+            <Route path={PERFORMANCE_PATH} component={Performance} />
+            <Route path={ADD_UPSTREAM_PATH} component={AddUpstream} />
+            <Route path={UPDATE_UPSTREAM_PATH} component={UpdateUpstream} />
+            <Route exact path={CONFIGS_PATH} component={Config} />
+            <Route path={UPDATE_CONFIG_PATH} component={UpdateConfig} />
+            <Route exact path={DIRECTOR_PATH} component={Director} />
+          </div>
+        </HashRouter>
       </div>
     );
   }

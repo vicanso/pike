@@ -128,6 +128,9 @@ class AddUpdateUpstream extends React.Component {
       }
       await this.submit(data);
       message.info("add/update upstream successful");
+      await new Promise((resolve) => {
+        setTimeout(resolve, 500);
+      });
       router.back();
     } catch (err) {
       message.error(err.message);
