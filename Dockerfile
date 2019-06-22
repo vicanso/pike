@@ -29,17 +29,15 @@ FROM alpine
 
 RUN addgroup -g 1000 pike \
   && adduser -u 1000 -G pike -s /bin/sh -D pike \
-  && mkdir /usr/local/pike \
-  && chown pike /usr/local/pike \
   && apk add --no-cache ca-certificates
 
 COPY --from=builder /usr/local/lib/libbrotlicommon.so.1 /usr/lib/
 COPY --from=builder /usr/local/lib/libbrotlienc.so.1 /usr/lib/
 COPY --from=builder /usr/local/lib/libbrotlidec.so.1 /usr/lib/
-COPY --from=builder /pike/pike /usr/local/pike/pike
+COPY --from=builder /pike/pike /usr/local/bin/pike
 
 USER pike
 
-WORKDIR /usr/local/pike
+WORKDIR /home/pike
 
-CMD ["./pike"]
+CMD ["pike"]
