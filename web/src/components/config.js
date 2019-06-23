@@ -16,7 +16,6 @@ class Config extends React.Component {
   };
   renderConfig() {
     const { basicConfig, directorConfig, applicationInfo } = this.state;
-    console.dir(applicationInfo);
     const updateBasicPath = UPDATE_CONFIG_PATH.replace(":name", "basic");
 
     const cols = [

@@ -84,11 +84,11 @@ func NewAdminServer(opts Options) *cod.Cod {
 	})
 	d.Use(recover.New())
 	d.Use(errorhandler.NewDefault())
-	d.Use(responder.NewDefault())
 	d.Use(fresh.NewDefault())
 	d.Use(etag.NewDefault())
 	d.Use(compress.NewDefault())
 	d.Use(bodyparser.NewDefault())
+	d.Use(responder.NewDefault())
 
 	adminHandlerList := make([]cod.Handler, 0)
 
