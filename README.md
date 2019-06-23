@@ -34,6 +34,48 @@ HTTP cache server like `varnish`.
 - [x] 后端返回数据已添加ETag
 - [x] 304的处理
 
+## 性能测试
+
+
+### 可缓存的接口，gzip(2436字节)，原数据9286字节
+
+```bash
+wrk -c1000 -t10 -d1m -H 'Accept-Encoding: gzip, deflate' --latency 'http://127.0.0.1:3005/chapters'
+Running 1m test @ http://127.0.0.1:3005/chapters
+  10 threads and 1000 connections
+
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency    23.90ms   47.63ms   1.23s    97.84%
+    Req/Sec     5.16k   595.36     9.68k    76.77%
+  Latency Distribution
+     50%   16.88ms
+     75%   23.88ms
+     90%   38.70ms
+     99%   94.31ms
+  3081367 requests in 1.00m, 7.73GB read
+Requests/sec:  51276.94
+Transfer/sec:    131.68MB
+```
+
+### 可缓存的接口，br(1958字节)，原数据9286字节
+
+```bash
+wrk -c1000 -t10 -d1m -H 'Accept-Encoding: br' --latency 'http://127.0.0.1:3005/chapters'
+Running 1m test @ http://127.0.0.1:3005/chapters
+  10 threads and 1000 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency    21.63ms   27.32ms   1.04s    94.50%
+    Req/Sec     5.18k   534.52    11.17k    72.66%
+  Latency Distribution
+     50%   16.77ms
+     75%   23.72ms
+     90%   37.78ms
+     99%   80.60ms
+  3094104 requests in 1.00m, 6.38GB read
+Requests/sec:  51480.91
+Transfer/sec:    108.63MB
+```
+
 
 ## ETCD
 
