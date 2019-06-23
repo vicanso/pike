@@ -225,11 +225,9 @@ func NewAdminServer(opts Options) *cod.Cod {
 			return
 		}
 		c.Body = &struct {
-			ApplicationInfo *ApplicationInfo       `json:"applicationInfo,omitempty"`
-			Basic           *config.Config         `json:"basic,omitempty"`
-			BasicYaml       string                 `json:"basicYaml,omitempty"`
-			Director        *config.DirectorConfig `json:"director,omitempty"`
-			DirectorYaml    string                 `json:"directorYaml,omitempty"`
+			ApplicationInfo *ApplicationInfo `json:"applicationInfo,omitempty"`
+			BasicYaml       string           `json:"basicYaml,omitempty"`
+			DirectorYaml    string           `json:"directorYaml,omitempty"`
 		}{
 			&ApplicationInfo{
 				Version:   df.Version,
@@ -238,9 +236,7 @@ func NewAdminServer(opts Options) *cod.Cod {
 				CommitID:  df.CommitID,
 				GoVersion: runtime.Version(),
 			},
-			opts.BasicConfig,
 			string(basicYaml),
-			opts.DirectorConfig,
 			string(directorYaml),
 		}
 		return

@@ -95,24 +95,28 @@ class Caches extends React.Component {
         title: "MaxAge",
         dataIndex: "maxAge",
         key: "maxAge",
+        width: 110,
         sorter: (a, b) => a.maxAge - b.maxAge
       },
       {
         title: "Expired",
         dataIndex: "expiredDesc",
         key: "expired",
+        width: 110,
         sorter: (a, b) => a.expired - b.expired
       },
       {
         title: "Created",
         dataIndex: "createdDesc",
         key: "created",
+        width: 190,
         sorter: (a, b) => a.created - b.created
       },
       {
         title: "Action",
         dataIndex: "",
         key: "x",
+        width: 80,
         render: row => {
           return (
             <a
@@ -131,6 +135,9 @@ class Caches extends React.Component {
         }
       }
     ];
+    const scrollOptions = {
+      x: true,
+    };
     return (
       <div>
         <Modal
@@ -148,6 +155,7 @@ class Caches extends React.Component {
               className="table"
               dataSource={cachedList}
               columns={columns}
+              scroll={scrollOptions}
             />
           </TabPane>
           <TabPane tab={`HitForPass(${hitFroPassList.length})`} key="2">
@@ -155,6 +163,7 @@ class Caches extends React.Component {
               className="table"
               dataSource={hitFroPassList}
               columns={columns}
+              scroll={scrollOptions}
             />
           </TabPane>
           <TabPane tab={`Fetching(${fechingList.length})`} key="3">
@@ -162,6 +171,7 @@ class Caches extends React.Component {
               className="table"
               dataSource={fechingList}
               columns={columns}
+              scroll={scrollOptions}
             />
           </TabPane>
         </Tabs>
