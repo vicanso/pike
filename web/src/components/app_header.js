@@ -1,6 +1,8 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import { withRouter } from "react-router-dom";
+import request from "axios";
+import { message } from "antd";
 
 import logo from "../logo.svg";
 import "./app_header.sass";
@@ -10,6 +12,9 @@ import {
   PERFORMANCE_PATH,
   CONFIGS_PATH
 } from "../paths";
+import {
+  CONFIGS,
+} from "../urls";
 
 const paths = [
   {
@@ -32,10 +37,11 @@ const paths = [
 
 class AppHeader extends React.Component {
   state = {
-    active: -1
+    active: -1,
+    version: '',
   };
   render() {
-    const { active } = this.state;
+    const { active, version } = this.state;
     const arr = paths.map((item, index) => {
       let className = "";
       if (index === active) {
@@ -54,6 +60,9 @@ class AppHeader extends React.Component {
         <div className="logo">
           <img src={logo} alt="logo" />
           Pike
+          {version && <span className="version">
+            {version}
+          </span>}
         </div>
         <ul className="functions">{arr}</ul>
       </div>
@@ -75,6 +84,18 @@ class AppHeader extends React.Component {
   }
   componentWillMount() {
     this.changeActive(this.props.location.pathname);
+  }
+  async componentDidMount() {
+    try {
+      const {
+        data,
+      } = await request.get(CONFIGS);
+      this.setState({
+        version: data.applicationInfo.version,
+      });
+    } catch (err) {
+      message.error(err.message)
+    }
   }
 }
 
