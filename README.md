@@ -76,8 +76,33 @@ Requests/sec:  51480.91
 Transfer/sec:    108.63MB
 ```
 
+## 文件配置
+
+首次启动时，无配置文件，因此需要通过ENV的形式指定管理后台路径，如下：
+
+```bash
+docker run -it --rm \
+  -p 3015:3015 \
+  -v ~/tmp/pike:/home/pike \
+  -e ADMIN_PATH=/pike \
+  vicanso/pike
+```
+
+打开地址`http://127.0.0.1:3015/pike/#/`，配置相关信息：
+
+
+配置完成后，则可正式启动服务：
+
+```bash
+docker run -d --restart=always \
+  -p 3015:3015 \
+  -v ~/tmp/pike:/home/pike \
+  vicanso/pike
+```
 
 ## ETCD
+
+建议使用ETCD来存储配置文件（便于启用多实例），如果未有ETCD的服务，可以使用下面的方式简单启动：
 
 ```bash
 docker run -d --restart=always \
@@ -87,3 +112,25 @@ docker run -d --restart=always \
   --listen-client-urls 'http://0.0.0.0:2379' \
   --advertise-client-urls 'http://0.0.0.0:2379'
 ```
+
+使用ETCD存储文件，需要指定连接地址，因为首次启动时，ETCD中无相关配置，因此需要通过ENV的形式指定管理后台路径，如下：
+
+```bash
+docker run -it --rm \
+  -p 3015:3015 \
+  -e CONFIG=etcd://172.20.10.2:2379/test-pike \
+  -e ADMIN_PATH=/pike \
+  vicanso/pike
+```
+
+后续的配置与使用文件的配置形式一样，在配置完成后，则可以正式启用服务：
+
+```bash
+docker run -d --restart=always \
+  -p 3015:3015 \
+  -e CONFIG=etcd://172.20.10.2:2379/test-pike \
+  vicanso/pike
+```
+
+程序运行中会监听ETCD中配置的文件，自动更新配置，因此可以配置多实例，在其中一个的管理后台上修改配置则各实例实时生效。
+
