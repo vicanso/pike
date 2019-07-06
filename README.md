@@ -90,6 +90,7 @@ docker run -it --rm \
 
 打开地址`http://127.0.0.1:3015/pike/#/`，配置相关信息：
 
+![](./assets/pike.gif)
 
 配置完成后，则可正式启动服务：
 
