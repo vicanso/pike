@@ -154,7 +154,7 @@ func (bc *Config) fillDefault() {
 
 	timeout := &data.Timeout
 	if timeout.Connect == 0 {
-		timeout.Connect = defaultIdelConnTimeout
+		timeout.Connect = defaultConnectTimeout
 	}
 	if timeout.ExpectContinue == 0 {
 		timeout.ExpectContinue = defaultExpectContinueTimeout
