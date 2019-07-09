@@ -109,7 +109,7 @@ timeout:
   idle_conn: 1m30s
   expect_continue: 3s
   response_header: 10s
-  connect: 1m30s
+  connect: 15s
   tls_handshake: 5s
 `, string(out))
 	})
