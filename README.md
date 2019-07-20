@@ -1,5 +1,8 @@
 # pike
 
+[![Build Status](https://img.shields.io/travis/vicanso/pike.svg?label=linux+build)](https://travis-ci.org/vicanso/pike)
+
+
 HTTP cache server like `varnish`.
 
 
