@@ -4,7 +4,7 @@ import "time"
 
 const (
 	// Version application's version
-	Version = "2.0.0"
+	Version = "2.0.1"
 	// APP application's name
 	APP = "pike"
 
