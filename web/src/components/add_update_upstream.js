@@ -12,7 +12,6 @@ import {
   Spin
 } from "antd";
 
-import * as router from "../router";
 import "./add_update_upstream.sass";
 
 const Option = Select.Option;
@@ -37,6 +36,7 @@ class AddUpdateUpstream extends React.Component {
     requestHeader: []
   };
   async handleSubmit(e) {
+    const { history } = this.props;
     e.preventDefault();
     // 点击时，select的数据有可能未更新，延时操作
     await new Promise(resolve => {
@@ -131,7 +131,9 @@ class AddUpdateUpstream extends React.Component {
       await new Promise(resolve => {
         setTimeout(resolve, 500);
       });
-      router.back();
+      if (history) {
+        history.goBack();
+      }
     } catch (err) {
       message.error(err.message);
     } finally {

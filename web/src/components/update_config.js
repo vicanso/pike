@@ -4,7 +4,6 @@ import { Spin, Form, Card, message, Input, Select, Button, Switch } from "antd";
 
 import "./update_config.sass";
 import { CONFIGS } from "../urls";
-import * as router from "../router";
 import { sha256 } from "../helpers/crypto";
 
 function convertNsToSecnod(value) {
@@ -50,6 +49,7 @@ class UpdateConfig extends React.Component {
     }
   }
   async handleSubmit(e) {
+    const { history } = this.props;
     e.preventDefault();
     const { name } = this.props.match.params;
     const { spinning, data } = this.state;
@@ -60,7 +60,7 @@ class UpdateConfig extends React.Component {
       spinning: true,
       spinTips: "Updating..."
     });
-    // TODO 做转换以及类型转换
+    // TODO 判断字段是否符合
     try {
       const updateData = Object.assign({}, data);
       // 因为有数据转换，因此先复制
@@ -87,11 +87,12 @@ class UpdateConfig extends React.Component {
         // 测试是否正则
         new RegExp(data.compress.filter);
       }
-      // 修改密码时生成sha256串
-      updateData.admin.password = sha256(updateData.admin.password);
+    
       await request.patch(`${CONFIGS}/${name}`, updateData);
       message.info("update config successful");
-      router.back();
+      if (history) {
+        history.goBack();
+      }
     } catch (err) {
       message.error(err.message);
     } finally {
@@ -100,28 +101,31 @@ class UpdateConfig extends React.Component {
       });
     }
   }
+  setUpdateValue(keys, value) {
+    const { data } = this.state;
+    const key = keys[0];
+    let currentUpdate = data[key];
+    if (keys.length === 1) {
+      currentUpdate = value;
+    } else {
+      currentUpdate[keys[1]] = value;
+    }
+    const updateData = {};
+    updateData[key] = currentUpdate;
+    this.setState({
+      data: Object.assign(data, updateData)
+    });
+  }
   createInputOnChagne(name) {
     const arr = name.split(".");
     return e => {
       const { target } = e;
-      const { data } = this.state;
       let v = target.value.trim();
       // 针对相应的key转换为数字取 valueAsNumber
       if (!Number.isNaN(target.valueAsNumber)) {
         v = target.valueAsNumber;
       }
-      const key = arr[0];
-      let currentUpdate = data[key];
-      if (arr.length === 1) {
-        currentUpdate = v;
-      } else {
-        currentUpdate[arr[1]] = v;
-      }
-      const updateData = {};
-      updateData[key] = currentUpdate;
-      this.setState({
-        data: Object.assign(data, updateData)
-      });
+      this.setUpdateValue(arr, v);
     };
   }
   renderAdminConfig() {
@@ -150,7 +154,10 @@ class UpdateConfig extends React.Component {
             defaultValue={adminConfig.password}
             type="password"
             placeholder="Input the password of admin"
-            onChange={this.createInputOnChagne("admin.password")}
+            onChange={(e) => {
+              const value = sha256(e.target.value.trim());
+              this.setUpdateValue(["admin", "password"], value);
+            }}
           />
         </Form.Item>
       </Card>
