@@ -5,6 +5,26 @@
 
 HTTP cache server like `varnish`.
 
+## 主要特性
+
+- 支持`gzip`与`br`压缩智能选择
+- 多数据源配置方式：文件与ETCD
+- 实时无中断的配置更新(TODO如何做到)
+- 通过`Cache-Control`的标准化缓存处理
+
+## HTTP缓存
+
+### 根据HTTP请求生成缓存的key
+
+缓存的key默认的生成方式为`Method Host RequestURI`，根据此三个参数生成请求的唯一key，以此判断是否可使用同一缓存。`Host`先从HTTP头中获取，如果没有，则从url中获取，需要注意，如果同一服务使用多个域名，如wwww.aslant.site与aslant.site是指向同一个服务，此两个域名会导致生成两个不同的缓存，建议在前置反向代理中将HTTP请求头统一重设。
+
+### 根据HTTP响应头生成缓存时长
+
+- 响应头有`Set-Cookie`则不可缓存
+- 响应头没有`Cache-Control`则不可缓存
+- `Cache-Control`包含`no-cache`、`no-store`或者`private`则不可缓存
+- 获取`Cache-Control`中的`s-maxage`的值，如果没有则获取`max-age`的值为初始缓存时长
+- 再获取`Age`请求头中的值，如果能获取到该值，则初始缓存时长减去`Age`则为真正的缓存时长
 
 ## 模块
 
