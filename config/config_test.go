@@ -249,6 +249,6 @@ func TestDirectorConfig(t *testing.T) {
 		conf.RemoveBackend(name)
 		err = conf.WriteConfig()
 		assert.Nil(err)
-		assert.Equal("{}\n", string(mrw.data))
+		assert.Equal("", string(mrw.data))
 	})
 }

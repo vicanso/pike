@@ -1,6 +1,7 @@
 package config
 
 import (
+	"bytes"
 	"os"
 	"strings"
 	"time"
@@ -118,6 +119,9 @@ func writeConfig(rw ReadWriter, v interface{}) (err error) {
 	buf, err := yaml.Marshal(v)
 	if err != nil {
 		return
+	}
+	if bytes.Equal(buf, []byte("{}\n")) {
+		buf = []byte("")
 	}
 	return rw.WriteConfig(buf)
 }
