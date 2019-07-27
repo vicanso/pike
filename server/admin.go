@@ -263,7 +263,6 @@ func NewAdminServer(opts Options) *cod.Cod {
 			return
 		}
 		data := opts.BasicConfig.Data
-		data.Admin.Password = "***"
 		c.Body = data
 		return
 	})
