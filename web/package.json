@@ -16,7 +16,7 @@
     "react-scripts": "3.0.1"
   },
   "scripts": {
-    "format": "node node_modules/.bin/prettier --write *.js */*.js */*/*.js",
+    "format": "node node_modules/.bin/prettier --write src/**/*.js src/**/**/*.js",
     "start": "react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",

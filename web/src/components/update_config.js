@@ -5,6 +5,7 @@ import { Spin, Form, Card, message, Input, Select, Button, Switch } from "antd";
 import "./update_config.sass";
 import { CONFIGS } from "../urls";
 import * as router from "../router";
+import { sha256 } from "../helpers/crypto";
 
 function convertNsToSecnod(value) {
   return Math.round(value / (1000 * 1000 * 1000));
@@ -86,6 +87,8 @@ class UpdateConfig extends React.Component {
         // 测试是否正则
         new RegExp(data.compress.filter);
       }
+      // 修改密码时生成sha256串
+      updateData.admin.password = sha256(updateData.admin.password);
       await request.patch(`${CONFIGS}/${name}`, updateData);
       message.info("update config successful");
       router.back();

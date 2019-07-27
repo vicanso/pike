@@ -12,9 +12,7 @@ import {
   PERFORMANCE_PATH,
   CONFIGS_PATH
 } from "../paths";
-import {
-  CONFIGS,
-} from "../urls";
+import { CONFIGS } from "../urls";
 
 const paths = [
   {
@@ -38,7 +36,7 @@ const paths = [
 class AppHeader extends React.Component {
   state = {
     active: -1,
-    version: '',
+    version: ""
   };
   render() {
     const { active, version } = this.state;
@@ -60,9 +58,7 @@ class AppHeader extends React.Component {
         <div className="logo">
           <img src={logo} alt="logo" />
           Pike
-          {version && <span className="version">
-            {version}
-          </span>}
+          {version && <span className="version">{version}</span>}
         </div>
         <ul className="functions">{arr}</ul>
       </div>
@@ -87,14 +83,12 @@ class AppHeader extends React.Component {
   }
   async componentDidMount() {
     try {
-      const {
-        data,
-      } = await request.get(CONFIGS);
+      const { data } = await request.get(CONFIGS);
       this.setState({
-        version: data.applicationInfo.version,
+        version: data.applicationInfo.version
       });
     } catch (err) {
-      message.error(err.message)
+      message.error(err.message);
     }
   }
 }

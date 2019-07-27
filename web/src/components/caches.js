@@ -136,7 +136,7 @@ class Caches extends React.Component {
       }
     ];
     const scrollOptions = {
-      x: true,
+      x: true
     };
     return (
       <div>

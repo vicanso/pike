@@ -2,8 +2,11 @@ package server
 
 import (
 	"bytes"
+	"crypto/sha256"
+	"encoding/base64"
 	"encoding/json"
 	"os"
+	"regexp"
 	"runtime"
 
 	"github.com/vicanso/hes"
@@ -69,6 +72,13 @@ func sendFile(c *cod.Context, file string) (err error) {
 	return
 }
 
+func doSha256(str string) string {
+	hash := sha256.New()
+	hash.Write([]byte(str))
+	hashBytes := hash.Sum(nil)
+	return base64.StdEncoding.EncodeToString(hashBytes)
+}
+
 // NewAdminServer create an admin server
 func NewAdminServer(opts Options) *cod.Cod {
 	cfg := opts.BasicConfig
@@ -99,7 +109,8 @@ func NewAdminServer(opts Options) *cod.Cod {
 	if adminUser != "" && adminPwd != "" {
 		adminHandlerList = append(adminHandlerList, basicauth.New(basicauth.Config{
 			Validate: func(account, pwd string, _ *cod.Context) (bool, error) {
-				if account == adminUser && pwd == adminPwd {
+				if account == adminUser && (pwd == adminPwd ||
+					doSha256(pwd) == adminPwd) {
 					return true, nil
 				}
 				return false, nil
@@ -220,6 +231,9 @@ func NewAdminServer(opts Options) *cod.Cod {
 		if err != nil {
 			return
 		}
+		// 替换password
+		reg := regexp.MustCompile(`password:[\s\S]+?\n`)
+		basicYaml = reg.ReplaceAll(basicYaml, []byte("password: ***\n"))
 		directorYaml, err := opts.DirectorConfig.YAML()
 		if err != nil {
 			return
@@ -248,7 +262,9 @@ func NewAdminServer(opts Options) *cod.Cod {
 			err = hes.New("Only support to get basic config")
 			return
 		}
-		c.Body = opts.BasicConfig.Data
+		data := opts.BasicConfig.Data
+		data.Admin.Password = "***"
+		c.Body = data
 		return
 	})
 
