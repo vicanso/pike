@@ -87,6 +87,10 @@ class UpdateConfig extends React.Component {
         // 测试是否正则
         new RegExp(data.compress.filter);
       }
+      const reg = new RegExp("^http(s)?://[a-zA-Z0-9][-a-zA-Z0-9]{0,62}");
+      if (data.endPoint.upstream && !reg.test(data.endPoint.upstream)) {
+        throw new Error("end point of upstream callback is invalid");
+      }
     
       await request.patch(`${CONFIGS}/${name}`, updateData);
       message.info("update config successful");
@@ -280,6 +284,22 @@ class UpdateConfig extends React.Component {
       </Card>
     );
   }
+  renderEndpoint() {
+    const {
+      data,
+    } = this.state;
+    return (
+      <Card size="small" title="End Point(callback)" className="config">
+        <Form.Item key="upstream" label={"Upstream"}>
+          <Input
+            placeholder={`Input the callback endpoint of upstream, http://127.0.0.1/notify`}
+            defaultValue={data.endPoint.upstream || ""}
+            onChange={this.createInputOnChagne("endPoint.upstream")}
+          />
+        </Form.Item>
+      </Card>
+    )
+  }
   renderForm() {
     const { data } = this.state;
     if (!data) {
@@ -335,6 +355,7 @@ class UpdateConfig extends React.Component {
         {this.renderTimeoutConfig()}
         {this.renderCacheConfig()}
         {this.renderCompressConfig()}
+        {this.renderEndpoint()}
         <Button type="primary" htmlType="submit" className="submit">
           Update
         </Button>

@@ -68,6 +68,9 @@ type (
 			Connect        time.Duration `yaml:"connect,omitempty" json:"connect,omitempty"`
 			TLSHandshake   time.Duration `yaml:"tls_handshake,omitempty" json:"tlsHandshake,omitempty"`
 		} `yaml:"timeout,omitempty" json:"timeout,omitempty"`
+		EndPoint struct {
+			Upstream string `yaml:"upstream,omitempty" json:"upstream,omitempty"`
+		} `yaml:"endPoint,omitempty" json:"endPoint,omitempty"`
 	}
 	// BackendConfig backend config
 	BackendConfig struct {

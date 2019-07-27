@@ -1,10 +1,12 @@
 package server
 
 import (
+	"fmt"
 	"net"
 	"net/http"
 	"os"
 	"regexp"
+	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -40,6 +42,13 @@ type (
 	}
 )
 
+const (
+	upstreamCallbackTempalte = `{
+		"uri": "%s",
+		"status": "%s"
+	}`
+)
+
 // Destroy destroy instance
 func (ins *Instance) Destroy() {
 	ins.Director.ClearUpstreams()
@@ -65,10 +74,24 @@ func NewInstance(basicConfig *config.Config, directorConfig *config.DirectorConf
 			ResponseHeaderTimeout: timeoutConfig.ResponseHeader,
 		},
 		OnStatusChange: func(upstream *UP.HTTPUpstream, status string) {
+			uri := upstream.URL.String()
 			logger.Info("upstream status change",
-				zap.String("uri", upstream.URL.String()),
+				zap.String("uri", uri),
 				zap.String("status", status),
 			)
+			upstreamCallback := basicConfig.Data.EndPoint.Upstream
+			if upstreamCallback != "" {
+
+				r := strings.NewReader(fmt.Sprintf(upstreamCallbackTempalte, uri, status))
+				resp, err := http.Post(upstreamCallback, "application/json", r)
+				if err != nil {
+					logger.Error("upstream call back fail",
+						zap.Error(err),
+					)
+					return
+				}
+				resp.Body.Close()
+			}
 		},
 	}
 
