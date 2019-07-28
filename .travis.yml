@@ -13,9 +13,9 @@ before_install:
 
 script:
   - make test
-  - docker build -t pike .
 
 after_success:
+  - docker build -t pike .
   - export VERSION=2.0.1
   - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
   - docker tag pike $DOCKER_USERNAME/pike:$VERSION
