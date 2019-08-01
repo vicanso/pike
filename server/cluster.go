@@ -1,6 +1,8 @@
 package server
 
 import (
+	"bytes"
+	"encoding/json"
 	"fmt"
 	"net"
 	"net/http"
@@ -121,6 +123,26 @@ func NewInstance(basicConfig *config.Config, directorConfig *config.DirectorConf
 			zap.String("url", c.Request.RequestURI),
 			zap.Strings("stack", util.GetStack(4, 9)),
 		)
+		errorCallback := basicConfig.Data.EndPoint.Error
+		if errorCallback == "" {
+			return
+		}
+		data, _ := json.Marshal(map[string]string{
+			"category": he.Category,
+			"method":   c.Request.Method,
+			"host":     c.Request.Host,
+			"url":      c.Request.RequestURI,
+			"message":  err.Error(),
+		})
+		r := bytes.NewReader(data)
+		resp, err := http.Post(errorCallback, "application/json", r)
+		if err != nil {
+			logger.Error("error call back fail",
+				zap.Error(err),
+			)
+			return
+		}
+		resp.Body.Close()
 	})
 	ins = &Instance{
 		Director: director,

@@ -158,7 +158,7 @@ class UpdateConfig extends React.Component {
             defaultValue={adminConfig.password}
             type="password"
             placeholder="Input the password of admin"
-            onChange={(e) => {
+            onChange={e => {
               const value = sha256(e.target.value.trim());
               this.setUpdateValue(["admin", "password"], value);
             }}
@@ -285,9 +285,7 @@ class UpdateConfig extends React.Component {
     );
   }
   renderEndpoint() {
-    const {
-      data,
-    } = this.state;
+    const { data } = this.state;
     return (
       <Card size="small" title="End Point(callback)" className="config">
         <Form.Item key="upstream" label={"Upstream"}>
@@ -297,8 +295,15 @@ class UpdateConfig extends React.Component {
             onChange={this.createInputOnChagne("endPoint.upstream")}
           />
         </Form.Item>
+        <Form.Item key="error" label={"Error"}>
+          <Input
+            placeholder={`Input the callback endpoint of error, http://127.0.0.1/error`}
+            defaultValue={data.endPoint.error || ""}
+            onChange={this.createInputOnChagne("endPoint.error")}
+          />
+        </Form.Item>
       </Card>
-    )
+    );
   }
   renderForm() {
     const { data } = this.state;

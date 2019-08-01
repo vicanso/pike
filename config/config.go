@@ -70,6 +70,7 @@ type (
 		} `yaml:"timeout,omitempty" json:"timeout,omitempty"`
 		EndPoint struct {
 			Upstream string `yaml:"upstream,omitempty" json:"upstream,omitempty"`
+			Error    string `yaml:"error,omitempty" json:"error,omitempty"`
 		} `yaml:"endPoint,omitempty" json:"endPoint,omitempty"`
 	}
 	// BackendConfig backend config
