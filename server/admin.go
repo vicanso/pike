@@ -5,6 +5,7 @@ import (
 	"crypto/sha256"
 	"encoding/base64"
 	"encoding/json"
+	"io"
 	"os"
 	"regexp"
 	"runtime"
@@ -12,16 +13,16 @@ import (
 	"github.com/vicanso/hes"
 
 	"github.com/gobuffalo/packr/v2"
-	"github.com/vicanso/cod"
-	basicauth "github.com/vicanso/cod-basic-auth"
-	bodyparser "github.com/vicanso/cod-body-parser"
-	compress "github.com/vicanso/cod-compress"
-	errorhandler "github.com/vicanso/cod-error-handler"
-	etag "github.com/vicanso/cod-etag"
-	fresh "github.com/vicanso/cod-fresh"
-	recover "github.com/vicanso/cod-recover"
-	responder "github.com/vicanso/cod-responder"
-	staticServe "github.com/vicanso/cod-static-serve"
+	"github.com/vicanso/elton"
+	basicauth "github.com/vicanso/elton-basic-auth"
+	bodyparser "github.com/vicanso/elton-body-parser"
+	compress "github.com/vicanso/elton-compress"
+	errorhandler "github.com/vicanso/elton-error-handler"
+	etag "github.com/vicanso/elton-etag"
+	fresh "github.com/vicanso/elton-fresh"
+	recover "github.com/vicanso/elton-recover"
+	responder "github.com/vicanso/elton-responder"
+	staticServe "github.com/vicanso/elton-static-serve"
 
 	"github.com/vicanso/pike/cache"
 	"github.com/vicanso/pike/config"
@@ -62,7 +63,15 @@ func (sf *staticFile) Get(file string) ([]byte, error) {
 func (sf *staticFile) Stat(file string) os.FileInfo {
 	return nil
 }
-func sendFile(c *cod.Context, file string) (err error) {
+func (sf *staticFile) NewReader(file string) (io.Reader, error) {
+	buf, err := sf.Get(file)
+	if err != nil {
+		return nil, err
+	}
+	return bytes.NewReader(buf), nil
+}
+
+func sendFile(c *elton.Context, file string) (err error) {
 	buf, err := box.Find(file)
 	if err != nil {
 		return
@@ -80,15 +89,15 @@ func doSha256(str string) string {
 }
 
 // NewAdminServer create an admin server
-func NewAdminServer(opts Options) *cod.Cod {
+func NewAdminServer(opts Options) *elton.Elton {
 	cfg := opts.BasicConfig
 	insStats := opts.Stats
 	director := opts.Director
 	dsp := opts.Dispatcher
 	directorConfig := opts.DirectorConfig
 
-	d := cod.New()
-	d.Use(func(c *cod.Context) error {
+	d := elton.New()
+	d.Use(func(c *elton.Context) error {
 		c.NoCache()
 		return c.Next()
 	})
@@ -100,7 +109,7 @@ func NewAdminServer(opts Options) *cod.Cod {
 	d.Use(bodyparser.NewDefault())
 	d.Use(responder.NewDefault())
 
-	adminHandlerList := make([]cod.Handler, 0)
+	adminHandlerList := make([]elton.Handler, 0)
 
 	adminConfig := cfg.Data.Admin
 	adminUser := adminConfig.User
@@ -108,7 +117,7 @@ func NewAdminServer(opts Options) *cod.Cod {
 	// 设置 basic auth 认证
 	if adminUser != "" && adminPwd != "" {
 		adminHandlerList = append(adminHandlerList, basicauth.New(basicauth.Config{
-			Validate: func(account, pwd string, _ *cod.Context) (bool, error) {
+			Validate: func(account, pwd string, _ *elton.Context) (bool, error) {
 				if account == adminUser && (pwd == adminPwd ||
 					doSha256(pwd) == adminPwd) {
 					return true, nil
@@ -118,9 +127,9 @@ func NewAdminServer(opts Options) *cod.Cod {
 		}))
 	}
 
-	g := cod.NewGroup("", adminHandlerList...)
+	g := elton.NewGroup("", adminHandlerList...)
 	// 获取系统状态统计
-	g.GET("/stats", func(c *cod.Context) error {
+	g.GET("/stats", func(c *elton.Context) error {
 		c.Body = &struct {
 			Stats *stats.Info `json:"stats,omitempty"`
 		}{
@@ -129,7 +138,7 @@ func NewAdminServer(opts Options) *cod.Cod {
 		return nil
 	})
 	// 获取 upstream 列表
-	g.GET("/upstreams", func(c *cod.Context) error {
+	g.GET("/upstreams", func(c *elton.Context) error {
 		c.Body = &struct {
 			Upstreams []upstream.Info `json:"upstreams,omitempty"`
 		}{
@@ -139,7 +148,7 @@ func NewAdminServer(opts Options) *cod.Cod {
 	})
 
 	// 获取单个upstream信息
-	g.GET("/upstreams/:name", func(c *cod.Context) error {
+	g.GET("/upstreams/:name", func(c *elton.Context) error {
 		name := c.Param("name")
 		infos := director.GetUpstreamInfos()
 		for _, item := range infos {
@@ -154,7 +163,7 @@ func NewAdminServer(opts Options) *cod.Cod {
 	})
 
 	// 增加upstream
-	g.POST("/upstreams", func(c *cod.Context) (err error) {
+	g.POST("/upstreams", func(c *elton.Context) (err error) {
 		backend := config.BackendConfig{}
 		err = json.Unmarshal(c.RequestBody, &backend)
 		if err != nil {
@@ -177,7 +186,7 @@ func NewAdminServer(opts Options) *cod.Cod {
 		return nil
 	})
 
-	g.PATCH("/upstreams/:name", func(c *cod.Context) (err error) {
+	g.PATCH("/upstreams/:name", func(c *elton.Context) (err error) {
 		backend := config.BackendConfig{}
 		err = json.Unmarshal(c.RequestBody, &backend)
 		if err != nil {
@@ -198,7 +207,7 @@ func NewAdminServer(opts Options) *cod.Cod {
 	})
 
 	// 删除upstream
-	g.DELETE("/upstreams/:name", func(c *cod.Context) (err error) {
+	g.DELETE("/upstreams/:name", func(c *elton.Context) (err error) {
 		directorConfig.RemoveBackend(c.Param("name"))
 		err = directorConfig.WriteConfig()
 		if err != nil {
@@ -209,7 +218,7 @@ func NewAdminServer(opts Options) *cod.Cod {
 	})
 
 	// 获取缓存列表
-	g.GET("/caches", func(c *cod.Context) error {
+	g.GET("/caches", func(c *elton.Context) error {
 		c.Body = &struct {
 			Caches []*cache.HTTPCacheInfo `json:"caches,omitempty"`
 		}{
@@ -219,14 +228,14 @@ func NewAdminServer(opts Options) *cod.Cod {
 	})
 
 	// 删除缓存
-	g.DELETE("/caches", func(c *cod.Context) error {
+	g.DELETE("/caches", func(c *elton.Context) error {
 		dsp.Expire([]byte(c.QueryParam("key")))
 		c.NoContent()
 		return nil
 	})
 
 	// 获取配置列表
-	g.GET("/configs", func(c *cod.Context) (err error) {
+	g.GET("/configs", func(c *elton.Context) (err error) {
 		basicYaml, err := opts.BasicConfig.YAML()
 		if err != nil {
 			return
@@ -257,7 +266,7 @@ func NewAdminServer(opts Options) *cod.Cod {
 	})
 
 	// 获取基础配置信息
-	g.GET("/configs/:name", func(c *cod.Context) (err error) {
+	g.GET("/configs/:name", func(c *elton.Context) (err error) {
 		if c.Param("name") != "basic" {
 			err = hes.New("Only support to get basic config")
 			return
@@ -268,7 +277,7 @@ func NewAdminServer(opts Options) *cod.Cod {
 	})
 
 	// 更新基础配置信息
-	g.PATCH("/configs/basic", func(c *cod.Context) (err error) {
+	g.PATCH("/configs/basic", func(c *elton.Context) (err error) {
 		data := config.BasicConfig{}
 		err = json.Unmarshal(c.RequestBody, &data)
 		if err != nil {
@@ -289,7 +298,7 @@ func NewAdminServer(opts Options) *cod.Cod {
 	}
 	// 静态文件
 
-	g.GET("/", func(c *cod.Context) error {
+	g.GET("/", func(c *elton.Context) error {
 		c.CacheMaxAge("10s")
 		return sendFile(c, "index.html")
 	})

@@ -13,7 +13,7 @@ import (
 
 	"github.com/vicanso/hes"
 
-	"github.com/vicanso/cod"
+	"github.com/vicanso/elton"
 	"github.com/vicanso/pike/df"
 	"github.com/vicanso/pike/log"
 	"github.com/vicanso/pike/util"
@@ -24,8 +24,8 @@ import (
 var (
 	ignoreHeaderKeys = []string{
 		df.HeaderAge,
-		cod.HeaderContentEncoding,
-		cod.HeaderContentLength,
+		elton.HeaderContentEncoding,
+		elton.HeaderContentLength,
 	}
 )
 
@@ -259,7 +259,7 @@ func (hc *HTTPCache) HitForPass() {
 }
 
 // Cacheable set status to bo cacheable
-func (hc *HTTPCache) Cacheable(maxAge int, c *cod.Context) {
+func (hc *HTTPCache) Cacheable(maxAge int, c *elton.Context) {
 	hc.Status = Cacheable
 	hc.CreatedAt = time.Now().Unix()
 	hc.MaxAge = maxAge
@@ -267,7 +267,7 @@ func (hc *HTTPCache) Cacheable(maxAge int, c *cod.Context) {
 
 	header := c.Header()
 	body := c.BodyBuffer.Bytes()
-	encoding := header.Get(cod.HeaderContentEncoding)
+	encoding := header.Get(elton.HeaderContentEncoding)
 	if encoding != "" {
 		// 如果不是gzip，设置为hit for pass
 		if encoding != df.GZIP {
@@ -297,7 +297,7 @@ func (hc *HTTPCache) Cacheable(maxAge int, c *cod.Context) {
 	if opts != nil &&
 		len(body) >= compressMinLength &&
 		textFilter != nil &&
-		textFilter.MatchString(header.Get(cod.HeaderContentType)) {
+		textFilter.MatchString(header.Get(elton.HeaderContentType)) {
 		gzipBody, err = doGzip(body, opts.CompressLevel)
 		if err != nil {
 			log.Default().Error("gzip fail",

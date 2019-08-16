@@ -7,7 +7,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	"github.com/vicanso/cod"
+	"github.com/vicanso/elton"
 	"github.com/vicanso/pike/config"
 	"github.com/vicanso/pike/df"
 	"github.com/vicanso/pike/upstream"
@@ -49,11 +49,11 @@ func TestNewProxy(t *testing.T) {
 		})
 
 	req := httptest.NewRequest("GET", "http://aslant.site/", nil)
-	req.Header.Set(cod.HeaderAcceptEncoding, df.GZIP)
-	req.Header.Set(cod.HeaderIfModifiedSince, "modified date")
-	req.Header.Set(cod.HeaderIfNoneMatch, `"ETag"`)
+	req.Header.Set(elton.HeaderAcceptEncoding, df.GZIP)
+	req.Header.Set(elton.HeaderIfModifiedSince, "modified date")
+	req.Header.Set(elton.HeaderIfNoneMatch, `"ETag"`)
 	resp := httptest.NewRecorder()
-	c := cod.NewContext(resp, req)
+	c := elton.NewContext(resp, req)
 	c.Next = func() error {
 		return nil
 	}

@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
-	"github.com/vicanso/cod"
+	"github.com/vicanso/elton"
 	"github.com/vicanso/pike/config"
 	"github.com/vicanso/pike/stats"
 )
@@ -26,7 +26,7 @@ func TestNewInitialization(t *testing.T) {
 	fn := NewInitialization(bc, stats.New())
 	resp := httptest.NewRecorder()
 	req := httptest.NewRequest("GET", "/", nil)
-	c := cod.NewContext(resp, req)
+	c := elton.NewContext(resp, req)
 	c.Next = func() error {
 		assert.Equal("", c.GetHeader("X-Response-ID"))
 		assert.Equal("123", c.GetRequestHeader("X-Request-ID"), "X-Request-ID should be set")
@@ -44,7 +44,7 @@ func TestTooManyRequest(t *testing.T) {
 	}
 	fn := NewInitialization(bc, stats.New())
 
-	c1 := cod.NewContext(httptest.NewRecorder(), httptest.NewRequest("GET", "/", nil))
+	c1 := elton.NewContext(httptest.NewRecorder(), httptest.NewRequest("GET", "/", nil))
 	c1.Next = func() error {
 		time.Sleep(100 * time.Millisecond)
 		return nil
@@ -53,7 +53,7 @@ func TestTooManyRequest(t *testing.T) {
 		err := fn(c1)
 		assert.Nil(err)
 	}()
-	c2 := cod.NewContext(httptest.NewRecorder(), httptest.NewRequest("GET", "/", nil))
+	c2 := elton.NewContext(httptest.NewRecorder(), httptest.NewRequest("GET", "/", nil))
 	time.Sleep(time.Millisecond)
 	err := fn(c2)
 	assert.Equal(errTooManyRequest, err)

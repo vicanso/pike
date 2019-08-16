@@ -12,7 +12,7 @@ import (
 	"sync/atomic"
 	"testing"
 
-	"github.com/vicanso/cod"
+	"github.com/vicanso/elton"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/vicanso/pike/cache"
@@ -28,7 +28,7 @@ func newTestServer() (ln net.Listener, err error) {
 		return
 	}
 
-	d := cod.New()
+	d := elton.New()
 
 	inc := func(p *int32) *bytes.Buffer {
 		v := atomic.AddInt32(p, 1)
@@ -44,13 +44,13 @@ func newTestServer() (ln net.Listener, err error) {
 	}
 
 	// 响应未压缩
-	notCompressHandler := func(c *cod.Context) error {
+	notCompressHandler := func(c *elton.Context) error {
 		c.SetHeader("Content-Type", "text/html")
 		c.BodyBuffer = genBuffer(4096)
 		return nil
 	}
 	// 响应数据已压缩
-	compressHandler := func(c *cod.Context) error {
+	compressHandler := func(c *elton.Context) error {
 		c.SetHeader("Content-Type", "text/html")
 		c.SetHeader("Content-Encoding", "gzip")
 		buf, _ := cache.Gzip(genBuffer(4096).Bytes())
@@ -59,24 +59,24 @@ func newTestServer() (ln net.Listener, err error) {
 		return nil
 	}
 
-	setCacheNext := func(c *cod.Context) error {
+	setCacheNext := func(c *elton.Context) error {
 		c.CacheMaxAge("10s")
 		return c.Next()
 	}
 
-	d.GET("/ping", func(c *cod.Context) error {
+	d.GET("/ping", func(c *elton.Context) error {
 		c.BodyBuffer = bytes.NewBufferString("pong")
 		return nil
 	})
 
 	var postResponseID int32
-	d.POST("/post", func(c *cod.Context) error {
+	d.POST("/post", func(c *elton.Context) error {
 		c.BodyBuffer = inc(&postResponseID)
 		return nil
 	})
 
 	// 非文本类数据
-	d.GET("/image-cache", func(c *cod.Context) error {
+	d.GET("/image-cache", func(c *elton.Context) error {
 		c.CacheMaxAge("10s")
 		c.SetHeader("Content-Type", "image/png")
 		c.BodyBuffer = genBuffer(4096)
@@ -94,13 +94,13 @@ func newTestServer() (ln net.Listener, err error) {
 
 	d.GET("/get-without-etag", notCompressHandler)
 
-	d.GET("/get-with-etag", func(c *cod.Context) error {
+	d.GET("/get-with-etag", func(c *elton.Context) error {
 		c.SetHeader("ETag", `"123"`)
 		return notCompressHandler(c)
 	})
 
 	var noCacheResponseID int32
-	d.GET("/no-cache", func(c *cod.Context) error {
+	d.GET("/no-cache", func(c *elton.Context) error {
 		c.BodyBuffer = inc(&noCacheResponseID)
 		return nil
 	})
@@ -158,7 +158,7 @@ func TestNewServer(t *testing.T) {
 
 	newRequest := func(method, url string) *http.Request {
 		req := httptest.NewRequest(method, url, nil)
-		req.Header.Set(cod.HeaderAcceptEncoding, "gzip")
+		req.Header.Set(elton.HeaderAcceptEncoding, "gzip")
 		return req
 	}
 
@@ -219,8 +219,8 @@ func TestNewServer(t *testing.T) {
 
 			assert.Equal(resp.Code, 200)
 			assert.Equal(resp.Body.Len(), 4096)
-			assert.Equal(h.Get(cod.HeaderContentEncoding), "")
-			assert.Equal(h.Get(cod.HeaderCacheControl), "public, max-age=10")
+			assert.Equal(h.Get(elton.HeaderContentEncoding), "")
+			assert.Equal(h.Get(elton.HeaderCacheControl), "public, max-age=10")
 
 		})
 		checkStatusList(t, statusList, fetchStatus, cacheableStatus)
@@ -235,8 +235,8 @@ func TestNewServer(t *testing.T) {
 
 			assert.Equal(resp.Code, 200)
 			assert.Equal(resp.Body.Len(), 43)
-			assert.NotEqual(h.Get(cod.HeaderETag), "")
-			assert.Equal(h.Get(cod.HeaderContentEncoding), "gzip")
+			assert.NotEqual(h.Get(elton.HeaderETag), "")
+			assert.Equal(h.Get(elton.HeaderContentEncoding), "gzip")
 
 		})
 	})
@@ -256,8 +256,8 @@ func TestNewServer(t *testing.T) {
 
 			assert.Equal(resp.Code, 200)
 			assert.Equal(resp.Body.Len(), 43)
-			assert.NotEqual(h.Get(cod.HeaderETag), "")
-			assert.Equal(h.Get(cod.HeaderContentEncoding), "gzip")
+			assert.NotEqual(h.Get(elton.HeaderETag), "")
+			assert.Equal(h.Get(elton.HeaderContentEncoding), "gzip")
 		})
 		checkStatusList(t, statusList, fetchStatus, hitForPassStatus)
 	})
@@ -277,8 +277,8 @@ func TestNewServer(t *testing.T) {
 
 			assert.Equal(resp.Code, 200)
 			assert.Equal(resp.Body.Len(), 43)
-			assert.NotEqual(h.Get(cod.HeaderETag), "")
-			assert.Equal(h.Get(cod.HeaderContentEncoding), "gzip")
+			assert.NotEqual(h.Get(elton.HeaderETag), "")
+			assert.Equal(h.Get(elton.HeaderContentEncoding), "gzip")
 		})
 		checkStatusList(t, statusList, fetchStatus, cacheableStatus)
 	})
@@ -297,8 +297,8 @@ func TestNewServer(t *testing.T) {
 			statusList = append(statusList, status)
 			assert.Equal(resp.Code, 200)
 			assert.Equal(resp.Body.Len(), 43)
-			assert.NotEqual(h.Get(cod.HeaderETag), "")
-			assert.Equal(h.Get(cod.HeaderContentEncoding), "gzip")
+			assert.NotEqual(h.Get(elton.HeaderETag), "")
+			assert.Equal(h.Get(elton.HeaderContentEncoding), "gzip")
 		})
 		checkStatusList(t, statusList, fetchStatus, cacheableStatus)
 	})
@@ -310,7 +310,7 @@ func TestNewServer(t *testing.T) {
 			d.ServeHTTP(resp, req)
 			h := resp.Header()
 			assert.Equal(resp.Code, 200)
-			assert.NotEqual(h.Get(cod.HeaderETag), "")
+			assert.NotEqual(h.Get(elton.HeaderETag), "")
 		})
 	})
 
@@ -321,7 +321,7 @@ func TestNewServer(t *testing.T) {
 			d.ServeHTTP(resp, req)
 			h := resp.Header()
 			assert.Equal(resp.Code, 200)
-			assert.Equal(h.Get(cod.HeaderETag), `"123"`)
+			assert.Equal(h.Get(elton.HeaderETag), `"123"`)
 		})
 	})
 

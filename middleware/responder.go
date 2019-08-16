@@ -7,7 +7,7 @@ import (
 
 	"github.com/vicanso/hes"
 
-	"github.com/vicanso/cod"
+	"github.com/vicanso/elton"
 	"github.com/vicanso/pike/cache"
 	"github.com/vicanso/pike/df"
 )
@@ -22,8 +22,8 @@ var (
 )
 
 // NewResponder create a respond middleware
-func NewResponder() cod.Handler {
-	return func(c *cod.Context) (err error) {
+func NewResponder() elton.Handler {
+	return func(c *elton.Context) (err error) {
 		err = c.Next()
 		// 出错或者已设置响应数据
 		if err != nil || c.BodyBuffer != nil {
@@ -42,7 +42,7 @@ func NewResponder() cod.Handler {
 			return
 		}
 		// 获取客户端可接受的 encoding
-		acceptEncoding := c.GetRequestHeader(cod.HeaderAcceptEncoding)
+		acceptEncoding := c.GetRequestHeader(elton.HeaderAcceptEncoding)
 
 		for k, value := range hc.Headers {
 			for _, v := range value {
@@ -61,7 +61,7 @@ func NewResponder() cod.Handler {
 		}
 		c.BodyBuffer = buf
 		if encoding != "" {
-			c.SetHeader(cod.HeaderContentEncoding, encoding)
+			c.SetHeader(elton.HeaderContentEncoding, encoding)
 		}
 		return
 	}

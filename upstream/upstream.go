@@ -8,7 +8,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/vicanso/cod"
+	"github.com/vicanso/elton"
 	"github.com/vicanso/hes"
 	"github.com/vicanso/pike/config"
 	"github.com/vicanso/pike/util"
@@ -16,7 +16,7 @@ import (
 
 	"github.com/vicanso/pike/df"
 
-	proxy "github.com/vicanso/cod-proxy"
+	proxy "github.com/vicanso/elton-proxy"
 )
 
 var (
@@ -60,7 +60,7 @@ type (
 		Hosts         []string
 		Prefixs       []string
 		Rewrites      []string
-		Handler       cod.Handler
+		Handler       elton.Handler
 	}
 	// ServerInfo upstream server's information
 	ServerInfo struct {
@@ -104,7 +104,7 @@ func (d *Director) SetBackends(backends []config.BackendConfig) {
 }
 
 // Proxy proxy
-func (d *Director) Proxy(c *cod.Context) (err error) {
+func (d *Director) Proxy(c *elton.Context) (err error) {
 	var found *Upstream
 	for _, item := range d.Upstreams {
 		if item.Match(c) {
@@ -215,7 +215,7 @@ func createTargetPicker(us *Upstream) proxy.TargetPicker {
 		isCookiePolicy = true
 	}
 	server := &us.Server
-	fn := func(c *cod.Context) (*url.URL, proxy.Done, error) {
+	fn := func(c *elton.Context) (*url.URL, proxy.Done, error) {
 		var result *UP.HTTPUpstream
 		var done proxy.Done
 		switch policy {
@@ -230,7 +230,7 @@ func createTargetPicker(us *Upstream) proxy.TargetPicker {
 			if result != nil {
 				// 连接数+1
 				result.Inc()
-				done = func(_ *cod.Context) {
+				done = func(_ *elton.Context) {
 					result.Dec()
 				}
 			}
@@ -257,7 +257,7 @@ func createTargetPicker(us *Upstream) proxy.TargetPicker {
 }
 
 // createProxyHandler create proxy handler
-func createProxyHandler(us *Upstream, transport *http.Transport) cod.Handler {
+func createProxyHandler(us *Upstream, transport *http.Transport) elton.Handler {
 	fn := createTargetPicker(us)
 
 	cfg := proxy.Config{
@@ -334,7 +334,7 @@ func New(backend config.BackendConfig, transport *http.Transport) *Upstream {
 }
 
 // Match match
-func (us *Upstream) Match(c *cod.Context) bool {
+func (us *Upstream) Match(c *elton.Context) bool {
 	hosts := us.Hosts
 	if len(hosts) != 0 {
 		found := false

@@ -5,7 +5,7 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/vicanso/cod"
+	"github.com/vicanso/elton"
 	"github.com/vicanso/pike/cache"
 	"github.com/vicanso/pike/config"
 	"github.com/vicanso/pike/df"
@@ -13,10 +13,10 @@ import (
 	"github.com/vicanso/pike/stats"
 	"github.com/vicanso/pike/upstream"
 
-	compress "github.com/vicanso/cod-compress"
-	etag "github.com/vicanso/cod-etag"
-	fresh "github.com/vicanso/cod-fresh"
-	recover "github.com/vicanso/cod-recover"
+	compress "github.com/vicanso/elton-compress"
+	etag "github.com/vicanso/elton-etag"
+	fresh "github.com/vicanso/elton-fresh"
+	recover "github.com/vicanso/elton-recover"
 )
 
 type (
@@ -30,9 +30,9 @@ type (
 	}
 )
 
-// NewServer create a cod server
-func NewServer(opts Options) *cod.Cod {
-	d := cod.NewWithoutServer()
+// NewServer create a elton server
+func NewServer(opts Options) *elton.Elton {
+	d := elton.NewWithoutServer()
 	cfg := opts.BasicConfig
 	insStats := opts.Stats
 	director := opts.Director
@@ -43,8 +43,8 @@ func NewServer(opts Options) *cod.Cod {
 	// 则在回调中调整响应头
 	if d.EnableTrace {
 		prefix := df.APP + "-"
-		d.OnTrace(func(c *cod.Context, traceInfos cod.TraceInfos) {
-			c.AddHeader(cod.HeaderServerTiming, string(traceInfos.ServerTiming(prefix)))
+		d.OnTrace(func(c *elton.Context, traceInfos elton.TraceInfos) {
+			c.AddHeader(elton.HeaderServerTiming, string(traceInfos.ServerTiming(prefix)))
 		})
 	}
 
@@ -52,7 +52,7 @@ func NewServer(opts Options) *cod.Cod {
 	adminPath := cfg.Data.Admin.Prefix
 	if adminPath != "" {
 		adminServer := NewAdminServer(opts)
-		adminFn := func(c *cod.Context) error {
+		adminFn := func(c *elton.Context) error {
 			path := c.Request.URL.Path
 			if strings.HasPrefix(path, adminPath) {
 				c.Request.URL.Path = path[len(adminPath):]
@@ -69,7 +69,7 @@ func NewServer(opts Options) *cod.Cod {
 	d.Use(fn)
 	d.SetFunctionName(fn, "-")
 
-	ping := func(c *cod.Context) error {
+	ping := func(c *elton.Context) error {
 		if c.Request.RequestURI == "/ping" {
 			c.BodyBuffer = bytes.NewBufferString("pong")
 			return nil
@@ -114,7 +114,7 @@ func NewServer(opts Options) *cod.Cod {
 	d.Use(fn)
 	d.SetFunctionName(fn, "Proxy")
 
-	noop := func(c *cod.Context) (err error) {
+	noop := func(c *elton.Context) (err error) {
 		return
 	}
 	d.ALL("/*url", noop)

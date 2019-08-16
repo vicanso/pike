@@ -5,7 +5,7 @@ import (
 	"regexp"
 	"strconv"
 
-	"github.com/vicanso/cod"
+	"github.com/vicanso/elton"
 	"github.com/vicanso/pike/cache"
 	"github.com/vicanso/pike/config"
 	"github.com/vicanso/pike/df"
@@ -21,11 +21,11 @@ var (
 // 根据Cache-Control的信息，获取s-maxage 或者max-age的值
 func getCacheAge(header http.Header) int {
 	// 如果有设置cookie，则为不可缓存
-	if len(header.Get(cod.HeaderSetCookie)) != 0 {
+	if len(header.Get(elton.HeaderSetCookie)) != 0 {
 		return 0
 	}
 	// 如果没有设置cache-control，则不可缓存
-	cc := header.Get(cod.HeaderCacheControl)
+	cc := header.Get(elton.HeaderCacheControl)
 	if len(cc) == 0 {
 		return 0
 	}
@@ -59,18 +59,18 @@ func getCacheAge(header http.Header) int {
 }
 
 // NewCacheIdentifier create a cache identifier middleware
-func NewCacheIdentifier(cfg config.BasicConfig, dsp *cache.Dispatcher) cod.Handler {
+func NewCacheIdentifier(cfg config.BasicConfig, dsp *cache.Dispatcher) elton.Handler {
 	identify := cfg.Identity
 	fn := util.GetIdentity
 	if identify != "" {
 		fn = util.GenerateGetIdentity(identify)
 	}
-	return func(c *cod.Context) (err error) {
+	return func(c *elton.Context) (err error) {
 		// 如果非 GET HEAD请求，直接跳过
 		// 如果请求头设置为 no cache，则pass
 		method := c.Request.Method
 		if (method != http.MethodGet && method != http.MethodHead) ||
-			c.GetRequestHeader(cod.HeaderCacheControl) == "no-cache" {
+			c.GetRequestHeader(elton.HeaderCacheControl) == "no-cache" {
 			c.Set(df.Status, cache.Pass)
 			return c.Next()
 		}

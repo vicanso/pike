@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
-	"github.com/vicanso/cod"
+	"github.com/vicanso/elton"
 	"github.com/vicanso/pike/cache"
 	"github.com/vicanso/pike/df"
 )
@@ -18,7 +18,7 @@ func TestNewResponder(t *testing.T) {
 
 	t.Run("response body has been set", func(t *testing.T) {
 		assert := assert.New(t)
-		c := cod.NewContext(nil, nil)
+		c := elton.NewContext(nil, nil)
 		c.Next = func() error {
 			return nil
 		}
@@ -29,7 +29,7 @@ func TestNewResponder(t *testing.T) {
 
 	t.Run("no http cache", func(t *testing.T) {
 		assert := assert.New(t)
-		c := cod.NewContext(nil, nil)
+		c := elton.NewContext(nil, nil)
 		c.Next = func() error {
 			return nil
 		}
@@ -39,7 +39,7 @@ func TestNewResponder(t *testing.T) {
 
 	t.Run("invalid cache", func(t *testing.T) {
 		assert := assert.New(t)
-		c := cod.NewContext(nil, nil)
+		c := elton.NewContext(nil, nil)
 		c.Set(df.Cache, "1")
 		c.Next = func() error {
 			return nil
@@ -70,8 +70,8 @@ func TestNewResponder(t *testing.T) {
 		assert := assert.New(t)
 		req := httptest.NewRequest("GET", "/", nil)
 		resp := httptest.NewRecorder()
-		req.Header.Set(cod.HeaderAcceptEncoding, "gzip, deflate, br")
-		c := cod.NewContext(resp, req)
+		req.Header.Set(elton.HeaderAcceptEncoding, "gzip, deflate, br")
+		c := elton.NewContext(resp, req)
 		c.Set(df.Cache, hc)
 		c.Next = func() error {
 			return nil
@@ -82,15 +82,15 @@ func TestNewResponder(t *testing.T) {
 		assert.Equal(200, c.StatusCode)
 		assert.NotEqual("", c.GetHeader(df.HeaderAge))
 		assert.Equal(responseID, c.GetHeader(responseIDKey))
-		assert.Equal("br", c.GetHeader(cod.HeaderContentEncoding))
+		assert.Equal("br", c.GetHeader(elton.HeaderContentEncoding))
 	})
 
 	t.Run("gzip cache", func(t *testing.T) {
 		assert := assert.New(t)
 		req := httptest.NewRequest("GET", "/", nil)
 		resp := httptest.NewRecorder()
-		req.Header.Set(cod.HeaderAcceptEncoding, "gzip, deflate")
-		c := cod.NewContext(resp, req)
+		req.Header.Set(elton.HeaderAcceptEncoding, "gzip, deflate")
+		c := elton.NewContext(resp, req)
 		c.Set(df.Cache, hc)
 		c.Next = func() error {
 			return nil
@@ -101,14 +101,14 @@ func TestNewResponder(t *testing.T) {
 		assert.Equal(200, c.StatusCode)
 		assert.NotEqual("", c.GetHeader(df.HeaderAge))
 		assert.Equal(responseID, c.GetHeader(responseIDKey))
-		assert.Equal("gzip", c.GetHeader(cod.HeaderContentEncoding))
+		assert.Equal("gzip", c.GetHeader(elton.HeaderContentEncoding))
 	})
 
 	t.Run("gunzip cache", func(t *testing.T) {
 		assert := assert.New(t)
 		req := httptest.NewRequest("GET", "/", nil)
 		resp := httptest.NewRecorder()
-		c := cod.NewContext(resp, req)
+		c := elton.NewContext(resp, req)
 		c.Set(df.Cache, hc)
 		c.Next = func() error {
 			return nil
@@ -119,7 +119,7 @@ func TestNewResponder(t *testing.T) {
 		assert.Equal(200, c.StatusCode)
 		assert.NotEqual("", c.GetHeader(df.HeaderAge))
 		assert.Equal(responseID, c.GetHeader(responseIDKey))
-		assert.Equal("", c.GetHeader(cod.HeaderContentEncoding))
+		assert.Equal("", c.GetHeader(elton.HeaderContentEncoding))
 	})
 
 	t.Run("raw body cache", func(t *testing.T) {
@@ -129,7 +129,7 @@ func TestNewResponder(t *testing.T) {
 		hc.Body = bytes.NewBuffer(buf)
 		req := httptest.NewRequest("GET", "/", nil)
 		resp := httptest.NewRecorder()
-		c := cod.NewContext(resp, req)
+		c := elton.NewContext(resp, req)
 		c.Set(df.Cache, hc)
 		c.Next = func() error {
 			return nil
@@ -140,6 +140,6 @@ func TestNewResponder(t *testing.T) {
 		assert.Equal(200, c.StatusCode)
 		assert.NotEqual("", c.GetHeader(df.HeaderAge))
 		assert.Equal(responseID, c.GetHeader(responseIDKey))
-		assert.Equal("", c.GetHeader(cod.HeaderContentEncoding))
+		assert.Equal("", c.GetHeader(elton.HeaderContentEncoding))
 	})
 }

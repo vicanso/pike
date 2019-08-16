@@ -4,7 +4,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/vicanso/cod"
+	"github.com/vicanso/elton"
 	"github.com/vicanso/hes"
 	"github.com/vicanso/pike/config"
 	"github.com/vicanso/pike/stats"
@@ -24,12 +24,12 @@ var (
 )
 
 // NewInitialization create an initialization middleware
-func NewInitialization(cfg config.BasicConfig, insStats *stats.Stats) cod.Handler {
+func NewInitialization(cfg config.BasicConfig, insStats *stats.Stats) elton.Handler {
 	maxConcurrency := uint32(cfg.Concurrency)
 	responseHeader := util.ConvertToHTTPHeader(cfg.ResponseHeader)
 	requestHeader := util.ConvertToHTTPHeader(cfg.RequestHeader)
 
-	return func(c *cod.Context) (err error) {
+	return func(c *elton.Context) (err error) {
 		startedAt := time.Now()
 		defer insStats.DecreaseConcurrency()
 		insStats.IncreaseRequestCount()

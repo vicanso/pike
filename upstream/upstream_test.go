@@ -8,7 +8,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	"github.com/vicanso/cod"
+	"github.com/vicanso/elton"
 	"github.com/vicanso/pike/config"
 
 	gock "gopkg.in/h2non/gock.v1"
@@ -157,7 +157,7 @@ func TestCreateTargetPicker(t *testing.T) {
 		us := create()
 		us.Policy = policyLeastconn
 		fn := createTargetPicker(us)
-		c := cod.NewContext(nil, nil)
+		c := elton.NewContext(nil, nil)
 		for i := 0; i < 100; i++ {
 			info, _, err := fn(c)
 			index := i % len(backends)
@@ -172,8 +172,8 @@ func TestCreateTargetPicker(t *testing.T) {
 		us.Policy = policyIPHash
 		fn := createTargetPicker(us)
 		req := httptest.NewRequest("GET", "/", nil)
-		c := cod.NewContext(nil, req)
-		c.SetRequestHeader(cod.HeaderXForwardedFor, "1.1.1.1")
+		c := elton.NewContext(nil, req)
+		c.SetRequestHeader(elton.HeaderXForwardedFor, "1.1.1.1")
 		index := hash(c.RealIP()) % uint32(len(backends))
 		for i := 0; i < 100; i++ {
 			info, _, err := fn(c)
@@ -189,7 +189,7 @@ func TestCreateTargetPicker(t *testing.T) {
 		us.Policy = headerHashPrefix + key
 		fn := createTargetPicker(us)
 		req := httptest.NewRequest("GET", "/", nil)
-		c := cod.NewContext(nil, req)
+		c := elton.NewContext(nil, req)
 		c.SetRequestHeader(key, "123")
 		index := hash(c.GetRequestHeader(key)) % uint32(len(backends))
 		for i := 0; i < 100; i++ {
@@ -206,7 +206,7 @@ func TestCreateTargetPicker(t *testing.T) {
 		us.Policy = cookieHashPrefix + key
 		fn := createTargetPicker(us)
 		req := httptest.NewRequest("GET", "/", nil)
-		c := cod.NewContext(nil, req)
+		c := elton.NewContext(nil, req)
 		c.SetRequestHeader("Cookie", key+"="+"123")
 		cookie, err := c.Cookie(key)
 		assert.Nil(err, "get cookie fail")
@@ -226,7 +226,7 @@ func TestCreateTargetPicker(t *testing.T) {
 		}
 		fn := createTargetPicker(us)
 		req := httptest.NewRequest("GET", "/", nil)
-		c := cod.NewContext(nil, req)
+		c := elton.NewContext(nil, req)
 		_, _, err := fn(c)
 		assert.Equal(t, errNoAvailableUpstream, err)
 	})
@@ -262,7 +262,7 @@ func TestCreateProxyHandler(t *testing.T) {
 	fn := createProxyHandler(us, nil)
 	req := httptest.NewRequest("GET", "http://aslant.site/", nil)
 	resp := httptest.NewRecorder()
-	c := cod.NewContext(resp, req)
+	c := elton.NewContext(resp, req)
 	c.Next = func() error {
 		return nil
 	}
@@ -283,15 +283,15 @@ func TestUpstream(t *testing.T) {
 	}
 
 	req := httptest.NewRequest("GET", "http://aslant.site/api/users/me", nil)
-	c := cod.NewContext(nil, req)
+	c := elton.NewContext(nil, req)
 	assert.True(up.Match(c), "should match the upstream")
 
 	req = httptest.NewRequest("GET", "http://aslant.site/", nil)
-	c = cod.NewContext(nil, req)
+	c = elton.NewContext(nil, req)
 	assert.False(up.Match(c), "should not match upstream, prefix is not match")
 
 	req = httptest.NewRequest("GET", "http://127.0.0.1/api/users/me", nil)
-	c = cod.NewContext(nil, req)
+	c = elton.NewContext(nil, req)
 	assert.False(up.Match(c), "should not match upstream, host is not match")
 }
 
@@ -323,7 +323,7 @@ func TestProxy(t *testing.T) {
 
 	req := httptest.NewRequest("GET", "/", nil)
 	resp := httptest.NewRecorder()
-	c := cod.NewContext(resp, req)
+	c := elton.NewContext(resp, req)
 	err := d.Proxy(c)
 	assert.Equal(err, errNoMatchUpstream)
 
@@ -337,7 +337,7 @@ func TestProxy(t *testing.T) {
 
 	req = httptest.NewRequest("GET", "http://aslant.site/", nil)
 	resp = httptest.NewRecorder()
-	c = cod.NewContext(resp, req)
+	c = elton.NewContext(resp, req)
 	c.Next = func() error {
 		return nil
 	}

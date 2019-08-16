@@ -14,9 +14,9 @@ import (
 	"time"
 	"unsafe"
 
-	"github.com/vicanso/cod"
+	"github.com/vicanso/elton"
 
-	recover "github.com/vicanso/cod-recover"
+	recover "github.com/vicanso/elton-recover"
 	"github.com/vicanso/hes"
 	"github.com/vicanso/pike/cache"
 	"github.com/vicanso/pike/config"
@@ -40,7 +40,7 @@ type (
 	// Instance server instance
 	Instance struct {
 		Director *upstream.Director
-		Server   *cod.Cod
+		Server   *elton.Elton
 	}
 )
 
@@ -110,7 +110,7 @@ func NewInstance(basicConfig *config.Config, directorConfig *config.DirectorConf
 	})
 
 	// 出错时输出相关出错日志
-	d.OnError(func(c *cod.Context, err error) {
+	d.OnError(func(c *elton.Context, err error) {
 		he := hes.Wrap(err)
 		// 如果是recover，记录统计
 		if he.Category == recover.ErrCategory {

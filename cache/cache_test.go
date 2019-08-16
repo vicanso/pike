@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
-	"github.com/vicanso/cod"
+	"github.com/vicanso/elton"
 )
 
 func TestGetHTTPCache(t *testing.T) {
@@ -50,7 +50,7 @@ func TestDispatcher(t *testing.T) {
 		hc1 := dsp.GetHTTPCache(k1)
 		go func() {
 			time.Sleep(time.Millisecond)
-			hc1.Cacheable(10, &cod.Context{
+			hc1.Cacheable(10, &elton.Context{
 				Headers:    make(http.Header),
 				BodyBuffer: bytes.NewBufferString("abcd"),
 			})
@@ -129,11 +129,11 @@ func TestCacheable(t *testing.T) {
 	t.Run("cacheable", func(t *testing.T) {
 		assert := assert.New(t)
 		header := make(http.Header)
-		header.Set(cod.HeaderContentType, "text/html")
-		header.Set(cod.HeaderContentLength, "10")
+		header.Set(elton.HeaderContentType, "text/html")
+		header.Set(elton.HeaderContentLength, "10")
 		buf := make([]byte, 4096)
 		maxAge := 10
-		c := &cod.Context{
+		c := &elton.Context{
 			Headers:    header,
 			BodyBuffer: bytes.NewBuffer(buf),
 			StatusCode: 200,
@@ -147,18 +147,18 @@ func TestCacheable(t *testing.T) {
 		assert.NotNil(hc.Headers, "headers shouldn't be nil")
 		assert.Nil(hc.Body, "original body should be nil")
 		assert.NotNil(hc.GzipBody, "gzip body shouldn't be nil")
-		assert.Equal("", hc.Headers.Get(cod.HeaderContentLength), "Content-Length should be empty")
+		assert.Equal("", hc.Headers.Get(elton.HeaderContentLength), "Content-Length should be empty")
 	})
 
 	t.Run("cacheable(gunzip success)", func(t *testing.T) {
 		assert := assert.New(t)
 		header := make(http.Header)
-		header.Set(cod.HeaderContentType, "text/html")
-		header.Set(cod.HeaderContentEncoding, "gzip")
+		header.Set(elton.HeaderContentType, "text/html")
+		header.Set(elton.HeaderContentEncoding, "gzip")
 		data := []byte("abcd")
 		buf, _ := doGzip(data, 0)
 		maxAge := 10
-		c := &cod.Context{
+		c := &elton.Context{
 			Headers:    header,
 			BodyBuffer: bytes.NewBuffer(buf),
 			StatusCode: 200,
@@ -175,11 +175,11 @@ func TestCacheable(t *testing.T) {
 	t.Run("gunzip fail should hit for pass", func(t *testing.T) {
 		assert := assert.New(t)
 		header := make(http.Header)
-		header.Set(cod.HeaderContentType, "text/html")
-		header.Set(cod.HeaderContentEncoding, "gzip")
+		header.Set(elton.HeaderContentType, "text/html")
+		header.Set(elton.HeaderContentEncoding, "gzip")
 		buf := make([]byte, 4096)
 		maxAge := 10
-		c := &cod.Context{
+		c := &elton.Context{
 			Headers:    header,
 			BodyBuffer: bytes.NewBuffer(buf),
 			StatusCode: 200,
@@ -194,11 +194,11 @@ func TestCacheable(t *testing.T) {
 	t.Run("not support encoding should hit for pass", func(t *testing.T) {
 		assert := assert.New(t)
 		header := make(http.Header)
-		header.Set(cod.HeaderContentType, "text/html")
-		header.Set(cod.HeaderContentEncoding, "xx")
+		header.Set(elton.HeaderContentType, "text/html")
+		header.Set(elton.HeaderContentEncoding, "xx")
 		buf := make([]byte, 4096)
 		maxAge := 10
-		c := &cod.Context{
+		c := &elton.Context{
 			Headers:    header,
 			BodyBuffer: bytes.NewBuffer(buf),
 			StatusCode: 200,
