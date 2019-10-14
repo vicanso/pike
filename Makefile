@@ -7,16 +7,10 @@ dev:
 	fresh
 
 test:
-	GO_MODE=test go test -race -cover ./...
-
-test-all:
-	GO_MODE=test go test -race -cover -tags brotli ./...
+	GO_MODE=test CONFIG=etcd://127.0.0.1:2379 go test -race -cover ./...
 
 test-cover:
-	GO_MODE=test go test -race -coverprofile=test.out ./... && go tool cover --html=test.out
-
-test-cover-all:
-	GO_MODE=test go test -race -tags brotli -coverprofile=test.out ./... && go tool cover --html=test.out
+	GO_MODE=test CONFIG=etcd://127.0.0.1:2379 go test -race -coverprofile=test.out ./... && go tool cover --html=test.out
 
 build:
 	packr2

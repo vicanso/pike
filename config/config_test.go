@@ -1,254 +1,167 @@
+// Copyright 2019 tree xie
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package config
 
 import (
 	"testing"
 	"time"
 
-	"github.com/go-yaml/yaml"
 	"github.com/stretchr/testify/assert"
 )
 
-var basicConfigExample = `admin:
-  prefix: /pike
-  user: pike
-  password: abcd
-concurrency: 256000
-enable_server_timing: true
-identity: host method
-response_header:
-- X-Server:$SERVER
-- X-Location:GZ
-request_header:
-- X-Server:$SERVER
-- X-Location:GZ
-compress:
-  level: 1
-  min_length: 1024
-  filter: text|javascript|json
-cache:
-  zone: 1024
-  size: 10240
-  hit_for_pass: 30s
-timeout:
-  idle_conn: 40s
-  expect_continue: 1s
-  response_header: 10s
-  connect: 15s
-  tls_handshake: 5s
-`
+func TestGetKey(t *testing.T) {
+	assert := assert.New(t)
+	assert.Equal("/pike/test", getKey("test"))
+	assert.Equal("/pike/test", getKey("/test"))
+	assert.Equal("/pike/test/1", getKey("test", "1"))
+}
 
-var directorConfigExample = `tiny:
-  policy: cookie:jt
-  ping: /ping
-  prefixs:
-  - /api
-  rewrites:
-  - /api/*:/$1
-  hosts:
-  - tiny.aslant.site
-  response_header:
-  - X-Powered-By:koa
-  request_header:
-  - X-Version:${VERSION}
-  backends:
-  - http://127.0.0.1:5018
-  - http://192.168.31.3:3001|backup
-  - http://192.168.31.3:3002
-`
+func TestAdminConfig(t *testing.T) {
+	assert := assert.New(t)
+	defer func() {
+		new(Admin).Delete()
+	}()
+	admin := new(Admin)
+	err := admin.Fetch()
+	assert.Nil(err)
+	assert.Equal(defaultAdminPrefix, admin.Prefix)
+	assert.Empty(admin.User)
+	assert.Empty(admin.Password)
 
-type (
-	MockReadWriter struct {
-		data []byte
+	user := "foo"
+	password := "bar"
+	prefix := "/user-admin"
+	admin.User = user
+	admin.Prefix = prefix
+	admin.Password = password
+	err = admin.Save()
+	assert.Nil(err)
+
+	admin = new(Admin)
+	err = admin.Fetch()
+	assert.Nil(err)
+	assert.Equal(user, admin.User)
+	assert.Equal(password, admin.Password)
+	assert.Equal(prefix, admin.Prefix)
+}
+
+func TestServerConfig(t *testing.T) {
+
+	assert := assert.New(t)
+	s := &Server{}
+	err := s.Fetch()
+	assert.Equal(errServerNameIsNil, err)
+	err = s.Save()
+	assert.Equal(errServerNameIsNil, err)
+	err = s.Delete()
+	assert.Equal(errServerNameIsNil, err)
+
+	s.Name = "tiny"
+	defer s.Delete()
+
+	err = s.Fetch()
+	assert.Nil(err)
+	assert.Empty(s.Concurrency)
+	assert.Empty(s.EnableServerTiming)
+	assert.Empty(s.Port)
+	assert.Empty(s.ReadTimeout)
+	assert.Empty(s.ReadHeaderTimeout)
+	assert.Empty(s.WriteTimeout)
+	assert.Empty(s.IdleTimeout)
+	assert.Empty(s.MaxHeaderBytes)
+
+	port := 7000
+	concurrency := 1000
+	enableServerTiming := true
+	readTimeout := 1 * time.Second
+	readHeaderTimeout := 2 * time.Second
+	writeTimeout := 3 * time.Second
+	ideleTimeout := 4 * time.Second
+	maxHeaderBytes := 10
+
+	s.Port = port
+	s.Concurrency = concurrency
+	s.EnableServerTiming = enableServerTiming
+	s.ReadTimeout = readTimeout
+	s.ReadHeaderTimeout = readHeaderTimeout
+	s.WriteTimeout = writeTimeout
+	s.IdleTimeout = ideleTimeout
+	s.MaxHeaderBytes = maxHeaderBytes
+	err = s.Save()
+	assert.Nil(err)
+
+	ns := &Server{
+		Name: s.Name,
 	}
-)
-
-func (mrw *MockReadWriter) ReadConfig() ([]byte, error) {
-	return mrw.data, nil
+	err = ns.Fetch()
+	assert.Nil(err)
+	assert.Equal(port, ns.Port)
+	assert.Equal(concurrency, ns.Concurrency)
+	assert.Equal(enableServerTiming, ns.EnableServerTiming)
+	assert.Equal(readTimeout, ns.ReadTimeout)
+	assert.Equal(readHeaderTimeout, ns.ReadHeaderTimeout)
+	assert.Equal(writeTimeout, ns.WriteTimeout)
+	assert.Equal(ideleTimeout, ns.IdleTimeout)
+	assert.Equal(maxHeaderBytes, ns.MaxHeaderBytes)
 }
 
-func (mrw *MockReadWriter) WriteConfig(data []byte) error {
-	mrw.data = data
-	return nil
+func TestCompressConfig(t *testing.T) {
+	assert := assert.New(t)
+	c := &Compress{}
+	err := c.Fetch()
+	assert.Equal(errCompressNameIsNil, err)
+	err = c.Save()
+	assert.Equal(errCompressNameIsNil, err)
+	err = c.Delete()
+	assert.Equal(errCompressNameIsNil, err)
+
+	c.Name = "tiny"
+	defer c.Delete()
+
+	err = c.Fetch()
+	assert.Nil(err)
+	assert.Empty(c.Level)
+	assert.Empty(c.MinLength)
+	assert.Empty(c.Filter)
+
+	level := 9
+	minLength := 1024
+	filter := "abcd"
+	c.Level = level
+	c.MinLength = minLength
+	c.Filter = filter
+	err = c.Save()
+	assert.Nil(err)
+
+	nc := &Compress{
+		Name: c.Name,
+	}
+	err = nc.Fetch()
+	assert.Nil(err)
+	assert.Equal(level, nc.Level)
+	assert.Equal(minLength, nc.MinLength)
+	assert.Equal(filter, c.Filter)
 }
 
-func (mrw *MockReadWriter) Watch(fn func()) {
-	time.Sleep(100 * time.Millisecond)
-	fn()
-}
-
-func (mrw *MockReadWriter) Close() error {
-	return nil
-}
-
-func TestBasicConfig(t *testing.T) {
-	t.Run("marshal", func(t *testing.T) {
-		assert := assert.New(t)
-		c := &BasicConfig{}
-		err := yaml.Unmarshal([]byte(basicConfigExample), c)
-		assert.Nil(err)
-
-		out, _ := yaml.Marshal(c)
-		assert.Equal(basicConfigExample, string(out))
-	})
-
-	t.Run("fill default", func(t *testing.T) {
-		assert := assert.New(t)
-		bc := Config{}
-		bc.fillDefault()
-		out, err := yaml.Marshal(bc.Data)
-		assert.Nil(err)
-		assert.Equal(`concurrency: 256000
-compress:
-  min_length: 1024
-  filter: text|javascript|json
-cache:
-  zone: 1024
-  size: 1024
-  hit_for_pass: 5m0s
-timeout:
-  idle_conn: 1m30s
-  expect_continue: 3s
-  response_header: 10s
-  connect: 15s
-  tls_handshake: 5s
-`, string(out))
-	})
-
-	t.Run("read config from file", func(t *testing.T) {
-		assert := assert.New(t)
-		bc, err := NewBasicConfig("")
-		assert.Nil(err)
-		err = bc.ReadConfig()
-		assert.Nil(err)
-	})
-
-	t.Run("write config", func(t *testing.T) {
-		assert := assert.New(t)
-		mrw := new(MockReadWriter)
-		conf := Config{
-			rw: mrw,
-		}
-		conf.Data = BasicConfig{
-			Concurrency: 100,
-		}
-		result := "concurrency: 100\n"
-		err := conf.WriteConfig()
-		assert.Nil(err)
-		assert.Equal(result, string(mrw.data))
-		data, err := conf.YAML()
-		assert.Nil(err)
-		assert.Equal(result, string(data))
-	})
-
-	t.Run("watch", func(t *testing.T) {
-		assert := assert.New(t)
-		mrw := new(MockReadWriter)
-		conf := Config{
-			rw: mrw,
-		}
-		ch := make(chan bool)
-		done := false
-		go conf.OnConfigChange(func() {
-			done = true
-			ch <- true
-		})
-		<-ch
-		assert.True(done)
-	})
-}
-
-func TestDirectorConfig(t *testing.T) {
-	t.Run("marshal", func(t *testing.T) {
-		assert := assert.New(t)
-		dc := new(BackendConfigs)
-		err := yaml.Unmarshal([]byte(directorConfigExample), dc)
-		assert.Nil(err)
-
-		out, _ := yaml.Marshal(dc)
-		assert.Equal(directorConfigExample, string(out))
-	})
-
-	t.Run("read config from file", func(t *testing.T) {
-		assert := assert.New(t)
-		dc, err := NewDirectorConfig("")
-		assert.Nil(err)
-		err = dc.ReadConfig()
-		assert.Nil(err)
-	})
-
-	mrw := new(MockReadWriter)
-	name := "aslant"
-	t.Run("add backend", func(t *testing.T) {
-		assert := assert.New(t)
-		conf := DirectorConfig{
-			rw: mrw,
-		}
-		err := conf.AddBackend(BackendConfig{
-			Name:     name,
-			Backends: []string{"http://aslant.site/"},
-		})
-		assert.Nil(err)
-		err = conf.WriteConfig()
-		assert.Nil(err)
-		assert.Equal(`aslant:
-  backends:
-  - http://aslant.site/
-`, string(mrw.data))
-		data, err := conf.YAML()
-		assert.Nil(err)
-		assert.Equal(data, mrw.data)
-		err = conf.AddBackend(BackendConfig{
-			Name: name,
-		})
-		assert.Equal(err, errBackendExists)
-	})
-
-	t.Run("update backend", func(t *testing.T) {
-		assert := assert.New(t)
-		conf := DirectorConfig{
-			rw: mrw,
-		}
-
-		err := conf.ReadConfig()
-		assert.Nil(err)
-		conf.UpdateBackend(BackendConfig{
-			Name:     name,
-			Backends: []string{"http://127.0.0.1:3015/"},
-		})
-		err = conf.WriteConfig()
-		assert.Nil(err)
-		assert.Equal(`aslant:
-  backends:
-  - http://127.0.0.1:3015/
-`, string(mrw.data))
-
-		err = conf.UpdateBackend(BackendConfig{
-			Name: "abcd",
-		})
-		assert.Equal(err, errBackendNotExists)
-	})
-
-	t.Run("get backends", func(t *testing.T) {
-		assert := assert.New(t)
-		conf := DirectorConfig{
-			rw: mrw,
-		}
-		err := conf.ReadConfig()
-		assert.Nil(err)
-		backends := conf.GetBackends()
-		assert.Equal(1, len(backends))
-	})
-
-	t.Run("remove backend", func(t *testing.T) {
-		assert := assert.New(t)
-		conf := DirectorConfig{
-			rw: mrw,
-		}
-		err := conf.ReadConfig()
-		assert.Nil(err)
-		conf.RemoveBackend(name)
-		err = conf.WriteConfig()
-		assert.Nil(err)
-		assert.Equal("", string(mrw.data))
-	})
+func TestCacheConfig(t *testing.T) {
+	assert := assert.New(t)
+	c := &Cache{}
+	err := c.Fetch()
+	assert.Equal(errCacheNameIsNil, err)
+	err = c.Save()
+	assert.Equal(errCacheNameIsNil, err)
+	err = c.Delete()
+	assert.Equal(errCacheNameIsNil, err)
 }

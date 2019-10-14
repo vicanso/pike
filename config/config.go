@@ -1,316 +1,245 @@
+// Copyright 2019 tree xie
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+// The config of pike, include admin, server and upstreams.
+
 package config
 
 import (
-	"bytes"
+	"errors"
 	"os"
+	"path/filepath"
 	"strings"
 	"time"
-
-	"github.com/vicanso/hes"
 
 	"github.com/go-yaml/yaml"
 )
 
-const (
-	// BasicConfigName basic config's name
-	BasicConfigName = "config"
-	// DirectorConfigName director config's name
-	DirectorConfigName = "director"
-	configType         = "yml"
+var (
+	basePath string
 
-	etcdPrefix = "etcd"
-
-	defaultConcurrency           = 256 * 1000
-	defaultZoneSize              = 1024
-	defaultCacheSize             = 1024
-	defaultHitForPass            = 5 * time.Minute
-	defaultCompressMinLength     = 1024
-	defaultCompressFilter        = "text|javascript|json"
-	defaultIdelConnTimeout       = 90 * time.Second
-	defaultExpectContinueTimeout = 3 * time.Second
-	defaultResponseHeaderTimeout = 10 * time.Second
-	defaultConnectTimeout        = 15 * time.Second
-	defaultTLSHandshakeTimeout   = 5 * time.Second
+	configClient Client
 )
 
 var (
-	errBackendExists    = hes.New("backend is already exists")
-	errBackendNotExists = hes.New("backend isn't exists")
+	errServerNameIsNil   = errors.New("server's name can't be nil")
+	errCompressNameIsNil = errors.New("compress's name can't be nil")
+	errCacheNameIsNil    = errors.New("cache's name can't be nil")
+)
+
+const (
+	defaultBasePath = "/pike"
+
+	defaultAdminKey    = "admin"
+	defaultAdminPrefix = "/admin"
+
+	defaultServerPath   = "servers"
+	defaultCompressPath = "compresses"
+	defaultCachePath    = "caches"
 )
 
 type (
-	// BasicConfig basic config data
-	BasicConfig struct {
-		Admin struct {
-			Prefix   string `yaml:"prefix,omitempty" json:"prefix,omitempty"`
-			User     string `yaml:"user,omitempty" json:"user,omitempty"`
-			Password string `yaml:"password,omitempty" json:"password,omitempty"`
-		} `yaml:"admin,omitempty" json:"admin,omitempty"`
-		Concurrency        int      `yaml:"concurrency,omitempty" json:"concurrency,omitempty"`
-		EnableServerTiming bool     `yaml:"enable_server_timing,omitempty" json:"enableServerTiming,omitempty"`
-		Identity           string   `yaml:"identity,omitempty" json:"identity,omitempty"`
-		ResponseHeader     []string `yaml:"response_header,omitempty" json:"responseHeader,omitempty"`
-		RequestHeader      []string `yaml:"request_header,omitempty" json:"requestHeader,omitempty"`
-		Compress           struct {
-			Level     int    `yaml:"level,omitempty" json:"level,omitempty"`
-			MinLength int    `yaml:"min_length,omitempty" json:"minLength,omitempty"`
-			Filter    string `yaml:"filter,omitempty" json:"filter,omitempty"`
-		} `yaml:"compress,omitempty" json:"compress,omitempty"`
-		Cache struct {
-			Zone       int           `yaml:"zone,omitempty" json:"zone,omitempty"`
-			Size       int           `yaml:"size,omitempty" json:"size,omitempty"`
-			HitForPass time.Duration `yaml:"hit_for_pass,omitempty" json:"hitForPass,omitempty"`
-		} `yaml:"cache,omitempty" json:"cache,omitempty"`
-		Timeout struct {
-			IdleConn       time.Duration `yaml:"idle_conn,omitempty" json:"idleConn,omitempty"`
-			ExpectContinue time.Duration `yaml:"expect_continue,omitempty" json:"expectContinue,omitempty"`
-			ResponseHeader time.Duration `yaml:"response_header,omitempty" json:"responseHeader,omitempty"`
-			Connect        time.Duration `yaml:"connect,omitempty" json:"connect,omitempty"`
-			TLSHandshake   time.Duration `yaml:"tls_handshake,omitempty" json:"tlsHandshake,omitempty"`
-		} `yaml:"timeout,omitempty" json:"timeout,omitempty"`
-		EndPoint struct {
-			Upstream string `yaml:"upstream,omitempty" json:"upstream,omitempty"`
-			Error    string `yaml:"error,omitempty" json:"error,omitempty"`
-		} `yaml:"endPoint,omitempty" json:"endPoint,omitempty"`
+	// Admin admin config
+	Admin struct {
+		Prefix   string `yaml:"prefix,omitempty" json:"prefix,omitempty"`
+		User     string `yaml:"user,omitempty" json:"user,omitempty"`
+		Password string `yaml:"password,omitempty" json:"password,omitempty"`
 	}
-	// BackendConfig backend config
-	BackendConfig struct {
-		Name           string   `yaml:"-" json:"name,omitempty"`
-		Policy         string   `yaml:"policy,omitempty" json:"policy,omitempty"`
-		Ping           string   `yaml:"ping,omitempty" json:"ping,omitempty"`
-		Prefixs        []string `yaml:"prefixs,omitempty" json:"prefixs,omitempty"`
-		Rewrites       []string `yaml:"rewrites,omitempty" json:"rewrites,omitempty"`
-		Hosts          []string `yaml:"hosts,omitempty" json:"hosts,omitempty"`
-		ResponseHeader []string `yaml:"response_header,omitempty" json:"responseHeader,omitempty"`
-		RequestHeader  []string `yaml:"request_header,omitempty" json:"requestHeader,omitempty"`
-		Backends       []string `yaml:"backends,omitempty" json:"backends,omitempty"`
+	// Server server config
+	Server struct {
+		Name               string        `yaml:"-" json:"name,omitempty"`
+		Port               int           `yaml:"port,omitempty" json:"port,omitempty"`
+		Concurrency        int           `yaml:"concurrency,omitempty" json:"concurrency,omitempty"`
+		EnableServerTiming bool          `yaml:"enable_server_timing,omitempty" json:"enableServerTiming,omitempty"`
+		ReadTimeout        time.Duration `yaml:"read_timeout,omitempty" json:"readTimeout,omitempty"`
+		ReadHeaderTimeout  time.Duration `yaml:"read_header_timeout,omitempty" json:"readHeaderTimeout,omitempty"`
+		WriteTimeout       time.Duration `yaml:"write_timeout,omitempty" json:"writeTimeout,omitempty"`
+		IdleTimeout        time.Duration `yaml:"idle_timeout,omitempty" json:"idleTimeout,omitempty"`
+		MaxHeaderBytes     int           `yaml:"max_header_bytes,omitempty" json:"maxHeaderBytes,omitempty"`
 	}
-	// BackendConfigs upstream backend config data
-	BackendConfigs map[string]BackendConfig
-	// Config basic config of pike
-	Config struct {
-		Data BasicConfig
-		rw   ReadWriter
+	// Compress compress config
+	Compress struct {
+		Name      string `yaml:"-" json:"name,omitempty"`
+		Level     int    `yaml:"level,omitempty" json:"level,omitempty"`
+		MinLength int    `yaml:"min_length,omitempty" json:"minLength,omitempty"`
+		Filter    string `yaml:"filter,omitempty" json:"filter,omitempty"`
 	}
-	// DirectorConfig director config
-	DirectorConfig struct {
-		Data BackendConfigs
-		rw   ReadWriter
-	}
-	// ReadWriter config reader writer
-	ReadWriter interface {
-		ReadConfig() ([]byte, error)
-		WriteConfig([]byte) error
-		Watch(func())
-		Close() error
+	// Cache cache config
+	Cache struct {
+		Name       string        `yaml:"-" json:"name,omitempty"`
+		Zone       int           `yaml:"zone,omitempty" json:"zone,omitempty"`
+		Size       int           `yaml:"size,omitempty" json:"size,omitempty"`
+		HitForPass time.Duration `yaml:"hit_for_pass,omitempty" json:"hitForPass,omitempty"`
 	}
 )
 
-func readConfig(rw ReadWriter, v interface{}) (err error) {
-	buf, err := rw.ReadConfig()
-	// 配置文件
-	if err != nil && os.IsNotExist(err) {
-		err = nil
+func init() {
+	basePath = os.Getenv("BASE_PATH")
+	if basePath == "" {
+		basePath = defaultBasePath
 	}
-	if err != nil {
-		return
+	configPath := os.Getenv("CONFIG")
+	if configPath == "" {
+		panic(errors.New("config path can't be nil"))
 	}
-	err = yaml.Unmarshal(buf, v)
-	return
-}
-
-func writeConfig(rw ReadWriter, v interface{}) (err error) {
-	buf, err := yaml.Marshal(v)
-	if err != nil {
-		return
-	}
-	if bytes.Equal(buf, []byte("{}\n")) {
-		buf = []byte("")
-	}
-	return rw.WriteConfig(buf)
-}
-
-// fillDefault fill the config with default
-func (bc *Config) fillDefault() {
-	data := &bc.Data
-	if data.Concurrency <= 0 {
-		data.Concurrency = defaultConcurrency
-	}
-
-	cache := &data.Cache
-	if cache.Zone <= 0 {
-		cache.Zone = defaultZoneSize
-	}
-	if cache.Size <= 0 {
-		cache.Size = defaultCacheSize
-	}
-	if cache.HitForPass < time.Second {
-		cache.HitForPass = defaultHitForPass
-	}
-
-	compress := &data.Compress
-	if compress.Level < 0 {
-		compress.Level = 0
-	}
-	// 允许设置为小于0，表示所有都压缩
-	if compress.MinLength == 0 {
-		compress.MinLength = defaultCompressMinLength
-	}
-	if compress.Filter == "" {
-		compress.Filter = defaultCompressFilter
-	}
-
-	timeout := &data.Timeout
-	if timeout.Connect == 0 {
-		timeout.Connect = defaultConnectTimeout
-	}
-	if timeout.ExpectContinue == 0 {
-		timeout.ExpectContinue = defaultExpectContinueTimeout
-	}
-	if timeout.IdleConn == 0 {
-		timeout.IdleConn = defaultIdelConnTimeout
-	}
-	if timeout.ResponseHeader == 0 {
-		timeout.ResponseHeader = defaultResponseHeaderTimeout
-	}
-	if timeout.TLSHandshake == 0 {
-		timeout.TLSHandshake = defaultTLSHandshakeTimeout
-	}
-
-	admin := &data.Admin
-	adminPath := os.Getenv("ADMIN_PATH")
-	if adminPath != "" {
-		admin.Prefix = adminPath
-	}
-}
-
-// ReadConfig read config
-func (bc *Config) ReadConfig() (err error) {
-	err = readConfig(bc.rw, &bc.Data)
-	if err != nil {
-		return
-	}
-	bc.fillDefault()
-	return
-}
-
-// WriteConfig write config
-func (bc *Config) WriteConfig() (err error) {
-	return writeConfig(bc.rw, &bc.Data)
-}
-
-// OnConfigChange watch config change
-func (bc *Config) OnConfigChange(fn func()) {
-	bc.rw.Watch(fn)
-}
-
-// YAML to yaml
-func (bc *Config) YAML() ([]byte, error) {
-	return yaml.Marshal(&bc.Data)
-}
-
-// ReadConfig read config
-func (dc *DirectorConfig) ReadConfig() (err error) {
-	return readConfig(dc.rw, &dc.Data)
-}
-
-// GetBackends get backends
-func (dc *DirectorConfig) GetBackends() []BackendConfig {
-	result := make([]BackendConfig, 0)
-	if dc.Data == nil {
-		return result
-	}
-	for key := range dc.Data {
-		value := dc.Data[key]
-		value.Name = key
-		result = append(result, value)
-	}
-	return result
-}
-
-// YAML to yaml
-func (dc *DirectorConfig) YAML() ([]byte, error) {
-	return yaml.Marshal(&dc.Data)
-}
-
-// WriteConfig write config
-func (dc *DirectorConfig) WriteConfig() (err error) {
-	return writeConfig(dc.rw, &dc.Data)
-}
-
-// OnConfigChange watch config change
-func (dc *DirectorConfig) OnConfigChange(fn func()) {
-	dc.rw.Watch(fn)
-}
-
-// AddBackend add backend
-func (dc *DirectorConfig) AddBackend(backend BackendConfig) (err error) {
-	if dc.Data == nil {
-		dc.Data = make(BackendConfigs)
-	}
-	_, exists := dc.Data[backend.Name]
-	if exists {
-		err = errBackendExists
-	}
-	dc.Data[backend.Name] = backend
-	return
-}
-
-// UpdateBackend update backend
-func (dc *DirectorConfig) UpdateBackend(backend BackendConfig) (err error) {
-	_, exists := dc.Data[backend.Name]
-	if !exists {
-		err = errBackendNotExists
-	}
-	dc.Data[backend.Name] = backend
-	return
-}
-
-// RemoveBackend remove backend
-func (dc *DirectorConfig) RemoveBackend(name string) {
-	delete(dc.Data, name)
-}
-
-// createReadWriter create reader writer
-func createReadWriter(uri, name string) (rw ReadWriter, err error) {
-	if strings.HasPrefix(uri, etcdPrefix) {
-		etcdConfig, e := NewEtcdConfig(uri)
-		if e != nil {
-			err = e
-			return
+	if strings.HasPrefix(configPath, "etcd://") {
+		etcdClient, err := NewEtcdClient(configPath)
+		if err != nil {
+			panic(err)
 		}
-		etcdConfig.Name = name
-		rw = etcdConfig
+		configClient = etcdClient
 	} else {
-		rw = &FileConfig{
-			Path: uri,
-			Type: configType,
-			Name: name,
-		}
+		// TODO 支持文件配置
+	}
+}
+
+func getKey(elem ...string) string {
+	arr := []string{
+		basePath,
+	}
+	arr = append(arr, elem...)
+	return filepath.Join(arr...)
+}
+
+func fetchConfig(v interface{}, keys ...string) (err error) {
+	data, err := configClient.Get(getKey(keys...))
+	if err != nil {
+		return
+	}
+	err = yaml.Unmarshal(data, v)
+	return
+}
+
+func saveConfig(v interface{}, keys ...string) (err error) {
+	data, err := yaml.Marshal(v)
+	if err != nil {
+		return
+	}
+	err = configClient.Set(getKey(keys...), data)
+	return
+}
+
+func deleteConfig(key ...string) (err error) {
+	return configClient.Delete(getKey(key...))
+}
+
+// Fetch fetch admin config
+func (admin *Admin) Fetch() (err error) {
+	err = fetchConfig(admin, defaultAdminKey)
+	if err != nil {
+		return
+	}
+	if admin.Prefix == "" {
+		admin.Prefix = defaultAdminPrefix
 	}
 	return
 }
 
-// NewBasicConfig create a basic config
-func NewBasicConfig(uri string) (conf *Config, err error) {
-	rw, err := createReadWriter(uri, BasicConfigName)
-	if err != nil {
-		return
-	}
-	conf = &Config{
-		rw: rw,
-	}
+// Save save admin config
+func (admin *Admin) Save() (err error) {
+	err = saveConfig(admin, defaultAdminKey)
 	return
 }
 
-// NewDirectorConfig create a new director config
-func NewDirectorConfig(uri string) (conf *DirectorConfig, err error) {
-	rw, err := createReadWriter(uri, DirectorConfigName)
-	if err != nil {
+// Delete delete admin config
+func (admin *Admin) Delete() (err error) {
+	return deleteConfig(defaultAdminKey)
+}
+
+// Fetch fetch server config
+func (s *Server) Fetch() (err error) {
+	if s.Name == "" {
+		err = errServerNameIsNil
 		return
 	}
-	conf = &DirectorConfig{
-		rw: rw,
-	}
+	err = fetchConfig(s, defaultServerPath, s.Name)
 	return
+}
+
+// Save save server config
+func (s *Server) Save() (err error) {
+	if s.Name == "" {
+		err = errServerNameIsNil
+		return
+	}
+	err = saveConfig(s, defaultServerPath, s.Name)
+	return
+}
+
+// Delete delete server config
+func (s *Server) Delete() (err error) {
+	if s.Name == "" {
+		err = errServerNameIsNil
+		return
+	}
+	return deleteConfig(defaultServerPath, s.Name)
+}
+
+// Fetch fetch compress config
+func (c *Compress) Fetch() (err error) {
+	if c.Name == "" {
+		err = errCompressNameIsNil
+		return
+	}
+	err = fetchConfig(c, defaultCompressPath, c.Name)
+	return
+}
+
+// Save save compress config
+func (c *Compress) Save() (err error) {
+	if c.Name == "" {
+		err = errCompressNameIsNil
+		return
+	}
+	err = saveConfig(c, defaultCompressPath, c.Name)
+	return
+}
+
+// Delete delete compress config
+func (c *Compress) Delete() (err error) {
+	if c.Name == "" {
+		err = errCompressNameIsNil
+		return
+	}
+	return deleteConfig(defaultCompressPath, c.Name)
+}
+
+// Fetch fetch cache config
+func (c *Cache) Fetch() (err error) {
+	if c.Name == "" {
+		err = errCacheNameIsNil
+		return
+	}
+	err = fetchConfig(c, defaultCachePath, c.Name)
+	return
+}
+
+// Save save ccache config
+func (c *Cache) Save() (err error) {
+	if c.Name == "" {
+		err = errCacheNameIsNil
+		return
+	}
+	err = saveConfig(c, defaultCachePath, c.Name)
+	return
+}
+
+// Delete delete compress config
+func (c *Cache) Delete() (err error) {
+	if c.Name == "" {
+		err = errCacheNameIsNil
+		return
+	}
+	return deleteConfig(defaultCachePath, c.Name)
 }
