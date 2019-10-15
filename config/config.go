@@ -36,6 +36,7 @@ var (
 	errServerNameIsNil   = errors.New("server's name can't be nil")
 	errCompressNameIsNil = errors.New("compress's name can't be nil")
 	errCacheNameIsNil    = errors.New("cache's name can't be nil")
+	errUpstreamNameIsNil = errors.New("upstream's name catn't be nil")
 )
 
 const (
@@ -47,6 +48,7 @@ const (
 	defaultServerPath   = "servers"
 	defaultCompressPath = "compresses"
 	defaultCachePath    = "caches"
+	defaultUpstreamPath = "upstreams"
 )
 
 type (
@@ -61,26 +63,37 @@ type (
 		Name               string        `yaml:"-" json:"name,omitempty"`
 		Port               int           `yaml:"port,omitempty" json:"port,omitempty"`
 		Concurrency        int           `yaml:"concurrency,omitempty" json:"concurrency,omitempty"`
-		EnableServerTiming bool          `yaml:"enable_server_timing,omitempty" json:"enableServerTiming,omitempty"`
-		ReadTimeout        time.Duration `yaml:"read_timeout,omitempty" json:"readTimeout,omitempty"`
-		ReadHeaderTimeout  time.Duration `yaml:"read_header_timeout,omitempty" json:"readHeaderTimeout,omitempty"`
-		WriteTimeout       time.Duration `yaml:"write_timeout,omitempty" json:"writeTimeout,omitempty"`
-		IdleTimeout        time.Duration `yaml:"idle_timeout,omitempty" json:"idleTimeout,omitempty"`
-		MaxHeaderBytes     int           `yaml:"max_header_bytes,omitempty" json:"maxHeaderBytes,omitempty"`
+		EnableServerTiming bool          `yaml:"enableServerTiming,omitempty" json:"enableServerTiming,omitempty"`
+		ReadTimeout        time.Duration `yaml:"readTimeout,omitempty" json:"readTimeout,omitempty"`
+		ReadHeaderTimeout  time.Duration `yaml:"readHeaderTimeout,omitempty" json:"readHeaderTimeout,omitempty"`
+		WriteTimeout       time.Duration `yaml:"writeTimeout,omitempty" json:"writeTimeout,omitempty"`
+		IdleTimeout        time.Duration `yaml:"idleTimeout,omitempty" json:"idleTimeout,omitempty"`
+		MaxHeaderBytes     int           `yaml:"maxHeaderBytes,omitempty" json:"maxHeaderBytes,omitempty"`
 	}
 	// Compress compress config
 	Compress struct {
 		Name      string `yaml:"-" json:"name,omitempty"`
 		Level     int    `yaml:"level,omitempty" json:"level,omitempty"`
-		MinLength int    `yaml:"min_length,omitempty" json:"minLength,omitempty"`
+		MinLength int    `yaml:"minLength,omitempty" json:"minLength,omitempty"`
 		Filter    string `yaml:"filter,omitempty" json:"filter,omitempty"`
 	}
 	// Cache cache config
 	Cache struct {
-		Name       string        `yaml:"-" json:"name,omitempty"`
-		Zone       int           `yaml:"zone,omitempty" json:"zone,omitempty"`
-		Size       int           `yaml:"size,omitempty" json:"size,omitempty"`
-		HitForPass time.Duration `yaml:"hit_for_pass,omitempty" json:"hitForPass,omitempty"`
+		Name       string `yaml:"-" json:"name,omitempty"`
+		Zone       int    `yaml:"zone,omitempty" json:"zone,omitempty"`
+		Size       int    `yaml:"size,omitempty" json:"size,omitempty"`
+		HitForPass int    `yaml:"hitForPass,omitempty" json:"hitForPass,omitempty"`
+	}
+	// UpstreamServer upstream server
+	UpstreamServer struct {
+		Addr   string `yaml:"addr,omitempty" json:"addr,omitempty"`
+		Weight int    `yaml:"weight,omitempty" json:"weight,omitempty"`
+		Backup bool   `yaml:"backup,omitempty" json:"backup,omitempty"`
+	}
+	// Upstream upstream config
+	Upstream struct {
+		Name    string           `yaml:"-" json:"name,omitempty"`
+		Servers []UpstreamServer `yaml:"servers,omitempty" json:"servers,omitempty"`
 	}
 )
 
@@ -242,4 +255,33 @@ func (c *Cache) Delete() (err error) {
 		return
 	}
 	return deleteConfig(defaultCachePath, c.Name)
+}
+
+// Fetch fetch upstream config
+func (u *Upstream) Fetch() (err error) {
+	if u.Name == "" {
+		err = errUpstreamNameIsNil
+		return
+	}
+	err = fetchConfig(u, defaultUpstreamPath, u.Name)
+	return
+}
+
+// Save save upstream config
+func (u *Upstream) Save() (err error) {
+	if u.Name == "" {
+		err = errUpstreamNameIsNil
+		return
+	}
+	err = saveConfig(u, defaultUpstreamPath, u.Name)
+	return
+}
+
+// Delete delete upsteram config
+func (u *Upstream) Delete() (err error) {
+	if u.Name == "" {
+		err = errUpstreamNameIsNil
+		return
+	}
+	return deleteConfig(defaultUpstreamPath, u.Name)
 }

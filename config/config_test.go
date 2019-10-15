@@ -164,4 +164,67 @@ func TestCacheConfig(t *testing.T) {
 	assert.Equal(errCacheNameIsNil, err)
 	err = c.Delete()
 	assert.Equal(errCacheNameIsNil, err)
+
+	c.Name = "cache"
+	defer c.Delete()
+
+	err = c.Fetch()
+	assert.Nil(err)
+	assert.Empty(c.HitForPass)
+	assert.Empty(c.Zone)
+	assert.Empty(c.Size)
+
+	hitForPass := 300
+	zone := 1
+	size := 10
+	c.HitForPass = hitForPass
+	c.Zone = zone
+	c.Size = size
+	err = c.Save()
+	assert.Nil(err)
+
+	nc := &Cache{
+		Name: c.Name,
+	}
+	err = nc.Fetch()
+	assert.Nil(err)
+	assert.Equal(hitForPass, nc.HitForPass)
+	assert.Equal(zone, nc.Zone)
+	assert.Equal(size, nc.Size)
+}
+
+func TestUpstreamConfig(t *testing.T) {
+	assert := assert.New(t)
+	us := &Upstream{}
+	err := us.Fetch()
+	assert.Equal(errUpstreamNameIsNil, err)
+	err = us.Save()
+	assert.Equal(errUpstreamNameIsNil, err)
+	err = us.Delete()
+	assert.Equal(errUpstreamNameIsNil, err)
+
+	us.Name = "upstream"
+	defer us.Delete()
+
+	err = us.Fetch()
+	assert.Nil(err)
+	assert.Empty(us.Servers)
+
+	upstreamServer := UpstreamServer{
+		Addr:   "127.0.0.1:7000",
+		Weight: 10,
+		Backup: true,
+	}
+	us.Servers = make([]UpstreamServer, 1)
+	us.Servers[0] = upstreamServer
+	err = us.Save()
+	assert.Nil(err)
+
+	nus := &Upstream{
+		Name: us.Name,
+	}
+	err = nus.Fetch()
+	assert.Nil(err)
+	assert.Equal(1, len(nus.Servers))
+	assert.Equal(upstreamServer, nus.Servers[0])
 }
