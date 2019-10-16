@@ -23,9 +23,18 @@ import (
 
 func TestGetKey(t *testing.T) {
 	assert := assert.New(t)
-	assert.Equal("/pike/test", getKey("test"))
-	assert.Equal("/pike/test", getKey("/test"))
-	assert.Equal("/pike/test/1", getKey("test", "1"))
+	key, err := getKey("test", "")
+	assert.Equal(errKeyIsNil, err)
+	assert.Empty(key)
+
+	key, _ = getKey("test")
+	assert.Equal("/pike/test", key)
+
+	key, _ = getKey("/test")
+	assert.Equal("/pike/test", key)
+
+	key, _ = getKey("test", "1")
+	assert.Equal("/pike/test/1", key)
 }
 
 func TestAdminConfig(t *testing.T) {
@@ -60,18 +69,12 @@ func TestAdminConfig(t *testing.T) {
 func TestServerConfig(t *testing.T) {
 
 	assert := assert.New(t)
-	s := &Server{}
-	err := s.Fetch()
-	assert.Equal(errServerNameIsNil, err)
-	err = s.Save()
-	assert.Equal(errServerNameIsNil, err)
-	err = s.Delete()
-	assert.Equal(errServerNameIsNil, err)
-
-	s.Name = "tiny"
+	s := &Server{
+		Name: "tiny",
+	}
 	defer s.Delete()
 
-	err = s.Fetch()
+	err := s.Fetch()
 	assert.Nil(err)
 	assert.Empty(s.Concurrency)
 	assert.Empty(s.EnableServerTiming)
@@ -119,18 +122,12 @@ func TestServerConfig(t *testing.T) {
 
 func TestCompressConfig(t *testing.T) {
 	assert := assert.New(t)
-	c := &Compress{}
-	err := c.Fetch()
-	assert.Equal(errCompressNameIsNil, err)
-	err = c.Save()
-	assert.Equal(errCompressNameIsNil, err)
-	err = c.Delete()
-	assert.Equal(errCompressNameIsNil, err)
-
-	c.Name = "tiny"
+	c := &Compress{
+		Name: "tiny",
+	}
 	defer c.Delete()
 
-	err = c.Fetch()
+	err := c.Fetch()
 	assert.Nil(err)
 	assert.Empty(c.Level)
 	assert.Empty(c.MinLength)
@@ -157,18 +154,12 @@ func TestCompressConfig(t *testing.T) {
 
 func TestCacheConfig(t *testing.T) {
 	assert := assert.New(t)
-	c := &Cache{}
-	err := c.Fetch()
-	assert.Equal(errCacheNameIsNil, err)
-	err = c.Save()
-	assert.Equal(errCacheNameIsNil, err)
-	err = c.Delete()
-	assert.Equal(errCacheNameIsNil, err)
-
-	c.Name = "cache"
+	c := &Cache{
+		Name: "tiny",
+	}
 	defer c.Delete()
 
-	err = c.Fetch()
+	err := c.Fetch()
 	assert.Nil(err)
 	assert.Empty(c.HitForPass)
 	assert.Empty(c.Zone)
@@ -195,18 +186,12 @@ func TestCacheConfig(t *testing.T) {
 
 func TestUpstreamConfig(t *testing.T) {
 	assert := assert.New(t)
-	us := &Upstream{}
-	err := us.Fetch()
-	assert.Equal(errUpstreamNameIsNil, err)
-	err = us.Save()
-	assert.Equal(errUpstreamNameIsNil, err)
-	err = us.Delete()
-	assert.Equal(errUpstreamNameIsNil, err)
-
-	us.Name = "upstream"
+	us := &Upstream{
+		Name: "tiny",
+	}
 	defer us.Delete()
 
-	err = us.Fetch()
+	err := us.Fetch()
 	assert.Nil(err)
 	assert.Empty(us.Servers)
 

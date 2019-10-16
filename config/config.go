@@ -33,10 +33,7 @@ var (
 )
 
 var (
-	errServerNameIsNil   = errors.New("server's name can't be nil")
-	errCompressNameIsNil = errors.New("compress's name can't be nil")
-	errCacheNameIsNil    = errors.New("cache's name can't be nil")
-	errUpstreamNameIsNil = errors.New("upstream's name catn't be nil")
+	errKeyIsNil = errors.New("key can't be nil")
 )
 
 const (
@@ -117,16 +114,25 @@ func init() {
 	}
 }
 
-func getKey(elem ...string) string {
+func getKey(elem ...string) (string, error) {
+	for _, item := range elem {
+		if item == "" {
+			return "", errKeyIsNil
+		}
+	}
 	arr := []string{
 		basePath,
 	}
 	arr = append(arr, elem...)
-	return filepath.Join(arr...)
+	return filepath.Join(arr...), nil
 }
 
 func fetchConfig(v interface{}, keys ...string) (err error) {
-	data, err := configClient.Get(getKey(keys...))
+	key, err := getKey(keys...)
+	if err != nil {
+		return
+	}
+	data, err := configClient.Get(key)
 	if err != nil {
 		return
 	}
@@ -135,16 +141,24 @@ func fetchConfig(v interface{}, keys ...string) (err error) {
 }
 
 func saveConfig(v interface{}, keys ...string) (err error) {
+	key, err := getKey(keys...)
+	if err != nil {
+		return
+	}
 	data, err := yaml.Marshal(v)
 	if err != nil {
 		return
 	}
-	err = configClient.Set(getKey(keys...), data)
+	err = configClient.Set(key, data)
 	return
 }
 
-func deleteConfig(key ...string) (err error) {
-	return configClient.Delete(getKey(key...))
+func deleteConfig(keys ...string) (err error) {
+	key, err := getKey(keys...)
+	if err != nil {
+		return
+	}
+	return configClient.Delete(key)
 }
 
 // Fetch fetch admin config
@@ -172,116 +186,60 @@ func (admin *Admin) Delete() (err error) {
 
 // Fetch fetch server config
 func (s *Server) Fetch() (err error) {
-	if s.Name == "" {
-		err = errServerNameIsNil
-		return
-	}
-	err = fetchConfig(s, defaultServerPath, s.Name)
-	return
+	return fetchConfig(s, defaultServerPath, s.Name)
 }
 
 // Save save server config
 func (s *Server) Save() (err error) {
-	if s.Name == "" {
-		err = errServerNameIsNil
-		return
-	}
-	err = saveConfig(s, defaultServerPath, s.Name)
-	return
+	return saveConfig(s, defaultServerPath, s.Name)
 }
 
 // Delete delete server config
 func (s *Server) Delete() (err error) {
-	if s.Name == "" {
-		err = errServerNameIsNil
-		return
-	}
 	return deleteConfig(defaultServerPath, s.Name)
 }
 
 // Fetch fetch compress config
 func (c *Compress) Fetch() (err error) {
-	if c.Name == "" {
-		err = errCompressNameIsNil
-		return
-	}
-	err = fetchConfig(c, defaultCompressPath, c.Name)
-	return
+	return fetchConfig(c, defaultCompressPath, c.Name)
 }
 
 // Save save compress config
 func (c *Compress) Save() (err error) {
-	if c.Name == "" {
-		err = errCompressNameIsNil
-		return
-	}
-	err = saveConfig(c, defaultCompressPath, c.Name)
-	return
+	return saveConfig(c, defaultCompressPath, c.Name)
 }
 
 // Delete delete compress config
 func (c *Compress) Delete() (err error) {
-	if c.Name == "" {
-		err = errCompressNameIsNil
-		return
-	}
 	return deleteConfig(defaultCompressPath, c.Name)
 }
 
 // Fetch fetch cache config
 func (c *Cache) Fetch() (err error) {
-	if c.Name == "" {
-		err = errCacheNameIsNil
-		return
-	}
-	err = fetchConfig(c, defaultCachePath, c.Name)
-	return
+	return fetchConfig(c, defaultCachePath, c.Name)
 }
 
 // Save save ccache config
 func (c *Cache) Save() (err error) {
-	if c.Name == "" {
-		err = errCacheNameIsNil
-		return
-	}
-	err = saveConfig(c, defaultCachePath, c.Name)
-	return
+	return saveConfig(c, defaultCachePath, c.Name)
 }
 
 // Delete delete compress config
 func (c *Cache) Delete() (err error) {
-	if c.Name == "" {
-		err = errCacheNameIsNil
-		return
-	}
 	return deleteConfig(defaultCachePath, c.Name)
 }
 
 // Fetch fetch upstream config
 func (u *Upstream) Fetch() (err error) {
-	if u.Name == "" {
-		err = errUpstreamNameIsNil
-		return
-	}
-	err = fetchConfig(u, defaultUpstreamPath, u.Name)
-	return
+	return fetchConfig(u, defaultUpstreamPath, u.Name)
 }
 
 // Save save upstream config
 func (u *Upstream) Save() (err error) {
-	if u.Name == "" {
-		err = errUpstreamNameIsNil
-		return
-	}
-	err = saveConfig(u, defaultUpstreamPath, u.Name)
-	return
+	return saveConfig(u, defaultUpstreamPath, u.Name)
 }
 
 // Delete delete upsteram config
 func (u *Upstream) Delete() (err error) {
-	if u.Name == "" {
-		err = errUpstreamNameIsNil
-		return
-	}
 	return deleteConfig(defaultUpstreamPath, u.Name)
 }
