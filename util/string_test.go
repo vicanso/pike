@@ -26,3 +26,8 @@ func TestRandomString(t *testing.T) {
 	assert.Equal(size, len(RandomString(size)))
 	assert.NotEqual(RandomString(size), RandomString(size))
 }
+
+func TestByteSliceToString(t *testing.T) {
+	assert := assert.New(t)
+	assert.Equal("abcd", ByteSliceToString([]byte("abcd")))
+}

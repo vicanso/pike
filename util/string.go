@@ -17,6 +17,7 @@ package util
 import (
 	"math/rand"
 	"time"
+	"unsafe"
 )
 
 // https://stackoverflow.com/questions/22892120/how-to-generate-a-random-string-of-a-fixed-length-in-go
@@ -50,4 +51,9 @@ func randomString(baseLetters string, n int) string {
 // RandomString create a random string
 func RandomString(n int) string {
 	return randomString(letterBytes, n)
+}
+
+// ByteSliceToString converts a []byte to string without a heap allocation.
+func ByteSliceToString(b []byte) string {
+	return *(*string)(unsafe.Pointer(&b))
 }
