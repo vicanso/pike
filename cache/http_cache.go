@@ -12,135 +12,59 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// copy from https://github.com/golang/groupcache/blob/master/lru/lru.go
-// cache status lru
+// HTTP缓存模块，返回当前对应的缓存状态，是获取中、hit for pass等等。
+// 以及对缓存数据压缩、智能匹配返回格式等处理。
 
 package cache
 
 import (
-	"container/list"
+	"fmt"
 	"sync"
+	"time"
+)
+
+const (
+	// StatusUnknown unknown status
+	StatusUnknown = iota
+	// StatusFetching fetching status
+	StatusFetching
+	// StatusHitForPass hit-for-pass status
+	StatusHitForPass
+	// StatusCachable cachable status
+	StatusCachable
+	// StatusPassed pass status
+	StatusPassed
 )
 
 // HTTPCache cache status
 type HTTPCache struct {
+	mu     sync.Mutex
+	status int
+	chans  []chan bool
 }
 
-// HTTPCacheLRU is an LRU cache. It is not safe for concurrent access.
-type HTTPCacheLRU struct {
-	// 用于保证每个dispatcher的操作，避免同时操作lru cache
-	mu sync.Mutex
-	// MaxEntries is the maximum number of cache entries before
-	// an item is evicted. Zero means no limit.
-	MaxEntries int
-
-	ll    *list.List
-	cache map[string]*list.Element
+// NewHTTPCache new http cache
+func NewHTTPCache() *HTTPCache {
+	return &HTTPCache{}
 }
 
-// Iterator iterator function
-type Iterator func(key string, value *HTTPCache)
+// GetStatus get http status
+func (hc *HTTPCache) GetStatus() (status int, done chan bool) {
+	hc.mu.Lock()
+	defer hc.mu.Unlock()
+	fmt.Println(time.Now().Unix())
+	// TODO 如果缓存已过期，设置为StatusUnknown
 
-type entry struct {
-	key   string
-	value *HTTPCache
-}
-
-// NewStatusLRU creates a new Cache.
-// If maxEntries is zero, the cache has no limit and it's assumed
-// that eviction is done by the caller.
-func NewStatusLRU(maxEntries int) *HTTPCacheLRU {
-	return &HTTPCacheLRU{
-		MaxEntries: maxEntries,
-		ll:         list.New(),
+	if hc.status == StatusUnknown {
+		hc.status = StatusFetching
+		hc.chans = make([]chan bool, 0, 5)
 	}
-}
-
-// Lock mutex lock
-func (c *HTTPCacheLRU) Lock() {
-	c.mu.Lock()
-}
-
-// Unlock mutex unlock
-func (c *HTTPCacheLRU) Unlock() {
-	c.mu.Unlock()
-}
-
-// Add adds a value to the cache.
-func (c *HTTPCacheLRU) Add(key string, value *HTTPCache) {
-	if c.cache == nil {
-		c.cache = make(map[string]*list.Element)
-		c.ll = list.New()
+	// 如果是fetching，则相同的请求需要等待完成
+	// 通过chan bool返回完成
+	if hc.status == StatusFetching {
+		done = make(chan bool)
+		hc.chans = append(hc.chans, done)
 	}
-	if ee, ok := c.cache[key]; ok {
-		c.ll.MoveToFront(ee)
-		ee.Value.(*entry).value = value
-		return
-	}
-	ele := c.ll.PushFront(&entry{key, value})
-	c.cache[key] = ele
-	if c.MaxEntries != 0 && c.ll.Len() > c.MaxEntries {
-		c.RemoveOldest()
-	}
-}
-
-// Get looks up a key's value from the cache.
-func (c *HTTPCacheLRU) Get(key string) (value *HTTPCache, ok bool) {
-	if c.cache == nil {
-		return
-	}
-	if ele, hit := c.cache[key]; hit {
-		c.ll.MoveToFront(ele)
-		return ele.Value.(*entry).value, true
-	}
+	status = hc.status
 	return
-}
-
-// Remove removes the provided key from the cache.
-func (c *HTTPCacheLRU) Remove(key string) {
-	if c.cache == nil {
-		return
-	}
-	if ele, hit := c.cache[key]; hit {
-		c.removeElement(ele)
-	}
-}
-
-// RemoveOldest removes the oldest item from the cache.
-func (c *HTTPCacheLRU) RemoveOldest() {
-	if c.cache == nil {
-		return
-	}
-	ele := c.ll.Back()
-	if ele != nil {
-		c.removeElement(ele)
-	}
-}
-
-func (c *HTTPCacheLRU) removeElement(e *list.Element) {
-	c.ll.Remove(e)
-	kv := e.Value.(*entry)
-	delete(c.cache, kv.key)
-}
-
-// Len returns the number of items in the cache.
-func (c *HTTPCacheLRU) Len() int {
-	if c.cache == nil {
-		return 0
-	}
-	return c.ll.Len()
-}
-
-// Clear purges all stored items from the cache.
-func (c *HTTPCacheLRU) Clear() {
-	c.ll = nil
-	c.cache = nil
-}
-
-// ForEach for each
-func (c *HTTPCacheLRU) ForEach(fn Iterator) {
-	for _, e := range c.cache {
-		kv := e.Value.(*entry)
-		fn(kv.key, kv.value)
-	}
 }
