@@ -58,7 +58,7 @@ type (
 	// Server server config
 	Server struct {
 		Name               string        `yaml:"-" json:"name,omitempty"`
-		Port               int           `yaml:"port,omitempty" json:"port,omitempty"`
+		Addr               string        `yaml:"Addr,omitempty" json:"Addr,omitempty"`
 		Concurrency        int           `yaml:"concurrency,omitempty" json:"concurrency,omitempty"`
 		EnableServerTiming bool          `yaml:"enableServerTiming,omitempty" json:"enableServerTiming,omitempty"`
 		ReadTimeout        time.Duration `yaml:"readTimeout,omitempty" json:"readTimeout,omitempty"`
@@ -89,8 +89,10 @@ type (
 	}
 	// Upstream upstream config
 	Upstream struct {
-		Name    string           `yaml:"-" json:"name,omitempty"`
-		Servers []UpstreamServer `yaml:"servers,omitempty" json:"servers,omitempty"`
+		HealthCheck string           `yaml:"healthCheck,omitempty" json:"healthCheck,omitempty"`
+		Policy      string           `yaml:"policy,omitempty" json:"policy,omitempty"`
+		Name        string           `yaml:"-" json:"name,omitempty"`
+		Servers     []UpstreamServer `yaml:"servers,omitempty" json:"servers,omitempty"`
 	}
 )
 
@@ -159,6 +161,32 @@ func deleteConfig(keys ...string) (err error) {
 		return
 	}
 	return configClient.Delete(key)
+}
+
+func listKeys(keyPath string) ([]string, error) {
+	key, err := getKey(keyPath)
+	if err != nil {
+		return nil, err
+	}
+	return configClient.List(key)
+}
+
+func listKeysExcludePrefix(keyPath string) ([]string, error) {
+	key, err := getKey(keyPath)
+	if err != nil {
+		return nil, err
+	}
+	keys, err := configClient.List(key)
+	if err != nil {
+		return nil, err
+	}
+	result := make([]string, len(keys))
+
+	keyLength := len(key)
+	for index, item := range keys {
+		result[index] = item[keyLength+1:]
+	}
+	return result, nil
 }
 
 // Fetch fetch admin config
@@ -242,4 +270,41 @@ func (u *Upstream) Save() (err error) {
 // Delete delete upsteram config
 func (u *Upstream) Delete() (err error) {
 	return deleteConfig(defaultUpstreamPath, u.Name)
+}
+
+// GetUpstreams get all upstream config
+func GetUpstreams() (upstreams []Upstream, err error) {
+	keys, err := listKeysExcludePrefix(defaultUpstreamPath)
+	upstreams = make([]Upstream, 0, len(keys))
+	for _, key := range keys {
+		u := Upstream{
+			Name: key,
+		}
+		err = u.Fetch()
+		if err != nil {
+			return
+		}
+		upstreams = append(upstreams, u)
+	}
+	return
+}
+
+// GetServers get all server config
+func GetServers() (servers []Server, err error) {
+	keys, err := listKeysExcludePrefix(defaultServerPath)
+	if err != nil {
+		return
+	}
+	servers = make([]Server, 0, len(keys))
+	for _, key := range keys {
+		s := Server{
+			Name: key,
+		}
+		err = s.Fetch()
+		if err != nil {
+			return
+		}
+		servers = append(servers, s)
+	}
+	return
 }

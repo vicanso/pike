@@ -78,14 +78,14 @@ func TestServerConfig(t *testing.T) {
 	assert.Nil(err)
 	assert.Empty(s.Concurrency)
 	assert.Empty(s.EnableServerTiming)
-	assert.Empty(s.Port)
+	assert.Empty(s.Addr)
 	assert.Empty(s.ReadTimeout)
 	assert.Empty(s.ReadHeaderTimeout)
 	assert.Empty(s.WriteTimeout)
 	assert.Empty(s.IdleTimeout)
 	assert.Empty(s.MaxHeaderBytes)
 
-	port := 7000
+	addr := ":7000"
 	concurrency := 1000
 	enableServerTiming := true
 	readTimeout := 1 * time.Second
@@ -94,7 +94,7 @@ func TestServerConfig(t *testing.T) {
 	ideleTimeout := 4 * time.Second
 	maxHeaderBytes := 10
 
-	s.Port = port
+	s.Addr = addr
 	s.Concurrency = concurrency
 	s.EnableServerTiming = enableServerTiming
 	s.ReadTimeout = readTimeout
@@ -110,7 +110,7 @@ func TestServerConfig(t *testing.T) {
 	}
 	err = ns.Fetch()
 	assert.Nil(err)
-	assert.Equal(port, ns.Port)
+	assert.Equal(addr, ns.Addr)
 	assert.Equal(concurrency, ns.Concurrency)
 	assert.Equal(enableServerTiming, ns.EnableServerTiming)
 	assert.Equal(readTimeout, ns.ReadTimeout)
@@ -187,7 +187,9 @@ func TestCacheConfig(t *testing.T) {
 func TestUpstreamConfig(t *testing.T) {
 	assert := assert.New(t)
 	us := &Upstream{
-		Name: "tiny",
+		Policy: "first"
+		HealthCheck: "/ping",
+		Name:        "tiny",
 	}
 	defer us.Delete()
 
