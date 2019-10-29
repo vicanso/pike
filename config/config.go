@@ -20,6 +20,7 @@ import (
 	"errors"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 	"time"
 
@@ -46,6 +47,7 @@ const (
 	defaultCompressPath = "compresses"
 	defaultCachePath    = "caches"
 	defaultUpstreamPath = "upstreams"
+	defaultLocationPath = "locations"
 )
 
 type (
@@ -94,6 +96,20 @@ type (
 		Name        string           `yaml:"-" json:"name,omitempty"`
 		Servers     []UpstreamServer `yaml:"servers,omitempty" json:"servers,omitempty"`
 	}
+	// Location location config
+	Location struct {
+		Name           string   `yaml:"name,omitempty" json:"name,omitempty"`
+		Upstream       string   `yaml:"upstream,omitempty" json:"upstream,omitempty"`
+		Server         string   `yaml:"server,omitempty" json:"server,omitempty"`
+		Cache          string   `yaml:"cache,omitempty" json:"cache,omitempty"`
+		Prefixs        []string `yaml:"prefixs,omitempty" json:"prefixs,omitempty"`
+		Rewrites       []string `yaml:"rewrites,omitempty" json:"rewrites,omitempty"`
+		Hosts          []string `yaml:"hosts,omitempty" json:"hosts,omitempty"`
+		ResponseHeader []string `yaml:"responseHeader,omitempty" json:"responseHeader,omitempty"`
+		RequestHeader  []string `yaml:"requestHeader,omitempty" json:"requestHeader,omitempty"`
+	}
+	// Locations locations
+	Locations []*Location
 )
 
 func init() {
@@ -272,6 +288,39 @@ func (u *Upstream) Delete() (err error) {
 	return deleteConfig(defaultUpstreamPath, u.Name)
 }
 
+// Fetch fetch location config
+func (l *Location) Fetch() (err error) {
+	return fetchConfig(l, defaultLocationPath, l.Name)
+}
+
+// Save save location config
+func (l *Location) Save() (err error) {
+	return saveConfig(l, defaultLocationPath, l.Name)
+}
+
+// Delete delete location config
+func (l *Location) Delete() (err error) {
+	return deleteConfig(defaultLocationPath, l.Name)
+}
+
+func (l *Location) getPriority() int {
+	priority := 8
+	if len(l.Prefixs) != 0 {
+		priority -= 4
+	}
+	if len(l.Hosts) != 0 {
+		priority -= 2
+	}
+	return priority
+}
+
+// Sort sort locations
+func (locations Locations) Sort() {
+	sort.Slice(locations, func(i, j int) bool {
+		return locations[i].getPriority() < locations[j].getPriority()
+	})
+}
+
 // GetUpstreams get all upstream config
 func GetUpstreams() (upstreams []Upstream, err error) {
 	keys, err := listKeysExcludePrefix(defaultUpstreamPath)
@@ -305,6 +354,27 @@ func GetServers() (servers []Server, err error) {
 			return
 		}
 		servers = append(servers, s)
+	}
+	return
+}
+
+// GetLocations get locations
+// *Location for better performance)
+func GetLocations() (locations Locations, err error) {
+	keys, err := listKeysExcludePrefix(defaultLocationPath)
+	if err != nil {
+		return
+	}
+	locations = make(Locations, 0, len(keys))
+	for _, key := range keys {
+		l := &Location{
+			Name: key,
+		}
+		err = l.Fetch()
+		if err != nil {
+			return
+		}
+		locations = append(locations, l)
 	}
 	return
 }
