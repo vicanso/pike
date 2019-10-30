@@ -15,8 +15,9 @@
 package config
 
 import (
+	"path/filepath"
+	"strings"
 	"testing"
-	"time"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -28,243 +29,50 @@ func TestGetKey(t *testing.T) {
 	assert.Empty(key)
 
 	key, _ = getKey("test")
-	assert.Equal("/pike/test", key)
+	assert.Equal(basePath+"/test", key)
 
 	key, _ = getKey("/test")
-	assert.Equal("/pike/test", key)
+	assert.Equal(basePath+"/test", key)
 
 	key, _ = getKey("test", "1")
-	assert.Equal("/pike/test/1", key)
+	assert.Equal(basePath+"/test/1", key)
 }
 
-func TestAdminConfig(t *testing.T) {
+func TestConfig(t *testing.T) {
 	assert := assert.New(t)
-	defer func() {
-		new(Admin).Delete()
-	}()
-	admin := new(Admin)
-	err := admin.Fetch()
-	assert.Nil(err)
-	assert.Equal(defaultAdminPrefix, admin.Prefix)
-	assert.Empty(admin.User)
-	assert.Empty(admin.Password)
-
-	user := "foo"
-	password := "bar"
-	prefix := "/user-admin"
-	admin.User = user
-	admin.Prefix = prefix
-	admin.Password = password
-	err = admin.Save()
-	assert.Nil(err)
-
-	admin = new(Admin)
-	err = admin.Fetch()
-	assert.Nil(err)
-	assert.Equal(user, admin.User)
-	assert.Equal(password, admin.Password)
-	assert.Equal(prefix, admin.Prefix)
-}
-
-func TestServerConfig(t *testing.T) {
-
-	assert := assert.New(t)
-	s := &Server{
-		Name: "tiny",
+	prefix := "foo"
+	key := filepath.Join(prefix, "1")
+	value := map[string]string{
+		"a": "1",
 	}
-	defer s.Delete()
-
-	err := s.Fetch()
-	assert.Nil(err)
-	assert.Empty(s.Concurrency)
-	assert.Empty(s.EnableServerTiming)
-	assert.Empty(s.Addr)
-	assert.Empty(s.ReadTimeout)
-	assert.Empty(s.ReadHeaderTimeout)
-	assert.Empty(s.WriteTimeout)
-	assert.Empty(s.IdleTimeout)
-	assert.Empty(s.MaxHeaderBytes)
-
-	addr := ":7000"
-	concurrency := 1000
-	enableServerTiming := true
-	readTimeout := 1 * time.Second
-	readHeaderTimeout := 2 * time.Second
-	writeTimeout := 3 * time.Second
-	ideleTimeout := 4 * time.Second
-	maxHeaderBytes := 10
-
-	s.Addr = addr
-	s.Concurrency = concurrency
-	s.EnableServerTiming = enableServerTiming
-	s.ReadTimeout = readTimeout
-	s.ReadHeaderTimeout = readHeaderTimeout
-	s.WriteTimeout = writeTimeout
-	s.IdleTimeout = ideleTimeout
-	s.MaxHeaderBytes = maxHeaderBytes
-	err = s.Save()
+	// 保存当前配置
+	err := saveConfig(value, key)
 	assert.Nil(err)
 
-	ns := &Server{
-		Name: s.Name,
-	}
-	err = ns.Fetch()
+	// 从存储中读取
+	result := make(map[string]string)
+	err = fetchConfig(result, key)
 	assert.Nil(err)
-	assert.Equal(addr, ns.Addr)
-	assert.Equal(concurrency, ns.Concurrency)
-	assert.Equal(enableServerTiming, ns.EnableServerTiming)
-	assert.Equal(readTimeout, ns.ReadTimeout)
-	assert.Equal(readHeaderTimeout, ns.ReadHeaderTimeout)
-	assert.Equal(writeTimeout, ns.WriteTimeout)
-	assert.Equal(ideleTimeout, ns.IdleTimeout)
-	assert.Equal(maxHeaderBytes, ns.MaxHeaderBytes)
-}
+	assert.Equal(value, result)
 
-func TestCompressConfig(t *testing.T) {
-	assert := assert.New(t)
-	c := &Compress{
-		Name: "tiny",
-	}
-	defer c.Delete()
-
-	err := c.Fetch()
+	// 获取当前前缀下在所有keys
+	keys, err := listKeys(key)
 	assert.Nil(err)
-	assert.Empty(c.Level)
-	assert.Empty(c.MinLength)
-	assert.Empty(c.Filter)
+	assert.NotEmpty(keys)
+	for _, item := range keys {
+		assert.True(strings.HasPrefix(item, filepath.Join(basePath, key)))
+	}
 
-	level := 9
-	minLength := 1024
-	filter := "abcd"
-	c.Level = level
-	c.MinLength = minLength
-	c.Filter = filter
-	err = c.Save()
+	// 获取当前前缀下的所有keys，并去除前缀
+	keys, err = listKeysExcludePrefix(prefix)
 	assert.Nil(err)
+	assert.Equal(1, len(keys))
+	assert.Equal("1", keys[0])
 
-	nc := &Compress{
-		Name: c.Name,
-	}
-	err = nc.Fetch()
+	// 删除数据并校验删除后是否为空
+	err = deleteConfig(key)
 	assert.Nil(err)
-	assert.Equal(level, nc.Level)
-	assert.Equal(minLength, nc.MinLength)
-	assert.Equal(filter, c.Filter)
-}
-
-func TestCacheConfig(t *testing.T) {
-	assert := assert.New(t)
-	c := &Cache{
-		Name: "tiny",
-	}
-	defer c.Delete()
-
-	err := c.Fetch()
+	keys, err = listKeys(key)
 	assert.Nil(err)
-	assert.Empty(c.HitForPass)
-	assert.Empty(c.Zone)
-	assert.Empty(c.Size)
-
-	hitForPass := 300
-	zone := 1
-	size := 10
-	c.HitForPass = hitForPass
-	c.Zone = zone
-	c.Size = size
-	err = c.Save()
-	assert.Nil(err)
-
-	nc := &Cache{
-		Name: c.Name,
-	}
-	err = nc.Fetch()
-	assert.Nil(err)
-	assert.Equal(hitForPass, nc.HitForPass)
-	assert.Equal(zone, nc.Zone)
-	assert.Equal(size, nc.Size)
-}
-
-func TestUpstreamConfig(t *testing.T) {
-	assert := assert.New(t)
-	us := &Upstream{
-		Policy:      "first",
-		HealthCheck: "/ping",
-		Name:        "testupstream",
-	}
-	defer us.Delete()
-
-	err := us.Fetch()
-	assert.Nil(err)
-	assert.Empty(us.Servers)
-
-	upstreamServer := UpstreamServer{
-		Addr:   "127.0.0.1:7000",
-		Weight: 10,
-		Backup: true,
-	}
-	us.Servers = make([]UpstreamServer, 1)
-	us.Servers[0] = upstreamServer
-	err = us.Save()
-	assert.Nil(err)
-
-	nus := &Upstream{
-		Name: us.Name,
-	}
-	err = nus.Fetch()
-	assert.Nil(err)
-	assert.Equal(1, len(nus.Servers))
-	assert.Equal(upstreamServer, nus.Servers[0])
-}
-
-func TestLocation(t *testing.T) {
-	assert := assert.New(t)
-	upstream := "testupstream"
-	server := "testserver"
-	cache := "testcache"
-	prefixs := []string{
-		"/api",
-	}
-	rewrites := []string{
-		"/api:/$1",
-	}
-	hosts := []string{
-		"aslant.site",
-	}
-	responseHeader := []string{
-		"a:1",
-		"b:2",
-	}
-	requestHeader := []string{
-		"c:3",
-		"d:4",
-	}
-	l := &Location{
-		Name:           "testlocation",
-		Upstream:       upstream,
-		Server:         server,
-		Cache:          cache,
-		Prefixs:        prefixs,
-		Rewrites:       rewrites,
-		Hosts:          hosts,
-		ResponseHeader: responseHeader,
-		RequestHeader:  requestHeader,
-	}
-	defer l.Delete()
-
-	err := l.Save()
-	assert.Nil(err)
-
-	l = &Location{
-		Name: "testlocation",
-	}
-	err = l.Fetch()
-	assert.Nil(err)
-	assert.Equal(upstream, l.Upstream)
-	assert.Equal(server, l.Server)
-	assert.Equal(cache, l.Cache)
-	assert.Equal(prefixs, l.Prefixs)
-	assert.Equal(rewrites, l.Rewrites)
-	assert.Equal(hosts, l.Hosts)
-	assert.Equal(responseHeader, l.ResponseHeader)
-	assert.Equal(requestHeader, l.RequestHeader)
+	assert.Empty(keys)
 }

@@ -17,7 +17,7 @@
 package cache
 
 import (
-	"fmt"
+	"github.com/vicanso/pike/util"
 
 	"github.com/minio/highwayhash"
 )
@@ -59,9 +59,10 @@ func NewDispatcher(size, zoneSize int) *Dispatcher {
 }
 
 // GetHTTPCache get http cache through key
-func (d *Dispatcher) GetHTTPCache(key []byte) {
+func (d *Dispatcher) GetHTTPCache(key []byte) *HTTPCache {
+	// 计算hash值
 	index := int(highwayhash.Sum64(key, hashKey)) % d.size
+	// 从预定义的列表中取对应的缓存
 	lru := d.list[index]
-
-	fmt.Println(lru)
+	return lru.FindOrCreate(util.ByteSliceToString(key))
 }
