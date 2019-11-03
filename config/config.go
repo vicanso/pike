@@ -26,6 +26,7 @@ import (
 )
 
 var (
+	// base path of config
 	basePath string
 
 	configClient Client
@@ -48,6 +49,33 @@ const (
 	defaultLocationPath = "locations"
 )
 
+// ChangeType change key's type
+type ChangeType int
+
+const (
+	// UnknownChange unknown change
+	UnknownChange ChangeType = iota
+	// ServerChange server's config change
+	ServerChange
+	// CompressChange compress's config change
+	CompressChange
+	// CacheChange cache's config change
+	CacheChange
+	// UpstreamChange upstream's config change
+	UpstreamChange
+	// LocationChange location's config change
+	LocationChange
+)
+
+var (
+	changeTypeKeyMap map[ChangeType]string
+)
+
+type (
+	// OnChange config change's event handler
+	OnChange func(ChangeType, string)
+)
+
 func init() {
 	basePath = os.Getenv("BASE_PATH")
 	if basePath == "" {
@@ -66,6 +94,12 @@ func init() {
 	} else {
 		// TODO 支持文件配置
 	}
+	changeTypeKeyMap = make(map[ChangeType]string)
+	changeTypeKeyMap[ServerChange] = filepath.Join(basePath, defaultServerPath)
+	changeTypeKeyMap[CompressChange] = filepath.Join(basePath, defaultCompressPath)
+	changeTypeKeyMap[CacheChange] = filepath.Join(basePath, defaultCachePath)
+	changeTypeKeyMap[UpstreamChange] = filepath.Join(basePath, defaultUpstreamPath)
+	changeTypeKeyMap[LocationChange] = filepath.Join(basePath, defaultLocationPath)
 }
 
 func getKey(elem ...string) (string, error) {
@@ -142,4 +176,15 @@ func listKeysExcludePrefix(keyPath string) ([]string, error) {
 		result = append(result, item[keyLength+1:])
 	}
 	return result, nil
+}
+
+// Watch watch config change
+func Watch(onChange OnChange) {
+	configClient.Watch(basePath, func(key string) {
+		for t, prefix := range changeTypeKeyMap {
+			if strings.HasPrefix(key, prefix) {
+				onChange(t, key[len(prefix)+1:])
+			}
+		}
+	})
 }

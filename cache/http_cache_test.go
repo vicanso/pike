@@ -16,8 +16,12 @@ package cache
 
 import (
 	"net/http"
+	"net/http/httptest"
 	"testing"
 	"time"
+
+	"github.com/vicanso/elton"
+	"github.com/vicanso/pike/util"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -90,7 +94,12 @@ func TestHTTPCacheGet(t *testing.T) {
 		brBody := []byte("br body")
 		go func() {
 			time.Sleep(time.Millisecond)
-			hc.Cachable(300, statusCode, rawBody, gzipBody, brBody)
+			hc.Cachable(300, &HTTPData{
+				StatusCode: statusCode,
+				RawBody:    rawBody,
+				GzipBody:   gzipBody,
+				BrBody:     brBody,
+			})
 		}()
 		// 此时会因为fetching而等待
 		status, data = hc.Get()
@@ -106,5 +115,84 @@ func TestHTTPCacheGet(t *testing.T) {
 		assert.Equal(StatusCachable, status)
 		assert.Equal(StatusCachable, hc.status)
 		assert.Equal(statusCode, data.StatusCode)
+
+		// 设置为过期(expiredAt < now)
+		hc.expiredAt = 1
+		status, data = hc.Get()
+		assert.Equal(StatusFetching, status)
+		assert.Nil(data)
+	})
+}
+
+func TestSetResponse(t *testing.T) {
+	t.Run("br", func(t *testing.T) {
+		assert := assert.New(t)
+		resp := httptest.NewRecorder()
+		req := httptest.NewRequest("GET", "/", nil)
+		req.Header.Set(elton.HeaderAcceptEncoding, "gzip, deflate, br")
+		c := elton.NewContext(resp, req)
+		brBody := []byte("br data")
+		headers := make(HTTPHeaders, 1)
+		headers[0] = HTTPHeader{
+			[]byte("a"),
+			[]byte("1"),
+		}
+		httpData := HTTPData{
+			BrBody:   brBody,
+			GzipBody: []byte("gzip data"),
+			Headers:  headers,
+		}
+		httpData.SetResponse(c)
+		assert.Equal(brBody, c.BodyBuffer.Bytes())
+		assert.Equal("7", c.GetHeader(elton.HeaderContentLength))
+		assert.Equal("br", c.GetHeader(elton.HeaderContentEncoding))
+		assert.Equal("1", c.GetHeader("a"))
+	})
+
+	t.Run("gzip", func(t *testing.T) {
+		assert := assert.New(t)
+		resp := httptest.NewRecorder()
+		req := httptest.NewRequest("GET", "/", nil)
+		req.Header.Set(elton.HeaderAcceptEncoding, "gzip, deflate, br")
+		c := elton.NewContext(resp, req)
+		gzipBody := []byte("gzip data")
+		httpData := HTTPData{
+			GzipBody: gzipBody,
+		}
+		httpData.SetResponse(c)
+		assert.Equal(gzipBody, c.BodyBuffer.Bytes())
+		assert.Equal("9", c.GetHeader(elton.HeaderContentLength))
+		assert.Equal("gzip", c.GetHeader(elton.HeaderContentEncoding))
+	})
+
+	t.Run("raw body", func(t *testing.T) {
+		assert := assert.New(t)
+		resp := httptest.NewRecorder()
+		req := httptest.NewRequest("GET", "/", nil)
+		c := elton.NewContext(resp, req)
+		rawBody := []byte("raw data")
+		httpData := HTTPData{
+			RawBody: rawBody,
+		}
+		httpData.SetResponse(c)
+		assert.Equal(rawBody, c.BodyBuffer.Bytes())
+		assert.Equal("8", c.GetHeader(elton.HeaderContentLength))
+		assert.Empty(c.GetHeader(elton.HeaderContentEncoding))
+	})
+
+	t.Run("get raw body from gzip", func(t *testing.T) {
+		assert := assert.New(t)
+		resp := httptest.NewRecorder()
+		req := httptest.NewRequest("GET", "/", nil)
+		c := elton.NewContext(resp, req)
+		rawBody := []byte("raw data")
+		gzipBody, _ := util.Gzip(rawBody, 9)
+		httpData := HTTPData{
+			GzipBody: gzipBody,
+		}
+		httpData.SetResponse(c)
+		assert.Equal(rawBody, c.BodyBuffer.Bytes())
+		assert.Equal("8", c.GetHeader(elton.HeaderContentLength))
+		assert.Empty(c.GetHeader(elton.HeaderContentEncoding))
 	})
 }

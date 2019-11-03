@@ -15,9 +15,18 @@
 package util
 
 import (
+	"crypto/sha1"
+	"encoding/base64"
+	"fmt"
 	"math/rand"
+	"net/http"
 	"time"
 	"unsafe"
+)
+
+const (
+	// spaceByte 空格
+	spaceByte = byte(' ')
 )
 
 // https://stackoverflow.com/questions/22892120/how-to-generate-a-random-string-of-a-fixed-length-in-go
@@ -56,4 +65,40 @@ func RandomString(n int) string {
 // ByteSliceToString converts a []byte to string without a heap allocation.
 func ByteSliceToString(b []byte) string {
 	return *(*string)(unsafe.Pointer(&b))
+}
+
+// GetIdentity get identity of request
+func GetIdentity(req *http.Request) []byte {
+	methodLen := len(req.Method)
+	hostLen := len(req.Host)
+	uriLen := len(req.RequestURI)
+	buffer := make([]byte, methodLen+hostLen+uriLen+2)
+	len := 0
+
+	copy(buffer[len:], req.Method)
+	len += methodLen
+
+	buffer[len] = spaceByte
+	len++
+
+	copy(buffer[len:], req.Host)
+	len += hostLen
+
+	buffer[len] = spaceByte
+	len++
+
+	copy(buffer[len:], req.RequestURI)
+	return buffer
+}
+
+// GenerateETag generate eTag
+func GenerateETag(buf []byte) string {
+	size := len(buf)
+	if size == 0 {
+		return `"0-2jmj7l5rSw0yVb_vlWAYkK_YBwk="`
+	}
+	h := sha1.New()
+	h.Write(buf)
+	hash := base64.URLEncoding.EncodeToString(h.Sum(nil))
+	return fmt.Sprintf(`"%x-%s"`, size, hash)
 }

@@ -32,7 +32,6 @@ func TestServerConfig(t *testing.T) {
 	err := s.Fetch()
 	assert.Nil(err)
 	assert.Empty(s.Concurrency)
-	assert.Empty(s.EnableServerTiming)
 	assert.Empty(s.Addr)
 	assert.Empty(s.ReadTimeout)
 	assert.Empty(s.ReadHeaderTimeout)
@@ -41,8 +40,13 @@ func TestServerConfig(t *testing.T) {
 	assert.Empty(s.MaxHeaderBytes)
 
 	addr := ":7000"
-	concurrency := 1000
-	enableServerTiming := true
+	cache := "tiny"
+	compress := "gzipBr9"
+	locations := []string{
+		"test",
+		"ip2location",
+	}
+	concurrency := uint32(1000)
 	readTimeout := 1 * time.Second
 	readHeaderTimeout := 2 * time.Second
 	writeTimeout := 3 * time.Second
@@ -50,8 +54,10 @@ func TestServerConfig(t *testing.T) {
 	maxHeaderBytes := 10
 
 	s.Addr = addr
+	s.Cache = cache
+	s.Compress = compress
+	s.Locations = locations
 	s.Concurrency = concurrency
-	s.EnableServerTiming = enableServerTiming
 	s.ReadTimeout = readTimeout
 	s.ReadHeaderTimeout = readHeaderTimeout
 	s.WriteTimeout = writeTimeout
@@ -66,8 +72,10 @@ func TestServerConfig(t *testing.T) {
 	err = ns.Fetch()
 	assert.Nil(err)
 	assert.Equal(addr, ns.Addr)
+	assert.Equal(cache, ns.Cache)
+	assert.Equal(compress, ns.Compress)
+	assert.Equal(locations, ns.Locations)
 	assert.Equal(concurrency, ns.Concurrency)
-	assert.Equal(enableServerTiming, ns.EnableServerTiming)
 	assert.Equal(readTimeout, ns.ReadTimeout)
 	assert.Equal(readHeaderTimeout, ns.ReadHeaderTimeout)
 	assert.Equal(writeTimeout, ns.WriteTimeout)

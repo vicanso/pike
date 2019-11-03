@@ -20,15 +20,18 @@ import "time"
 
 // Server server config
 type Server struct {
-	Name               string        `yaml:"-" json:"name,omitempty"`
-	Addr               string        `yaml:"Addr,omitempty" json:"Addr,omitempty"`
-	Concurrency        int           `yaml:"concurrency,omitempty" json:"concurrency,omitempty"`
-	EnableServerTiming bool          `yaml:"enableServerTiming,omitempty" json:"enableServerTiming,omitempty"`
-	ReadTimeout        time.Duration `yaml:"readTimeout,omitempty" json:"readTimeout,omitempty"`
-	ReadHeaderTimeout  time.Duration `yaml:"readHeaderTimeout,omitempty" json:"readHeaderTimeout,omitempty"`
-	WriteTimeout       time.Duration `yaml:"writeTimeout,omitempty" json:"writeTimeout,omitempty"`
-	IdleTimeout        time.Duration `yaml:"idleTimeout,omitempty" json:"idleTimeout,omitempty"`
-	MaxHeaderBytes     int           `yaml:"maxHeaderBytes,omitempty" json:"maxHeaderBytes,omitempty"`
+	Name              string        `yaml:"-" json:"name,omitempty"`
+	Cache             string        `yaml:"cache,omitempty" json:"cache,omitempty"`
+	Compress          string        `yaml:"compress,omitempty" json:"compress,omitempty"`
+	Locations         []string      `yaml:"locations,omitempty" json:"locations,omitempty"`
+	ETag              bool          `yaml:"eTag,omitempty" json:"eTag,omitempty"`
+	Addr              string        `yaml:"addr,omitempty" json:"addr,omitempty"`
+	Concurrency       uint32        `yaml:"concurrency,omitempty" json:"concurrency,omitempty"`
+	ReadTimeout       time.Duration `yaml:"readTimeout,omitempty" json:"readTimeout,omitempty"`
+	ReadHeaderTimeout time.Duration `yaml:"readHeaderTimeout,omitempty" json:"readHeaderTimeout,omitempty"`
+	WriteTimeout      time.Duration `yaml:"writeTimeout,omitempty" json:"writeTimeout,omitempty"`
+	IdleTimeout       time.Duration `yaml:"idleTimeout,omitempty" json:"idleTimeout,omitempty"`
+	MaxHeaderBytes    int           `yaml:"maxHeaderBytes,omitempty" json:"maxHeaderBytes,omitempty"`
 }
 
 // Servers server list

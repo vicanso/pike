@@ -65,8 +65,8 @@ func (c *HTTPCacheLRU) Unlock() {
 // FindOrCreate find or create http cache
 // 需要注意，lru其它方法中并没有锁的处理
 func (c *HTTPCacheLRU) FindOrCreate(key string) *HTTPCache {
-	c.mu.Lock()
-	defer c.mu.Unlock()
+	c.Lock()
+	defer c.Unlock()
 	cache, ok := c.Get(key)
 	if !ok {
 		cache = NewHTTPCache()

@@ -16,14 +16,15 @@
 
 package config
 
-import "sort"
+import (
+	"sort"
+	"strings"
+)
 
 // Location location config
 type Location struct {
 	Name           string   `yaml:"name,omitempty" json:"name,omitempty"`
 	Upstream       string   `yaml:"upstream,omitempty" json:"upstream,omitempty"`
-	Server         string   `yaml:"server,omitempty" json:"server,omitempty"`
-	Cache          string   `yaml:"cache,omitempty" json:"cache,omitempty"`
 	Prefixs        []string `yaml:"prefixs,omitempty" json:"prefixs,omitempty"`
 	Rewrites       []string `yaml:"rewrites,omitempty" json:"rewrites,omitempty"`
 	Hosts          []string `yaml:"hosts,omitempty" json:"hosts,omitempty"`
@@ -49,6 +50,35 @@ func (l *Location) Delete() (err error) {
 	return deleteConfig(defaultLocationPath, l.Name)
 }
 
+// Match check location's hosts and prefixs match host/url
+func (l *Location) Match(host, url string) bool {
+	if len(l.Hosts) != 0 {
+		found := false
+		for _, item := range l.Hosts {
+			if item == host {
+				found = true
+				break
+			}
+		}
+		if !found {
+			return false
+		}
+	}
+	if len(l.Prefixs) != 0 {
+		found := false
+		for _, item := range l.Prefixs {
+			if strings.HasPrefix(url, item) {
+				found = true
+				break
+			}
+		}
+		if !found {
+			return false
+		}
+	}
+	return true
+}
+
 func (l *Location) getPriority() int {
 	priority := 8
 	if len(l.Prefixs) != 0 {
@@ -72,6 +102,30 @@ func (locations Locations) Get(name string) (l *Location) {
 	for _, item := range locations {
 		if item.Name == name {
 			l = item
+		}
+	}
+	return
+}
+
+// GetMatch get match location
+func (locations Locations) GetMatch(host, url string) (l *Location) {
+	for _, item := range locations {
+		if item.Match(host, url) {
+			l = item
+			break
+		}
+	}
+	return
+}
+
+// Filter filter locations
+func (locations Locations) Filter(filters ...string) (result Locations) {
+	result = make(Locations, 0)
+	for _, item := range locations {
+		for _, name := range filters {
+			if item.Name == name {
+				result = append(result, item)
+			}
 		}
 	}
 	return

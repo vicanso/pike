@@ -37,7 +37,11 @@ type (
 		Delete(key string) (err error)
 		// List list all sub keys of key
 		List(prefix string) (keys []string, err error)
+		// Watch watch key change with prefix
+		Watch(key string, onChange OnKeyChange)
 	}
+	// OnKeyChange config change's event handler
+	OnKeyChange func(string)
 	// EtcdClient etcd client
 	EtcdClient struct {
 		c       *clientv3.Client
@@ -124,4 +128,15 @@ func (ec *EtcdClient) Delete(key string) (err error) {
 	defer cancel()
 	_, err = ec.c.Delete(ctx, key)
 	return
+}
+
+// Watch config change
+func (ec *EtcdClient) Watch(key string, onChange OnKeyChange) {
+	ch := ec.c.Watch(context.Background(), key, clientv3.WithPrefix())
+	// 只监听有变化则可
+	for result := range ch {
+		for _, event := range result.Events {
+			onChange(string(event.Kv.Key))
+		}
+	}
 }

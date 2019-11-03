@@ -18,9 +18,15 @@
 package cache
 
 import (
+	"bytes"
 	"net/http"
+	"strconv"
+	"strings"
 	"sync"
 	"time"
+
+	"github.com/vicanso/elton"
+	"github.com/vicanso/pike/util"
 )
 
 const (
@@ -60,6 +66,37 @@ type (
 		expiredAt int
 	}
 )
+
+// SetResponse set response
+func (httpData *HTTPData) SetResponse(c *elton.Context) {
+	c.StatusCode = httpData.StatusCode
+	acceptEncoding := c.GetRequestHeader(elton.HeaderAcceptEncoding)
+	var buf *bytes.Buffer
+	encoding := ""
+	// 如果支持br而且有br压缩数据
+	if strings.Contains(acceptEncoding, elton.Br) && len(httpData.BrBody) != 0 {
+		encoding = elton.Br
+		buf = bytes.NewBuffer(httpData.BrBody)
+	} else if strings.Contains(acceptEncoding, elton.Gzip) && len(httpData.GzipBody) != 0 {
+		// 如果支持gzip而且有gzip压缩数据
+		encoding = elton.Gzip
+		buf = bytes.NewBuffer(httpData.GzipBody)
+	} else {
+		// 如果不支持压缩或者该数据不符合压缩条件
+		rawBody := httpData.RawBody
+		// 如果无原始数据，则从gzip中解压
+		if len(rawBody) == 0 && len(httpData.GzipBody) != 0 {
+			rawBody, _ = util.Gunzip(httpData.GzipBody)
+		}
+		buf = bytes.NewBuffer(rawBody)
+	}
+	for _, httpHeader := range httpData.Headers {
+		c.SetHeader(util.ByteSliceToString(httpHeader[0]), util.ByteSliceToString(httpHeader[1]))
+	}
+	c.SetHeader(elton.HeaderContentLength, strconv.Itoa(buf.Len()))
+	c.SetHeader(elton.HeaderContentEncoding, encoding)
+	c.BodyBuffer = buf
+}
 
 // NewHTTPHeader new a http header
 func NewHTTPHeader(key, value []byte) HTTPHeader {
@@ -151,18 +188,14 @@ func (hc *HTTPCache) HitForPass(ttl int) {
 }
 
 // Cachable set the http cache cachable
-func (hc *HTTPCache) Cachable(ttl, statusCode int, rawBody, gzipBody, brBody []byte) {
+func (hc *HTTPCache) Cachable(ttl int, httpData *HTTPData) {
 	hc.mu.Lock()
 	defer hc.mu.Unlock()
 	hc.createdAt = int(time.Now().Unix())
 	hc.expiredAt = hc.createdAt + ttl
 	hc.status = StatusCachable
-	hc.data = &HTTPData{
-		StatusCode: statusCode,
-		GzipBody:   gzipBody,
-		BrBody:     brBody,
-		RawBody:    rawBody,
-	}
+
+	hc.data = httpData
 	for _, ch := range hc.chans {
 		ch <- true
 	}
