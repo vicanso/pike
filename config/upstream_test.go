@@ -26,6 +26,7 @@ func TestUpstreamConfig(t *testing.T) {
 		Policy:      "first",
 		HealthCheck: "/ping",
 		Name:        "testupstream",
+		Description: "upstream description",
 	}
 	defer us.Delete()
 

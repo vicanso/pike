@@ -18,9 +18,10 @@ package config
 
 // Admin admin config
 type Admin struct {
-	Prefix   string `yaml:"prefix,omitempty" json:"prefix,omitempty"`
-	User     string `yaml:"user,omitempty" json:"user,omitempty"`
-	Password string `yaml:"password,omitempty" json:"password,omitempty"`
+	Prefix      string `yaml:"prefix,omitempty" json:"prefix,omitempty"`
+	User        string `yaml:"user,omitempty" json:"user,omitempty"`
+	Password    string `yaml:"password,omitempty" json:"password,omitempty"`
+	Description string `yaml:"description,omitempty" json:"description,omitempty"`
 }
 
 // Fetch fetch admin config

@@ -20,6 +20,8 @@ import (
 	"testing"
 
 	"github.com/minio/highwayhash"
+	"github.com/stretchr/testify/assert"
+	"github.com/vicanso/pike/config"
 )
 
 func BenchmarkSha256(b *testing.B) {
@@ -39,4 +41,22 @@ func BenchmarkHighwayHash(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		highwayhash.Sum64(data, key)
 	}
+}
+
+func TestDispatcher(t *testing.T) {
+	assert := assert.New(t)
+	name := "test"
+	cachesConfig := config.Caches{
+		&config.Cache{
+			Name: name,
+		},
+	}
+	dispatchers := NewDispatchers(cachesConfig)
+	disp := dispatchers.Get(name)
+	assert.NotNil(disp)
+
+	key := []byte("abcd")
+	c1 := disp.GetHTTPCache(key)
+	c2 := disp.GetHTTPCache(key)
+	assert.Equal(c1, c2)
 }

@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package config
+package util
 
 import (
 	"testing"
@@ -20,42 +20,16 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestCacheConfig(t *testing.T) {
+func TestGzip(t *testing.T) {
 	assert := assert.New(t)
-	c := &Cache{
-		Name: "tiny",
-	}
-	defer c.Delete()
-
-	err := c.Fetch()
+	originalBuf := []byte("abcd")
+	buf, err := Gzip(originalBuf, 0)
 	assert.Nil(err)
-	assert.Empty(c.HitForPass)
-	assert.Empty(c.Zone)
-	assert.Empty(c.Size)
+	assert.NotEmpty(buf)
+	assert.NotEqual(originalBuf, buf)
 
-	hitForPass := 300
-	zone := 1
-	size := 10
-	description := "cache description"
-	c.HitForPass = hitForPass
-	c.Zone = zone
-	c.Size = size
-	c.Description = description
-	err = c.Save()
+	buf, err = Gunzip(buf)
 	assert.Nil(err)
-
-	nc := &Cache{
-		Name: c.Name,
-	}
-	err = nc.Fetch()
-	assert.Nil(err)
-	assert.Equal(hitForPass, nc.HitForPass)
-	assert.Equal(zone, nc.Zone)
-	assert.Equal(size, nc.Size)
-	assert.Equal(description, nc.Description)
-
-	caches, err := GetCaches()
-	assert.Nil(err)
-	nc = caches.Get(c.Name)
-	assert.Equal(c, nc)
+	assert.NotEmpty(buf)
+	assert.Equal(originalBuf, buf)
 }

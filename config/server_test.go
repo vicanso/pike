@@ -42,6 +42,7 @@ func TestServerConfig(t *testing.T) {
 	addr := ":7000"
 	cache := "tiny"
 	compress := "gzipBr9"
+	description := "server description"
 	locations := []string{
 		"test",
 		"ip2location",
@@ -63,6 +64,7 @@ func TestServerConfig(t *testing.T) {
 	s.WriteTimeout = writeTimeout
 	s.IdleTimeout = ideleTimeout
 	s.MaxHeaderBytes = maxHeaderBytes
+	s.Description = description
 	err = s.Save()
 	assert.Nil(err)
 
@@ -81,6 +83,7 @@ func TestServerConfig(t *testing.T) {
 	assert.Equal(writeTimeout, ns.WriteTimeout)
 	assert.Equal(ideleTimeout, ns.IdleTimeout)
 	assert.Equal(maxHeaderBytes, ns.MaxHeaderBytes)
+	assert.Equal(description, ns.Description)
 
 	servers, err := GetServers()
 	assert.Nil(err)

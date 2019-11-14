@@ -32,6 +32,7 @@ type Server struct {
 	WriteTimeout      time.Duration `yaml:"writeTimeout,omitempty" json:"writeTimeout,omitempty"`
 	IdleTimeout       time.Duration `yaml:"idleTimeout,omitempty" json:"idleTimeout,omitempty"`
 	MaxHeaderBytes    int           `yaml:"maxHeaderBytes,omitempty" json:"maxHeaderBytes,omitempty"`
+	Description       string        `yaml:"description,omitempty" json:"description,omitempty"`
 }
 
 // Servers server list

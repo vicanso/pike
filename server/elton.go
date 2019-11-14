@@ -201,6 +201,7 @@ func NewElton(eltonConfig *EltonConfig) *elton.Elton {
 			}
 		}
 	})
+	e.Use(recover.New())
 
 	var concurrency uint32
 	maxConcurrency := eltonConfig.maxConcurrency
@@ -215,7 +216,6 @@ func NewElton(eltonConfig *EltonConfig) *elton.Elton {
 		})
 	}
 
-	e.Use(recover.New())
 	e.Use(fresh.NewDefault())
 
 	// get http cache

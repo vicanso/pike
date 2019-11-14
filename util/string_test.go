@@ -15,6 +15,7 @@
 package util
 
 import (
+	"net/http/httptest"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -30,4 +31,17 @@ func TestRandomString(t *testing.T) {
 func TestByteSliceToString(t *testing.T) {
 	assert := assert.New(t)
 	assert.Equal("abcd", ByteSliceToString([]byte("abcd")))
+}
+
+func TestGetIdentity(t *testing.T) {
+	assert := assert.New(t)
+	req := httptest.NewRequest("GET", "/users/v1/me?type=vip", nil)
+	req.Host = "aslant.site"
+	assert.Equal("GET aslant.site /users/v1/me?type=vip", string(GetIdentity(req)))
+}
+
+func TestGenerateETag(t *testing.T) {
+	assert := assert.New(t)
+	assert.Equal(`"0-2jmj7l5rSw0yVb_vlWAYkK_YBwk="`, GenerateETag(nil))
+	assert.Equal(`"4-gf6L_odXbD7LIkJvjleEc4KRes8="`, GenerateETag([]byte("abcd")))
 }

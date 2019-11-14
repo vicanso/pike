@@ -29,6 +29,7 @@ type Upstream struct {
 	Policy      string           `yaml:"policy,omitempty" json:"policy,omitempty"`
 	Name        string           `yaml:"-" json:"name,omitempty"`
 	Servers     []UpstreamServer `yaml:"servers,omitempty" json:"servers,omitempty"`
+	Description string           `yaml:"description,omitempty" json:"description,omitempty"`
 }
 
 // Upstreams upstream config list

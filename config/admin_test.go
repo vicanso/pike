@@ -35,9 +35,11 @@ func TestAdminConfig(t *testing.T) {
 	user := "foo"
 	password := "bar"
 	prefix := "/user-admin"
+	description := "admin description"
 	admin.User = user
 	admin.Prefix = prefix
 	admin.Password = password
+	admin.Description = description
 	err = admin.Save()
 	assert.Nil(err)
 
@@ -47,4 +49,5 @@ func TestAdminConfig(t *testing.T) {
 	assert.Equal(user, admin.User)
 	assert.Equal(password, admin.Password)
 	assert.Equal(prefix, admin.Prefix)
+	assert.Equal(description, admin.Description)
 }

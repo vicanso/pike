@@ -30,6 +30,7 @@ type Location struct {
 	Hosts          []string `yaml:"hosts,omitempty" json:"hosts,omitempty"`
 	ResponseHeader []string `yaml:"responseHeader,omitempty" json:"responseHeader,omitempty"`
 	RequestHeader  []string `yaml:"requestHeader,omitempty" json:"requestHeader,omitempty"`
+	Description    string   `yaml:"description,omitempty" json:"description,omitempty"`
 }
 
 // Locations locations

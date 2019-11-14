@@ -36,9 +36,11 @@ func TestCompressConfig(t *testing.T) {
 	level := 9
 	minLength := 1024
 	filter := "abcd"
+	compressDescription := "compress description"
 	c.Level = level
 	c.MinLength = minLength
 	c.Filter = filter
+	c.Description = compressDescription
 	err = c.Save()
 	assert.Nil(err)
 
@@ -50,6 +52,7 @@ func TestCompressConfig(t *testing.T) {
 	assert.Equal(level, nc.Level)
 	assert.Equal(minLength, nc.MinLength)
 	assert.Equal(filter, c.Filter)
+	assert.Equal(compressDescription, c.Description)
 
 	compresses, err := GetCompresses()
 	assert.Nil(err)

@@ -17,10 +17,11 @@ package config
 
 // Cache cache config
 type Cache struct {
-	Name       string `yaml:"-" json:"name,omitempty"`
-	Zone       int    `yaml:"zone,omitempty" json:"zone,omitempty"`
-	Size       int    `yaml:"size,omitempty" json:"size,omitempty"`
-	HitForPass int    `yaml:"hitForPass,omitempty" json:"hitForPass,omitempty"`
+	Name        string `yaml:"-" json:"name,omitempty"`
+	Zone        int    `yaml:"zone,omitempty" json:"zone,omitempty"`
+	Size        int    `yaml:"size,omitempty" json:"size,omitempty"`
+	HitForPass  int    `yaml:"hitForPass,omitempty" json:"hitForPass,omitempty"`
+	Description string `yaml:"description,omitempty" json:"description,omitempty"`
 }
 
 // Caches cache configs

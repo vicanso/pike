@@ -61,6 +61,7 @@ func NewDispatcher(cacheConfig *config.Cache) *Dispatcher {
 		hitForPass = defaultHitForPass
 	}
 
+	// 按zoneSize与size创建二维缓存，存放的是LRU缓存实例
 	list := make([]*HTTPCacheLRU, size)
 	for i := 0; i < size; i++ {
 		list[i] = NewHTTPCacheLRU(zoneSize)

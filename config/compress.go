@@ -18,10 +18,11 @@ package config
 
 // Compress compress config
 type Compress struct {
-	Name      string `yaml:"-" json:"name,omitempty"`
-	Level     int    `yaml:"level,omitempty" json:"level,omitempty"`
-	MinLength int    `yaml:"minLength,omitempty" json:"minLength,omitempty"`
-	Filter    string `yaml:"filter,omitempty" json:"filter,omitempty"`
+	Name        string `yaml:"-" json:"name,omitempty"`
+	Level       int    `yaml:"level,omitempty" json:"level,omitempty"`
+	MinLength   int    `yaml:"minLength,omitempty" json:"minLength,omitempty"`
+	Filter      string `yaml:"filter,omitempty" json:"filter,omitempty"`
+	Description string `yaml:"description,omitempty" json:"description,omitempty"`
 }
 
 // Compresses compress config list

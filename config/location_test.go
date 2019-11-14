@@ -23,6 +23,7 @@ import (
 func TestLocation(t *testing.T) {
 	assert := assert.New(t)
 	upstream := "testupstream"
+	description := "location description"
 	prefixs := []string{
 		"/api",
 	}
@@ -48,6 +49,7 @@ func TestLocation(t *testing.T) {
 		Hosts:          hosts,
 		ResponseHeader: responseHeader,
 		RequestHeader:  requestHeader,
+		Description:    description,
 	}
 	defer l.Delete()
 
@@ -65,6 +67,7 @@ func TestLocation(t *testing.T) {
 	assert.Equal(hosts, l.Hosts)
 	assert.Equal(responseHeader, l.ResponseHeader)
 	assert.Equal(requestHeader, l.RequestHeader)
+	assert.Equal(description, l.Description)
 
 	locations, err := GetLocations()
 	assert.Nil(err)
