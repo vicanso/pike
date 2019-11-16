@@ -60,7 +60,7 @@ type (
 	HTTPCache struct {
 		mu        sync.Mutex
 		status    int
-		chans     []chan bool
+		chans     []chan struct{}
 		data      *HTTPData
 		createdAt int
 		expiredAt int
@@ -138,6 +138,7 @@ func NewHTTPCache() *HTTPCache {
 func (hc *HTTPCache) Get() (status int, data *HTTPData) {
 	status, done, data := hc.get()
 	if done != nil {
+		// TODO 后续再考虑是否需要添加timeout
 		<-done
 		status = hc.status
 		data = hc.data
@@ -146,7 +147,7 @@ func (hc *HTTPCache) Get() (status int, data *HTTPData) {
 }
 
 // get get http cache
-func (hc *HTTPCache) get() (status int, done chan bool, data *HTTPData) {
+func (hc *HTTPCache) get() (status int, done chan struct{}, data *HTTPData) {
 	hc.mu.Lock()
 	defer hc.mu.Unlock()
 	now := int(time.Now().Unix())
@@ -157,13 +158,13 @@ func (hc *HTTPCache) get() (status int, done chan bool, data *HTTPData) {
 	// 如果是fetching，则相同的请求需要等待完成
 	// 通过chan bool返回完成
 	if hc.status == StatusFetching {
-		done = make(chan bool)
+		done = make(chan struct{})
 		hc.chans = append(hc.chans, done)
 	}
 
 	if hc.status == StatusUnknown {
 		hc.status = StatusFetching
-		hc.chans = make([]chan bool, 0, 5)
+		hc.chans = make([]chan struct{}, 0, 5)
 	}
 
 	status = hc.status
@@ -183,7 +184,7 @@ func (hc *HTTPCache) HitForPass(ttl int) {
 	hc.expiredAt = int(time.Now().Unix()) + ttl
 	hc.status = StatusHitForPass
 	for _, ch := range hc.chans {
-		ch <- true
+		ch <- struct{}{}
 	}
 }
 
@@ -197,6 +198,6 @@ func (hc *HTTPCache) Cachable(ttl int, httpData *HTTPData) {
 
 	hc.data = httpData
 	for _, ch := range hc.chans {
-		ch <- true
+		ch <- struct{}{}
 	}
 }
