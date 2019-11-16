@@ -13,9 +13,12 @@ require (
 	github.com/minio/highwayhash v1.0.0
 	github.com/stretchr/testify v1.4.0
 	github.com/vicanso/elton v0.2.1
+	github.com/vicanso/elton-error-handler v0.1.2
+	github.com/vicanso/elton-etag v0.1.0
 	github.com/vicanso/elton-fresh v0.1.0
 	github.com/vicanso/elton-proxy v0.1.0
 	github.com/vicanso/elton-recover v0.1.2
+	github.com/vicanso/elton-responder v0.1.0
 	github.com/vicanso/hes v0.2.1
 	github.com/vicanso/upstream v0.0.5
 	go.etcd.io/etcd v3.3.17+incompatible

@@ -36,6 +36,9 @@ import (
 const (
 	statusKey    = "status"
 	httpCacheKey = "httpCache"
+
+	// 默认的 admin 目录
+	defaultAdminPath = "/pike"
 )
 
 var (
@@ -188,6 +191,8 @@ func NewElton(eltonConfig *EltonConfig) *elton.Elton {
 	compress := eltonConfig.compress
 	e := elton.New()
 
+	adminElton := NewAdmin(defaultAdminPath, eltonConfig)
+
 	proxyMids := createProxyMiddlewares(locations, upstreams)
 	compressHandler := createCompressHandler(compress)
 
@@ -215,6 +220,15 @@ func NewElton(eltonConfig *EltonConfig) *elton.Elton {
 			return c.Next()
 		})
 	}
+
+	// 如果是admin路径，则转发至admin elton
+	e.Use(func(c *elton.Context) error {
+		if !strings.HasPrefix(c.Request.RequestURI, defaultAdminPath) {
+			return c.Next()
+		}
+		c.Pass(adminElton)
+		return nil
+	})
 
 	e.Use(fresh.NewDefault())
 
