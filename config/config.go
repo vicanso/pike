@@ -54,6 +54,13 @@ const (
 	LocationsCategory = "locations"
 )
 
+// IConfig config interface
+type IConfig interface {
+	Fetch() error
+	Save() error
+	Delete() error
+}
+
 // ChangeType change key's type
 type ChangeType int
 

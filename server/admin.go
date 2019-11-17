@@ -67,60 +67,31 @@ func NewAdmin(adminPath string, eltonConfig *EltonConfig) *elton.Elton {
 	// 添加与更新使用相同处理
 	g.POST("/configs/:category", func(c *elton.Context) (err error) {
 		category := c.Param("category")
+		var iconfig config.IConfig
 		switch category {
 		case config.CachesCategory:
-			cacheConfig := config.Cache{}
-			err = doValidate(&cacheConfig, c.RequestBody)
-			if err != nil {
-				return
-			}
-			err = cacheConfig.Save()
-			if err != nil {
-				return
-			}
+			iconfig = new(config.Cache)
 		case config.CompressCategory:
-			compressConfig := config.Compress{}
-			err = doValidate(&compressConfig, c.RequestBody)
-			if err != nil {
-				return
-			}
-			err = compressConfig.Save()
-			if err != nil {
-				return
-			}
+			iconfig = new(config.Compress)
 		case config.LocationsCategory:
-			locationConfig := config.Location{}
-			err = doValidate(&locationConfig, c.RequestBody)
-			if err != nil {
-				return
-			}
-			err = locationConfig.Save()
-			if err != nil {
-				return
-			}
+			iconfig = new(config.Location)
 		case config.ServersCategory:
-			serverConfig := config.Server{}
-			err = doValidate(&serverConfig, c.RequestBody)
-			if err != nil {
-				return
-			}
-			err = serverConfig.Save()
-			if err != nil {
-				return
-			}
+			iconfig = new(config.Server)
 		case config.UpstreamsCategory:
-			upstreamConfig := config.Upstream{}
-			err = doValidate(&upstreamConfig, c.RequestBody)
-			if err != nil {
-				return
-			}
-			err = upstreamConfig.Save()
-			if err != nil {
-				return
-			}
+			iconfig = new(config.Upstream)
 		default:
 			err = hes.New(category + " is not support")
 		}
+
+		err = doValidate(iconfig, c.RequestBody)
+		if err != nil {
+			return
+		}
+		err = iconfig.Save()
+		if err != nil {
+			return
+		}
+
 		if err != nil {
 			return
 		}
