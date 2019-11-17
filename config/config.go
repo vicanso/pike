@@ -42,11 +42,16 @@ const (
 	defaultAdminKey    = "admin"
 	defaultAdminPrefix = "/admin"
 
-	defaultServerPath   = "servers"
-	defaultCompressPath = "compresses"
-	defaultCachePath    = "caches"
-	defaultUpstreamPath = "upstreams"
-	defaultLocationPath = "locations"
+	// ServersCategory servers category
+	ServersCategory = "servers"
+	// CompressCategory compresses category
+	CompressCategory = "compresses"
+	// CachesCategory caches category
+	CachesCategory = "caches"
+	// UpstreamsCategory upstreams category
+	UpstreamsCategory = "upstreams"
+	// LocationsCategory locations category
+	LocationsCategory = "locations"
 )
 
 // ChangeType change key's type
@@ -95,11 +100,11 @@ func init() {
 		// TODO 支持文件配置
 	}
 	changeTypeKeyMap = make(map[ChangeType]string)
-	changeTypeKeyMap[ServerChange] = filepath.Join(basePath, defaultServerPath)
-	changeTypeKeyMap[CompressChange] = filepath.Join(basePath, defaultCompressPath)
-	changeTypeKeyMap[CacheChange] = filepath.Join(basePath, defaultCachePath)
-	changeTypeKeyMap[UpstreamChange] = filepath.Join(basePath, defaultUpstreamPath)
-	changeTypeKeyMap[LocationChange] = filepath.Join(basePath, defaultLocationPath)
+	changeTypeKeyMap[ServerChange] = filepath.Join(basePath, ServersCategory)
+	changeTypeKeyMap[CompressChange] = filepath.Join(basePath, CompressCategory)
+	changeTypeKeyMap[CacheChange] = filepath.Join(basePath, CachesCategory)
+	changeTypeKeyMap[UpstreamChange] = filepath.Join(basePath, UpstreamsCategory)
+	changeTypeKeyMap[LocationChange] = filepath.Join(basePath, LocationsCategory)
 }
 
 func getKey(elem ...string) (string, error) {

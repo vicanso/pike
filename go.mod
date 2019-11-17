@@ -4,6 +4,7 @@ go 1.13
 
 require (
 	github.com/andybalholm/brotli v0.0.0-20190821151343-b60f0d972eeb
+	github.com/asaskevich/govalidator v0.0.0-20190424111038-f61b66f89f4a
 	github.com/coreos/etcd v3.3.17+incompatible // indirect
 	github.com/coreos/go-systemd v0.0.0-20190719114852-fd7a80b32e1f // indirect
 	github.com/coreos/pkg v0.0.0-20180928190104-399ea9e2e55f // indirect
@@ -13,6 +14,7 @@ require (
 	github.com/minio/highwayhash v1.0.0
 	github.com/stretchr/testify v1.4.0
 	github.com/vicanso/elton v0.2.1
+	github.com/vicanso/elton-body-parser v0.1.5
 	github.com/vicanso/elton-error-handler v0.1.2
 	github.com/vicanso/elton-etag v0.1.0
 	github.com/vicanso/elton-fresh v0.1.0

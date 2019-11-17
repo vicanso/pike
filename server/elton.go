@@ -155,7 +155,10 @@ func getCacheAge(header http.Header) int {
 
 func createCompressHandler(compressConfig *config.Compress) CompressHandler {
 	// 前置已针对未支持的encoding过滤，因此data只可能为未压缩或者gzip数据
-	filter, _ := regexp.Compile(compressConfig.Filter)
+	var filter *regexp.Regexp
+	if compressConfig.Filter != "" {
+		filter, _ = regexp.Compile(compressConfig.Filter)
+	}
 	return func(c *elton.Context, data []byte, ignoreHeader bool) (httpData *cache.HTTPData) {
 		headers := c.Headers
 		httpData = &cache.HTTPData{
@@ -165,6 +168,10 @@ func createCompressHandler(compressConfig *config.Compress) CompressHandler {
 		// 如果忽略header（对于post等不可缓存的请求）
 		if !ignoreHeader {
 			httpData.Headers = cache.NewHTTPHeaders(headers, elton.HeaderContentEncoding, elton.HeaderContentLength)
+		}
+		// 如果未指定filter的数据，则认为都不需要压缩
+		if filter == nil {
+			return
 		}
 		if len(data) < compressConfig.MinLength {
 			return

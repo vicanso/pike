@@ -17,11 +17,11 @@ package config
 
 // Cache cache config
 type Cache struct {
-	Name        string `yaml:"-" json:"name,omitempty"`
-	Zone        int    `yaml:"zone,omitempty" json:"zone,omitempty"`
-	Size        int    `yaml:"size,omitempty" json:"size,omitempty"`
-	HitForPass  int    `yaml:"hitForPass,omitempty" json:"hitForPass,omitempty"`
-	Description string `yaml:"description,omitempty" json:"description,omitempty"`
+	Name        string `yaml:"-" json:"name,omitempty" valid:"xName"`
+	Zone        int    `yaml:"zone,omitempty" json:"zone,omitempty" valid:"numeric,range(1|10000)"`
+	Size        int    `yaml:"size,omitempty" json:"size,omitempty" valid:"numeric,range(1|10000)"`
+	HitForPass  int    `yaml:"hitForPass,omitempty" json:"hitForPass,omitempty" valid:"numeric,range(1|3600)"`
+	Description string `yaml:"description,omitempty" json:"description,omitempty" valid:"-"`
 }
 
 // Caches cache configs
@@ -29,17 +29,17 @@ type Caches []*Cache
 
 // Fetch fetch cache config
 func (c *Cache) Fetch() (err error) {
-	return fetchConfig(c, defaultCachePath, c.Name)
+	return fetchConfig(c, CachesCategory, c.Name)
 }
 
 // Save save ccache config
 func (c *Cache) Save() (err error) {
-	return saveConfig(c, defaultCachePath, c.Name)
+	return saveConfig(c, CachesCategory, c.Name)
 }
 
 // Delete delete compress config
 func (c *Cache) Delete() (err error) {
-	return deleteConfig(defaultCachePath, c.Name)
+	return deleteConfig(CachesCategory, c.Name)
 }
 
 // Get get cache config from cache list
@@ -54,7 +54,7 @@ func (caches Caches) Get(name string) (c *Cache) {
 
 // GetCaches get all config config
 func GetCaches() (caches Caches, err error) {
-	keys, err := listKeysExcludePrefix(defaultCachePath)
+	keys, err := listKeysExcludePrefix(CachesCategory)
 	if err != nil {
 		return
 	}

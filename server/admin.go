@@ -16,6 +16,7 @@ package server
 
 import (
 	"github.com/vicanso/elton"
+	bodyparser "github.com/vicanso/elton-body-parser"
 	errorhandler "github.com/vicanso/elton-error-handler"
 	etag "github.com/vicanso/elton-etag"
 	fresh "github.com/vicanso/elton-fresh"
@@ -33,32 +34,97 @@ func NewAdmin(adminPath string, eltonConfig *EltonConfig) *elton.Elton {
 
 	e.Use(responder.NewDefault())
 	e.Use(errorhandler.NewDefault())
+	e.Use(bodyparser.NewDefault())
 
 	g := elton.NewGroup(adminPath)
 
-	g.GET("/configs/:name", func(c *elton.Context) (err error) {
+	g.GET("/configs/:category", func(c *elton.Context) (err error) {
 		var data interface{}
-		name := c.Param("name")
-		switch name {
-		case "caches":
+		category := c.Param("category")
+		switch category {
+		case config.CachesCategory:
 			data, err = config.GetCaches()
-		case "compresses":
+		case config.CompressCategory:
 			data, err = config.GetCompresses()
-		case "locations":
+		case config.LocationsCategory:
 			data, err = config.GetLocations()
-		case "servers":
+		case config.ServersCategory:
 			data, err = config.GetServers()
-		case "upstreams":
+		case config.UpstreamsCategory:
 			data, err = config.GetUpstreams()
 		default:
-			err = hes.New(name + " is not support")
+			err = hes.New(category + " is not support")
 		}
 		if err != nil {
 			return
 		}
 		res := make(map[string]interface{})
-		res[name] = data
+		res[category] = data
 		c.Body = res
+		return
+	})
+
+	// 添加与更新使用相同处理
+	g.POST("/configs/:category", func(c *elton.Context) (err error) {
+		category := c.Param("category")
+		switch category {
+		case config.CachesCategory:
+			cacheConfig := config.Cache{}
+			err = doValidate(&cacheConfig, c.RequestBody)
+			if err != nil {
+				return
+			}
+			err = cacheConfig.Save()
+			if err != nil {
+				return
+			}
+		case config.CompressCategory:
+			compressConfig := config.Compress{}
+			err = doValidate(&compressConfig, c.RequestBody)
+			if err != nil {
+				return
+			}
+			err = compressConfig.Save()
+			if err != nil {
+				return
+			}
+		case config.LocationsCategory:
+			locationConfig := config.Location{}
+			err = doValidate(&locationConfig, c.RequestBody)
+			if err != nil {
+				return
+			}
+			err = locationConfig.Save()
+			if err != nil {
+				return
+			}
+		case config.ServersCategory:
+			serverConfig := config.Server{}
+			err = doValidate(&serverConfig, c.RequestBody)
+			if err != nil {
+				return
+			}
+			err = serverConfig.Save()
+			if err != nil {
+				return
+			}
+		case config.UpstreamsCategory:
+			upstreamConfig := config.Upstream{}
+			err = doValidate(&upstreamConfig, c.RequestBody)
+			if err != nil {
+				return
+			}
+			err = upstreamConfig.Save()
+			if err != nil {
+				return
+			}
+		default:
+			err = hes.New(category + " is not support")
+		}
+		if err != nil {
+			return
+		}
+		c.NoContent()
 		return
 	})
 

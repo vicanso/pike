@@ -2,6 +2,8 @@ cloud.google.com/go v0.26.0/go.mod h1:aQUYkXzVsufM+DwF1aE+0xfcU+56JwCaLick0ClmMT
 github.com/BurntSushi/toml v0.3.1/go.mod h1:xHWCNGjB5oqiDr8zfno3MHue2Ht5sIBksp03qcyfWMU=
 github.com/andybalholm/brotli v0.0.0-20190821151343-b60f0d972eeb h1:ZSlUsEd11C/uRzhZHOgANARJ03fkwmjJEa6g2Cqjlo4=
 github.com/andybalholm/brotli v0.0.0-20190821151343-b60f0d972eeb/go.mod h1:loMXtMfwqflxFJPmdbJO0a3KNoPuLBgiu3qAvBg8x/Y=
+github.com/asaskevich/govalidator v0.0.0-20190424111038-f61b66f89f4a h1:idn718Q4B6AGu/h5Sxe66HYVdqdGu2l9Iebqhi/AEoA=
+github.com/asaskevich/govalidator v0.0.0-20190424111038-f61b66f89f4a/go.mod h1:lB+ZfQJz7igIIfQNfa7Ml4HSf2uFQQRzpGGRXenZAgY=
 github.com/client9/misspell v0.3.4/go.mod h1:qj6jICC3Q7zFZvVWo7KLAzC3yx5G7kyvSDkc90ppPyw=
 github.com/coreos/etcd v3.3.17+incompatible h1:f/Z3EoDSx1yjaIjLQGo1diYUlQYSBrrAQ5vP8NjwXwo=
 github.com/coreos/etcd v3.3.17+incompatible/go.mod h1:uF7uidLiAD3TWHmW31ZFd/JWoc32PjwdhPthX9715RE=
@@ -11,6 +13,7 @@ github.com/coreos/pkg v0.0.0-20180928190104-399ea9e2e55f h1:lBNOc5arjvs8E5mO2tbp
 github.com/coreos/pkg v0.0.0-20180928190104-399ea9e2e55f/go.mod h1:E3G3o1h8I7cfcXa63jLwjI0eiQQMgzzUDFVpN/nH/eA=
 github.com/davecgh/go-spew v1.1.0 h1:ZDRjVQ15GmhC3fiQ8ni8+OwkZQO4DARzQgrnXU1Liz8=
 github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
+github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/go-yaml/yaml v2.1.0+incompatible h1:RYi2hDdss1u4YE7GwixGzWwVo47T8UQwnTLB6vQiq+o=
 github.com/go-yaml/yaml v2.1.0+incompatible/go.mod h1:w2MrLa16VYP0jy6N7M5kHaCkaLENm+P+Tv+MfurjSw0=
@@ -48,6 +51,8 @@ github.com/stretchr/testify v1.4.0/go.mod h1:j7eGeouHqKxXV5pUuKE4zz7dFj8WfuZ+81P
 github.com/vicanso/elton v0.2.0/go.mod h1:ynAUOSkZQ+pFaUsxlG5hYnJFjPpMwz8YyEBPzNh0pSg=
 github.com/vicanso/elton v0.2.1 h1:OrfDjNjXL6KzUhAuAFwCQIa6guXXd7OY+L4ZgH16Rpc=
 github.com/vicanso/elton v0.2.1/go.mod h1:ynAUOSkZQ+pFaUsxlG5hYnJFjPpMwz8YyEBPzNh0pSg=
+github.com/vicanso/elton-body-parser v0.1.5 h1:aC2UCu/zRhSuUrBbuiPBTlFzL192mJ/QOVKTTjh2+d8=
+github.com/vicanso/elton-body-parser v0.1.5/go.mod h1:aOb5NzyeFEV0XWWR80wMJjPPRex8XkzGJfwJPqIvoRQ=
 github.com/vicanso/elton-error-handler v0.1.2 h1:yPpx2DPGhJ9h1NhVJYyyZcRs+tLtlk+tVN5w4QmI/k8=
 github.com/vicanso/elton-error-handler v0.1.2/go.mod h1:7GleoxXXr+Br9K2J6ZBJ2PZ1l39+VC7MYFJ+a8uQCUg=
 github.com/vicanso/elton-etag v0.1.0 h1:oSNzsWRYHhYb2L8NWSqxElcR6+H2YowwCgo+nwdTg5M=

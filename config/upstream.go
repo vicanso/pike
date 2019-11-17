@@ -18,18 +18,18 @@ package config
 
 // UpstreamServer upstream server
 type UpstreamServer struct {
-	Addr   string `yaml:"addr,omitempty" json:"addr,omitempty"`
-	Weight int    `yaml:"weight,omitempty" json:"weight,omitempty"`
-	Backup bool   `yaml:"backup,omitempty" json:"backup,omitempty"`
+	Addr   string `yaml:"addr,omitempty" json:"addr,omitempty" valid:"url"`
+	Weight int    `yaml:"weight,omitempty" json:"weight,omitempty" valid:"-"`
+	Backup bool   `yaml:"backup,omitempty" json:"backup,omitempty" valid:"-"`
 }
 
 // Upstream upstream config
 type Upstream struct {
-	HealthCheck string           `yaml:"healthCheck,omitempty" json:"healthCheck,omitempty"`
-	Policy      string           `yaml:"policy,omitempty" json:"policy,omitempty"`
-	Name        string           `yaml:"-" json:"name,omitempty"`
-	Servers     []UpstreamServer `yaml:"servers,omitempty" json:"servers,omitempty"`
-	Description string           `yaml:"description,omitempty" json:"description,omitempty"`
+	HealthCheck string           `yaml:"healthCheck,omitempty" json:"healthCheck,omitempty" valid:"xURLPath,optional"`
+	Policy      string           `yaml:"policy,omitempty" json:"policy,omitempty" valid:"-"`
+	Name        string           `yaml:"-" json:"name,omitempty" valid:"xName"`
+	Servers     []UpstreamServer `yaml:"servers,omitempty" json:"servers,omitempty" valid:"xServers"`
+	Description string           `yaml:"description,omitempty" json:"description,omitempty" valid:"-"`
 }
 
 // Upstreams upstream config list
@@ -37,17 +37,17 @@ type Upstreams []*Upstream
 
 // Fetch fetch upstream config
 func (u *Upstream) Fetch() (err error) {
-	return fetchConfig(u, defaultUpstreamPath, u.Name)
+	return fetchConfig(u, UpstreamsCategory, u.Name)
 }
 
 // Save save upstream config
 func (u *Upstream) Save() (err error) {
-	return saveConfig(u, defaultUpstreamPath, u.Name)
+	return saveConfig(u, UpstreamsCategory, u.Name)
 }
 
 // Delete delete upsteram config
 func (u *Upstream) Delete() (err error) {
-	return deleteConfig(defaultUpstreamPath, u.Name)
+	return deleteConfig(UpstreamsCategory, u.Name)
 }
 
 // Get get upstream config from upstream list
@@ -62,7 +62,7 @@ func (upstreams Upstreams) Get(name string) (u *Upstream) {
 
 // GetUpstreams get all upstream config
 func GetUpstreams() (upstreams Upstreams, err error) {
-	keys, err := listKeysExcludePrefix(defaultUpstreamPath)
+	keys, err := listKeysExcludePrefix(UpstreamsCategory)
 	upstreams = make(Upstreams, 0, len(keys))
 	for _, key := range keys {
 		u := &Upstream{

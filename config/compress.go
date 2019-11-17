@@ -18,11 +18,11 @@ package config
 
 // Compress compress config
 type Compress struct {
-	Name        string `yaml:"-" json:"name,omitempty"`
-	Level       int    `yaml:"level,omitempty" json:"level,omitempty"`
-	MinLength   int    `yaml:"minLength,omitempty" json:"minLength,omitempty"`
-	Filter      string `yaml:"filter,omitempty" json:"filter,omitempty"`
-	Description string `yaml:"description,omitempty" json:"description,omitempty"`
+	Name        string `yaml:"-" json:"name,omitempty" valid:"xName"`
+	Level       int    `yaml:"level,omitempty" json:"level,omitempty" valid:"numeric,range(0|11)"`
+	MinLength   int    `yaml:"minLength,omitempty" json:"minLength,omitempty" valid:"numeric,range(0|51200)"`
+	Filter      string `yaml:"filter,omitempty" json:"filter,omitempty" valid:"-"`
+	Description string `yaml:"description,omitempty" json:"description,omitempty" valid:"-"`
 }
 
 // Compresses compress config list
@@ -30,17 +30,17 @@ type Compresses []*Compress
 
 // Fetch fetch compress config
 func (c *Compress) Fetch() (err error) {
-	return fetchConfig(c, defaultCompressPath, c.Name)
+	return fetchConfig(c, CompressCategory, c.Name)
 }
 
 // Save save compress config
 func (c *Compress) Save() (err error) {
-	return saveConfig(c, defaultCompressPath, c.Name)
+	return saveConfig(c, CompressCategory, c.Name)
 }
 
 // Delete delete compress config
 func (c *Compress) Delete() (err error) {
-	return deleteConfig(defaultCompressPath, c.Name)
+	return deleteConfig(CompressCategory, c.Name)
 }
 
 // Get get compress config from compress list
@@ -55,7 +55,7 @@ func (compresses Compresses) Get(name string) (c *Compress) {
 
 // GetCompresses get all compress config
 func GetCompresses() (compresses Compresses, err error) {
-	keys, err := listKeysExcludePrefix(defaultCompressPath)
+	keys, err := listKeysExcludePrefix(CompressCategory)
 	if err != nil {
 		return
 	}

@@ -23,14 +23,14 @@ import (
 
 // Location location config
 type Location struct {
-	Name           string   `yaml:"name,omitempty" json:"name,omitempty"`
-	Upstream       string   `yaml:"upstream,omitempty" json:"upstream,omitempty"`
-	Prefixs        []string `yaml:"prefixs,omitempty" json:"prefixs,omitempty"`
-	Rewrites       []string `yaml:"rewrites,omitempty" json:"rewrites,omitempty"`
-	Hosts          []string `yaml:"hosts,omitempty" json:"hosts,omitempty"`
-	ResponseHeader []string `yaml:"responseHeader,omitempty" json:"responseHeader,omitempty"`
-	RequestHeader  []string `yaml:"requestHeader,omitempty" json:"requestHeader,omitempty"`
-	Description    string   `yaml:"description,omitempty" json:"description,omitempty"`
+	Name           string   `yaml:"name,omitempty" json:"name,omitempty" valid:"xName"`
+	Upstream       string   `yaml:"upstream,omitempty" json:"upstream,omitempty" valid:"xName"`
+	Prefixs        []string `yaml:"prefixs,omitempty" json:"prefixs,omitempty" valid:"xPrefixs,optional"`
+	Rewrites       []string `yaml:"rewrites,omitempty" json:"rewrites,omitempty" valid:"xRewrites,optional"`
+	Hosts          []string `yaml:"hosts,omitempty" json:"hosts,omitempty" valid:"xHosts,optional"`
+	ResponseHeader []string `yaml:"responseHeader,omitempty" json:"responseHeader,omitempty" valid:"xHeader,optional"`
+	RequestHeader  []string `yaml:"requestHeader,omitempty" json:"requestHeader,omitempty" valid:"xHeader,optional"`
+	Description    string   `yaml:"description,omitempty" json:"description,omitempty" valid:"-"`
 }
 
 // Locations locations
@@ -38,17 +38,17 @@ type Locations []*Location
 
 // Fetch fetch location config
 func (l *Location) Fetch() (err error) {
-	return fetchConfig(l, defaultLocationPath, l.Name)
+	return fetchConfig(l, LocationsCategory, l.Name)
 }
 
 // Save save location config
 func (l *Location) Save() (err error) {
-	return saveConfig(l, defaultLocationPath, l.Name)
+	return saveConfig(l, LocationsCategory, l.Name)
 }
 
 // Delete delete location config
 func (l *Location) Delete() (err error) {
-	return deleteConfig(defaultLocationPath, l.Name)
+	return deleteConfig(LocationsCategory, l.Name)
 }
 
 // Match check location's hosts and prefixs match host/url
@@ -135,7 +135,7 @@ func (locations Locations) Filter(filters ...string) (result Locations) {
 // GetLocations get locations
 // *Location for better performance)
 func GetLocations() (locations Locations, err error) {
-	keys, err := listKeysExcludePrefix(defaultLocationPath)
+	keys, err := listKeysExcludePrefix(LocationsCategory)
 	if err != nil {
 		return
 	}

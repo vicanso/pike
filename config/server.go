@@ -20,19 +20,19 @@ import "time"
 
 // Server server config
 type Server struct {
-	Name              string        `yaml:"-" json:"name,omitempty"`
-	Cache             string        `yaml:"cache,omitempty" json:"cache,omitempty"`
-	Compress          string        `yaml:"compress,omitempty" json:"compress,omitempty"`
-	Locations         []string      `yaml:"locations,omitempty" json:"locations,omitempty"`
-	ETag              bool          `yaml:"eTag,omitempty" json:"eTag,omitempty"`
-	Addr              string        `yaml:"addr,omitempty" json:"addr,omitempty"`
-	Concurrency       uint32        `yaml:"concurrency,omitempty" json:"concurrency,omitempty"`
-	ReadTimeout       time.Duration `yaml:"readTimeout,omitempty" json:"readTimeout,omitempty"`
-	ReadHeaderTimeout time.Duration `yaml:"readHeaderTimeout,omitempty" json:"readHeaderTimeout,omitempty"`
-	WriteTimeout      time.Duration `yaml:"writeTimeout,omitempty" json:"writeTimeout,omitempty"`
-	IdleTimeout       time.Duration `yaml:"idleTimeout,omitempty" json:"idleTimeout,omitempty"`
-	MaxHeaderBytes    int           `yaml:"maxHeaderBytes,omitempty" json:"maxHeaderBytes,omitempty"`
-	Description       string        `yaml:"description,omitempty" json:"description,omitempty"`
+	Name              string        `yaml:"-" json:"name,omitempty" valid:"xName"`
+	Cache             string        `yaml:"cache,omitempty" json:"cache,omitempty" valid:"xName"`
+	Compress          string        `yaml:"compress,omitempty" json:"compress,omitempty" valid:"xName"`
+	Locations         []string      `yaml:"locations,omitempty" json:"locations,omitempty" valid:"xNames"`
+	ETag              bool          `yaml:"eTag,omitempty" json:"eTag,omitempty" valid:"-"`
+	Addr              string        `yaml:"addr,omitempty" json:"addr,omitempty" valid:"ascii,runelength(1|50)"`
+	Concurrency       uint32        `yaml:"concurrency,omitempty" json:"concurrency,omitempty" valid:"-"`
+	ReadTimeout       time.Duration `yaml:"readTimeout,omitempty" json:"readTimeout,omitempty" valid:"-"`
+	ReadHeaderTimeout time.Duration `yaml:"readHeaderTimeout,omitempty" json:"readHeaderTimeout,omitempty" valid:"-"`
+	WriteTimeout      time.Duration `yaml:"writeTimeout,omitempty" json:"writeTimeout,omitempty" valid:"-"`
+	IdleTimeout       time.Duration `yaml:"idleTimeout,omitempty" json:"idleTimeout,omitempty" valid:"-"`
+	MaxHeaderBytes    int           `yaml:"maxHeaderBytes,omitempty" json:"maxHeaderBytes,omitempty" valid:"-"`
+	Description       string        `yaml:"description,omitempty" json:"description,omitempty" valid:"-"`
 }
 
 // Servers server list
@@ -40,17 +40,17 @@ type Servers []*Server
 
 // Fetch fetch server config
 func (s *Server) Fetch() (err error) {
-	return fetchConfig(s, defaultServerPath, s.Name)
+	return fetchConfig(s, ServersCategory, s.Name)
 }
 
 // Save save server config
 func (s *Server) Save() (err error) {
-	return saveConfig(s, defaultServerPath, s.Name)
+	return saveConfig(s, ServersCategory, s.Name)
 }
 
 // Delete delete server config
 func (s *Server) Delete() (err error) {
-	return deleteConfig(defaultServerPath, s.Name)
+	return deleteConfig(ServersCategory, s.Name)
 }
 
 // Get get server config from server list
@@ -65,7 +65,7 @@ func (servers Servers) Get(name string) (s *Server) {
 
 // GetServers get all server config
 func GetServers() (servers Servers, err error) {
-	keys, err := listKeysExcludePrefix(defaultServerPath)
+	keys, err := listKeysExcludePrefix(ServersCategory)
 	if err != nil {
 		return
 	}
