@@ -37,3 +37,13 @@ func TestBrotli(t *testing.T) {
 	assert.Nil(err)
 	assert.Equal(originalBuf, buf)
 }
+
+func BenchmarkBrotli(b *testing.B) {
+	buf, err := ioutil.ReadFile("../assets/jquery-3.4.1.min.js")
+	if err != nil {
+		panic(err)
+	}
+	for i := 0; i < b.N; i++ {
+		Brotli(buf, 0)
+	}
+}

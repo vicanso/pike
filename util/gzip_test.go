@@ -15,6 +15,7 @@
 package util
 
 import (
+	"io/ioutil"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -32,4 +33,14 @@ func TestGzip(t *testing.T) {
 	assert.Nil(err)
 	assert.NotEmpty(buf)
 	assert.Equal(originalBuf, buf)
+}
+
+func BenchmarkGzip(b *testing.B) {
+	buf, err := ioutil.ReadFile("../assets/jquery-3.4.1.min.js")
+	if err != nil {
+		panic(err)
+	}
+	for i := 0; i < b.N; i++ {
+		Gzip(buf, 0)
+	}
 }

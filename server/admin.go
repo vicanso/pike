@@ -15,6 +15,8 @@
 package server
 
 import (
+	"strings"
+
 	"github.com/vicanso/elton"
 	bodyparser "github.com/vicanso/elton-body-parser"
 	errorhandler "github.com/vicanso/elton-error-handler"
@@ -40,26 +42,28 @@ func NewAdmin(adminPath string, eltonConfig *EltonConfig) *elton.Elton {
 
 	g.GET("/configs/:category", func(c *elton.Context) (err error) {
 		var data interface{}
-		category := c.Param("category")
-		switch category {
-		case config.CachesCategory:
-			data, err = config.GetCaches()
-		case config.CompressCategory:
-			data, err = config.GetCompresses()
-		case config.LocationsCategory:
-			data, err = config.GetLocations()
-		case config.ServersCategory:
-			data, err = config.GetServers()
-		case config.UpstreamsCategory:
-			data, err = config.GetUpstreams()
-		default:
-			err = hes.New(category + " is not support")
-		}
-		if err != nil {
-			return
-		}
 		res := make(map[string]interface{})
-		res[category] = data
+		arr := strings.Split(c.Param("category"), ",")
+		for _, category := range arr {
+			switch category {
+			case config.CachesCategory:
+				data, err = config.GetCaches()
+			case config.CompressCategory:
+				data, err = config.GetCompresses()
+			case config.LocationsCategory:
+				data, err = config.GetLocations()
+			case config.ServersCategory:
+				data, err = config.GetServers()
+			case config.UpstreamsCategory:
+				data, err = config.GetUpstreams()
+			default:
+				err = hes.New(category + " is not support")
+			}
+			if err != nil {
+				return
+			}
+			res[category] = data
+		}
 		c.Body = res
 		return
 	})
@@ -92,6 +96,42 @@ func NewAdmin(adminPath string, eltonConfig *EltonConfig) *elton.Elton {
 			return
 		}
 
+		if err != nil {
+			return
+		}
+		c.NoContent()
+		return
+	})
+
+	g.DELETE("/configs/:category/:name", func(c *elton.Context) (err error) {
+		category := c.Param("category")
+		name := c.Param("name")
+		var iconfig config.IConfig
+		switch category {
+		case config.CachesCategory:
+			iconfig = &config.Cache{
+				Name: name,
+			}
+		case config.CompressCategory:
+			iconfig = &config.Compress{
+				Name: name,
+			}
+		case config.LocationsCategory:
+			iconfig = &config.Location{
+				Name: name,
+			}
+		case config.ServersCategory:
+			iconfig = &config.Server{
+				Name: name,
+			}
+		case config.UpstreamsCategory:
+			iconfig = &config.Upstream{
+				Name: name,
+			}
+		default:
+			err = hes.New(category + " is not support")
+		}
+		err = iconfig.Delete()
 		if err != nil {
 			return
 		}
