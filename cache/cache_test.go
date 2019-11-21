@@ -16,6 +16,7 @@ package cache
 
 import (
 	"crypto/sha256"
+	"encoding/binary"
 	"encoding/hex"
 	"testing"
 
@@ -39,7 +40,8 @@ func BenchmarkHighwayHash(b *testing.B) {
 	key, _ := hex.DecodeString("000102030405060708090A0B0C0D0E0FF0E0D0C0B0A090807060504030201000") // use your own key here
 
 	for i := 0; i < b.N; i++ {
-		highwayhash.Sum64(data, key)
+		buf := highwayhash.Sum128(data, key)
+		binary.LittleEndian.Uint16(buf[:2])
 	}
 }
 

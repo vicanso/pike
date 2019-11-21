@@ -17,6 +17,8 @@
 package cache
 
 import (
+	"encoding/binary"
+
 	"github.com/vicanso/pike/config"
 	"github.com/vicanso/pike/util"
 
@@ -37,7 +39,7 @@ type (
 	// Dispatcher http cache dispatcher
 	Dispatcher struct {
 		HitForPass int
-		size       int
+		size       uint16
 		list       []*HTTPCacheLRU
 	}
 	// Dispatchers http cache dispatcher list
@@ -69,7 +71,7 @@ func NewDispatcher(cacheConfig *config.Cache) *Dispatcher {
 
 	return &Dispatcher{
 		HitForPass: hitForPass,
-		size:       size,
+		size:       uint16(size),
 		list:       list,
 	}
 }
@@ -77,7 +79,8 @@ func NewDispatcher(cacheConfig *config.Cache) *Dispatcher {
 // GetHTTPCache get http cache through key
 func (d *Dispatcher) GetHTTPCache(key []byte) *HTTPCache {
 	// 计算hash值
-	index := uint(highwayhash.Sum64(key, hashKey)) % uint(d.size)
+	buf := highwayhash.Sum128(key, hashKey)
+	index := binary.LittleEndian.Uint16(buf[:2]) % d.size
 	// 从预定义的列表中取对应的缓存
 	lru := d.list[index]
 	return lru.FindOrCreate(util.ByteSliceToString(key))
