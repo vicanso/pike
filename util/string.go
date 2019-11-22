@@ -102,3 +102,13 @@ func GenerateETag(buf []byte) string {
 	hash := base64.URLEncoding.EncodeToString(h.Sum(nil))
 	return fmt.Sprintf(`"%x-%s"`, size, hash)
 }
+
+// ContainesString contain string
+func ContainesString(arr []string, str string) bool {
+	for _, item := range arr {
+		if item == str {
+			return true
+		}
+	}
+	return false
+}

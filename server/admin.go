@@ -104,19 +104,33 @@ func NewAdmin(adminPath string, eltonConfig *EltonConfig) *elton.Elton {
 	})
 
 	g.DELETE("/configs/:category/:name", func(c *elton.Context) (err error) {
+		serverConfigs, err := config.GetServers()
+		if err != nil {
+			return
+		}
+		locations, err := config.GetLocations()
+		if err != nil {
+			return
+		}
+
 		category := c.Param("category")
 		name := c.Param("name")
 		var iconfig config.IConfig
+		shouldBeCheckedByServer := false
+		shouldBeCheckedByLocation := false
 		switch category {
 		case config.CachesCategory:
+			shouldBeCheckedByServer = true
 			iconfig = &config.Cache{
 				Name: name,
 			}
 		case config.CompressCategory:
+			shouldBeCheckedByServer = true
 			iconfig = &config.Compress{
 				Name: name,
 			}
 		case config.LocationsCategory:
+			shouldBeCheckedByServer = true
 			iconfig = &config.Location{
 				Name: name,
 			}
@@ -125,12 +139,25 @@ func NewAdmin(adminPath string, eltonConfig *EltonConfig) *elton.Elton {
 				Name: name,
 			}
 		case config.UpstreamsCategory:
+			shouldBeCheckedByLocation = true
 			iconfig = &config.Upstream{
 				Name: name,
 			}
 		default:
 			err = hes.New(category + " is not support")
+			return
 		}
+		// 判断是否在现有server配置中有使用
+		if shouldBeCheckedByServer && serverConfigs.Exists(category, name) {
+			err = hes.New(name + " of " + category + " is used by server, it can't be delelted")
+			return
+		}
+		// 判断是否有location在使用该upstream
+		if shouldBeCheckedByLocation && locations.Exists(name) {
+			err = hes.New(name + " of " + category + " is used by location, it can't be delelted")
+			return
+		}
+
 		err = iconfig.Delete()
 		if err != nil {
 			return

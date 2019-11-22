@@ -132,6 +132,16 @@ func (locations Locations) Filter(filters ...string) (result Locations) {
 	return
 }
 
+// Exists check the upstream exists
+func (locations Locations) Exists(name string) bool {
+	for _, item := range locations {
+		if item.Upstream == name {
+			return true
+		}
+	}
+	return false
+}
+
 // GetLocations get locations
 // *Location for better performance)
 func GetLocations() (locations Locations, err error) {

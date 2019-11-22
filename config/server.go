@@ -16,7 +16,11 @@
 
 package config
 
-import "time"
+import (
+	"time"
+
+	"github.com/vicanso/pike/util"
+)
 
 // Server server config
 type Server struct {
@@ -61,6 +65,27 @@ func (servers Servers) Get(name string) (s *Server) {
 		}
 	}
 	return
+}
+
+// Exists check the category of config is exists
+func (servers Servers) Exists(category, name string) bool {
+	for _, item := range servers {
+		switch category {
+		case CachesCategory:
+			if item.Cache == name {
+				return true
+			}
+		case CompressCategory:
+			if item.Compress == name {
+				return true
+			}
+		case LocationsCategory:
+			if util.ContainesString(item.Locations, name) {
+				return true
+			}
+		}
+	}
+	return false
 }
 
 // GetServers get all server config
