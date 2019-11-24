@@ -1,18 +1,20 @@
 import React from "react";
 import { Link, withRouter } from "react-router-dom";
-// import request from "axios";
-// import { message } from "antd";
 
 import logo from "../../logo.svg";
 import "./app_header.sass";
 import i18n from "../../i18n";
-import { CACHES_PATH } from "../../paths";
+import { CACHES_PATH, COMPRESSES_PATH } from "../../paths";
 // import { CONFIGS } from "../urls";
 
 const paths = [
   {
     name: i18n("nav.caches"),
     path: CACHES_PATH
+  },
+  {
+    name: i18n("nav.compresses"),
+    path: COMPRESSES_PATH
   }
   // {
   //   name: "Performance"
@@ -38,7 +40,15 @@ class AppHeader extends React.Component {
       }
       return (
         <li key={item.name}>
-          <Link to={item.path} className={className}>
+          <Link
+            to={item.path}
+            className={className}
+            onClick={() => {
+              this.setState({
+                active: index
+              });
+            }}
+          >
             {item.name}
           </Link>
         </li>

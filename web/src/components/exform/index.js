@@ -72,6 +72,10 @@ class ExForm extends React.Component {
       let decorator = null;
       let layout = null;
       const { key, rules } = item;
+      const inputProps = {};
+      if (key === "name" && originalData[key]) {
+        inputProps.disabled = true;
+      }
       switch (item.type) {
         case "textarea":
           decorator = getFieldDecorator(key, {
@@ -82,9 +86,10 @@ class ExForm extends React.Component {
         default:
           decorator = getFieldDecorator(key, {
             rules,
-            initialValue: originalData[key]
+            initialValue: originalData[key] || item.defaultValue
           })(
             <Input
+              {...inputProps}
               placeholder={item.placeholder || ""}
               type={item.type || "text"}
             />
