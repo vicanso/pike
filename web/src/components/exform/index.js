@@ -1,12 +1,105 @@
 import React from "react";
 import PropTypes from "prop-types";
 import _ from "lodash";
-import { Form, Input, Spin, Button, Icon } from "antd";
+import {
+  Form,
+  Input,
+  Spin,
+  Button,
+  Icon,
+  Select,
+  Switch,
+  Row,
+  Col
+} from "antd";
 
 import "./exform.sass";
 import i18n from "../../i18n";
 
 const { TextArea } = Input;
+const { Option } = Select;
+
+class UpstreamServersInput extends React.Component {
+  state = {
+    upstreamServers: null
+  };
+  constructor(props) {
+    super(props);
+    const value = props.value || [];
+    this.state.upstreamServers = value;
+  }
+  handleChange(index, value) {
+    const servers = this.state.upstreamServers.slice(0);
+    servers[index] = _.extend(servers[index], value);
+    this.setState({
+      upstreamServers: servers
+    });
+    const { onChange } = this.props;
+    if (onChange) {
+      onChange(_.filter(servers, item => !!item.addr));
+    }
+  }
+  renderBackend(backend, index) {
+    return (
+      <li key={`backend-${index}`}>
+        <Row gutter={8}>
+          <Col span={19}>
+            <Input
+              onChange={e => {
+                this.handleChange(index, {
+                  addr: e.target.value
+                });
+              }}
+              defaultValue={backend && backend.addr}
+              type="text"
+              placeholder={this.props.placeholder}
+            />
+          </Col>
+          <Col span={3}>
+            <Switch
+              onChange={checked => {
+                this.handleChange(index, {
+                  backup: checked
+                });
+              }}
+              checkedChildren="backup"
+              unCheckedChildren="backup"
+              defaultChecked={backend && backend.backup}
+            />
+          </Col>
+          <Col className="remove" span={2}>
+            <a
+              href="/remove-backend"
+              onClick={e => {
+                e.preventDefault();
+                const arr = this.state.upstreamServers.slice(0);
+                // 为了保证数组的顺序，直接置空，不删除
+                arr[index] = {};
+                this.setState({
+                  upstreamServers: arr
+                });
+              }}
+            >
+              <Icon type="close-circle" />
+            </a>
+          </Col>
+        </Row>
+      </li>
+    );
+  }
+  render() {
+    const { upstreamServers } = this.state;
+    const servers = _.map(upstreamServers, (item, index) => {
+      return this.renderBackend(item, index);
+    });
+    return (
+      <ul className="upstreamServers">
+        {servers}
+        {this.renderBackend(null, servers.length)}
+      </ul>
+    );
+  }
+}
 
 class ExForm extends React.Component {
   state = {
@@ -82,6 +175,23 @@ class ExForm extends React.Component {
             rules,
             initialValue: originalData[key]
           })(<TextArea rows={5} placeholder={item.placeholder || ""} />);
+          break;
+        case "select":
+          const opts = _.map(item.options, item => {
+            return (
+              <Option key={item} value={item}>
+                {item}
+              </Option>
+            );
+          });
+          decorator = getFieldDecorator(key, {
+            initialValue: originalData[key]
+          })(<Select placeholder={item.placeholder || ""}>{opts}</Select>);
+          break;
+        case "upstreamServers":
+          decorator = getFieldDecorator(key, {
+            initialValue: originalData[key]
+          })(<UpstreamServersInput placeholder={item.placeholder || ""} />);
           break;
         default:
           decorator = getFieldDecorator(key, {

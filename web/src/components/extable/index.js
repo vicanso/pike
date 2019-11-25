@@ -75,7 +75,7 @@ class ExTable extends React.Component {
       <div className="ExTable">
         <Spin spinning={submitting}>
           <Table
-            rowKey={rowKey}
+            rowKey={rowKey || "name"}
             className="ExTable"
             dataSource={dataSource}
             columns={cloneColumns}
@@ -89,7 +89,7 @@ class ExTable extends React.Component {
 ExTable.propTypes = {
   columns: PropTypes.array.isRequired,
   dataSource: PropTypes.array,
-  rowKey: PropTypes.string.isRequired,
+  rowKey: PropTypes.string,
   onUpdate: PropTypes.func,
   onDelete: PropTypes.func
 };

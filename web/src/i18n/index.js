@@ -4,11 +4,13 @@ let lang = "en";
 
 const navEn = {
   caches: "Caches",
-  compresses: "Compresses"
+  compresses: "Compresses",
+  upstreams: "Upstreams"
 };
 const navZh = {
   caches: "缓存",
-  compresses: "压缩"
+  compresses: "压缩",
+  upstreams: "Upstreams"
 };
 
 const commonEn = {
@@ -35,7 +37,7 @@ const commonZh = {
 };
 
 // 缓存相关文本配置
-const cachesEn = {
+const cacheEn = {
   createUpdateTitle: "Create or update cache",
   createUpdateDescription:
     "Create or update http cache for pike, the cache's size is zone * size, 1000 * 1000 is suitable for most website. Hit for pass is the ttle for cache's pass status, 300 seconds(5 minutes) is suitable.",
@@ -52,7 +54,7 @@ const cachesEn = {
   hitForPassPlaceholder: "Please input hit for pass ttl for cache",
   hitForPassRequireMessage: "The cache's hit for pass should be gt 0"
 };
-const cachesZh = {
+const cacheZh = {
   createUpdateTitle: "创建或更新缓存",
   createUpdateDescription:
     "创建或更新HTTP缓存，缓存的大小由 zone * size，1000 * 1000已适用于大部分网站。Hit for pass是缓存pass状态的有效期，300秒（5分钟）是比较适合的值。",
@@ -70,7 +72,7 @@ const cachesZh = {
   hitForPassRequireMessage: "hit for pass的有效期必须大于0"
 };
 
-const compressesEn = {
+const compressEn = {
   createUpdateTitle: "Create or update compress",
   createUpdateDescription:
     "Set the compress level, min compress byte's length and compress data content type.",
@@ -88,7 +90,7 @@ const compressesEn = {
     "Please input the regexp for check content type to compress",
   filterRequireMessage: "The content type filter can't be empty!"
 };
-const compressesZh = {
+const compressZh = {
   createUpdateTitle: "创建或更新配置缓存",
   createUpdateDescription:
     "指定HTTP压缩的级别，可限定最少压缩长度以及压缩数据类型。",
@@ -106,18 +108,57 @@ const compressesZh = {
   filterRequireMessage: "内容类型筛选不能为空"
 };
 
+const upstreamEn = {
+  createUpdateTitle: "Create or update upstream",
+  createUpdateDescription:
+    "Set the upstream's address list for location's proxy, the policy of choosing upstream server, and the health check path.",
+  name: "Name",
+  namePlaceHolder: "Please input the name of upstream",
+  nameRequireMessage: "The name of upstream can't be empty!",
+  policy: "Policy",
+  policyPlaceHolder: "Please select the policy of chosing upstream server",
+  servers: "Servers",
+  serverAddrPlaceHolder:
+    "Please input the addreass of upstream server, e.g.: http://127.0.0.1:3000.",
+  serverAddrRequireMessage: "The address of upstream server can't be empty!",
+  backup: "Backup",
+  healthCheck: "Health Check",
+  healthCheckPlaceHolder:
+    "Please input the url path of health check, e.g.: /ping"
+};
+
+const upstreamZh = {
+  createUpdateTitle: "创建或更新Upstream",
+  createUpdateDescription:
+    "设置upstream服务的服务地址列表，相关的选择策略以及健康检测配置。",
+  name: "名称",
+  namePlaceHolder: "请输入upstream的名称",
+  nameRequireMessage: "upstream的名称不能为空！",
+  policy: "策略",
+  policyPlaceHolder: "请选择upstream的选择策略",
+  servers: "服务列表",
+  addr: "地址",
+  serverAddrPlaceHolder: "请输入upstream服务的地址，如：http://127.0.0.1:3000",
+  serverAddrRequireMessage: "upstream服务的地址不能为空！",
+  backup: "备用",
+  healthCheck: "健康检测",
+  healthCheckPlaceHolder: "请输入健康检测的路径，如： /ping"
+};
+
 const i18ns = {
   en: {
     common: commonEn,
     nav: navEn,
-    caches: cachesEn,
-    compresses: compressesEn
+    cache: cacheEn,
+    compress: compressEn,
+    upstream: upstreamEn
   },
   zh: {
     common: commonZh,
     nav: navZh,
-    caches: cachesZh,
-    compresses: compressesZh
+    cache: cacheZh,
+    compress: compressZh,
+    upstream: upstreamZh
   }
 };
 

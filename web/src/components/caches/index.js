@@ -7,21 +7,21 @@ const category = "caches";
 
 const columns = [
   {
-    title: i18n("caches.name"),
+    title: i18n("cache.name"),
     dataIndex: "name"
   },
   {
-    title: i18n("caches.size"),
+    title: i18n("cache.size"),
     dataIndex: "size",
     sorter: (a, b) => a.size - b.size
   },
   {
-    title: i18n("caches.zone"),
+    title: i18n("cache.zone"),
     dataIndex: "zone",
     sorter: (a, b) => a.zone - b.zone
   },
   {
-    title: i18n("caches.hitForPass"),
+    title: i18n("cache.hitForPass"),
     dataIndex: "hitForPass",
     sorter: (a, b) => a.hitForPass - b.hitForPass
   },
@@ -33,49 +33,49 @@ const columns = [
 
 const fields = [
   {
-    label: i18n("caches.name"),
+    label: i18n("cache.name"),
     key: "name",
-    placeholder: i18n("caches.namePlaceholder"),
+    placeholder: i18n("cache.namePlaceholder"),
     rules: [
       {
         required: true,
-        message: i18n("caches.nameRequireMessage")
+        message: i18n("cache.nameRequireMessage")
       }
     ]
   },
   {
-    label: i18n("caches.zone"),
+    label: i18n("cache.zone"),
     key: "zone",
     type: "number",
-    placeholder: i18n("caches.zonePlaceholder"),
+    placeholder: i18n("cache.zonePlaceholder"),
     rules: [
       {
         required: true,
-        message: i18n("caches.zoneRequireMessage")
+        message: i18n("cache.zoneRequireMessage")
       }
     ]
   },
   {
-    label: i18n("caches.size"),
+    label: i18n("cache.size"),
     key: "size",
     type: "number",
-    placeholder: i18n("caches.sizePlaceholder"),
+    placeholder: i18n("cache.sizePlaceholder"),
     rules: [
       {
         required: true,
-        message: i18n("caches.sizeRequireMessage")
+        message: i18n("cache.sizeRequireMessage")
       }
     ]
   },
   {
-    label: i18n("caches.hitForPass"),
+    label: i18n("cache.hitForPass"),
     key: "hitForPass",
     type: "number",
-    placeholder: i18n("caches.hitForPassPlaceholder"),
+    placeholder: i18n("cache.hitForPassPlaceholder"),
     rules: [
       {
         required: true,
-        message: i18n("caches.hitForPassRequireMessage")
+        message: i18n("cache.hitForPassRequireMessage")
       }
     ]
   },
@@ -91,8 +91,8 @@ class Caches extends Configs {
   constructor(props) {
     super(props);
     _.extend(this.state, {
-      title: i18n("caches.createUpdateTitle"),
-      description: i18n("caches.createUpdateDescription"),
+      title: i18n("cache.createUpdateTitle"),
+      description: i18n("cache.createUpdateDescription"),
       category,
       columns,
       fields

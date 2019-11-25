@@ -4,7 +4,7 @@ import { Link, withRouter } from "react-router-dom";
 import logo from "../../logo.svg";
 import "./app_header.sass";
 import i18n from "../../i18n";
-import { CACHES_PATH, COMPRESSES_PATH } from "../../paths";
+import { CACHES_PATH, COMPRESSES_PATH, UPSTREAMS_PATH } from "../../paths";
 // import { CONFIGS } from "../urls";
 
 const paths = [
@@ -15,6 +15,10 @@ const paths = [
   {
     name: i18n("nav.compresses"),
     path: COMPRESSES_PATH
+  },
+  {
+    name: i18n("nav.upstreams"),
+    path: UPSTREAMS_PATH
   }
   // {
   //   name: "Performance"
@@ -31,6 +35,10 @@ class AppHeader extends React.Component {
     active: -1,
     version: ""
   };
+  componentDidMount() {
+    const { location } = this.props;
+    this.changeActive(location.pathname);
+  }
   render() {
     const { active, version } = this.state;
     const arr = paths.map((item, index) => {
