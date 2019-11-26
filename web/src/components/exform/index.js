@@ -19,6 +19,169 @@ import i18n from "../../i18n";
 const { TextArea } = Input;
 const { Option } = Select;
 
+class KeyValueListInput extends React.Component {
+  state = {
+    keyValueList: null
+  };
+  constructor(props) {
+    super(props);
+    const value = props.value || [];
+    const keyValueList = [];
+    _.forEach(value, item => {
+      const arr = item.split(":");
+      keyValueList.push({
+        key: arr[0],
+        value: arr[1]
+      });
+    });
+    if (keyValueList.length === 0) {
+      keyValueList.push(null);
+    }
+    this.state.keyValueList = keyValueList;
+  }
+  handleChange(index, data) {
+    const keyValueList = this.state.keyValueList.slice(0);
+    if (!keyValueList[index]) {
+      keyValueList[index] = {};
+    }
+    _.extend(keyValueList[index], data);
+    this.setState({
+      keyValueList
+    });
+
+    const { onChange } = this.props;
+    if (onChange) {
+      const values = [];
+      _.forEach(keyValueList, item => {
+        if (item.key && item.value) {
+          values.push(`${item.key}:${item.value}`);
+        }
+      });
+      onChange(values);
+    }
+  }
+  renderKeyValue(item, index) {
+    const placeholder = this.props.placeholder || [];
+    return (
+      <div key={`key-value-${index}`}>
+        <Row gutter={8}>
+          <Col span={11}>
+            <Input
+              defaultValue={item && item.key}
+              placeholder={placeholder[0]}
+              type="text"
+              allowClear
+              onChange={e => {
+                this.handleChange(index, {
+                  key: e.target.value
+                });
+              }}
+            />
+          </Col>
+          <Col
+            style={{
+              textAlign: "center"
+            }}
+            span={1}
+          >
+            :
+          </Col>
+          <Col span={12}>
+            <Input
+              defaultValue={item && item.value}
+              placeholder={placeholder[1]}
+              type="text"
+              allowClear
+              onChange={e => {
+                this.handleChange(index, {
+                  value: e.target.value
+                });
+              }}
+            />
+          </Col>
+        </Row>
+      </div>
+    );
+  }
+  render() {
+    const { keyValueList } = this.state;
+    const list = _.map(keyValueList, (item, index) => {
+      return this.renderKeyValue(item, index);
+    });
+    return (
+      <div>
+        {list}
+        <Button
+          onClick={() => {
+            const keyValueList = this.state.keyValueList.slice(0);
+            keyValueList.push({});
+            this.setState({
+              keyValueList
+            });
+          }}
+        >
+          {i18n("common.add").toUpperCase()}
+        </Button>
+      </div>
+    );
+  }
+}
+
+class TextListInput extends React.Component {
+  state = {
+    textList: null
+  };
+  constructor(props) {
+    super(props);
+    const value = props.value || [];
+    if (value.length === 0) {
+      value.push("");
+    }
+    this.state.textList = value;
+  }
+  handleChange(index, value) {
+    const textList = this.state.textList.slice(0);
+    textList[index] = value;
+    const { onChange } = this.props;
+    if (onChange) {
+      onChange(_.filter(textList, item => !!item));
+    }
+  }
+  render() {
+    const { textList } = this.state;
+    const list = _.map(textList, (item, index) => {
+      return (
+        <Input
+          defaultValue={item}
+          key={`text-list-${index}`}
+          type="text"
+          placeholder={this.props.placeholder}
+          allowClear
+          onChange={e => {
+            this.handleChange(index, e.target.value);
+          }}
+        />
+      );
+    });
+    return (
+      <div>
+        {list}
+        <Button
+          onClick={() => {
+            const textList = this.state.textList.slice(0);
+            textList.push("");
+            this.setState({
+              textList
+            });
+          }}
+        >
+          {i18n("common.add").toUpperCase()}
+        </Button>
+      </div>
+    );
+  }
+}
+
 class UpstreamServersInput extends React.Component {
   state = {
     upstreamServers: null
@@ -26,6 +189,9 @@ class UpstreamServersInput extends React.Component {
   constructor(props) {
     super(props);
     const value = props.value || [];
+    if (value.length === 0) {
+      value.push(null);
+    }
     this.state.upstreamServers = value;
   }
   handleChange(index, value) {
@@ -41,9 +207,9 @@ class UpstreamServersInput extends React.Component {
   }
   renderBackend(backend, index) {
     return (
-      <li key={`backend-${index}`}>
+      <div key={`backend-${index}`}>
         <Row gutter={8}>
-          <Col span={19}>
+          <Col span={20}>
             <Input
               onChange={e => {
                 this.handleChange(index, {
@@ -53,6 +219,7 @@ class UpstreamServersInput extends React.Component {
               defaultValue={backend && backend.addr}
               type="text"
               placeholder={this.props.placeholder}
+              allowClear
             />
           </Col>
           <Col span={3}>
@@ -67,24 +234,8 @@ class UpstreamServersInput extends React.Component {
               defaultChecked={backend && backend.backup}
             />
           </Col>
-          <Col className="remove" span={2}>
-            <a
-              href="/remove-backend"
-              onClick={e => {
-                e.preventDefault();
-                const arr = this.state.upstreamServers.slice(0);
-                // 为了保证数组的顺序，直接置空，不删除
-                arr[index] = {};
-                this.setState({
-                  upstreamServers: arr
-                });
-              }}
-            >
-              <Icon type="close-circle" />
-            </a>
-          </Col>
         </Row>
-      </li>
+      </div>
     );
   }
   render() {
@@ -93,10 +244,20 @@ class UpstreamServersInput extends React.Component {
       return this.renderBackend(item, index);
     });
     return (
-      <ul className="upstreamServers">
+      <div className="upstreamServers">
         {servers}
-        {this.renderBackend(null, servers.length)}
-      </ul>
+        <Button
+          onClick={() => {
+            const servers = this.state.upstreamServers.slice(0);
+            servers.push({});
+            this.setState({
+              upstreamServers: servers
+            });
+          }}
+        >
+          {i18n("common.add").toUpperCase()}
+        </Button>
+      </div>
     );
   }
 }
@@ -169,12 +330,16 @@ class ExForm extends React.Component {
       if (key === "name" && originalData[key]) {
         inputProps.disabled = true;
       }
+      const decoratorOpts = {
+        rules,
+        initialValue: originalData[key] || item.defaultValue
+      };
       switch (item.type) {
         case "textarea":
-          decorator = getFieldDecorator(key, {
-            rules,
-            initialValue: originalData[key]
-          })(<TextArea rows={5} placeholder={item.placeholder || ""} />);
+          decorator = getFieldDecorator(
+            key,
+            decoratorOpts
+          )(<TextArea rows={5} placeholder={item.placeholder || ""} />);
           break;
         case "select":
           const opts = _.map(item.options, item => {
@@ -184,20 +349,34 @@ class ExForm extends React.Component {
               </Option>
             );
           });
-          decorator = getFieldDecorator(key, {
-            initialValue: originalData[key]
-          })(<Select placeholder={item.placeholder || ""}>{opts}</Select>);
+          decorator = getFieldDecorator(
+            key,
+            decoratorOpts
+          )(<Select placeholder={item.placeholder || ""}>{opts}</Select>);
           break;
         case "upstreamServers":
-          decorator = getFieldDecorator(key, {
-            initialValue: originalData[key]
-          })(<UpstreamServersInput placeholder={item.placeholder || ""} />);
+          decorator = getFieldDecorator(
+            key,
+            decoratorOpts
+          )(<UpstreamServersInput placeholder={item.placeholder || ""} />);
+          break;
+        case "textList":
+          decorator = getFieldDecorator(
+            key,
+            decoratorOpts
+          )(<TextListInput placeholder={item.placeholder} />);
+          break;
+        case "keyValueList":
+          decorator = getFieldDecorator(
+            key,
+            decoratorOpts
+          )(<KeyValueListInput placeholder={item.placeholder} />);
           break;
         default:
-          decorator = getFieldDecorator(key, {
-            rules,
-            initialValue: originalData[key] || item.defaultValue
-          })(
+          decorator = getFieldDecorator(
+            key,
+            decoratorOpts
+          )(
             <Input
               {...inputProps}
               placeholder={item.placeholder || ""}

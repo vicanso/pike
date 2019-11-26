@@ -5,12 +5,14 @@ let lang = "en";
 const navEn = {
   caches: "Caches",
   compresses: "Compresses",
-  upstreams: "Upstreams"
+  upstreams: "Upstreams",
+  locations: "Locations"
 };
 const navZh = {
   caches: "缓存",
   compresses: "压缩",
-  upstreams: "Upstreams"
+  upstreams: "Upstreams",
+  locations: "Locations"
 };
 
 const commonEn = {
@@ -118,6 +120,7 @@ const upstreamEn = {
   policy: "Policy",
   policyPlaceHolder: "Please select the policy of chosing upstream server",
   servers: "Servers",
+  serversRequireMessage: "The servers of upstream can't be empty!",
   serverAddrPlaceHolder:
     "Please input the addreass of upstream server, e.g.: http://127.0.0.1:3000.",
   serverAddrRequireMessage: "The address of upstream server can't be empty!",
@@ -126,7 +129,6 @@ const upstreamEn = {
   healthCheckPlaceHolder:
     "Please input the url path of health check, e.g.: /ping"
 };
-
 const upstreamZh = {
   createUpdateTitle: "创建或更新Upstream",
   createUpdateDescription:
@@ -137,6 +139,7 @@ const upstreamZh = {
   policy: "策略",
   policyPlaceHolder: "请选择upstream的选择策略",
   servers: "服务列表",
+  serversRequireMessage: "服务器列表不能为空！",
   addr: "地址",
   serverAddrPlaceHolder: "请输入upstream服务的地址，如：http://127.0.0.1:3000",
   serverAddrRequireMessage: "upstream服务的地址不能为空！",
@@ -145,20 +148,67 @@ const upstreamZh = {
   healthCheckPlaceHolder: "请输入健康检测的路径，如： /ping"
 };
 
+const locationEn = {
+  createUpdateTitle: "Create or update location",
+  createUpdateDescription:
+    "Create or update location for http server, include hosts, prefixs, upstream, request header and response header.",
+  name: "Name",
+  namePlaceHolder: "Please input the name of location",
+  nameRequireMessage: "The name of location can't be empty!",
+  upstream: "Upstream",
+  upstreamPlaceHolder: "Please select the upstream of location",
+  upstreamRequireMessage: "The upstream of location can't be empty!",
+  hosts: "Hosts",
+  hostsPlaceHolder: "Please input the host for location, optional",
+  prefixs: "Prefixs",
+  prefixsPlaceHolder: "Please input the prefix for location, optional",
+  rewrites: "URL Rewrites",
+  rewriteOriginalPlaceHolder: "Please input the original url",
+  rewriteNewPlaceHolder: "Please input the rewrite url",
+  reqHeader: "Request Header",
+  resHeader: "Response Header",
+  headerNamePlaceHolder: "Please input the header's name",
+  headerValuePlaceHolder: "Please input the header's value"
+};
+const locationZh = {
+  createUpdateTitle: "创建或更新location",
+  createUpdateDescription:
+    "创建或更新用于HTTP服务的location，包括host列表，url前缀列表，upstream、请求头与响应头等。",
+  name: "名称",
+  namePlaceHolder: "请输入location的名称",
+  nameRequireMessage: "location的名称不能为空！",
+  upstream: "Upstream",
+  upstreamPlaceHolder: "请选择该location的upstream",
+  upstreamRequireMessage: "该location的upstream不能为空！",
+  hosts: "Hosts",
+  hostsPlaceHolder: "请输入该location使用的host，可选",
+  prefixs: "前缀",
+  prefixsPlaceHolder: "请输入该location的URL前缀，可选",
+  rewrites: "URL重写",
+  rewriteOriginalPlaceHolder: "请输入原始URL",
+  rewriteNewPlaceHolder: "请输入重写的URL",
+  reqHeader: "请求头",
+  resHeader: "响应头",
+  headerNamePlaceHolder: "请输入HTTP头的名称",
+  headerValuePlaceHolder: "请输入HTTP头的值"
+};
+
 const i18ns = {
   en: {
     common: commonEn,
     nav: navEn,
     cache: cacheEn,
     compress: compressEn,
-    upstream: upstreamEn
+    upstream: upstreamEn,
+    location: locationEn
   },
   zh: {
     common: commonZh,
     nav: navZh,
     cache: cacheZh,
     compress: compressZh,
-    upstream: upstreamZh
+    upstream: upstreamZh,
+    location: locationZh
   }
 };
 

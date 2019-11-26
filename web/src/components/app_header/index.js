@@ -4,8 +4,12 @@ import { Link, withRouter } from "react-router-dom";
 import logo from "../../logo.svg";
 import "./app_header.sass";
 import i18n from "../../i18n";
-import { CACHES_PATH, COMPRESSES_PATH, UPSTREAMS_PATH } from "../../paths";
-// import { CONFIGS } from "../urls";
+import {
+  CACHES_PATH,
+  COMPRESSES_PATH,
+  UPSTREAMS_PATH,
+  LOCATIONS_PATH
+} from "../../paths";
 
 const paths = [
   {
@@ -19,6 +23,10 @@ const paths = [
   {
     name: i18n("nav.upstreams"),
     path: UPSTREAMS_PATH
+  },
+  {
+    name: i18n("nav.locations"),
+    path: LOCATIONS_PATH
   }
   // {
   //   name: "Performance"

@@ -58,7 +58,13 @@ const fields = [
     label: i18n("upstream.servers"),
     key: "servers",
     type: "upstreamServers",
-    placeholder: i18n("upstream.serverAddrPlaceHolder")
+    placeholder: i18n("upstream.serverAddrPlaceHolder"),
+    rules: [
+      {
+        required: true,
+        message: i18n("upstream.serversRequireMessage")
+      }
+    ]
   },
   {
     label: i18n("upstream.policy"),
