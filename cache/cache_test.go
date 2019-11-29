@@ -16,11 +16,8 @@ package cache
 
 import (
 	"crypto/sha256"
-	"encoding/binary"
-	"encoding/hex"
 	"testing"
 
-	"github.com/minio/highwayhash"
 	"github.com/stretchr/testify/assert"
 	"github.com/vicanso/pike/config"
 )
@@ -34,14 +31,10 @@ func BenchmarkSha256(b *testing.B) {
 	}
 }
 
-func BenchmarkHighwayHash(b *testing.B) {
+func BenchmarkMemhash(b *testing.B) {
 	data := []byte("GET tiny.aslant.site /users/v1/login-token?type=vip")
-
-	key, _ := hex.DecodeString("000102030405060708090A0B0C0D0E0FF0E0D0C0B0A090807060504030201000") // use your own key here
-
 	for i := 0; i < b.N; i++ {
-		buf := highwayhash.Sum128(data, key)
-		binary.LittleEndian.Uint16(buf[:2])
+		MemHash(data)
 	}
 }
 

@@ -201,3 +201,8 @@ func (hc *HTTPCache) Cachable(ttl int, httpData *HTTPData) {
 		ch <- struct{}{}
 	}
 }
+
+// Age get the http cache's age
+func (hc *HTTPCache) Age() int {
+	return int(time.Now().Unix()) - hc.createdAt
+}

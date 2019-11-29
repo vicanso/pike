@@ -11,7 +11,6 @@ require (
 	github.com/go-yaml/yaml v2.1.0+incompatible
 	github.com/gogo/protobuf v1.3.0 // indirect
 	github.com/google/uuid v1.1.1 // indirect
-	github.com/minio/highwayhash v1.0.0
 	github.com/stretchr/testify v1.4.0
 	github.com/vicanso/elton v0.2.1
 	github.com/vicanso/elton-body-parser v0.1.5

@@ -91,6 +91,10 @@ func NewInstance() (ins *Instance, err error) {
 	for _, conf := range serversConfig {
 		result := locationsConfig.Filter(conf.Locations...)
 		dispatcher := dispatchers.Get(conf.Cache)
+		// 如果无dispatcher，则不初始化该server
+		if dispatcher == nil {
+			continue
+		}
 		srv := NewServer(conf, result, upstreams, dispatcher, compressesConfig.Get(conf.Compress))
 		servers.Store(conf.Name, srv)
 	}

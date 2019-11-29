@@ -39,6 +39,8 @@ const (
 
 	// 默认的 admin 目录
 	defaultAdminPath = "/pike"
+
+	headerAge = "Age"
 )
 
 var (
@@ -144,7 +146,7 @@ func getCacheAge(header http.Header) int {
 	}
 
 	// 如果有设置了 age 字段，则最大缓存时长减少
-	age := header.Get("Age")
+	age := header.Get(headerAge)
 	if age != "" {
 		v, _ := strconv.Atoi(age)
 		maxAge -= v
@@ -156,7 +158,7 @@ func getCacheAge(header http.Header) int {
 func createCompressHandler(compressConfig *config.Compress) CompressHandler {
 	// 前置已针对未支持的encoding过滤，因此data只可能为未压缩或者gzip数据
 	var filter *regexp.Regexp
-	if compressConfig.Filter != "" {
+	if compressConfig != nil && compressConfig.Filter != "" {
 		filter, _ = regexp.Compile(compressConfig.Filter)
 	}
 	return func(c *elton.Context, data []byte, ignoreHeader bool) (httpData *cache.HTTPData) {
@@ -205,6 +207,7 @@ func NewElton(eltonConfig *EltonConfig) *elton.Elton {
 
 	// 未处理错误
 	e.OnError(func(c *elton.Context, err error) {
+		// TODO 是否针对异常输出日志
 		status, _ := c.Get(statusKey).(int)
 		if status == cache.StatusFetching {
 			httpCache, _ := c.Get(httpCacheKey).(*cache.HTTPCache)
@@ -250,6 +253,11 @@ func NewElton(eltonConfig *EltonConfig) *elton.Elton {
 		status, httpData := httpCache.Get()
 		if status == cache.StatusCachable {
 			httpData.SetResponse(c)
+			// 设置Age
+			age := httpCache.Age()
+			if age > 0 {
+				c.SetHeader(headerAge, strconv.Itoa(age))
+			}
 			return
 		}
 
