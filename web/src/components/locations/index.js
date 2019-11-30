@@ -117,7 +117,7 @@ const fields = [
 class Locations extends Configs {
   constructor(props) {
     super(props);
-    _.extend(this.state, {
+    _.assignIn(this.state, {
       title: i18n("location.createUpdateTitle"),
       description: i18n("location.createUpdateDescription"),
       category,

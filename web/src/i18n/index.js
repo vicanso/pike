@@ -6,16 +6,21 @@ const navEn = {
   caches: "Caches",
   compresses: "Compresses",
   upstreams: "Upstreams",
-  locations: "Locations"
+  locations: "Locations",
+  servers: "Servers"
 };
 const navZh = {
   caches: "缓存",
   compresses: "压缩",
   upstreams: "Upstreams",
-  locations: "Locations"
+  locations: "Locations",
+  servers: "HTTP服务器"
 };
 
 const commonEn = {
+  second: "s",
+  minute: "m",
+  hour: "h",
   action: "Action",
   description: "Description",
   descriptionPlaceholder: "Please input the description",
@@ -27,6 +32,9 @@ const commonEn = {
   deleteTips: "Are you sure to delete this config?"
 };
 const commonZh = {
+  second: "秒",
+  minute: "分",
+  hour: "时",
   action: "操作",
   description: "描述",
   descriptionPlaceholder: "请输入描述",
@@ -47,7 +55,7 @@ const cacheEn = {
   namePlaceholder: "Please input the cache's name",
   nameRequireMessage: "The cache's name can't be empty!",
   zone: "Zone Size",
-  zonePlaceholder: "Please input the cache's zone size",
+  zonePlaceholder: "Please input the cache's zone size, 256 may be good",
   zoneRequireMessage: "The cache's zone size should be gt 0",
   size: "Size",
   sizePlaceholder: "Please input the cache's size",
@@ -67,7 +75,7 @@ const cacheZh = {
   zonePlaceholder: "请输入缓存空间的长度",
   zoneRequireMessage: "缓存空间的长度必须大于0",
   size: "大小",
-  sizePlaceholder: "请输入缓存的长度",
+  sizePlaceholder: "请输入缓存的长度，建议设置为256",
   sizeRequireMessage: "缓存的长度必须大于0",
   hitForPass: "Hit For Pass",
   hitForPassPlaceholder: "请输入hit for pass的有效期",
@@ -193,6 +201,70 @@ const locationZh = {
   headerValuePlaceHolder: "请输入HTTP头的值"
 };
 
+const serverEn = {
+  createUpdateTitle: "Create or update http server",
+  createUpdateDescription:
+    "Create or update http server, the listen address and port shouldn't be used.",
+  name: "Name",
+  namePlaceHolder: "Please input the name of http server",
+  nameRequireMessage: "The name of http server can't be empty!",
+  cache: "Cache",
+  cachePlaceHolder: "Please select the cache config for http server",
+  cacheRequireMessage: "The cache config for http server can't be empty!",
+  compress: "Compress",
+  compressPlaceHolder: "Please select the compress config for http server",
+  compressRequireMessage: "The compress config for http server can't be empty!",
+  locations: "Locations",
+  locationsPlaceHolder: "Please select the locations config for http server",
+  locationsRequireMesage:
+    "The locations config for http server can't be empty!",
+  etag: "ETag",
+  addr: "Address",
+  addrPlaceHolder: "Please input the listen address for http server",
+  addrRequireMessage: "The listen address can't be empty!",
+  concurrency: "Concurrency",
+  concurrencyPlaceHolder: "Please input the limit concurrency",
+  readTimeout: "ReadTimeout",
+  readTimeoutPlaceHolder: "Please input the read timeout",
+  writeTimeout: "WriteTimeout",
+  writeTimeoutPlaceHolder: "Please input the write timeout",
+  idleTimeout: "IdleTimeout",
+  idleTimeoutPlaceHolder: "Please input the idle timeout",
+  maxHeaderBytes: "MaxHeaderBytes",
+  maxHeaderBytesPlaceHolder: "Please input the max header bytes limit"
+};
+const serverZh = {
+  createUpdateTitle: "创建或更新HTTP服务器",
+  createUpdateDescription:
+    "创建或更新HTTP服务器，其中监听的地址与端口必须未被使用的。",
+  name: "名称",
+  namePlaceHolder: "请输入HTTP服务器的名称",
+  nameRequireMessage: "HTTP服务器的名称不能为空！",
+  cache: "缓存",
+  cachePlaceHolder: "请选择HTTP服务器使用的缓存配置",
+  cacheRequireMessage: "HTTP服务器的缓存配置不能为空!",
+  compress: "压缩",
+  compressPlaceHolder: "请选择HTTP服务器使用的压缩配置",
+  compressRequireMessage: "HTTP服务器的压缩配置不能为空！",
+  locations: "locations",
+  locationsPlaceHolder: "请选择HTTP服务器使用的locations配置",
+  locationsRequireMesage: "HTTP服务器的locations配置不能为空",
+  etag: "ETag",
+  addr: "监听地址",
+  addrPlaceHolder: "请输入HTTP服务器的监听地址",
+  addrRequireMessage: "HTTP服务器监听地址不能为空！",
+  concurrency: "并发数",
+  concurrencyPlaceHolder: "请输入并发数限制",
+  readTimeout: "读超时",
+  readTimeoutPlaceHolder: "请输入读超时参数",
+  writeTimeout: "写超时",
+  writeTimeoutPlaceHolder: "请输入写超时参数",
+  idleTimeout: "空闲超时",
+  idleTimeoutPlaceHolder: "请输入空闲超时参数",
+  maxHeaderBytes: "最大请求头长度",
+  maxHeaderBytesPlaceHolder: "请输入最大请求头长度限制参数"
+};
+
 const i18ns = {
   en: {
     common: commonEn,
@@ -200,7 +272,8 @@ const i18ns = {
     cache: cacheEn,
     compress: compressEn,
     upstream: upstreamEn,
-    location: locationEn
+    location: locationEn,
+    server: serverEn
   },
   zh: {
     common: commonZh,
@@ -208,7 +281,8 @@ const i18ns = {
     cache: cacheZh,
     compress: compressZh,
     upstream: upstreamZh,
-    location: locationZh
+    location: locationZh,
+    server: serverZh
   }
 };
 

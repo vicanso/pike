@@ -90,7 +90,7 @@ const fields = [
 class Caches extends Configs {
   constructor(props) {
     super(props);
-    _.extend(this.state, {
+    _.assignIn(this.state, {
       title: i18n("cache.createUpdateTitle"),
       description: i18n("cache.createUpdateDescription"),
       category,

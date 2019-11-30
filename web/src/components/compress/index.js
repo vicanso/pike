@@ -89,7 +89,7 @@ const fields = [
 class Compresses extends Configs {
   constructor(props) {
     super(props);
-    _.extend(this.state, {
+    _.assignIn(this.state, {
       title: i18n("compress.createUpdateTitle"),
       description: i18n("compress.createUpdateDescription"),
       category,

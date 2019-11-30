@@ -15,9 +15,95 @@ import {
 
 import "./exform.sass";
 import i18n from "../../i18n";
+import { durationToNumber, divideDuration } from "../../util";
 
 const { TextArea } = Input;
 const { Option } = Select;
+
+class DurationInput extends React.Component {
+  state = {
+    units: [
+      {
+        desc: i18n("common.second"),
+        type: "s"
+      },
+      {
+        desc: i18n("common.minute"),
+        type: "m"
+      }
+    ],
+    unit: "",
+    value: 0
+  };
+  constructor(props) {
+    super(props);
+    if (props.value) {
+      const result = divideDuration(props.value);
+      _.assignIn(this.state, result);
+    } else {
+      this.state.unit = this.state.units[0].type;
+    }
+  }
+  handleChange() {
+    const { unit, value } = this.state;
+    let duration = 0;
+    const { onChange } = this.props;
+    if (onChange) {
+      if (unit && value) {
+        duration = durationToNumber(value + unit);
+      }
+      onChange(duration);
+    }
+  }
+  render() {
+    const { props } = this;
+    const { units, unit, value } = this.state;
+    const selectItems = _.map(units, item => {
+      return (
+        <Option key={item.type} value={item.type}>
+          {item.desc}
+        </Option>
+      );
+    });
+    const selectAfter = (
+      <Select
+        style={{
+          padding: "0 3px"
+        }}
+        defaultValue={unit}
+        onChange={value => {
+          this.setState(
+            {
+              unit: value
+            },
+            () => this.handleChange()
+          );
+        }}
+      >
+        {selectItems}
+      </Select>
+    );
+    return (
+      <div>
+        <Input
+          type="number"
+          allowClear
+          onChange={e => {
+            this.setState(
+              {
+                value: e.target.valueAsNumber
+              },
+              () => this.handleChange()
+            );
+          }}
+          defaultValue={value}
+          addonAfter={selectAfter}
+          placeholder={props.placeholder}
+        />
+      </div>
+    );
+  }
+}
 
 class KeyValueListInput extends React.Component {
   state = {
@@ -44,7 +130,7 @@ class KeyValueListInput extends React.Component {
     if (!keyValueList[index]) {
       keyValueList[index] = {};
     }
-    _.extend(keyValueList[index], data);
+    _.assignIn(keyValueList[index], data);
     this.setState({
       keyValueList
     });
@@ -196,7 +282,7 @@ class UpstreamServersInput extends React.Component {
   }
   handleChange(index, value) {
     const servers = this.state.upstreamServers.slice(0);
-    servers[index] = _.extend(servers[index], value);
+    servers[index] = _.assignIn(servers[index], value);
     this.setState({
       upstreamServers: servers
     });
@@ -276,7 +362,10 @@ class ExForm extends React.Component {
       _.forEach(fields, item => {
         const { key, type } = item;
         if (type === "number" && values[key]) {
-          values[key] = Number(values[key]);
+          const v = values[key];
+          if (v) {
+            values[key] = Number(v);
+          }
         }
       });
       const done = () => {
@@ -352,7 +441,15 @@ class ExForm extends React.Component {
           decorator = getFieldDecorator(
             key,
             decoratorOpts
-          )(<Select placeholder={item.placeholder || ""}>{opts}</Select>);
+          )(
+            <Select
+              allowClear
+              mode={item.mode}
+              placeholder={item.placeholder || ""}
+            >
+              {opts}
+            </Select>
+          );
           break;
         case "upstreamServers":
           decorator = getFieldDecorator(
@@ -372,17 +469,36 @@ class ExForm extends React.Component {
             decoratorOpts
           )(<KeyValueListInput placeholder={item.placeholder} />);
           break;
+        case "switch":
+          decorator = getFieldDecorator(
+            key,
+            _.assignIn(
+              {
+                valuePropName: "checked"
+              },
+              decoratorOpts
+            )
+          )(<Switch />);
+          break;
+        case "duration":
+          decorator = getFieldDecorator(
+            key,
+            decoratorOpts
+          )(<DurationInput placeholder={item.placeholder} />);
+          break;
         default:
           decorator = getFieldDecorator(
             key,
             decoratorOpts
           )(
             <Input
+              allowClear
               {...inputProps}
               placeholder={item.placeholder || ""}
               type={item.type || "text"}
             />
           );
+          break;
       }
       return (
         <Form.Item label={item.label} key={item.key} {...layout}>

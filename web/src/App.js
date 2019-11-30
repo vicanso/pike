@@ -7,11 +7,13 @@ import {
   COMPRESSES_PATH,
   UPSTREAMS_PATH,
   LOCATIONS_PATH,
+  SERVERS_PATH,
 } from "./paths";
 import Caches from "./components/caches";
 import Compresses from "./components/compress";
 import Upstreams from "./components/upstreams";
 import Locations from "./components/locations";
+import Servers from "./components/servers";
 
 function App() {
   return (
@@ -23,6 +25,7 @@ function App() {
           <Route path={COMPRESSES_PATH} component={Compresses} />
           <Route path={UPSTREAMS_PATH} component={Upstreams} />
           <Route path={LOCATIONS_PATH} component={Locations} />
+          <Route path={SERVERS_PATH} component={Servers} />
         </div>
       </HashRouter>
     </div>

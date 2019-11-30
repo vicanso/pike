@@ -89,7 +89,7 @@ const fields = [
 class Upstreams extends Configs {
   constructor(props) {
     super(props);
-    _.extend(this.state, {
+    _.assignIn(this.state, {
       title: i18n("upstream.createUpdateTitle"),
       description: i18n("upstream.createUpdateDescription"),
       category,
