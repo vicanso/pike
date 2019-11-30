@@ -45,7 +45,6 @@ const columns = [
     title: i18n("server.etag"),
     dataIndex: "eTag",
     render: row => {
-      console.dir(row);
       return <Switch disabled={true} defaultChecked={row} />;
     }
   },

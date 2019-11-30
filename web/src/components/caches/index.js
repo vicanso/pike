@@ -44,18 +44,6 @@ const fields = [
     ]
   },
   {
-    label: i18n("cache.zone"),
-    key: "zone",
-    type: "number",
-    placeholder: i18n("cache.zonePlaceholder"),
-    rules: [
-      {
-        required: true,
-        message: i18n("cache.zoneRequireMessage")
-      }
-    ]
-  },
-  {
     label: i18n("cache.size"),
     key: "size",
     type: "number",
@@ -64,6 +52,18 @@ const fields = [
       {
         required: true,
         message: i18n("cache.sizeRequireMessage")
+      }
+    ]
+  },
+  {
+    label: i18n("cache.zone"),
+    key: "zone",
+    type: "number",
+    placeholder: i18n("cache.zonePlaceholder"),
+    rules: [
+      {
+        required: true,
+        message: i18n("cache.zoneRequireMessage")
       }
     ]
   },

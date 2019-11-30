@@ -1,9 +1,10 @@
 import React from "react";
 import { Link, withRouter } from "react-router-dom";
+import { Menu, Dropdown, Icon } from "antd";
 
 import logo from "../../logo.svg";
 import "./app_header.sass";
-import i18n from "../../i18n";
+import i18n, { changeToEnglish, changeToChinese } from "../../i18n";
 import {
   CACHES_PATH,
   COMPRESSES_PATH,
@@ -52,6 +53,45 @@ class AppHeader extends React.Component {
     const { location } = this.props;
     this.changeActive(location.pathname);
   }
+  renderLanguageSelector() {
+    const menu = (
+      <Menu>
+        <Menu.Item>
+          <a
+            href="/en"
+            onClick={e => {
+              e.preventDefault();
+              changeToEnglish();
+              window.location.reload();
+            }}
+          >
+            English
+          </a>
+        </Menu.Item>
+        <Menu.Item>
+          <a
+            href="/zh"
+            onClick={e => {
+              e.preventDefault();
+              changeToChinese();
+              window.location.reload();
+            }}
+          >
+            中文
+          </a>
+        </Menu.Item>
+      </Menu>
+    );
+    return (
+      <div className="langSelector">
+        <Dropdown overlay={menu}>
+          <span>
+            {i18n("common.lang")} <Icon type="down" />
+          </span>
+        </Dropdown>
+      </div>
+    );
+  }
   render() {
     const { active, version } = this.state;
     const arr = paths.map((item, index) => {
@@ -75,6 +115,7 @@ class AppHeader extends React.Component {
         </li>
       );
     });
+
     return (
       <div className="AppHeader clearfix">
         <div className="logo">
@@ -82,6 +123,7 @@ class AppHeader extends React.Component {
           Pike
           {version && <span className="version">{version}</span>}
         </div>
+        {this.renderLanguageSelector()}
         <ul className="functions">{arr}</ul>
       </div>
     );

@@ -1,6 +1,8 @@
 import _ from "lodash";
 
-let lang = "en";
+const key = "language";
+
+const lang = localStorage.getItem(key) || "en";
 
 const navEn = {
   caches: "Caches",
@@ -18,6 +20,7 @@ const navZh = {
 };
 
 const commonEn = {
+  lang: "Language",
   second: "s",
   minute: "m",
   hour: "h",
@@ -32,6 +35,7 @@ const commonEn = {
   deleteTips: "Are you sure to delete this config?"
 };
 const commonZh = {
+  lang: "语言",
   second: "秒",
   minute: "分",
   hour: "时",
@@ -50,15 +54,15 @@ const commonZh = {
 const cacheEn = {
   createUpdateTitle: "Create or update cache",
   createUpdateDescription:
-    "Create or update http cache for pike, the cache's size is zone * size, 1000 * 1000 is suitable for most website. Hit for pass is the ttle for cache's pass status, 300 seconds(5 minutes) is suitable.",
+    "Create or update http cache for pike, the max size of cache is zone * size, 256 * 1000 is suitable for most website. Hit for pass is the ttl for cache's pass status, 300 seconds(5 minutes) is suitable.",
   name: "Name",
-  namePlaceholder: "Please input the cache's name",
+  namePlaceholder: "Please input the cache's name, only support alphabets",
   nameRequireMessage: "The cache's name can't be empty!",
   zone: "Zone Size",
-  zonePlaceholder: "Please input the cache's zone size, 256 may be good",
+  zonePlaceholder: "Please input the cache's zone size",
   zoneRequireMessage: "The cache's zone size should be gt 0",
   size: "Size",
-  sizePlaceholder: "Please input the cache's size",
+  sizePlaceholder: "Please input the cache's size, 256 is suitable.",
   sizeRequireMessage: "The cache's size should be gt 0",
   hitForPass: "Hit For Pass",
   hitForPassPlaceholder: "Please input hit for pass ttl for cache",
@@ -67,9 +71,9 @@ const cacheEn = {
 const cacheZh = {
   createUpdateTitle: "创建或更新缓存",
   createUpdateDescription:
-    "创建或更新HTTP缓存，缓存的大小由 zone * size，1000 * 1000已适用于大部分网站。Hit for pass是缓存pass状态的有效期，300秒（5分钟）是比较适合的值。",
+    "创建或更新HTTP缓存，缓存的最大长度是 zone * size，256 * 1000已适用于大部分网站。Hit for pass是缓存pass状态的有效期，300秒（5分钟）是比较适合的值。",
   name: "名称",
-  namePlaceholder: "缓存的名称",
+  namePlaceholder: "请输入缓存的名称，只支持字母",
   nameRequireMessage: "缓存的名称不能为空",
   zone: "空间大小",
   zonePlaceholder: "请输入缓存空间的长度",
@@ -87,13 +91,14 @@ const compressEn = {
   createUpdateDescription:
     "Set the compress level, min compress byte's length and compress data content type.",
   name: "Name",
-  namePlaceHolder: "Please input the compress's name",
+  namePlaceHolder: "Please input the compress's name, only support alphabets",
   nameRequireMessage: "The compress's name can't be empty!",
   level: "Level",
-  levelPlaceHolder: "Please input the compress's level",
+  levelPlaceHolder: "Please input the compress's level, 9 is better",
   levelRequireMessage: "The compress level can't be empty!",
   minLength: "Min Length",
-  minLengthPlaceHolder: "Please input the min byte's length to compress",
+  minLengthPlaceHolder:
+    "Please input the min byte's length to compress, 1024 is better",
   minLengthRequireMessage: "The min length can't be empty!",
   filter: "Filter",
   filterPlaceHolder:
@@ -103,16 +108,16 @@ const compressEn = {
 const compressZh = {
   createUpdateTitle: "创建或更新配置缓存",
   createUpdateDescription:
-    "指定HTTP压缩的级别，可限定最少压缩长度以及压缩数据类型。",
+    "指定HTTP压缩的级别，可限定最小压缩长度以及压缩数据类型。",
   name: "名称",
-  namePlaceHolder: "请输入压缩配置的名称",
+  namePlaceHolder: "请输入压缩配置的名称，仅支持字母",
   nameRequireMessage: "压缩配置的名称不能为空",
   level: "压缩等级",
-  levelPlaceHolder: "请输入压缩的级别",
+  levelPlaceHolder: "请输入压缩的级别，9为比较合适的压缩级别",
   levelRequireMessage: "压缩级别不能为空",
-  minLength: "压缩最少长度",
-  minLengthPlaceHolder: "请输入的最少字节长度",
-  minLengthRequireMessage: "最少字节长度不能为空",
+  minLength: "压缩最小长度",
+  minLengthPlaceHolder: "请输入的最小字节长度，1024为比较合适的最小长度",
+  minLengthRequireMessage: "最小字节长度不能为空",
   filter: "筛选",
   filterPlaceHolder: "请输入对响应内容筛选的正式表达式，默认为text|json",
   filterRequireMessage: "内容类型筛选不能为空"
@@ -123,26 +128,25 @@ const upstreamEn = {
   createUpdateDescription:
     "Set the upstream's address list for location's proxy, the policy of choosing upstream server, and the health check path.",
   name: "Name",
-  namePlaceHolder: "Please input the name of upstream",
+  namePlaceHolder: "Please input the name of upstream, only support alphabets",
   nameRequireMessage: "The name of upstream can't be empty!",
   policy: "Policy",
   policyPlaceHolder: "Please select the policy of chosing upstream server",
   servers: "Servers",
   serversRequireMessage: "The servers of upstream can't be empty!",
   serverAddrPlaceHolder:
-    "Please input the addreass of upstream server, e.g.: http://127.0.0.1:3000.",
+    "Please input the addreass of upstream server, eg: http://127.0.0.1:3000.",
   serverAddrRequireMessage: "The address of upstream server can't be empty!",
   backup: "Backup",
   healthCheck: "Health Check",
-  healthCheckPlaceHolder:
-    "Please input the url path of health check, e.g.: /ping"
+  healthCheckPlaceHolder: "Please input the url path of health check, eg: /ping"
 };
 const upstreamZh = {
   createUpdateTitle: "创建或更新Upstream",
   createUpdateDescription:
     "设置upstream服务的服务地址列表，相关的选择策略以及健康检测配置。",
   name: "名称",
-  namePlaceHolder: "请输入upstream的名称",
+  namePlaceHolder: "请输入upstream的名称，仅支持字母",
   nameRequireMessage: "upstream的名称不能为空！",
   policy: "策略",
   policyPlaceHolder: "请选择upstream的选择策略",
@@ -161,7 +165,7 @@ const locationEn = {
   createUpdateDescription:
     "Create or update location for http server, include hosts, prefixs, upstream, request header and response header.",
   name: "Name",
-  namePlaceHolder: "Please input the name of location",
+  namePlaceHolder: "Please input the name of location, only support alphabets",
   nameRequireMessage: "The name of location can't be empty!",
   upstream: "Upstream",
   upstreamPlaceHolder: "Please select the upstream of location",
@@ -171,19 +175,19 @@ const locationEn = {
   prefixs: "Prefixs",
   prefixsPlaceHolder: "Please input the prefix for location, optional",
   rewrites: "URL Rewrites",
-  rewriteOriginalPlaceHolder: "Please input the original url",
-  rewriteNewPlaceHolder: "Please input the rewrite url",
+  rewriteOriginalPlaceHolder: "Please input the original url, eg: /api/*",
+  rewriteNewPlaceHolder: "Please input the rewrite url, eg: /$1",
   reqHeader: "Request Header",
   resHeader: "Response Header",
-  headerNamePlaceHolder: "Please input the header's name",
-  headerValuePlaceHolder: "Please input the header's value"
+  headerNamePlaceHolder: "Please input the header's name, eg: X-Request-ID",
+  headerValuePlaceHolder: "Please input the header's value eg: 1001"
 };
 const locationZh = {
   createUpdateTitle: "创建或更新location",
   createUpdateDescription:
     "创建或更新用于HTTP服务的location，包括host列表，url前缀列表，upstream、请求头与响应头等。",
   name: "名称",
-  namePlaceHolder: "请输入location的名称",
+  namePlaceHolder: "请输入location的名称，仅支持字母",
   nameRequireMessage: "location的名称不能为空！",
   upstream: "Upstream",
   upstreamPlaceHolder: "请选择该location的upstream",
@@ -193,12 +197,12 @@ const locationZh = {
   prefixs: "前缀",
   prefixsPlaceHolder: "请输入该location的URL前缀，可选",
   rewrites: "URL重写",
-  rewriteOriginalPlaceHolder: "请输入原始URL",
-  rewriteNewPlaceHolder: "请输入重写的URL",
+  rewriteOriginalPlaceHolder: "请输入原始URL，如：/api/*",
+  rewriteNewPlaceHolder: "请输入重写的URL，如：/$1",
   reqHeader: "请求头",
   resHeader: "响应头",
-  headerNamePlaceHolder: "请输入HTTP头的名称",
-  headerValuePlaceHolder: "请输入HTTP头的值"
+  headerNamePlaceHolder: "请输入HTTP头的名称，如：X-Request-ID",
+  headerValuePlaceHolder: "请输入HTTP头的值，如：1001"
 };
 
 const serverEn = {
@@ -206,7 +210,8 @@ const serverEn = {
   createUpdateDescription:
     "Create or update http server, the listen address and port shouldn't be used.",
   name: "Name",
-  namePlaceHolder: "Please input the name of http server",
+  namePlaceHolder:
+    "Please input the name of http server, only support alphabets",
   nameRequireMessage: "The name of http server can't be empty!",
   cache: "Cache",
   cachePlaceHolder: "Please select the cache config for http server",
@@ -220,7 +225,8 @@ const serverEn = {
     "The locations config for http server can't be empty!",
   etag: "ETag",
   addr: "Address",
-  addrPlaceHolder: "Please input the listen address for http server",
+  addrPlaceHolder:
+    "Please input the listen address for http server, eg: :7000 or 127.0.0.1:7000",
   addrRequireMessage: "The listen address can't be empty!",
   concurrency: "Concurrency",
   concurrencyPlaceHolder: "Please input the limit concurrency",
@@ -238,7 +244,7 @@ const serverZh = {
   createUpdateDescription:
     "创建或更新HTTP服务器，其中监听的地址与端口必须未被使用的。",
   name: "名称",
-  namePlaceHolder: "请输入HTTP服务器的名称",
+  namePlaceHolder: "请输入HTTP服务器的名称，仅支持字母",
   nameRequireMessage: "HTTP服务器的名称不能为空！",
   cache: "缓存",
   cachePlaceHolder: "请选择HTTP服务器使用的缓存配置",
@@ -251,7 +257,7 @@ const serverZh = {
   locationsRequireMesage: "HTTP服务器的locations配置不能为空",
   etag: "ETag",
   addr: "监听地址",
-  addrPlaceHolder: "请输入HTTP服务器的监听地址",
+  addrPlaceHolder: "请输入HTTP服务器的监听地址，如：:7000 或者 127.0.0.1:7000",
   addrRequireMessage: "HTTP服务器监听地址不能为空！",
   concurrency: "并发数",
   concurrencyPlaceHolder: "请输入并发数限制",
@@ -289,3 +295,10 @@ const i18ns = {
 export default field => {
   return _.get(i18ns, `${lang}.${field}`) || "";
 };
+
+export function changeToEnglish() {
+  localStorage.setItem(key, "en");
+}
+export function changeToChinese() {
+  localStorage.setItem(key, "zh");
+}

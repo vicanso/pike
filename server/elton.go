@@ -214,7 +214,10 @@ func NewElton(eltonConfig *EltonConfig) *elton.Elton {
 			zap.String("url", c.Request.RequestURI),
 			zap.Error(err),
 		)
-		// TODO 是否针对异常输出日志
+		// 如果没有设置dispatcher，则无需要处理以下流程
+		if dispatcher == nil {
+			return
+		}
 		status, _ := c.Get(statusKey).(int)
 		if status == cache.StatusFetching {
 			httpCache, _ := c.Get(httpCacheKey).(*cache.HTTPCache)
@@ -251,7 +254,8 @@ func NewElton(eltonConfig *EltonConfig) *elton.Elton {
 
 	// get http cache
 	e.Use(func(c *elton.Context) (err error) {
-		if requestIsPass(c.Request) {
+		// 如果dispatcher未设置，所有请求都直接pass
+		if dispatcher == nil || requestIsPass(c.Request) {
 			return c.Next()
 		}
 		key := util.GetIdentity(c.Request)

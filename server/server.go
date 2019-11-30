@@ -18,6 +18,7 @@ package server
 
 import (
 	"net/http"
+	"os"
 	"sync"
 	"sync/atomic"
 	"unsafe"
@@ -63,6 +64,12 @@ func NewInstance() (ins *Instance, err error) {
 	if err != nil {
 		return
 	}
+	if os.Getenv("ENABLED_ADMIN_SERVER") != "" {
+		serversConfig = append(serversConfig, &config.Server{
+			Name: "admin",
+			Addr: ":3015",
+		})
+	}
 
 	cachesConfig, err := config.GetCaches()
 	if err != nil {
@@ -91,10 +98,6 @@ func NewInstance() (ins *Instance, err error) {
 	for _, conf := range serversConfig {
 		result := locationsConfig.Filter(conf.Locations...)
 		dispatcher := dispatchers.Get(conf.Cache)
-		// 如果无dispatcher，则不初始化该server
-		if dispatcher == nil {
-			continue
-		}
 		srv := NewServer(conf, result, upstreams, dispatcher, compressesConfig.Get(conf.Compress))
 		servers.Store(conf.Name, srv)
 	}

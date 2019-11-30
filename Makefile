@@ -4,7 +4,7 @@ export GO111MODULE = on
 
 # for dev
 dev:
-	CONFIG=etcd://127.0.0.1:2379 fresh
+	ENABLED_ADMIN_SERVER=1 CONFIG=etcd://127.0.0.1:2379 fresh
 
 test:
 	GO_MODE=test BASE_PATH=/test-pike CONFIG=etcd://127.0.0.1:2379 go test -race -cover ./...
