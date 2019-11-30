@@ -29,8 +29,10 @@ import (
 	"github.com/vicanso/hes"
 	"github.com/vicanso/pike/cache"
 	"github.com/vicanso/pike/config"
+	"github.com/vicanso/pike/log"
 	"github.com/vicanso/pike/upstream"
 	"github.com/vicanso/pike/util"
+	"go.uber.org/zap"
 )
 
 const (
@@ -172,7 +174,7 @@ func createCompressHandler(compressConfig *config.Compress) CompressHandler {
 			httpData.Headers = cache.NewHTTPHeaders(headers, elton.HeaderContentEncoding, elton.HeaderContentLength)
 		}
 		// 如果未指定filter的数据，则认为都不需要压缩
-		if filter == nil {
+		if filter == nil || len(data) == 0 {
 			return
 		}
 		if len(data) < compressConfig.MinLength {
@@ -194,6 +196,7 @@ func createCompressHandler(compressConfig *config.Compress) CompressHandler {
 
 // NewElton new an elton instance
 func NewElton(eltonConfig *EltonConfig) *elton.Elton {
+	logger := log.Default()
 	locations := eltonConfig.locations
 	upstreams := eltonConfig.upstreams
 	dispatcher := eltonConfig.dispatcher
@@ -207,6 +210,10 @@ func NewElton(eltonConfig *EltonConfig) *elton.Elton {
 
 	// 未处理错误
 	e.OnError(func(c *elton.Context, err error) {
+		logger.Error("uncaught exception",
+			zap.String("url", c.Request.RequestURI),
+			zap.Error(err),
+		)
 		// TODO 是否针对异常输出日志
 		status, _ := c.Get(statusKey).(int)
 		if status == cache.StatusFetching {

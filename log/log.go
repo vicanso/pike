@@ -12,40 +12,30 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// gzip compress
-
-package util
+package log
 
 import (
-	"bytes"
-	"compress/gzip"
-	"io/ioutil"
+	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
 )
 
-// Gunzip gunzip
-func Gunzip(buf []byte) ([]byte, error) {
-	if len(buf) == 0 {
-		return nil, nil
-	}
-	r, err := gzip.NewReader(bytes.NewBuffer(buf))
+var (
+	defaultLogger *zap.Logger
+)
+
+func init() {
+	c := zap.NewProductionConfig()
+	c.DisableCaller = true
+	c.EncoderConfig.EncodeTime = zapcore.ISO8601TimeEncoder
+	// 只针对panic 以上的日志增加stack trace
+	l, err := c.Build(zap.AddStacktrace(zap.DPanicLevel))
 	if err != nil {
-		return nil, err
+		panic(err)
 	}
-	defer r.Close()
-	return ioutil.ReadAll(r)
+	defaultLogger = l
 }
 
-// Gzip gzip function
-func Gzip(buf []byte, level int) ([]byte, error) {
-	var b bytes.Buffer
-	if level <= 0 || level > gzip.BestCompression {
-		level = gzip.DefaultCompression
-	}
-	w, _ := gzip.NewWriterLevel(&b, level)
-	_, err := w.Write(buf)
-	if err != nil {
-		return nil, err
-	}
-	w.Close()
-	return b.Bytes(), nil
+// Default get default logger
+func Default() *zap.Logger {
+	return defaultLogger
 }
