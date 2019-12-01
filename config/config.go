@@ -39,7 +39,6 @@ var (
 const (
 	defaultBasePath = "/pike"
 
-	defaultAdminKey    = "admin"
 	defaultAdminPrefix = "/admin"
 
 	// ServersCategory servers category
@@ -52,6 +51,8 @@ const (
 	UpstreamsCategory = "upstreams"
 	// LocationsCategory locations category
 	LocationsCategory = "locations"
+	// AdminCategory admin category
+	AdminCategory = "admin"
 )
 
 // IConfig config interface
@@ -77,6 +78,8 @@ const (
 	UpstreamChange
 	// LocationChange location's config change
 	LocationChange
+	// AdminChange admin's config chage
+	AdminChange
 )
 
 var (
@@ -112,6 +115,7 @@ func init() {
 	changeTypeKeyMap[CacheChange] = filepath.Join(basePath, CachesCategory)
 	changeTypeKeyMap[UpstreamChange] = filepath.Join(basePath, UpstreamsCategory)
 	changeTypeKeyMap[LocationChange] = filepath.Join(basePath, LocationsCategory)
+	changeTypeKeyMap[AdminChange] = filepath.Join(basePath, AdminCategory)
 }
 
 func getKey(elem ...string) (string, error) {
@@ -195,7 +199,11 @@ func Watch(onChange OnChange) {
 	configClient.Watch(basePath, func(key string) {
 		for t, prefix := range changeTypeKeyMap {
 			if strings.HasPrefix(key, prefix) {
-				onChange(t, key[len(prefix)+1:])
+				value := ""
+				if len(key) > len(prefix) {
+					value = key[len(prefix)+1:]
+				}
+				onChange(t, value)
 			}
 		}
 	})

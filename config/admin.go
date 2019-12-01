@@ -18,15 +18,16 @@ package config
 
 // Admin admin config
 type Admin struct {
-	Prefix      string `yaml:"prefix,omitempty" json:"prefix,omitempty"`
-	User        string `yaml:"user,omitempty" json:"user,omitempty"`
-	Password    string `yaml:"password,omitempty" json:"password,omitempty"`
-	Description string `yaml:"description,omitempty" json:"description,omitempty"`
+	Prefix                string `yaml:"prefix,omitempty" json:"prefix,omitempty" valid:"ascii"`
+	User                  string `yaml:"user,omitempty" json:"user,omitempty" valid:"-"`
+	Password              string `yaml:"password,omitempty" json:"password,omitempty" valid:"-"`
+	EnabledInternetAccess bool   `yaml:"enabledInternetAccess,omitempty" json:"enabledInternetAccess,omitempty" valid:"-"`
+	Description           string `yaml:"description,omitempty" json:"description,omitempty" valid:"-"`
 }
 
 // Fetch fetch admin config
 func (admin *Admin) Fetch() (err error) {
-	err = fetchConfig(admin, defaultAdminKey)
+	err = fetchConfig(admin, AdminCategory)
 	if err != nil {
 		return
 	}
@@ -38,11 +39,18 @@ func (admin *Admin) Fetch() (err error) {
 
 // Save save admin config
 func (admin *Admin) Save() (err error) {
-	err = saveConfig(admin, defaultAdminKey)
+	err = saveConfig(admin, AdminCategory)
 	return
 }
 
 // Delete delete admin config
 func (admin *Admin) Delete() (err error) {
-	return deleteConfig(defaultAdminKey)
+	return deleteConfig(AdminCategory)
+}
+
+// GetAdmin get admin config
+func GetAdmin() (*Admin, error) {
+	admin := new(Admin)
+	err := admin.Fetch()
+	return admin, err
 }

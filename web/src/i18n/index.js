@@ -9,14 +9,16 @@ const navEn = {
   compresses: "Compresses",
   upstreams: "Upstreams",
   locations: "Locations",
-  servers: "Servers"
+  servers: "Servers",
+  admin: "Admin"
 };
 const navZh = {
   caches: "缓存",
   compresses: "压缩",
   upstreams: "Upstreams",
   locations: "Locations",
-  servers: "HTTP服务器"
+  servers: "HTTP服务器",
+  admin: "管理配置"
 };
 
 const commonEn = {
@@ -271,6 +273,33 @@ const serverZh = {
   maxHeaderBytesPlaceHolder: "请输入最大请求头长度限制参数"
 };
 
+const adminEn = {
+  createUpdateTitle: "Create or update admin config",
+  createUpdateDescription:
+    "Create or update admin config for http basic auth. FYA, only one config is effective.",
+  user: "User",
+  userPlaceHolder: "Please input the account",
+  password: "Password",
+  passwordPlaceHolder: "Please input the password for user",
+  prefix: "URL Prefix",
+  prefixPlaceHolder: "Please input the url prefix for admin",
+  prefixRequireMessage: "URL prefix for admin can't be empty!",
+  enabledInternetAccess: "Enabled Internet"
+};
+const adminZh = {
+  createUpdateTitle: "创建或更新管理配置",
+  createUpdateDescription:
+    "创建或更新用于HTTP基础认证的相关配置，请注意管理配置只有一个生效。",
+  user: "用户",
+  userPlaceHolder: "请输入用户名",
+  password: "密码",
+  passwordPlaceHolder: "请输入用户密码",
+  prefix: "地址前缀",
+  prefixPlaceHolder: "请输入管理后台的地址前缀",
+  prefixRequireMessage: "管理后台地址前缀不能为空！",
+  enabledInternetAccess: "允许外网"
+};
+
 const i18ns = {
   en: {
     common: commonEn,
@@ -279,7 +308,8 @@ const i18ns = {
     compress: compressEn,
     upstream: upstreamEn,
     location: locationEn,
-    server: serverEn
+    server: serverEn,
+    admin: adminEn
   },
   zh: {
     common: commonZh,
@@ -288,7 +318,8 @@ const i18ns = {
     compress: compressZh,
     upstream: upstreamZh,
     location: locationZh,
-    server: serverZh
+    server: serverZh,
+    admin: adminZh
   }
 };
 

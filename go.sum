@@ -48,6 +48,8 @@ github.com/stretchr/testify v1.4.0/go.mod h1:j7eGeouHqKxXV5pUuKE4zz7dFj8WfuZ+81P
 github.com/vicanso/elton v0.2.0/go.mod h1:ynAUOSkZQ+pFaUsxlG5hYnJFjPpMwz8YyEBPzNh0pSg=
 github.com/vicanso/elton v0.2.1 h1:OrfDjNjXL6KzUhAuAFwCQIa6guXXd7OY+L4ZgH16Rpc=
 github.com/vicanso/elton v0.2.1/go.mod h1:ynAUOSkZQ+pFaUsxlG5hYnJFjPpMwz8YyEBPzNh0pSg=
+github.com/vicanso/elton-basic-auth v0.1.0 h1:iyewKIXC6PpNG/+4CRdHy5dn4ou+deZuK8tyi4VutU8=
+github.com/vicanso/elton-basic-auth v0.1.0/go.mod h1:2HxZNmYnG/SEcQbd4M5J84NJd08WTWTKuMM4K6oEoaI=
 github.com/vicanso/elton-body-parser v0.1.5 h1:aC2UCu/zRhSuUrBbuiPBTlFzL192mJ/QOVKTTjh2+d8=
 github.com/vicanso/elton-body-parser v0.1.5/go.mod h1:aOb5NzyeFEV0XWWR80wMJjPPRex8XkzGJfwJPqIvoRQ=
 github.com/vicanso/elton-error-handler v0.1.2 h1:yPpx2DPGhJ9h1NhVJYyyZcRs+tLtlk+tVN5w4QmI/k8=

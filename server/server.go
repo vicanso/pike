@@ -187,7 +187,9 @@ func (s *Server) ListenAndServe() error {
 
 // toggleElton toggle elton
 func (s *Server) toggleElton() *elton.Elton {
+	adminConfig, _ := config.GetAdmin()
 	e := NewElton(&EltonConfig{
+		adminConfig:    adminConfig,
 		eTag:           s.eTag,
 		maxConcurrency: s.concurrency,
 		locations:      s.locations,

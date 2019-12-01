@@ -8,12 +8,14 @@ import {
   UPSTREAMS_PATH,
   LOCATIONS_PATH,
   SERVERS_PATH,
+  ADMIN_PATH,
 } from "./paths";
 import Caches from "./components/caches";
 import Compresses from "./components/compress";
 import Upstreams from "./components/upstreams";
 import Locations from "./components/locations";
 import Servers from "./components/servers";
+import Admin from "./components/admin";
 
 function App() {
   return (
@@ -26,6 +28,7 @@ function App() {
           <Route path={UPSTREAMS_PATH} component={Upstreams} />
           <Route path={LOCATIONS_PATH} component={Locations} />
           <Route path={SERVERS_PATH} component={Servers} />
+          <Route path={ADMIN_PATH} component={Admin} />
         </div>
       </HashRouter>
     </div>

@@ -31,8 +31,12 @@ class Configs extends React.Component {
     });
     try {
       const { data } = await axios.get(CONFIGS.replace(":category", category));
+      let configs = data[category];
+      if (!_.isArray(configs)) {
+        configs = [configs];
+      }
       this.setState({
-        configs: data[category]
+        configs
       });
     } catch (err) {
       message.error(err.message);

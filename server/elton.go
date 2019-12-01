@@ -75,6 +75,7 @@ type (
 
 // EltonConfig elton config
 type EltonConfig struct {
+	adminConfig    *config.Admin
 	maxConcurrency uint32
 	eTag           bool
 	locations      config.Locations
@@ -203,7 +204,12 @@ func NewElton(eltonConfig *EltonConfig) *elton.Elton {
 	compress := eltonConfig.compress
 	e := elton.New()
 
-	adminElton := NewAdmin(defaultAdminPath, eltonConfig)
+	adminPath := defaultAdminPath
+	adminConfig := eltonConfig.adminConfig
+	if adminConfig != nil && adminConfig.Prefix != "" {
+		adminPath = adminConfig.Prefix
+	}
+	adminElton := NewAdmin(adminPath, eltonConfig)
 
 	proxyMids := createProxyMiddlewares(locations, upstreams)
 	compressHandler := createCompressHandler(compress)
@@ -243,7 +249,7 @@ func NewElton(eltonConfig *EltonConfig) *elton.Elton {
 
 	// 如果是admin路径，则转发至admin elton
 	e.Use(func(c *elton.Context) error {
-		if !strings.HasPrefix(c.Request.RequestURI, defaultAdminPath) {
+		if !strings.HasPrefix(c.Request.RequestURI, adminPath) {
 			return c.Next()
 		}
 		c.Pass(adminElton)

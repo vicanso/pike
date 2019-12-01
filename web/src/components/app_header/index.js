@@ -10,7 +10,8 @@ import {
   COMPRESSES_PATH,
   UPSTREAMS_PATH,
   LOCATIONS_PATH,
-  SERVERS_PATH
+  SERVERS_PATH,
+  ADMIN_PATH
 } from "../../paths";
 
 const paths = [
@@ -33,6 +34,10 @@ const paths = [
   {
     name: i18n("nav.servers"),
     path: SERVERS_PATH
+  },
+  {
+    name: i18n("nav.admin"),
+    path: ADMIN_PATH
   }
   // {
   //   name: "Performance"
