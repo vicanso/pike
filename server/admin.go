@@ -26,43 +26,9 @@ import (
 	fresh "github.com/vicanso/elton-fresh"
 	responder "github.com/vicanso/elton-responder"
 	"github.com/vicanso/hes"
+	intranetip "github.com/vicanso/intranet-ip"
 	"github.com/vicanso/pike/config"
 )
-
-var (
-	// privateIPBlocks private ip blocks
-	privateIPBlocks []*net.IPNet
-)
-
-// https://stackoverflow.com/questions/43274579/golang-check-if-ip-address-is-in-a-network/43274687
-func initPrivateIPBlocks() {
-	for _, cidr := range []string{
-		"127.0.0.0/8",    // IPv4 loopback
-		"10.0.0.0/8",     // RFC1918
-		"172.16.0.0/12",  // RFC1918
-		"192.168.0.0/16", // RFC1918
-		"::1/128",        // IPv6 loopback
-		"fe80::/10",      // IPv6 link-local
-		"fc00::/7",       // IPv6 unique local addr
-	} {
-		_, block, _ := net.ParseCIDR(cidr)
-		privateIPBlocks = append(privateIPBlocks, block)
-	}
-}
-
-func init() {
-	initPrivateIPBlocks()
-}
-
-// IsPrivateIP check the ip is private
-func IsPrivateIP(ip net.IP) bool {
-	for _, block := range privateIPBlocks {
-		if block.Contains(ip) {
-			return true
-		}
-	}
-	return false
-}
 
 // NewAdmin new an admin elton istance
 func NewAdmin(adminPath string, eltonConfig *EltonConfig) *elton.Elton {
@@ -76,7 +42,7 @@ func NewAdmin(adminPath string, eltonConfig *EltonConfig) *elton.Elton {
 			e.Use(func(c *elton.Context) (err error) {
 				// 会获取客户的访问IP（获取到非内网IP为止，如果都没有，则remote addr)
 				ip := c.ClientIP()
-				if !IsPrivateIP(net.ParseIP(ip)) {
+				if !intranetip.Is(net.ParseIP(ip)) {
 					err = hes.New("Not allow to access")
 					return
 				}

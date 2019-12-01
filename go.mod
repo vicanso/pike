@@ -22,6 +22,7 @@ require (
 	github.com/vicanso/elton-recover v0.1.2
 	github.com/vicanso/elton-responder v0.1.0
 	github.com/vicanso/hes v0.2.1
+	github.com/vicanso/intranet-ip v0.0.1
 	github.com/vicanso/upstream v0.0.5
 	go.etcd.io/etcd v3.3.17+incompatible
 	go.uber.org/atomic v1.4.0 // indirect
