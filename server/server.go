@@ -18,7 +18,6 @@ package server
 
 import (
 	"net/http"
-	"os"
 	"sync"
 	"sync/atomic"
 	"unsafe"
@@ -53,18 +52,18 @@ type Server struct {
 
 // Instance pike server instance
 type Instance struct {
-	servers   *sync.Map
-	upstreams *upstream.Upstreams
+	EnabledAdminServer bool
+	servers            *sync.Map
+	upstreams          *upstream.Upstreams
 }
 
-// NewInstance new a pike server instance
-func NewInstance() (ins *Instance, err error) {
-	// TODO 对于未有任何配置信息时，增加默认的server
+// Fetch fetch config for instance
+func (ins *Instance) Fetch() (err error) {
 	serversConfig, err := config.GetServers()
 	if err != nil {
 		return
 	}
-	if os.Getenv("ENABLED_ADMIN_SERVER") != "" {
+	if ins.EnabledAdminServer {
 		serversConfig = append(serversConfig, &config.Server{
 			Name: "admin",
 			Addr: ":3015",
@@ -93,23 +92,37 @@ func NewInstance() (ins *Instance, err error) {
 	if err != nil {
 		return
 	}
-
-	servers := new(sync.Map)
+	servers := ins.servers
+	if servers == nil {
+		servers = new(sync.Map)
+	}
 	for _, conf := range serversConfig {
-		result := locationsConfig.Filter(conf.Locations...)
+		locations := locationsConfig.Filter(conf.Locations...)
 		dispatcher := dispatchers.Get(conf.Cache)
-		srv := NewServer(conf, result, upstreams, dispatcher, compressesConfig.Get(conf.Compress))
-		servers.Store(conf.Name, srv)
+		compress := compressesConfig.Get(conf.Compress)
+
+		data, ok := servers.Load(conf.Name)
+		// 如果已存在，仅更新信息
+		if ok {
+			srv := data.(*Server)
+			srv.Update(conf, locations, upstreams, dispatcher, compress)
+		} else {
+			srv := NewServer(conf, locations, upstreams, dispatcher, compress)
+			servers.Store(conf.Name, srv)
+		}
 	}
-	ins = &Instance{
-		servers:   servers,
-		upstreams: upstreams,
+	oldUpstreams := ins.upstreams
+	// 如果已有upstreams存在，则将原有upstream销毁
+	if oldUpstreams != nil {
+		oldUpstreams.Destroy()
 	}
+	ins.servers = servers
+	ins.upstreams = upstreams
 	return
 }
 
-// Start start all server
-func (ins *Instance) Start() {
+// Restart restart all server
+func (ins *Instance) Restart() {
 	ins.servers.Range(func(k, v interface{}) bool {
 		srv, ok := v.(*Server)
 		if ok {
@@ -117,6 +130,16 @@ func (ins *Instance) Start() {
 		}
 		return true
 	})
+}
+
+// Start start all server
+func (ins *Instance) Start() (err error) {
+	err = ins.Fetch()
+	if err != nil {
+		return
+	}
+	ins.Restart()
+	return
 }
 
 // NewServer new a server
@@ -130,17 +153,22 @@ func NewServer(conf *config.Server, locations config.Locations, upstreams *upstr
 		MaxHeaderBytes:    conf.MaxHeaderBytes,
 	}
 	srv := &Server{
-		maxConcurrency: conf.Concurrency,
-		eTag:           conf.ETag,
-		server:         server,
-		locations:      locations,
-		upstreams:      upstreams,
-		dispatcher:     dispatcher,
-		compress:       compress,
+		server: server,
 	}
-	srv.ToggleElton()
+	srv.Update(conf, locations, upstreams, dispatcher, compress)
 	server.Handler = srv
 	return srv
+}
+
+// Update update server config
+func (s *Server) Update(conf *config.Server, locations config.Locations, upstreams *upstream.Upstreams, dispatcher *cache.Dispatcher, compress *config.Compress) {
+	s.maxConcurrency = conf.Concurrency
+	s.eTag = conf.ETag
+	s.locations = locations
+	s.dispatcher = dispatcher
+	s.compress = compress
+	s.upstreams = upstreams
+	s.toggleElton()
 }
 
 // ListenAndServe call http server's listen and serve
@@ -157,8 +185,8 @@ func (s *Server) ListenAndServe() error {
 	return err
 }
 
-// ToggleElton toggle elton
-func (s *Server) ToggleElton() *elton.Elton {
+// toggleElton toggle elton
+func (s *Server) toggleElton() *elton.Elton {
 	e := NewElton(&EltonConfig{
 		eTag:           s.eTag,
 		maxConcurrency: s.concurrency,

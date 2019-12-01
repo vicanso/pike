@@ -359,6 +359,20 @@ func NewElton(eltonConfig *EltonConfig) *elton.Elton {
 			err = errServiceUnavailable
 			return
 		}
+		// 设置请求头
+		if l.RequestHeader != nil {
+			util.MergeHeader(c.Request.Header, l.ReqHeader)
+			host := l.ReqHeader.Get("Host")
+			// 如果有配置Host请求头，则设置request host
+			if host != "" {
+				c.Request.Host = host
+			}
+		}
+		// 设置响应头
+		if l.ResHeader != nil {
+			util.MergeHeader(c.Header(), l.ResHeader)
+		}
+
 		fn := proxyMids[l.Name]
 		if fn == nil {
 			err = errServiceUnavailable

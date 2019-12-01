@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"math/rand"
 	"net/http"
+	"strings"
 	"time"
 	"unsafe"
 )
@@ -111,4 +112,28 @@ func ContainesString(arr []string, str string) bool {
 		}
 	}
 	return false
+}
+
+// ConvertToHTTPHeader convert to http header
+func ConvertToHTTPHeader(values []string) http.Header {
+	if len(values) == 0 {
+		return nil
+	}
+	h := make(http.Header)
+	for _, item := range values {
+		arr := strings.Split(item, ":")
+		if len(arr) == 2 {
+			h.Add(arr[0], arr[1])
+		}
+	}
+	return h
+}
+
+// MergeHeader merge header
+func MergeHeader(h1, h2 http.Header) {
+	for key, values := range h2 {
+		for _, value := range values {
+			h1.Add(key, value)
+		}
+	}
 }

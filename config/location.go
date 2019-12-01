@@ -17,20 +17,25 @@
 package config
 
 import (
+	"net/http"
 	"sort"
 	"strings"
+
+	"github.com/vicanso/pike/util"
 )
 
 // Location location config
 type Location struct {
-	Name           string   `yaml:"name,omitempty" json:"name,omitempty" valid:"xName"`
-	Upstream       string   `yaml:"upstream,omitempty" json:"upstream,omitempty" valid:"xName"`
-	Prefixs        []string `yaml:"prefixs,omitempty" json:"prefixs,omitempty" valid:"xPrefixs,optional"`
-	Rewrites       []string `yaml:"rewrites,omitempty" json:"rewrites,omitempty" valid:"xRewrites,optional"`
-	Hosts          []string `yaml:"hosts,omitempty" json:"hosts,omitempty" valid:"xHosts,optional"`
-	ResponseHeader []string `yaml:"responseHeader,omitempty" json:"responseHeader,omitempty" valid:"xHeader,optional"`
-	RequestHeader  []string `yaml:"requestHeader,omitempty" json:"requestHeader,omitempty" valid:"xHeader,optional"`
-	Description    string   `yaml:"description,omitempty" json:"description,omitempty" valid:"-"`
+	Name           string      `yaml:"name,omitempty" json:"name,omitempty" valid:"xName"`
+	Upstream       string      `yaml:"upstream,omitempty" json:"upstream,omitempty" valid:"xName"`
+	Prefixs        []string    `yaml:"prefixs,omitempty" json:"prefixs,omitempty" valid:"xPrefixs,optional"`
+	Rewrites       []string    `yaml:"rewrites,omitempty" json:"rewrites,omitempty" valid:"xRewrites,optional"`
+	Hosts          []string    `yaml:"hosts,omitempty" json:"hosts,omitempty" valid:"xHosts,optional"`
+	ResponseHeader []string    `yaml:"responseHeader,omitempty" json:"responseHeader,omitempty" valid:"xHeader,optional"`
+	ResHeader      http.Header `yaml:"-" json:"-" valid:"-"`
+	RequestHeader  []string    `yaml:"requestHeader,omitempty" json:"requestHeader,omitempty" valid:"xHeader,optional"`
+	ReqHeader      http.Header `yaml:"-" json:"-" valid:"-"`
+	Description    string      `yaml:"description,omitempty" json:"description,omitempty" valid:"-"`
 }
 
 // Locations locations
@@ -38,7 +43,13 @@ type Locations []*Location
 
 // Fetch fetch location config
 func (l *Location) Fetch() (err error) {
-	return fetchConfig(l, LocationsCategory, l.Name)
+	err = fetchConfig(l, LocationsCategory, l.Name)
+	if err != nil {
+		return
+	}
+	l.ReqHeader = util.ConvertToHTTPHeader(l.RequestHeader)
+	l.ResHeader = util.ConvertToHTTPHeader(l.ResponseHeader)
+	return
 }
 
 // Save save location config
