@@ -43,8 +43,8 @@ const (
 
 	// ServersCategory servers category
 	ServersCategory = "servers"
-	// CompressCategory compresses category
-	CompressCategory = "compresses"
+	// CompressesCategory compresses category
+	CompressesCategory = "compresses"
 	// CachesCategory caches category
 	CachesCategory = "caches"
 	// UpstreamsCategory upstreams category
@@ -111,7 +111,7 @@ func init() {
 	}
 	changeTypeKeyMap = make(map[ChangeType]string)
 	changeTypeKeyMap[ServerChange] = filepath.Join(basePath, ServersCategory)
-	changeTypeKeyMap[CompressChange] = filepath.Join(basePath, CompressCategory)
+	changeTypeKeyMap[CompressChange] = filepath.Join(basePath, CompressesCategory)
 	changeTypeKeyMap[CacheChange] = filepath.Join(basePath, CachesCategory)
 	changeTypeKeyMap[UpstreamChange] = filepath.Join(basePath, UpstreamsCategory)
 	changeTypeKeyMap[LocationChange] = filepath.Join(basePath, LocationsCategory)

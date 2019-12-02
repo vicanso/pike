@@ -12,4 +12,5 @@ func TestMemHash(t *testing.T) {
 	data := "GET aslant.site /users/v1/me"
 	v := MemHash([]byte(data))
 	assert.Equal(v, MemHash([]byte(data)))
+	assert.Equal(v, MemHashString(data))
 }

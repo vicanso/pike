@@ -91,4 +91,13 @@ func TestServerConfig(t *testing.T) {
 
 	ns = servers.Get(s.Name)
 	assert.Equal(s, ns)
+
+	assert.True(servers.Exists(CachesCategory, cache))
+	assert.False(servers.Exists(CachesCategory, cache+"1"))
+
+	assert.True(servers.Exists(CompressesCategory, compress))
+	assert.False(servers.Exists(CompressesCategory, compress+"1"))
+
+	assert.True(servers.Exists(LocationsCategory, locations[0]))
+	assert.False(servers.Exists(LocationsCategory, locations[0]+"1"))
 }

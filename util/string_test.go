@@ -15,6 +15,7 @@
 package util
 
 import (
+	"net/http"
 	"net/http/httptest"
 	"testing"
 
@@ -44,4 +45,36 @@ func TestGenerateETag(t *testing.T) {
 	assert := assert.New(t)
 	assert.Equal(`"0-2jmj7l5rSw0yVb_vlWAYkK_YBwk="`, GenerateETag(nil))
 	assert.Equal(`"4-gf6L_odXbD7LIkJvjleEc4KRes8="`, GenerateETag([]byte("abcd")))
+}
+
+func TestContainesString(t *testing.T) {
+	assert := assert.New(t)
+	assert.True(ContainesString([]string{
+		"A",
+		"B",
+	}, "A"))
+	assert.False(ContainesString([]string{
+		"A",
+		"B",
+	}, "C"))
+}
+
+func TestConvertToHTTPHeader(t *testing.T) {
+	assert := assert.New(t)
+	values := []string{
+		"a:1",
+		"b:2",
+	}
+	h := ConvertToHTTPHeader(values)
+	assert.Equal("1", h.Get("a"))
+	assert.Equal("2", h.Get("b"))
+}
+
+func TestMergeHeader(t *testing.T) {
+	assert := assert.New(t)
+	h1 := make(http.Header)
+	h2 := make(http.Header)
+	h2.Set("a", "1")
+	MergeHeader(h1, h2)
+	assert.Equal(h2.Get("a"), h1.Get("a"))
 }

@@ -30,17 +30,17 @@ type Compresses []*Compress
 
 // Fetch fetch compress config
 func (c *Compress) Fetch() (err error) {
-	return fetchConfig(c, CompressCategory, c.Name)
+	return fetchConfig(c, CompressesCategory, c.Name)
 }
 
 // Save save compress config
 func (c *Compress) Save() (err error) {
-	return saveConfig(c, CompressCategory, c.Name)
+	return saveConfig(c, CompressesCategory, c.Name)
 }
 
 // Delete delete compress config
 func (c *Compress) Delete() (err error) {
-	return deleteConfig(CompressCategory, c.Name)
+	return deleteConfig(CompressesCategory, c.Name)
 }
 
 // Get get compress config from compress list
@@ -55,7 +55,7 @@ func (compresses Compresses) Get(name string) (c *Compress) {
 
 // GetCompresses get all compress config
 func GetCompresses() (compresses Compresses, err error) {
-	keys, err := listKeysExcludePrefix(CompressCategory)
+	keys, err := listKeysExcludePrefix(CompressesCategory)
 	if err != nil {
 		return
 	}

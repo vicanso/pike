@@ -95,8 +95,9 @@ func TestMatch(t *testing.T) {
 func newLocations() Locations {
 	return Locations{
 		&Location{
-			Name:    "api",
-			Prefixs: []string{"/api"},
+			Name:     "api",
+			Prefixs:  []string{"/api"},
+			Upstream: "api-backend",
 		},
 		&Location{
 			Name:  "aslant",
@@ -136,4 +137,11 @@ func TestFilter(t *testing.T) {
 	ls := newLocations()
 	result := ls.Filter("api", "tiny")
 	assert.Equal(2, len(result))
+}
+
+func TestExists(t *testing.T) {
+	assert := assert.New(t)
+	ls := newLocations()
+	assert.True(ls.ExistsUpstream("api-backend"))
+	assert.False(ls.ExistsUpstream("test"))
 }

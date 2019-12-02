@@ -122,6 +122,15 @@ func TestHTTPCacheGet(t *testing.T) {
 		assert.Equal(StatusFetching, status)
 		assert.Nil(data)
 	})
+
+	t.Run("get age", func(t *testing.T) {
+		assert := assert.New(t)
+		age := 10
+		hc := HTTPCache{
+			createdAt: int(time.Now().Unix()) - age,
+		}
+		assert.Equal(age, hc.Age())
+	})
 }
 
 func TestSetResponse(t *testing.T) {

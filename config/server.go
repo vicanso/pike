@@ -75,7 +75,7 @@ func (servers Servers) Exists(category, name string) bool {
 			if item.Cache == name {
 				return true
 			}
-		case CompressCategory:
+		case CompressesCategory:
 			if item.Compress == name {
 				return true
 			}

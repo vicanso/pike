@@ -25,8 +25,7 @@ func TestAdminConfig(t *testing.T) {
 	defer func() {
 		new(Admin).Delete()
 	}()
-	admin := new(Admin)
-	err := admin.Fetch()
+	admin, err := GetAdmin()
 	assert.Nil(err)
 	assert.Equal(defaultAdminPrefix, admin.Prefix)
 	assert.Empty(admin.User)

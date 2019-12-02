@@ -143,8 +143,8 @@ func (locations Locations) Filter(filters ...string) (result Locations) {
 	return
 }
 
-// Exists check the upstream exists
-func (locations Locations) Exists(name string) bool {
+// ExistsUpstream check the upstream exists
+func (locations Locations) ExistsUpstream(name string) bool {
 	for _, item := range locations {
 		if item.Upstream == name {
 			return true

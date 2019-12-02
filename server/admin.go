@@ -81,7 +81,7 @@ func NewAdmin(adminPath string, eltonConfig *EltonConfig) *elton.Elton {
 			switch category {
 			case config.CachesCategory:
 				data, err = config.GetCaches()
-			case config.CompressCategory:
+			case config.CompressesCategory:
 				data, err = config.GetCompresses()
 			case config.LocationsCategory:
 				data, err = config.GetLocations()
@@ -110,7 +110,7 @@ func NewAdmin(adminPath string, eltonConfig *EltonConfig) *elton.Elton {
 		switch category {
 		case config.CachesCategory:
 			iconfig = new(config.Cache)
-		case config.CompressCategory:
+		case config.CompressesCategory:
 			iconfig = new(config.Compress)
 		case config.LocationsCategory:
 			iconfig = new(config.Location)
@@ -161,7 +161,7 @@ func NewAdmin(adminPath string, eltonConfig *EltonConfig) *elton.Elton {
 			iconfig = &config.Cache{
 				Name: name,
 			}
-		case config.CompressCategory:
+		case config.CompressesCategory:
 			shouldBeCheckedByServer = true
 			iconfig = &config.Compress{
 				Name: name,
@@ -190,7 +190,7 @@ func NewAdmin(adminPath string, eltonConfig *EltonConfig) *elton.Elton {
 			return
 		}
 		// 判断是否有location在使用该upstream
-		if shouldBeCheckedByLocation && locations.Exists(name) {
+		if shouldBeCheckedByLocation && locations.ExistsUpstream(name) {
 			err = hes.New(name + " of " + category + " is used by location, it can't be delelted")
 			return
 		}
