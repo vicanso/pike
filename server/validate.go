@@ -107,10 +107,7 @@ func init() {
 
 	add("xServers", func(i interface{}, _ interface{}) bool {
 		_, ok := i.([]config.UpstreamServer)
-		if !ok {
-			return false
-		}
-		return true
+		return ok
 	})
 }
 
@@ -134,9 +131,9 @@ func isConfigName(value string) bool {
 func doValidate(s interface{}, data interface{}) (err error) {
 	// statusCode := http.StatusBadRequest
 	if data != nil {
-		switch data.(type) {
+		switch data := data.(type) {
 		case []byte:
-			err = json.Unmarshal(data.([]byte), s)
+			err = json.Unmarshal(data, s)
 			if err != nil {
 				he := hes.Wrap(err)
 				err = he

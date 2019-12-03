@@ -11,39 +11,38 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-
-package util
+package server
 
 import (
 	"bytes"
-	"io/ioutil"
-	"testing"
+	"io"
+	"os"
 
-	"github.com/andybalholm/brotli"
-
-	"github.com/stretchr/testify/assert"
+	"github.com/gobuffalo/packr/v2"
 )
 
-func TestBrotli(t *testing.T) {
-	assert := assert.New(t)
-	originalBuf := []byte("abcd")
-	buf, err := Brotli(originalBuf, 0)
-	assert.Nil(err)
-	assert.NotEmpty(buf)
-	assert.NotEqual(originalBuf, buf)
+var (
+	box = packr.New("asset", "../web/build")
+)
 
-	r := brotli.NewReader(bytes.NewBuffer(buf))
-	buf, err = ioutil.ReadAll(r)
-	assert.Nil(err)
-	assert.Equal(originalBuf, buf)
+type (
+	assetFiles struct {
+	}
+)
+
+func (*assetFiles) Exists(file string) bool {
+	return box.Has(file)
 }
-
-func BenchmarkBrotli(b *testing.B) {
-	buf, err := ioutil.ReadFile("../assets/jquery-3.4.1.min.js")
+func (*assetFiles) Get(file string) ([]byte, error) {
+	return box.Find(file)
+}
+func (*assetFiles) Stat(file string) os.FileInfo {
+	return nil
+}
+func (af *assetFiles) NewReader(file string) (io.Reader, error) {
+	buf, err := af.Get(file)
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
-	for i := 0; i < b.N; i++ {
-		_, _ = Brotli(buf, 0)
-	}
+	return bytes.NewReader(buf), nil
 }

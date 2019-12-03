@@ -25,7 +25,9 @@ func TestCacheConfig(t *testing.T) {
 	c := &Cache{
 		Name: "tiny",
 	}
-	defer c.Delete()
+	defer func() {
+		_ = c.Delete()
+	}()
 
 	err := c.Fetch()
 	assert.Nil(err)

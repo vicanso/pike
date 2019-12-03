@@ -23,7 +23,7 @@ import (
 func TestAdminConfig(t *testing.T) {
 	assert := assert.New(t)
 	defer func() {
-		new(Admin).Delete()
+		_ = new(Admin).Delete()
 	}()
 	admin, err := GetAdmin()
 	assert.Nil(err)

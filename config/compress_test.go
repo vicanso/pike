@@ -25,7 +25,9 @@ func TestCompressConfig(t *testing.T) {
 	c := &Compress{
 		Name: "tiny",
 	}
-	defer c.Delete()
+	defer func() {
+		_ = c.Delete()
+	}()
 
 	err := c.Fetch()
 	assert.Nil(err)

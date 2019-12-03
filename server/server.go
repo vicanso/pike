@@ -30,7 +30,7 @@ import (
 )
 
 const (
-	serverStatusNotRunning = iota
+	serverStatusNotRunning = iota // nolint
 	serverStatusRunning
 	serverStatusStop
 )
@@ -126,7 +126,10 @@ func (ins *Instance) Restart() {
 	ins.servers.Range(func(k, v interface{}) bool {
 		srv, ok := v.(*Server)
 		if ok {
-			go srv.ListenAndServe()
+			go func() {
+				// TODO 增加logger
+				_ = srv.ListenAndServe()
+			}()
 		}
 		return true
 	})

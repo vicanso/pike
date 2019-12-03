@@ -41,6 +41,7 @@ func TestStatusLRU(t *testing.T) {
 
 	lru.Remove(key1)
 	v, ok = lru.Get(key1)
+	assert.False(ok)
 	assert.Nil(v, "remove cache fail")
 
 	lru.Add(key1, value1)

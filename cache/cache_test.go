@@ -26,7 +26,7 @@ func BenchmarkSha256(b *testing.B) {
 	data := []byte("GET tiny.aslant.site /users/v1/login-token?type=vip")
 	for i := 0; i < b.N; i++ {
 		h := sha256.New()
-		h.Write(data)
+		_, _ = h.Write(data)
 		h.Sum(nil)
 	}
 }

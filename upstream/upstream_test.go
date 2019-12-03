@@ -28,10 +28,12 @@ func TestUpstreams(t *testing.T) {
 	assert := assert.New(t)
 	l, err := net.Listen("tcp", "0.0.0.0:0")
 	assert.Nil(err)
-	defer l.Close()
+	defer func() {
+		_ = l.Close()
+	}()
 	go func() {
 		server := http.Server{}
-		server.Serve(l)
+		_ = server.Serve(l)
 	}()
 	addr := "http://" + l.Addr().String()
 

@@ -41,10 +41,11 @@ func NewUpstreams(upstreamsConfig config.Upstreams) *Upstreams {
 		}
 		for _, server := range stream.Servers {
 			addr := server.Addr
+			// 如果添加失败，直接忽略
 			if server.Backup {
-				uh.AddBackup(addr)
+				_ = uh.AddBackup(addr)
 			} else {
-				uh.Add(addr)
+				_ = uh.Add(addr)
 			}
 		}
 		// 先执行一次health check，获取当前可用服务列表

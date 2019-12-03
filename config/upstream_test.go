@@ -28,7 +28,9 @@ func TestUpstreamConfig(t *testing.T) {
 		Name:        "testupstream",
 		Description: "upstream description",
 	}
-	defer us.Delete()
+	defer func() {
+		_ = us.Delete()
+	}()
 
 	err := us.Fetch()
 	assert.Nil(err)

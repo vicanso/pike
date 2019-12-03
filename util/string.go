@@ -99,7 +99,10 @@ func GenerateETag(buf []byte) string {
 		return `"0-2jmj7l5rSw0yVb_vlWAYkK_YBwk="`
 	}
 	h := sha1.New()
-	h.Write(buf)
+	size, _ = h.Write(buf)
+	if size == 0 {
+		return ""
+	}
 	hash := base64.URLEncoding.EncodeToString(h.Sum(nil))
 	return fmt.Sprintf(`"%x-%s"`, size, hash)
 }

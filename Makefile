@@ -18,3 +18,9 @@ build:
 
 bench:
 	GO_MODE=test BASE_PATH=/test-pike CONFIG=etcd://127.0.0.1:2379 go test -bench=. ./...
+
+lint:
+	golangci-lint run
+
+clean:
+	packr2 clean

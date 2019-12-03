@@ -27,7 +27,9 @@ func TestServerConfig(t *testing.T) {
 	s := &Server{
 		Name: "tiny",
 	}
-	defer s.Delete()
+	defer func() {
+		_ = s.Delete()
+	}()
 
 	err := s.Fetch()
 	assert.Nil(err)

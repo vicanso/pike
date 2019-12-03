@@ -9,6 +9,13 @@ import (
 	"go.uber.org/zap"
 )
 
+var (
+	// BuildedAt application builded at ???
+	BuildedAt = ""
+	// CommitID git commit id
+	CommitID = ""
+)
+
 func main() {
 	ins := server.Instance{
 		EnabledAdminServer: os.Getenv("ENABLED_ADMIN_SERVER") != "",

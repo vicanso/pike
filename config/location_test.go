@@ -51,7 +51,9 @@ func TestLocation(t *testing.T) {
 		RequestHeader:  requestHeader,
 		Description:    description,
 	}
-	defer l.Delete()
+	defer func() {
+		_ = l.Delete()
+	}()
 
 	err := l.Save()
 	assert.Nil(err)

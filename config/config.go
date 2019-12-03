@@ -106,9 +106,8 @@ func init() {
 			panic(err)
 		}
 		configClient = etcdClient
-	} else {
-		// TODO 支持文件配置
 	}
+	// TODO 支持文件配置
 	changeTypeKeyMap = make(map[ChangeType]string)
 	changeTypeKeyMap[ServerChange] = filepath.Join(basePath, ServersCategory)
 	changeTypeKeyMap[CompressChange] = filepath.Join(basePath, CompressesCategory)

@@ -41,6 +41,6 @@ func BenchmarkGzip(b *testing.B) {
 		panic(err)
 	}
 	for i := 0; i < b.N; i++ {
-		Gzip(buf, 0)
+		_, _ = Gzip(buf, 0)
 	}
 }

@@ -27,10 +27,6 @@ const (
 	defaultHitForPass = 300
 )
 
-var (
-	hashKey = []byte("2fKEes0u2jpZhJpfjVeAsmUE2RW7Ab2I")
-)
-
 type (
 	// Dispatcher http cache dispatcher
 	Dispatcher struct {

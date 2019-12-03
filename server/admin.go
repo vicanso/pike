@@ -15,6 +15,7 @@
 package server
 
 import (
+	"bytes"
 	"net"
 	"strings"
 
@@ -25,6 +26,7 @@ import (
 	etag "github.com/vicanso/elton-etag"
 	fresh "github.com/vicanso/elton-fresh"
 	responder "github.com/vicanso/elton-responder"
+	staticServe "github.com/vicanso/elton-static-serve"
 	"github.com/vicanso/hes"
 	intranetip "github.com/vicanso/intranet-ip"
 	"github.com/vicanso/pike/config"
@@ -202,6 +204,29 @@ func NewAdmin(adminPath string, eltonConfig *EltonConfig) *elton.Elton {
 		c.NoContent()
 		return
 	})
+
+	files := new(assetFiles)
+
+	g.GET("/", func(c *elton.Context) (err error) {
+		file := "index.html"
+		buf, err := files.Get(file)
+		if err != nil {
+			return
+		}
+		c.SetContentTypeByExt(file)
+		c.BodyBuffer = bytes.NewBuffer(buf)
+		return
+	})
+
+	g.GET("/static/*file", staticServe.New(files, staticServe.Config{
+		Path: "/static",
+		// 客户端缓存一年
+		MaxAge: 365 * 24 * 3600,
+		// 缓存服务器缓存一个小时
+		SMaxAge:             60 * 60,
+		DenyQueryString:     true,
+		DisableLastModified: true,
+	}))
 
 	e.AddGroup(g)
 	return e
