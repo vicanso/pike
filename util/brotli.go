@@ -35,6 +35,7 @@ func Brotli(buf []byte, level int) ([]byte, error) {
 	w := brotli.NewWriterLevel(buffer, level)
 	_, err := w.Write(buf)
 	if err != nil {
+		w.Close()
 		return nil, err
 	}
 	err = w.Close()

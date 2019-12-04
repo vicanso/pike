@@ -14,7 +14,13 @@ const columns = [
   },
   {
     title: i18n("admin.password"),
-    dataIndex: "password"
+    dataIndex: "password",
+    render: row => {
+      if (row) {
+        return "***";
+      }
+      return "";
+    }
   },
   {
     title: i18n("admin.prefix"),
@@ -47,7 +53,13 @@ const fields = [
   {
     label: i18n("admin.prefix"),
     key: "prefix",
-    placeholder: i18n("admin.prefixPlaceHolder")
+    placeholder: i18n("admin.prefixPlaceHolder"),
+    rules: [
+      {
+        required: true,
+        message: i18n("admin.prefixRequireMessage")
+      }
+    ]
   },
   {
     label: i18n("admin.enabledInternetAccess"),

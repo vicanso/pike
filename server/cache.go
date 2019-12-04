@@ -1,0 +1,204 @@
+// Copyright 2019 tree xie
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+package server
+
+import (
+	"net/http"
+	"regexp"
+	"strconv"
+	"strings"
+
+	"github.com/vicanso/elton"
+	"github.com/vicanso/pike/cache"
+	"github.com/vicanso/pike/config"
+	"github.com/vicanso/pike/util"
+)
+
+func createCompressHandler(compressConfig *config.Compress) CompressHandler {
+	// 前置已针对未支持的encoding过滤，因此data只可能为未压缩或者gzip数据
+	var filter *regexp.Regexp
+	if compressConfig != nil && compressConfig.Filter != "" {
+		filter, _ = regexp.Compile(compressConfig.Filter)
+	}
+	return func(c *elton.Context, data []byte, ignoreHeader bool) (httpData *cache.HTTPData) {
+		headers := c.Headers
+		httpData = &cache.HTTPData{
+			StatusCode: c.StatusCode,
+			RawBody:    data,
+		}
+		// 如果忽略header（对于post等不可缓存的请求）
+		if !ignoreHeader {
+			httpData.Headers = cache.NewHTTPHeaders(headers, elton.HeaderContentEncoding, elton.HeaderContentLength)
+		}
+		// 如果未指定filter的数据，则认为都不需要压缩
+		if filter == nil || len(data) == 0 {
+			return
+		}
+		if len(data) < compressConfig.MinLength {
+			return
+		}
+		contentType := headers.Get(elton.HeaderContentType)
+		if !filter.MatchString(contentType) {
+			return
+		}
+		httpData.GzipBody, _ = util.Gzip(data, compressConfig.Level)
+		// 如果gzip压缩成功，则删除rawBody（因为基本所有客户端都支持gzip，若不支持则从gzip解压获取），减少内存占用
+		if httpData.GzipBody != nil {
+			httpData.RawBody = nil
+		}
+		httpData.BrBody, _ = util.Brotli(data, compressConfig.Level)
+		return
+	}
+}
+
+func requestIsPass(req *http.Request) bool {
+	method := req.Method
+	return method != http.MethodGet && method != http.MethodHead
+}
+
+// 根据Cache-Control的信息，获取s-maxage 或者max-age的值
+func getCacheAge(header http.Header) int {
+	// 如果有设置cookie，则为不可缓存
+	if len(header.Get(elton.HeaderSetCookie)) != 0 {
+		return 0
+	}
+	// 如果没有设置cache-control，则不可缓存
+	cc := header.Get(elton.HeaderCacheControl)
+	if len(cc) == 0 {
+		return 0
+	}
+
+	// 如果设置不可缓存，返回0
+	match := noCacheReg.MatchString(cc)
+	if match {
+		return 0
+	}
+	// 优先从s-maxage中获取
+	var maxAge = 0
+	result := sMaxAgeReg.FindStringSubmatch(cc)
+	if len(result) == 2 {
+		maxAge, _ = strconv.Atoi(result[1])
+	} else {
+		// 从max-age中获取缓存时间
+		result = maxAgeReg.FindStringSubmatch(cc)
+		if len(result) == 2 {
+			maxAge, _ = strconv.Atoi(result[1])
+		}
+	}
+
+	// 如果有设置了 age 字段，则最大缓存时长减少
+	age := header.Get(headerAge)
+	if age != "" {
+		v, _ := strconv.Atoi(age)
+		maxAge -= v
+	}
+
+	return maxAge
+}
+
+// newCacheDispatchMiddleware create a cache dispatch middleware
+func newCacheDispatchMiddleware(dispatcher *cache.Dispatcher, compress *config.Compress, generateEtag bool) elton.Handler {
+
+	compressHandler := createCompressHandler(compress)
+	return func(c *elton.Context) (err error) {
+		// 如果dispatcher未设置，所有请求都直接pass
+		if dispatcher == nil || requestIsPass(c.Request) {
+			return c.Next()
+		}
+		key := util.GetIdentity(c.Request)
+		httpCache := dispatcher.GetHTTPCache(key)
+
+		status, httpData := httpCache.Get()
+		if status == cache.StatusCachable {
+			httpData.SetResponse(c)
+			// 设置Age
+			age := httpCache.Age()
+			if age > 0 {
+				c.SetHeader(headerAge, strconv.Itoa(age))
+			}
+			return
+		}
+
+		c.Set(statusKey, status)
+		c.Set(httpCacheKey, httpCache)
+
+		err = c.Next()
+
+		headers := c.Headers
+		encoding := headers.Get(elton.HeaderContentEncoding)
+		var body []byte
+		if c.BodyBuffer != nil {
+			body = c.BodyBuffer.Bytes()
+		}
+
+		done := func() {
+			if status == cache.StatusFetching {
+				httpCache.HitForPass(dispatcher.HitForPass)
+			}
+		}
+		if err != nil {
+			done()
+			return
+		}
+
+		// 生成etag
+		if generateEtag {
+			etag := headers.Get(elton.HeaderETag)
+			if etag == "" {
+				etag = util.GenerateETag(body)
+				headers.Set(elton.HeaderETag, etag)
+			}
+		}
+
+		// 如果是不支持的encoding，则直接返回
+		if encoding != "" && encoding != elton.Gzip {
+			done()
+			return
+		}
+
+		// 如果是fetching状态的，在成功获取数据后，要根据返回数据设置缓存状态
+		if status == cache.StatusFetching {
+			age := getCacheAge(c.Headers)
+			if age == 0 {
+				done()
+				return
+			}
+
+			// 如果返回的数据已压缩，解压
+			if strings.EqualFold(encoding, elton.Gzip) {
+				body, err = util.Gunzip(body)
+				if err != nil {
+					done()
+					return
+				}
+				headers.Del(elton.HeaderContentEncoding)
+			}
+			httpData = compressHandler(c, body, false)
+			httpCache.Cachable(age, httpData)
+			httpData.SetResponse(c)
+		} else {
+			// 如果返回的数据已压缩，解压
+			if strings.EqualFold(encoding, elton.Gzip) {
+				body, err = util.Gunzip(body)
+				if err != nil {
+					return
+				}
+			}
+			httpData := compressHandler(c, body, true)
+			httpData.SetResponse(c)
+		}
+		return
+	}
+}

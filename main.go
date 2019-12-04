@@ -2,6 +2,8 @@ package main
 
 import (
 	"os"
+	"os/signal"
+	"syscall"
 
 	"github.com/vicanso/pike/config"
 	"github.com/vicanso/pike/log"
@@ -11,9 +13,9 @@ import (
 
 var (
 	// BuildedAt application builded at ???
-	BuildedAt = ""
+	BuildedAt = "" // nolint
 	// CommitID git commit id
-	CommitID = ""
+	CommitID = "" // nolint
 )
 
 func main() {
@@ -38,6 +40,14 @@ func main() {
 	})
 
 	// TODO 增加监听信息关闭服务
-	c := make(chan os.Signal)
-	<-c
+	c := make(chan os.Signal, 1)
+	signal.Notify(c, syscall.SIGQUIT)
+	for s := range c {
+		switch s {
+		case syscall.SIGQUIT:
+			os.Exit(0)
+		default:
+			logger.Info("exit should use sigquit")
+		}
+	}
 }

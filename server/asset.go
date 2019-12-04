@@ -26,8 +26,7 @@ var (
 )
 
 type (
-	assetFiles struct {
-	}
+	assetFiles struct{}
 )
 
 func (*assetFiles) Exists(file string) bool {

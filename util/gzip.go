@@ -44,8 +44,12 @@ func Gzip(buf []byte, level int) ([]byte, error) {
 	w, _ := gzip.NewWriterLevel(&b, level)
 	_, err := w.Write(buf)
 	if err != nil {
+		w.Close()
 		return nil, err
 	}
-	w.Close()
+	err = w.Close()
+	if err != nil {
+		return nil, err
+	}
 	return b.Bytes(), nil
 }
