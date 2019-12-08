@@ -18,6 +18,7 @@ package util
 
 import (
 	"bytes"
+	"io/ioutil"
 
 	"github.com/andybalholm/brotli"
 )
@@ -43,4 +44,13 @@ func Brotli(buf []byte, level int) ([]byte, error) {
 		return nil, err
 	}
 	return buffer.Bytes(), nil
+}
+
+// BrotliDecode brotli decode
+func BrotliDecode(buf []byte) ([]byte, error) {
+	if len(buf) == 0 {
+		return nil, nil
+	}
+	r := brotli.NewReader(bytes.NewBuffer(buf))
+	return ioutil.ReadAll(r)
 }

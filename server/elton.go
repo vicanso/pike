@@ -64,11 +64,6 @@ var (
 	}
 )
 
-type (
-	// CompressHandler compress handler
-	CompressHandler func(*elton.Context, []byte, bool) (httpData *cache.HTTPData)
-)
-
 // EltonConfig elton config
 type EltonConfig struct {
 	adminConfig    *config.Admin

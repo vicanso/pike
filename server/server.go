@@ -176,15 +176,15 @@ func (s *Server) Update(conf *config.Server, locations config.Locations, upstrea
 
 // ListenAndServe call http server's listen and serve
 func (s *Server) ListenAndServe() error {
-	if s.status == serverStatusRunning {
+	if s.GetStatus() == serverStatusRunning {
 		return nil
 	}
-	s.status = serverStatusRunning
+	s.SetStatus(serverStatusRunning)
 	err := s.server.ListenAndServe()
 	if err != nil {
 		s.message = err.Error()
 	}
-	s.status = serverStatusStop
+	s.SetStatus(serverStatusStop)
 	return err
 }
 

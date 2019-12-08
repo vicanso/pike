@@ -7,7 +7,7 @@ dev:
 	ENABLED_ADMIN_SERVER=1 CONFIG=etcd://127.0.0.1:2379 fresh
 
 test:
-	GO_MODE=test BASE_PATH=/test-pike CONFIG=etcd://127.0.0.1:237CONFIG=etcd://127.0.0.1:23799 go test -race -cover ./...
+	GO_MODE=test BASE_PATH=/test-pike CONFIG=etcd://127.0.0.1:2379 go test -race -cover ./...
 
 test-cover:
 	GO_MODE=test BASE_PATH=/test-pike CONFIG=etcd://127.0.0.1:2379 go test -race -coverprofile=test.out ./... && go tool cover --html=test.out

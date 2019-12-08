@@ -42,17 +42,19 @@ type (
 
 // NewDispatcher new a dispatcher
 func NewDispatcher(cacheConfig *config.Cache) *Dispatcher {
-	size := cacheConfig.Size
-	zoneSize := cacheConfig.Zone
-	hitForPass := cacheConfig.HitForPass
-	if size <= 0 {
-		size = defaultSize
-	}
-	if zoneSize <= 0 {
-		zoneSize = defaultZoneSize
-	}
-	if hitForPass <= 0 {
-		hitForPass = defaultHitForPass
+	size := defaultSize
+	zoneSize := defaultZoneSize
+	hitForPass := defaultHitForPass
+	if cacheConfig != nil {
+		if cacheConfig.Size > 0 {
+			size = cacheConfig.Size
+		}
+		if cacheConfig.Zone > 0 {
+			zoneSize = cacheConfig.Zone
+		}
+		if cacheConfig.HitForPass > 0 {
+			hitForPass = cacheConfig.HitForPass
+		}
 	}
 
 	// 按zoneSize与size创建二维缓存，存放的是LRU缓存实例

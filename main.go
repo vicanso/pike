@@ -8,6 +8,7 @@ import (
 	"github.com/vicanso/pike/config"
 	"github.com/vicanso/pike/log"
 	"github.com/vicanso/pike/server"
+	_ "go.uber.org/automaxprocs"
 	"go.uber.org/zap"
 )
 
@@ -41,10 +42,15 @@ func main() {
 
 	// TODO 增加监听信息关闭服务
 	c := make(chan os.Signal, 1)
-	signal.Notify(c, syscall.SIGQUIT)
+	signal.Notify(c, syscall.SIGQUIT, syscall.SIGINT, syscall.SIGTERM)
 	for s := range c {
 		switch s {
+		case syscall.SIGINT:
+			fallthrough
+		case syscall.SIGTERM:
+			fallthrough
 		case syscall.SIGQUIT:
+			// TODO 将server设置为stop，延时退出
 			os.Exit(0)
 		default:
 			logger.Info("exit should use sigquit")

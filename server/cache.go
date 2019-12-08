@@ -16,52 +16,13 @@ package server
 
 import (
 	"net/http"
-	"regexp"
 	"strconv"
-	"strings"
 
 	"github.com/vicanso/elton"
 	"github.com/vicanso/pike/cache"
 	"github.com/vicanso/pike/config"
 	"github.com/vicanso/pike/util"
 )
-
-func createCompressHandler(compressConfig *config.Compress) CompressHandler {
-	// 前置已针对未支持的encoding过滤，因此data只可能为未压缩或者gzip数据
-	var filter *regexp.Regexp
-	if compressConfig != nil && compressConfig.Filter != "" {
-		filter, _ = regexp.Compile(compressConfig.Filter)
-	}
-	return func(c *elton.Context, data []byte, ignoreHeader bool) (httpData *cache.HTTPData) {
-		headers := c.Headers
-		httpData = &cache.HTTPData{
-			StatusCode: c.StatusCode,
-			RawBody:    data,
-		}
-		// 如果忽略header（对于post等不可缓存的请求）
-		if !ignoreHeader {
-			httpData.Headers = cache.NewHTTPHeaders(headers, elton.HeaderContentEncoding, elton.HeaderContentLength)
-		}
-		// 如果未指定filter的数据，则认为都不需要压缩
-		if filter == nil || len(data) == 0 {
-			return
-		}
-		if len(data) < compressConfig.MinLength {
-			return
-		}
-		contentType := headers.Get(elton.HeaderContentType)
-		if !filter.MatchString(contentType) {
-			return
-		}
-		httpData.GzipBody, _ = util.Gzip(data, compressConfig.Level)
-		// 如果gzip压缩成功，则删除rawBody（因为基本所有客户端都支持gzip，若不支持则从gzip解压获取），减少内存占用
-		if httpData.GzipBody != nil {
-			httpData.RawBody = nil
-		}
-		httpData.BrBody, _ = util.Brotli(data, compressConfig.Level)
-		return
-	}
-}
 
 func requestIsPass(req *http.Request) bool {
 	method := req.Method
@@ -113,44 +74,56 @@ func newCacheDispatchMiddleware(dispatcher *cache.Dispatcher, compress *config.C
 
 	compressHandler := createCompressHandler(compress)
 	return func(c *elton.Context) (err error) {
-		// 如果dispatcher未设置，所有请求都直接pass
-		if dispatcher == nil || requestIsPass(c.Request) {
-			return c.Next()
-		}
-		key := util.GetIdentity(c.Request)
-		httpCache := dispatcher.GetHTTPCache(key)
+		status := cache.StatusUnknown
+		cacheable := false
+		passed := false
+		var httpData *cache.HTTPData
+		var httpCache *cache.HTTPCache
+		// 如果设置了dispatcher，而且不是pass类的请求
+		// 则表示有可能可缓存请求
+		if dispatcher != nil && !requestIsPass(c.Request) {
+			key := util.GetIdentity(c.Request)
+			httpCache = dispatcher.GetHTTPCache(key)
 
-		status, httpData := httpCache.Get()
-		if status == cache.StatusCachable {
-			httpData.SetResponse(c)
-			// 设置Age
-			age := httpCache.Age()
-			if age > 0 {
-				c.SetHeader(headerAge, strconv.Itoa(age))
+			status, httpData = httpCache.Get()
+			c.Set(statusKey, status)
+			// 如果获取到缓存，则直接返回
+			if status == cache.StatusCachable {
+				httpData.SetResponse(c)
+				// 设置Age
+				age := httpCache.Age()
+				if age > 0 {
+					c.SetHeader(headerAge, strconv.Itoa(age))
+				}
+				return
 			}
+
+			c.Set(httpCacheKey, httpCache)
+		} else {
+			passed = true
+			c.Set(statusKey, cache.StatusPassed)
+		}
+
+		// 对于fetching类的请求，如果最终是不可缓存的，则设置hit for pass
+		if status == cache.StatusFetching {
+			defer func() {
+				if !cacheable {
+					httpCache.HitForPass(dispatcher.HitForPass)
+				}
+			}()
+		}
+
+		err = c.Next()
+		if err != nil {
 			return
 		}
 
-		c.Set(statusKey, status)
-		c.Set(httpCacheKey, httpCache)
-
-		err = c.Next()
-
+		// 执行proxy成功之后
 		headers := c.Headers
 		encoding := headers.Get(elton.HeaderContentEncoding)
 		var body []byte
 		if c.BodyBuffer != nil {
 			body = c.BodyBuffer.Bytes()
-		}
-
-		done := func() {
-			if status == cache.StatusFetching {
-				httpCache.HitForPass(dispatcher.HitForPass)
-			}
-		}
-		if err != nil {
-			done()
-			return
 		}
 
 		// 生成etag
@@ -164,41 +137,27 @@ func newCacheDispatchMiddleware(dispatcher *cache.Dispatcher, compress *config.C
 
 		// 如果是不支持的encoding，则直接返回
 		if encoding != "" && encoding != elton.Gzip {
-			done()
 			return
 		}
 
 		// 如果是fetching状态的，在成功获取数据后，要根据返回数据设置缓存状态
-		if status == cache.StatusFetching {
-			age := getCacheAge(c.Headers)
-			if age == 0 {
-				done()
-				return
+		cacheAge := 0
+		// 如果是pass的请求，都不可以缓存
+		if !passed {
+			if status == cache.StatusFetching {
+				cacheAge = getCacheAge(c.Headers)
 			}
-
-			// 如果返回的数据已压缩，解压
-			if strings.EqualFold(encoding, elton.Gzip) {
-				body, err = util.Gunzip(body)
-				if err != nil {
-					done()
-					return
-				}
-				headers.Del(elton.HeaderContentEncoding)
+			// 缓存时长大于0
+			if cacheAge != 0 {
+				cacheable = true
 			}
-			httpData = compressHandler(c, body, false)
-			httpCache.Cachable(age, httpData)
-			httpData.SetResponse(c)
-		} else {
-			// 如果返回的数据已压缩，解压
-			if strings.EqualFold(encoding, elton.Gzip) {
-				body, err = util.Gunzip(body)
-				if err != nil {
-					return
-				}
-			}
-			httpData := compressHandler(c, body, true)
-			httpData.SetResponse(c)
 		}
+
+		httpData = compressHandler(c, cacheable)
+		if cacheable {
+			httpCache.Cachable(cacheAge, httpData)
+		}
+
 		return
 	}
 }
