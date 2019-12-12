@@ -42,12 +42,6 @@ const (
 )
 
 var (
-	// 需要清除的header
-	clearHeaders = []string{
-		"Date",
-		"Connection",
-		elton.HeaderContentLength,
-	}
 	noCacheReg = regexp.MustCompile(`no-cache|no-store|private`)
 	sMaxAgeReg = regexp.MustCompile(`s-maxage=(\d+)`)
 	maxAgeReg  = regexp.MustCompile(`max-age=(\d+)`)

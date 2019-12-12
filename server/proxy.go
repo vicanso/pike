@@ -29,6 +29,15 @@ import (
 	"github.com/vicanso/pike/util"
 )
 
+var (
+	// 需要清除的header
+	clearHeaders = []string{
+		"Date",
+		"Connection",
+		elton.HeaderContentLength,
+	}
+)
+
 func newProxyHandlers(locations config.Locations, upstreams *upstream.Upstreams) map[string]elton.Handler {
 	proxyMids := make(map[string]elton.Handler)
 	defaultTransport := &http.Transport{
@@ -53,6 +62,7 @@ func newProxyHandlers(locations config.Locations, upstreams *upstream.Upstreams)
 			continue
 		}
 		proxyMids[item.Name] = proxy.New(proxy.Config{
+			Rewrites:  item.Rewrites,
 			Transport: defaultTransport,
 			TargetPicker: func(c *elton.Context) (*url.URL, proxy.Done, error) {
 				httpUpstream, done := up.Next()
@@ -93,7 +103,7 @@ func createProxyMiddleware(locations config.Locations, upstreams *upstream.Upstr
 			return
 		}
 		// 设置请求头
-		if l.RequestHeader != nil {
+		if l.ReqHeader != nil {
 			util.MergeHeader(c.Request.Header, l.ReqHeader)
 			host := l.ReqHeader.Get("Host")
 			// 如果有配置Host请求头，则设置request host
@@ -106,8 +116,8 @@ func createProxyMiddleware(locations config.Locations, upstreams *upstream.Upstr
 			util.MergeHeader(c.Header(), l.ResHeader)
 		}
 
-		fn := proxyMids[l.Name]
-		if fn == nil {
+		fn, ok := proxyMids[l.Name]
+		if !ok || fn == nil {
 			err = errServiceUnavailable
 			return
 		}

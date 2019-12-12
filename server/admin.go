@@ -17,6 +17,7 @@ package server
 import (
 	"bytes"
 	"net"
+	"net/http"
 	"strings"
 
 	"github.com/vicanso/elton"
@@ -32,6 +33,39 @@ import (
 	"github.com/vicanso/pike/config"
 )
 
+func newAdminValidateMiddlewares(adminConfig *config.Admin) []elton.Handler {
+	handlers := make([]elton.Handler, 0)
+	// 不允许外网访问
+	if !adminConfig.EnabledInternetAccess {
+		fn := func(c *elton.Context) (err error) {
+			// 会获取客户的访问IP（获取到非内网IP为止，如果都没有，则remote addr)
+			ip := c.ClientIP()
+			if !intranetip.Is(net.ParseIP(ip)) {
+				err = hes.NewWithStatusCode("Not allow to access", http.StatusForbidden)
+				return
+			}
+			return c.Next()
+		}
+		handlers = append(handlers, fn)
+	}
+	user := adminConfig.User
+	password := adminConfig.Password
+	// 如果配置了认证
+	if user != "" && password != "" {
+		fn := basicauth.New(basicauth.Config{
+			Validate: func(account, pwd string, c *elton.Context) (bool, error) {
+				if account == user && pwd == password {
+					return true, nil
+				}
+				return false, nil
+			},
+		})
+
+		handlers = append(handlers, fn)
+	}
+	return handlers
+}
+
 // NewAdmin new an admin elton istance
 func NewAdmin(adminPath string, eltonConfig *EltonConfig) *elton.Elton {
 	e := elton.New()
@@ -39,31 +73,7 @@ func NewAdmin(adminPath string, eltonConfig *EltonConfig) *elton.Elton {
 	adminConfig := eltonConfig.adminConfig
 
 	if adminConfig != nil {
-		// 不允许外网访问
-		if !adminConfig.EnabledInternetAccess {
-			e.Use(func(c *elton.Context) (err error) {
-				// 会获取客户的访问IP（获取到非内网IP为止，如果都没有，则remote addr)
-				ip := c.ClientIP()
-				if !intranetip.Is(net.ParseIP(ip)) {
-					err = hes.New("Not allow to access")
-					return
-				}
-				return c.Next()
-			})
-		}
-		user := adminConfig.User
-		password := adminConfig.Password
-		// 如果配置了认证
-		if user != "" && password != "" {
-			e.Use(basicauth.New(basicauth.Config{
-				Validate: func(account, pwd string, c *elton.Context) (bool, error) {
-					if account == user && pwd == password {
-						return true, nil
-					}
-					return false, nil
-				},
-			}))
-		}
+		e.Use(newAdminValidateMiddlewares(adminConfig)...)
 	}
 
 	e.Use(fresh.NewDefault())

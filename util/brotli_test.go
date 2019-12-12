@@ -15,11 +15,8 @@
 package util
 
 import (
-	"bytes"
 	"io/ioutil"
 	"testing"
-
-	"github.com/andybalholm/brotli"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -32,8 +29,7 @@ func TestBrotli(t *testing.T) {
 	assert.NotEmpty(buf)
 	assert.NotEqual(originalBuf, buf)
 
-	r := brotli.NewReader(bytes.NewBuffer(buf))
-	buf, err = ioutil.ReadAll(r)
+	buf, err = BrotliDecode(buf)
 	assert.Nil(err)
 	assert.Equal(originalBuf, buf)
 }
