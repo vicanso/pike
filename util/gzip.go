@@ -35,21 +35,26 @@ func Gunzip(buf []byte) ([]byte, error) {
 	return ioutil.ReadAll(r)
 }
 
-// Gzip gzip function
-func Gzip(buf []byte, level int) ([]byte, error) {
-	var b bytes.Buffer
+func doGzip(buf []byte, level int) (*bytes.Buffer, error) {
+	buffer := new(bytes.Buffer)
 	if level <= 0 || level > gzip.BestCompression {
 		level = gzip.DefaultCompression
 	}
-	w, _ := gzip.NewWriterLevel(&b, level)
+	// 已处理了压缩级别范围，因此不会出错1
+	w, _ := gzip.NewWriterLevel(buffer, level)
+	defer w.Close()
 	_, err := w.Write(buf)
 	if err != nil {
-		w.Close()
 		return nil, err
 	}
-	err = w.Close()
+	return buffer, nil
+}
+
+// Gzip gzip function
+func Gzip(buf []byte, level int) ([]byte, error) {
+	buffer, err := doGzip(buf, level)
 	if err != nil {
 		return nil, err
 	}
-	return b.Bytes(), nil
+	return buffer.Bytes(), nil
 }

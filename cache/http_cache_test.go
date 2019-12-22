@@ -103,8 +103,8 @@ func TestHTTPCacheGet(t *testing.T) {
 		}()
 		// 此时会因为fetching而等待
 		status, data = hc.Get()
-		assert.Equal(StatusCachable, status)
-		assert.Equal(StatusCachable, hc.status)
+		assert.Equal(StatusCacheable, status)
+		assert.Equal(StatusCacheable, hc.status)
 		assert.Equal(statusCode, data.StatusCode)
 		assert.Equal(rawBody, data.RawBody)
 		assert.Equal(gzipBody, data.GzipBody)
@@ -112,8 +112,8 @@ func TestHTTPCacheGet(t *testing.T) {
 
 		// 此次不会再因为fetching而等待
 		status, data = hc.Get()
-		assert.Equal(StatusCachable, status)
-		assert.Equal(StatusCachable, hc.status)
+		assert.Equal(StatusCacheable, status)
+		assert.Equal(StatusCacheable, hc.status)
 		assert.Equal(statusCode, data.StatusCode)
 
 		// 设置为过期(expiredAt < now)

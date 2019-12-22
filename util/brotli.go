@@ -27,19 +27,23 @@ const (
 	defaultBrQuality = 8
 )
 
-// Brotli brotli compress
-func Brotli(buf []byte, level int) ([]byte, error) {
+func brotliEncode(buf []byte, level int) (*bytes.Buffer, error) {
 	buffer := new(bytes.Buffer)
 	if level <= 0 || level > 11 {
 		level = defaultBrQuality
 	}
 	w := brotli.NewWriterLevel(buffer, level)
+	defer w.Close()
 	_, err := w.Write(buf)
 	if err != nil {
-		w.Close()
 		return nil, err
 	}
-	err = w.Close()
+	return buffer, nil
+}
+
+// Brotli brotli compress
+func Brotli(buf []byte, level int) ([]byte, error) {
+	buffer, err := brotliEncode(buf, level)
 	if err != nil {
 		return nil, err
 	}

@@ -36,8 +36,8 @@ const (
 	StatusFetching
 	// StatusHitForPass hit-for-pass status
 	StatusHitForPass
-	// StatusCachable cachable status
-	StatusCachable
+	// StatusCacheable cachable status
+	StatusCacheable
 	// StatusPassed pass status
 	StatusPassed
 )
@@ -66,6 +66,21 @@ type (
 		expiredAt int
 	}
 )
+
+func StatusString(status int) string {
+	switch status {
+	case StatusFetching:
+		return "fetching"
+	case StatusHitForPass:
+		return "hitForPass"
+	case StatusCacheable:
+		return "cacheable"
+	case StatusPassed:
+		return "passed"
+	default:
+		return "unknown"
+	}
+}
 
 // SetResponse set response
 func (httpData *HTTPData) SetResponse(c *elton.Context) {
@@ -171,7 +186,7 @@ func (hc *HTTPCache) get() (status int, done chan struct{}, data *HTTPData) {
 	// 为什么需要返回status与data
 	// 因为有可能在函数调用完成后，刚好缓存过期了，如果此时不返回status与data
 	// 当其它goroutin获取锁之后，有可能刚好重置数据
-	if status == StatusCachable {
+	if status == StatusCacheable {
 		data = hc.data
 	}
 	return
@@ -194,7 +209,7 @@ func (hc *HTTPCache) Cachable(ttl int, httpData *HTTPData) {
 	defer hc.mu.Unlock()
 	hc.createdAt = int(time.Now().Unix())
 	hc.expiredAt = hc.createdAt + ttl
-	hc.status = StatusCachable
+	hc.status = StatusCacheable
 
 	hc.data = httpData
 	for _, ch := range hc.chans {
@@ -205,4 +220,9 @@ func (hc *HTTPCache) Cachable(ttl int, httpData *HTTPData) {
 // Age get the http cache's age
 func (hc *HTTPCache) Age() int {
 	return int(time.Now().Unix()) - hc.createdAt
+}
+
+// GetStatus get http cache status
+func (hc *HTTPCache) GetStatus() int {
+	return hc.status
 }

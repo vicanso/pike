@@ -69,6 +69,26 @@ type EltonConfig struct {
 	compress       *config.Compress
 }
 
+func newErrorListener(dispatcher *cache.Dispatcher, logger *zap.Logger) elton.ErrorListener {
+	return func(c *elton.Context, err error) {
+		logger.Error("uncaught exception",
+			zap.String("url", c.Request.RequestURI),
+			zap.Error(err),
+		)
+		// 如果没有设置dispatcher，则无需要处理以下流程
+		if dispatcher == nil {
+			return
+		}
+		status, _ := c.Get(statusKey).(int)
+		if status == cache.StatusFetching {
+			httpCache, _ := c.Get(httpCacheKey).(*cache.HTTPCache)
+			if httpCache != nil {
+				httpCache.HitForPass(dispatcher.HitForPass)
+			}
+		}
+	}
+}
+
 // NewElton new an elton instance
 func NewElton(eltonConfig *EltonConfig) *elton.Elton {
 	logger := log.Default()
@@ -85,23 +105,7 @@ func NewElton(eltonConfig *EltonConfig) *elton.Elton {
 	adminElton := NewAdmin(adminPath, eltonConfig)
 
 	// 未处理错误
-	e.OnError(func(c *elton.Context, err error) {
-		logger.Error("uncaught exception",
-			zap.String("url", c.Request.RequestURI),
-			zap.Error(err),
-		)
-		// 如果没有设置dispatcher，则无需要处理以下流程
-		if dispatcher == nil {
-			return
-		}
-		status, _ := c.Get(statusKey).(int)
-		if status == cache.StatusFetching {
-			httpCache, _ := c.Get(httpCacheKey).(*cache.HTTPCache)
-			if httpCache != nil {
-				httpCache.HitForPass(dispatcher.HitForPass)
-			}
-		}
-	})
+	e.OnError(newErrorListener(dispatcher, logger))
 	e.Use(recover.New())
 
 	var concurrency uint32

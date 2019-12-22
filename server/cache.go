@@ -24,6 +24,10 @@ import (
 	"github.com/vicanso/pike/util"
 )
 
+const (
+	headerStatusKey = "X-Status"
+)
+
 func requestIsPass(req *http.Request) bool {
 	method := req.Method
 	return method != http.MethodGet && method != http.MethodHead
@@ -88,20 +92,22 @@ func newCacheDispatchMiddleware(dispatcher *cache.Dispatcher, compress *config.C
 			status, httpData = httpCache.Get()
 			c.Set(statusKey, status)
 			// 如果获取到缓存，则直接返回
-			if status == cache.StatusCachable {
+			if status == cache.StatusCacheable {
 				httpData.SetResponse(c)
 				// 设置Age
 				age := httpCache.Age()
 				if age > 0 {
 					c.SetHeader(headerAge, strconv.Itoa(age))
 				}
+				c.SetHeader(headerStatusKey, cache.StatusString(status))
 				return
 			}
-
+			c.SetHeader(headerStatusKey, cache.StatusString(status))
 			c.Set(httpCacheKey, httpCache)
 		} else {
 			passed = true
 			c.Set(statusKey, cache.StatusPassed)
+			c.SetHeader(headerStatusKey, cache.StatusString(cache.StatusPassed))
 		}
 
 		// 对于fetching类的请求，如果最终是不可缓存的，则设置hit for pass

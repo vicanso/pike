@@ -67,7 +67,11 @@ func TestGetCacheAge(t *testing.T) {
 
 func TestCacheDispatchMiddleware(t *testing.T) {
 
-	dispatcher := cache.NewDispatcher(nil)
+	dispatcher := cache.NewDispatcher(&config.Cache{
+		Size:       10,
+		Zone:       10,
+		HitForPass: 30,
+	})
 
 	compressConfig := &config.Compress{
 		Filter:    "text|json|javascript",
@@ -147,7 +151,7 @@ func TestCacheDispatchMiddleware(t *testing.T) {
 		assert.Nil(err)
 		assert.Equal(1, count)
 		assert.NotEmpty(c.GetHeader(headerAge))
-		assert.Equal(cache.StatusCachable, c.Get(statusKey))
+		assert.Equal(cache.StatusCacheable, c.Get(statusKey))
 		assert.NotEmpty(c.BodyBuffer)
 		assert.NotEmpty(c.GetHeader(elton.HeaderETag))
 		assert.Equal(elton.Br, c.GetHeader(elton.HeaderContentEncoding))

@@ -94,3 +94,217 @@ func TestNewAdminValidateMiddlewares(t *testing.T) {
 		assert.True(done)
 	})
 }
+
+func TestConfigHandler(t *testing.T) {
+	assert := assert.New(t)
+	newContext := func(category string, requestBody []byte) *elton.Context {
+		c := elton.NewContext(nil, nil)
+		c.RequestBody = requestBody
+		c.Params = map[string]string{
+			"category": category,
+		}
+		return c
+	}
+	t.Run("cache config", func(t *testing.T) {
+		category := config.CachesCategory
+		c := newContext(category, []byte(`{
+			"name": "testCache",
+			"zone": 1000,
+			"size": 10,
+			"hitForPass": 300
+		}`))
+		err := createOrUpdateConfig(c)
+		assert.Nil(err)
+
+		c = newContext(category, nil)
+		err = getConfigs(c)
+		assert.Nil(err)
+		caches := c.Body.(map[string]interface{})[category].(config.Caches)
+		assert.NotEmpty(caches)
+
+		c = elton.NewContext(nil, nil)
+		c.Params = map[string]string{
+			"category": category,
+			"name":     "testCache",
+		}
+		err = deleteConfig(c)
+		assert.Nil(err)
+
+		c = newContext(category, nil)
+		err = getConfigs(c)
+		assert.Nil(err)
+		caches = c.Body.(map[string]interface{})[category].(config.Caches)
+		assert.Empty(caches)
+	})
+
+	t.Run("compress config", func(t *testing.T) {
+		category := config.CompressesCategory
+		c := newContext(category, []byte(`{
+			"name": "testCompress",
+			"level": 9,
+			"minLength": 1000,
+			"filter": "text|json"
+		}`))
+		err := createOrUpdateConfig(c)
+		assert.Nil(err)
+
+		c = newContext(category, nil)
+		err = getConfigs(c)
+		assert.Nil(err)
+		compresses := c.Body.(map[string]interface{})[category].(config.Compresses)
+		assert.NotEmpty(compresses)
+
+		c = elton.NewContext(nil, nil)
+		c.Params = map[string]string{
+			"category": category,
+			"name":     "testCompress",
+		}
+		err = deleteConfig(c)
+		assert.Nil(err)
+
+		c = newContext(category, nil)
+		err = getConfigs(c)
+		assert.Nil(err)
+		compresses = c.Body.(map[string]interface{})[category].(config.Compresses)
+		assert.Empty(compresses)
+	})
+
+	t.Run("locations config", func(t *testing.T) {
+		category := config.LocationsCategory
+		c := newContext(category, []byte(`{
+			"name": "testLocation",
+			"upstream": "testUpstream",
+			"prefixs": ["/api"],
+			"rewrites": ["/api/*:/$1"],
+			"hosts": ["aslant.site"],
+			"requestHeader": ["X-Request-Id:456"],
+			"responseHeader": ["X-Response-Id:123"]
+		}`))
+		err := createOrUpdateConfig(c)
+		assert.Nil(err)
+
+		c = newContext(category, nil)
+		err = getConfigs(c)
+		assert.Nil(err)
+		locations := c.Body.(map[string]interface{})[category].(config.Locations)
+		assert.NotEmpty(locations)
+
+		c = elton.NewContext(nil, nil)
+		c.Params = map[string]string{
+			"category": category,
+			"name":     "testLocation",
+		}
+		err = deleteConfig(c)
+		assert.Nil(err)
+
+		c = newContext(category, nil)
+		err = getConfigs(c)
+		assert.Nil(err)
+		locations = c.Body.(map[string]interface{})[category].(config.Locations)
+		assert.Empty(locations)
+	})
+
+	t.Run("servers config", func(t *testing.T) {
+		category := config.ServersCategory
+		c := newContext(category, []byte(`{
+			"name": "testServer",
+			"cache": "testCache",
+			"compress": "testCompress",
+			"locations": ["testLocation"],
+			"eTag": true,
+			"addr": "127.0.0.1:3000",
+			"concurrency": 100,
+			"readTimeout": 100000,
+			"writeTimeout": 100000,
+			"idleTimeout": 100000,
+			"maxHeaderBytes": 1000
+		}`))
+		err := createOrUpdateConfig(c)
+		assert.Nil(err)
+
+		c = newContext(category, nil)
+		err = getConfigs(c)
+		assert.Nil(err)
+		servers := c.Body.(map[string]interface{})[category].(config.Servers)
+		assert.NotEmpty(servers)
+
+		c = elton.NewContext(nil, nil)
+		c.Params = map[string]string{
+			"category": category,
+			"name":     "testServer",
+		}
+		err = deleteConfig(c)
+		assert.Nil(err)
+
+		c = newContext(category, nil)
+		err = getConfigs(c)
+		assert.Nil(err)
+		servers = c.Body.(map[string]interface{})[category].(config.Servers)
+		assert.Empty(servers)
+	})
+
+	t.Run("upstream config", func(t *testing.T) {
+		category := config.UpstreamsCategory
+		c := newContext(category, []byte(`{
+			"healthCheck": "/ping",
+			"policy": "first",
+			"name": "testUpstream",
+			"servers": [
+				{
+					"addr": "http://127.0.0.1:3000",
+					"backup": true
+				}
+			]
+		}`))
+		err := createOrUpdateConfig(c)
+		assert.Nil(err)
+
+		c = newContext(category, nil)
+		err = getConfigs(c)
+		assert.Nil(err)
+		upstreams := c.Body.(map[string]interface{})[category].(config.Upstreams)
+		assert.NotEmpty(upstreams)
+
+		c = elton.NewContext(nil, nil)
+		c.Params = map[string]string{
+			"category": category,
+			"name":     "testUpstream",
+		}
+		err = deleteConfig(c)
+		assert.Nil(err)
+
+		c = newContext(category, nil)
+		err = getConfigs(c)
+		assert.Nil(err)
+		upstreams = c.Body.(map[string]interface{})[category].(config.Upstreams)
+		assert.Empty(upstreams)
+	})
+
+	t.Run("admin config", func(t *testing.T) {
+		category := config.AdminCategory
+		c := newContext(category, []byte(`{
+			"prefix": "/pike",
+			"user": "user",
+			"password": "pass",
+			"enabledInternetAccess": true
+		}`))
+		err := createOrUpdateConfig(c)
+		assert.Nil(err)
+
+		c = newContext(category, nil)
+		err = getConfigs(c)
+		assert.Nil(err)
+		admin := c.Body.(map[string]interface{})[category].(*config.Admin)
+		assert.NotNil(admin)
+
+		err = admin.Delete()
+		assert.Nil(err)
+	})
+}
+
+func TestNewAdminServer(t *testing.T) {
+	// 仅简单测试初始化成功
+	assert := assert.New(t)
+	e := NewAdmin("/pike", &EltonConfig{})
+	assert.NotNil(e)
+}
