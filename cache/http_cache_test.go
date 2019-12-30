@@ -204,4 +204,12 @@ func TestSetResponse(t *testing.T) {
 		assert.Equal("8", c.GetHeader(elton.HeaderContentLength))
 		assert.Empty(c.GetHeader(elton.HeaderContentEncoding))
 	})
+
+	t.Run("get status", func(t *testing.T) {
+		assert := assert.New(t)
+		hc := HTTPCache{
+			status: StatusHitForPass,
+		}
+		assert.Equal(hc.status, hc.GetStatus())
+	})
 }
