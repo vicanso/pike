@@ -26,7 +26,9 @@ import (
 
 	"github.com/vicanso/pike/cache"
 	"github.com/vicanso/pike/config"
+	"github.com/vicanso/pike/log"
 	"github.com/vicanso/pike/upstream"
+	"go.uber.org/zap"
 )
 
 const (
@@ -127,7 +129,6 @@ func (ins *Instance) Restart() {
 		srv, ok := v.(*Server)
 		if ok {
 			go func() {
-				// TODO 增加logger
 				_ = srv.ListenAndServe()
 			}()
 		}
@@ -180,6 +181,10 @@ func (s *Server) ListenAndServe() error {
 		return nil
 	}
 	s.SetStatus(serverStatusRunning)
+
+	log.Default().Info("server listening",
+		zap.String("addr", s.server.Addr),
+	)
 	err := s.server.ListenAndServe()
 	if err != nil {
 		s.message = err.Error()

@@ -18,7 +18,6 @@ package config
 
 import (
 	"errors"
-	"os"
 	"path/filepath"
 	"strings"
 
@@ -37,8 +36,6 @@ var (
 )
 
 const (
-	defaultBasePath = "/pike"
-
 	defaultAdminPrefix = "/admin"
 
 	// ServersCategory servers category
@@ -91,23 +88,21 @@ type (
 	OnChange func(ChangeType, string)
 )
 
-func init() {
-	basePath = os.Getenv("BASE_PATH")
-	if basePath == "" {
-		basePath = defaultBasePath
-	}
-	configPath := os.Getenv("CONFIG")
-	if configPath == "" {
-		panic(errors.New("config path can't be nil"))
-	}
+func Init(configPath, bPath string) error {
+	basePath = bPath
 	if strings.HasPrefix(configPath, "etcd://") {
 		etcdClient, err := NewEtcdClient(configPath)
 		if err != nil {
-			panic(err)
+			return err
 		}
 		configClient = etcdClient
+	} else {
+		badgerClient, err := NewBadgerClient(configPath)
+		if err != nil {
+			return err
+		}
+		configClient = badgerClient
 	}
-	// TODO 支持文件配置
 	changeTypeKeyMap = make(map[ChangeType]string)
 	changeTypeKeyMap[ServerChange] = filepath.Join(basePath, ServersCategory)
 	changeTypeKeyMap[CompressChange] = filepath.Join(basePath, CompressesCategory)
@@ -115,6 +110,7 @@ func init() {
 	changeTypeKeyMap[UpstreamChange] = filepath.Join(basePath, UpstreamsCategory)
 	changeTypeKeyMap[LocationChange] = filepath.Join(basePath, LocationsCategory)
 	changeTypeKeyMap[AdminChange] = filepath.Join(basePath, AdminCategory)
+	return nil
 }
 
 func getKey(elem ...string) (string, error) {
@@ -206,4 +202,9 @@ func Watch(onChange OnChange) {
 			}
 		}
 	})
+}
+
+// Close close config client
+func Close() error {
+	return configClient.Close()
 }

@@ -1,14 +1,16 @@
 package main
 
 import (
+	"fmt"
 	"os"
 	"os/signal"
 	"syscall"
 
+	"github.com/spf13/cobra"
 	"github.com/vicanso/pike/config"
 	"github.com/vicanso/pike/log"
 	"github.com/vicanso/pike/server"
-	_ "go.uber.org/automaxprocs"
+	"go.uber.org/automaxprocs/maxprocs"
 	"go.uber.org/zap"
 )
 
@@ -19,9 +21,46 @@ var (
 	CommitID = "" // nolint
 )
 
-func main() {
+// cmds
+var (
+	// 配置保存的路径，支持etcd或者文件形式
+	configPath string
+	// 各配置的前缀路径
+	configBasePath string
+	// initMode模式在首次未配时服务时启用
+	initMode bool
+)
+var rootCmd = &cobra.Command{
+	Use:   "Pike",
+	Short: "Pike is a very fast http cache server",
+	Long:  `Pike support gzip and brotli compress`,
+	Run: func(cmd *cobra.Command, args []string) {
+		err := config.Init(configPath, configBasePath)
+		if err != nil {
+			log.Default().Error(err.Error())
+			os.Exit(1)
+		}
+		startServer()
+	},
+}
+
+func init() {
+	rootCmd.Flags().StringVarP(&configPath, "config", "c", "", "the config's address, E.g: etcd://127.0.0.1:6379 or /tmp/pike (required)")
+	_ = rootCmd.MarkFlagRequired("config")
+
+	rootCmd.Flags().StringVar(&configBasePath, "basePath", "/pike", "the base path of config (default is /pike)")
+
+	rootCmd.Flags().BoolVar(&initMode, "init", false, "init mode will enabled server listen on :3015")
+
+	_, _ = maxprocs.Set(maxprocs.Logger(func(format string, args ...interface{}) {
+		value := fmt.Sprintf(format, args...)
+		log.Default().Info(value)
+	}))
+}
+
+func startServer() {
 	ins := server.Instance{
-		EnabledAdminServer: os.Getenv("ENABLED_ADMIN_SERVER") != "",
+		EnabledAdminServer: initMode,
 	}
 
 	err := ins.Start()
@@ -50,10 +89,18 @@ func main() {
 		case syscall.SIGTERM:
 			fallthrough
 		case syscall.SIGQUIT:
+			config.Close()
 			// TODO 将server设置为stop，延时退出
 			os.Exit(0)
 		default:
 			logger.Info("exit should use sigquit")
 		}
+	}
+}
+
+func main() {
+	if err := rootCmd.Execute(); err != nil {
+		log.Default().Error(err.Error())
+		os.Exit(1)
 	}
 }

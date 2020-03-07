@@ -14,7 +14,7 @@ test-cover:
 
 build:
 	packr2
-	go build -tags 'brotli netgo' -ldflags "-X main.BuildedAt=`date -u +%Y%m%d.%H%M%S` -X main.CommitID=`git rev-parse --short HEAD`" -o pike
+	go build -ldflags "-X main.BuildedAt=`date -u +%Y%m%d.%H%M%S` -X main.CommitID=`git rev-parse --short HEAD`" -o pike
 
 bench:
 	GO_MODE=test BASE_PATH=/test-pike CONFIG=etcd://127.0.0.1:2379 go test -bench=. ./...

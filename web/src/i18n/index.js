@@ -284,7 +284,7 @@ const adminEn = {
   prefix: "URL Prefix",
   prefixPlaceHolder: "Please input the url prefix for admin",
   prefixRequireMessage: "URL prefix for admin can't be empty!",
-  enabledInternetAccess: "Enabled Internet"
+  enabledInternetAccess: "Internet Access"
 };
 const adminZh = {
   createUpdateTitle: "创建或更新管理配置",
@@ -297,7 +297,7 @@ const adminZh = {
   prefix: "地址前缀",
   prefixPlaceHolder: "请输入管理后台的地址前缀",
   prefixRequireMessage: "管理后台地址前缀不能为空！",
-  enabledInternetAccess: "允许外网"
+  enabledInternetAccess: "外网访问"
 };
 
 const i18ns = {
