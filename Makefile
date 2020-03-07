@@ -4,20 +4,20 @@ export GO111MODULE = on
 
 # for dev
 dev:
-	ENABLED_ADMIN_SERVER=1 CONFIG=etcd://127.0.0.1:2379 fresh
+	GO_MODE=test fresh
 
 test:
-	GO_MODE=test BASE_PATH=/test-pike CONFIG=etcd://127.0.0.1:2379 go test -race -cover ./...
+	GO_MODE=test go test -race -cover ./... 
 
 test-cover:
-	GO_MODE=test BASE_PATH=/test-pike CONFIG=etcd://127.0.0.1:2379 go test -race -coverprofile=test.out ./... && go tool cover --html=test.out
+	GO_MODE=test go test -race -coverprofile=test.out ./... && go tool cover --html=test.out
 
 build:
 	packr2
 	go build -ldflags "-X main.BuildedAt=`date -u +%Y%m%d.%H%M%S` -X main.CommitID=`git rev-parse --short HEAD`" -o pike
 
 bench:
-	GO_MODE=test BASE_PATH=/test-pike CONFIG=etcd://127.0.0.1:2379 go test -bench=. ./...
+	GO_MODE=test go test -bench=. ./...
 
 lint:
 	golangci-lint run

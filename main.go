@@ -45,6 +45,15 @@ var rootCmd = &cobra.Command{
 }
 
 func init() {
+	// 测试模式自动添加启动参数
+	if os.Getenv("GO_MODE") == "test" {
+		rootCmd.SetArgs([]string{
+			"--config",
+			"etcd://127.0.0.1:2379",
+			"--init",
+		})
+	}
+
 	rootCmd.Flags().StringVarP(&configPath, "config", "c", "", "the config's address, E.g: etcd://127.0.0.1:6379 or /tmp/pike (required)")
 	_ = rootCmd.MarkFlagRequired("config")
 

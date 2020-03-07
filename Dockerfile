@@ -7,7 +7,7 @@ RUN cd /pike/web \
   && yarn build \
   && rm -rf node_module
 
-FROM golang:1.13-alpine as builder
+FROM golang:1.14-alpine as builder
 
 COPY --from=webbuilder /pike /pike
 
@@ -17,3 +17,20 @@ RUN apk update \
   && go get -u github.com/gobuffalo/packr/v2/packr2 \
   && cd /pike \
   && make build
+
+FROM alpine
+
+RUN addgroup -g 1000 pike \
+  && adduser -u 1000 -G pike -s /bin/sh -D pike \
+  && apk add --no-cache ca-certificates
+
+COPY --from=builder /pike/pike /usr/local/bin/pike
+COPY --from=builder /forest/entrypoint.sh /home/pike/entrypoint.sh
+
+USER pike
+
+WORKDIR /home/pike
+
+CMD ["pike"]
+
+ENTRYPOINT ["entrypoint.sh"]

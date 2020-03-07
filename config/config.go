@@ -18,6 +18,7 @@ package config
 
 import (
 	"errors"
+	"os"
 	"path/filepath"
 	"strings"
 
@@ -87,6 +88,13 @@ type (
 	// OnChange config change's event handler
 	OnChange func(ChangeType, string)
 )
+
+func init() {
+	// 测试模式自动初始化
+	if os.Getenv("GO_MODE") == "test" {
+		_ = Init("etcd://127.0.0.1:2379", "/test-pike")
+	}
+}
 
 func Init(configPath, bPath string) error {
 	basePath = bPath
