@@ -25,7 +25,7 @@ RUN addgroup -g 1000 pike \
   && apk add --no-cache ca-certificates
 
 COPY --from=builder /pike/pike /usr/local/bin/pike
-COPY --from=builder /forest/entrypoint.sh /home/pike/entrypoint.sh
+COPY --from=builder /pike/entrypoint.sh /home/pike/entrypoint.sh
 
 USER pike
 
