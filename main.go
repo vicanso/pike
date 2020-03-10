@@ -35,12 +35,12 @@ var rootCmd = &cobra.Command{
 	Short: "Pike is a very fast http cache server",
 	Long:  `Pike support gzip and brotli compress`,
 	Run: func(cmd *cobra.Command, args []string) {
-		err := config.Init(configPath, configBasePath)
+		cfg, err := config.NewConfig(configPath, configBasePath)
 		if err != nil {
 			log.Default().Error(err.Error())
 			os.Exit(1)
 		}
-		startServer()
+		startServer(cfg)
 	},
 }
 
@@ -67,8 +67,9 @@ func init() {
 	}))
 }
 
-func startServer() {
+func startServer(cfg *config.Config) {
 	ins := server.Instance{
+		Config:             cfg,
 		EnabledAdminServer: initMode,
 	}
 
@@ -77,7 +78,7 @@ func startServer() {
 		panic(err)
 	}
 	logger := log.Default()
-	config.Watch(func(changeType config.ChangeType, value string) {
+	cfg.Watch(func(changeType config.ChangeType, value string) {
 		err := ins.Fetch()
 		if err != nil {
 			logger.Error("fetch config fail",
@@ -98,7 +99,7 @@ func startServer() {
 		case syscall.SIGTERM:
 			fallthrough
 		case syscall.SIGQUIT:
-			config.Close()
+			cfg.Close()
 			// TODO 将server设置为stop，延时退出
 			os.Exit(0)
 		default:

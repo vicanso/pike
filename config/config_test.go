@@ -23,22 +23,24 @@ import (
 )
 
 func TestGetKey(t *testing.T) {
+	cfg := NewTestConfig()
 	assert := assert.New(t)
-	key, err := getKey("test", "")
+	key, err := cfg.getKey("test", "")
 	assert.Equal(errKeyIsNil, err)
 	assert.Empty(key)
 
-	key, _ = getKey("test")
-	assert.Equal(basePath+"/test", key)
+	key, _ = cfg.getKey("test")
+	assert.Equal(cfg.basePath+"/test", key)
 
-	key, _ = getKey("/test")
-	assert.Equal(basePath+"/test", key)
+	key, _ = cfg.getKey("/test")
+	assert.Equal(cfg.basePath+"/test", key)
 
-	key, _ = getKey("test", "1")
-	assert.Equal(basePath+"/test/1", key)
+	key, _ = cfg.getKey("test", "1")
+	assert.Equal(cfg.basePath+"/test/1", key)
 }
 
 func TestConfig(t *testing.T) {
+	cfg := NewTestConfig()
 	assert := assert.New(t)
 	prefix := "foo"
 	key := filepath.Join(prefix, "1")
@@ -46,33 +48,33 @@ func TestConfig(t *testing.T) {
 		"a": "1",
 	}
 	// 保存当前配置
-	err := saveConfig(value, key)
+	err := cfg.saveConfig(value, key)
 	assert.Nil(err)
 
 	// 从存储中读取
 	result := make(map[string]string)
-	err = fetchConfig(result, key)
+	err = cfg.fetchConfig(result, key)
 	assert.Nil(err)
 	assert.Equal(value, result)
 
 	// 获取当前前缀下在所有keys
-	keys, err := listKeys(key)
+	keys, err := cfg.listKeys(key)
 	assert.Nil(err)
 	assert.NotEmpty(keys)
 	for _, item := range keys {
-		assert.True(strings.HasPrefix(item, filepath.Join(basePath, key)))
+		assert.True(strings.HasPrefix(item, filepath.Join(cfg.basePath, key)))
 	}
 
 	// 获取当前前缀下的所有keys，并去除前缀
-	keys, err = listKeysExcludePrefix(prefix)
+	keys, err = cfg.listKeysExcludePrefix(prefix)
 	assert.Nil(err)
 	assert.Equal(1, len(keys))
 	assert.Equal("1", keys[0])
 
 	// 删除数据并校验删除后是否为空
-	err = deleteConfig(key)
+	err = cfg.deleteConfig(key)
 	assert.Nil(err)
-	keys, err = listKeys(key)
+	keys, err = cfg.listKeys(key)
 	assert.Nil(err)
 	assert.Empty(keys)
 }

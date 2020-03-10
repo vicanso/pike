@@ -22,8 +22,10 @@ import (
 
 func TestCompressConfig(t *testing.T) {
 	assert := assert.New(t)
+	cfg := NewTestConfig()
 	c := &Compress{
 		Name: "tiny",
+		cfg:  cfg,
 	}
 	defer func() {
 		_ = c.Delete()
@@ -48,6 +50,7 @@ func TestCompressConfig(t *testing.T) {
 
 	nc := &Compress{
 		Name: c.Name,
+		cfg:  cfg,
 	}
 	err = nc.Fetch()
 	assert.Nil(err)
@@ -56,7 +59,7 @@ func TestCompressConfig(t *testing.T) {
 	assert.Equal(filter, c.Filter)
 	assert.Equal(compressDescription, c.Description)
 
-	compresses, err := GetCompresses()
+	compresses, err := cfg.GetCompresses()
 	assert.Nil(err)
 	assert.Equal(1, len(compresses))
 

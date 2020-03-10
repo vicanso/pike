@@ -25,6 +25,7 @@ type UpstreamServer struct {
 
 // Upstream upstream config
 type Upstream struct {
+	cfg         *Config
 	HealthCheck string           `yaml:"healthCheck,omitempty" json:"healthCheck,omitempty" valid:"xURLPath,optional"`
 	Policy      string           `yaml:"policy,omitempty" json:"policy,omitempty" valid:"-"`
 	Name        string           `yaml:"-" json:"name,omitempty" valid:"xName"`
@@ -37,17 +38,22 @@ type Upstreams []*Upstream
 
 // Fetch fetch upstream config
 func (u *Upstream) Fetch() (err error) {
-	return fetchConfig(u, UpstreamsCategory, u.Name)
+	return u.cfg.fetchConfig(u, UpstreamsCategory, u.Name)
 }
 
 // Save save upstream config
 func (u *Upstream) Save() (err error) {
-	return saveConfig(u, UpstreamsCategory, u.Name)
+	return u.cfg.saveConfig(u, UpstreamsCategory, u.Name)
 }
 
 // Delete delete upsteram config
 func (u *Upstream) Delete() (err error) {
-	return deleteConfig(UpstreamsCategory, u.Name)
+	return u.cfg.deleteConfig(UpstreamsCategory, u.Name)
+}
+
+// SetClient set client
+func (u *Upstream) SetClient(cfg *Config) {
+	u.cfg = cfg
 }
 
 // Get get upstream config from upstream list
@@ -56,23 +62,6 @@ func (upstreams Upstreams) Get(name string) (u *Upstream) {
 		if item.Name == name {
 			u = item
 		}
-	}
-	return
-}
-
-// GetUpstreams get all upstream config
-func GetUpstreams() (upstreams Upstreams, err error) {
-	keys, err := listKeysExcludePrefix(UpstreamsCategory)
-	upstreams = make(Upstreams, 0, len(keys))
-	for _, key := range keys {
-		u := &Upstream{
-			Name: key,
-		}
-		err = u.Fetch()
-		if err != nil {
-			return
-		}
-		upstreams = append(upstreams, u)
 	}
 	return
 }

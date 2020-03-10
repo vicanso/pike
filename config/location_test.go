@@ -21,6 +21,7 @@ import (
 )
 
 func TestLocation(t *testing.T) {
+	cfg := NewTestConfig()
 	assert := assert.New(t)
 	upstream := "testupstream"
 	description := "location description"
@@ -42,6 +43,7 @@ func TestLocation(t *testing.T) {
 		"d:4",
 	}
 	l := &Location{
+		cfg:            cfg,
 		Name:           "testlocation",
 		Upstream:       upstream,
 		Prefixs:        prefixs,
@@ -59,6 +61,7 @@ func TestLocation(t *testing.T) {
 	assert.Nil(err)
 
 	l = &Location{
+		cfg:  cfg,
 		Name: "testlocation",
 	}
 	err = l.Fetch()
@@ -71,7 +74,7 @@ func TestLocation(t *testing.T) {
 	assert.Equal(requestHeader, l.RequestHeader)
 	assert.Equal(description, l.Description)
 
-	locations, err := GetLocations()
+	locations, err := cfg.GetLocations()
 	assert.Nil(err)
 	assert.Equal(1, len(locations))
 

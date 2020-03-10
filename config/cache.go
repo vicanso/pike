@@ -17,6 +17,7 @@ package config
 
 // Cache cache config
 type Cache struct {
+	cfg         *Config
 	Name        string `yaml:"-" json:"name,omitempty" valid:"xName"`
 	Zone        int    `yaml:"zone,omitempty" json:"zone,omitempty" valid:"numeric,range(1|10000)"`
 	Size        int    `yaml:"size,omitempty" json:"size,omitempty" valid:"numeric,range(1|10000)"`
@@ -29,17 +30,17 @@ type Caches []*Cache
 
 // Fetch fetch cache config
 func (c *Cache) Fetch() (err error) {
-	return fetchConfig(c, CachesCategory, c.Name)
+	return c.cfg.fetchConfig(c, CachesCategory, c.Name)
 }
 
 // Save save ccache config
 func (c *Cache) Save() (err error) {
-	return saveConfig(c, CachesCategory, c.Name)
+	return c.cfg.saveConfig(c, CachesCategory, c.Name)
 }
 
 // Delete delete compress config
 func (c *Cache) Delete() (err error) {
-	return deleteConfig(CachesCategory, c.Name)
+	return c.cfg.deleteConfig(CachesCategory, c.Name)
 }
 
 // Get get cache config from cache list
@@ -52,22 +53,7 @@ func (caches Caches) Get(name string) (c *Cache) {
 	return
 }
 
-// GetCaches get all config config
-func GetCaches() (caches Caches, err error) {
-	keys, err := listKeysExcludePrefix(CachesCategory)
-	if err != nil {
-		return
-	}
-	caches = make(Caches, 0, len(keys))
-	for _, key := range keys {
-		c := &Cache{
-			Name: key,
-		}
-		err = c.Fetch()
-		if err != nil {
-			return
-		}
-		caches = append(caches, c)
-	}
-	return
+// SetClient set client
+func (c *Cache) SetClient(cfg *Config) {
+	c.cfg = cfg
 }

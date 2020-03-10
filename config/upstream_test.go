@@ -21,8 +21,10 @@ import (
 )
 
 func TestUpstreamConfig(t *testing.T) {
+	cfg := NewTestConfig()
 	assert := assert.New(t)
 	us := &Upstream{
+		cfg:         cfg,
 		Policy:      "first",
 		HealthCheck: "/ping",
 		Name:        "testupstream",
@@ -47,6 +49,7 @@ func TestUpstreamConfig(t *testing.T) {
 	assert.Nil(err)
 
 	nus := &Upstream{
+		cfg:  cfg,
 		Name: us.Name,
 	}
 	err = nus.Fetch()
@@ -54,7 +57,7 @@ func TestUpstreamConfig(t *testing.T) {
 	assert.Equal(1, len(nus.Servers))
 	assert.Equal(upstreamServer, nus.Servers[0])
 
-	upstreams, err := GetUpstreams()
+	upstreams, err := cfg.GetUpstreams()
 	assert.Nil(err)
 	assert.Equal(1, len(upstreams))
 

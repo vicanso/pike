@@ -24,6 +24,7 @@ import (
 
 // Server server config
 type Server struct {
+	cfg               *Config
 	Name              string        `yaml:"-" json:"name,omitempty" valid:"xName"`
 	Cache             string        `yaml:"cache,omitempty" json:"cache,omitempty" valid:"xName"`
 	Compress          string        `yaml:"compress,omitempty" json:"compress,omitempty" valid:"xName"`
@@ -44,17 +45,22 @@ type Servers []*Server
 
 // Fetch fetch server config
 func (s *Server) Fetch() (err error) {
-	return fetchConfig(s, ServersCategory, s.Name)
+	return s.cfg.fetchConfig(s, ServersCategory, s.Name)
 }
 
 // Save save server config
 func (s *Server) Save() (err error) {
-	return saveConfig(s, ServersCategory, s.Name)
+	return s.cfg.saveConfig(s, ServersCategory, s.Name)
 }
 
 // Delete delete server config
 func (s *Server) Delete() (err error) {
-	return deleteConfig(ServersCategory, s.Name)
+	return s.cfg.deleteConfig(ServersCategory, s.Name)
+}
+
+// SetClient set client
+func (s *Server) SetClient(cfg *Config) {
+	s.cfg = cfg
 }
 
 // Get get server config from server list
@@ -86,24 +92,4 @@ func (servers Servers) Exists(category, name string) bool {
 		}
 	}
 	return false
-}
-
-// GetServers get all server config
-func GetServers() (servers Servers, err error) {
-	keys, err := listKeysExcludePrefix(ServersCategory)
-	if err != nil {
-		return
-	}
-	servers = make(Servers, 0, len(keys))
-	for _, key := range keys {
-		s := &Server{
-			Name: key,
-		}
-		err = s.Fetch()
-		if err != nil {
-			return
-		}
-		servers = append(servers, s)
-	}
-	return
 }

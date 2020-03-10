@@ -22,8 +22,10 @@ import (
 
 func TestCacheConfig(t *testing.T) {
 	assert := assert.New(t)
+	cfg := NewTestConfig()
 	c := &Cache{
 		Name: "tiny",
+		cfg:  cfg,
 	}
 	defer func() {
 		_ = c.Delete()
@@ -48,6 +50,7 @@ func TestCacheConfig(t *testing.T) {
 
 	nc := &Cache{
 		Name: c.Name,
+		cfg:  cfg,
 	}
 	err = nc.Fetch()
 	assert.Nil(err)
@@ -56,7 +59,7 @@ func TestCacheConfig(t *testing.T) {
 	assert.Equal(size, nc.Size)
 	assert.Equal(description, nc.Description)
 
-	caches, err := GetCaches()
+	caches, err := cfg.GetCaches()
 	assert.Nil(err)
 	nc = caches.Get(c.Name)
 	assert.Equal(c, nc)

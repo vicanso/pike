@@ -22,10 +22,14 @@ import (
 
 func TestAdminConfig(t *testing.T) {
 	assert := assert.New(t)
+	cfg := NewTestConfig()
+
 	defer func() {
-		_ = new(Admin).Delete()
+		_ = (&Admin{
+			cfg: cfg,
+		}).Delete()
 	}()
-	admin, err := GetAdmin()
+	admin, err := cfg.GetAdmin()
 	assert.Nil(err)
 	assert.Equal(defaultAdminPrefix, admin.Prefix)
 	assert.Empty(admin.User)
@@ -42,7 +46,9 @@ func TestAdminConfig(t *testing.T) {
 	err = admin.Save()
 	assert.Nil(err)
 
-	admin = new(Admin)
+	admin = &Admin{
+		cfg: cfg,
+	}
 	err = admin.Fetch()
 	assert.Nil(err)
 	assert.Equal(user, admin.User)

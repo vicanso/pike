@@ -165,6 +165,7 @@ func (sl *stringList) Sort() {
 }
 
 func TestNewElton(t *testing.T) {
+	cfg := config.NewTestConfig()
 	assert := assert.New(t)
 	ln, err := net.Listen("tcp", "127.0.0.1:")
 	assert.Nil(err)
@@ -190,6 +191,7 @@ func TestNewElton(t *testing.T) {
 	})
 
 	eltonConfig := &EltonConfig{
+		cfg:            cfg,
 		maxConcurrency: 1024,
 		eTag:           true,
 		locations:      locations,

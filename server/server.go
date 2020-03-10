@@ -50,10 +50,12 @@ type Server struct {
 	upstreams      *upstream.Upstreams
 	dispatcher     *cache.Dispatcher
 	compress       *config.Compress
+	cfg            *config.Config
 }
 
 // Instance pike server instance
 type Instance struct {
+	Config             *config.Config
 	EnabledAdminServer bool
 	servers            *sync.Map
 	upstreams          *upstream.Upstreams
@@ -61,7 +63,8 @@ type Instance struct {
 
 // Fetch fetch config for instance
 func (ins *Instance) Fetch() (err error) {
-	serversConfig, err := config.GetServers()
+	cfg := ins.Config
+	serversConfig, err := cfg.GetServers()
 	if err != nil {
 		return
 	}
@@ -72,25 +75,25 @@ func (ins *Instance) Fetch() (err error) {
 		})
 	}
 
-	cachesConfig, err := config.GetCaches()
+	cachesConfig, err := cfg.GetCaches()
 	if err != nil {
 		return
 	}
 	dispatchers := cache.NewDispatchers(cachesConfig)
 
-	locationsConfig, err := config.GetLocations()
+	locationsConfig, err := cfg.GetLocations()
 	if err != nil {
 		return
 	}
 	locationsConfig.Sort()
 
-	upstreamsConfig, err := config.GetUpstreams()
+	upstreamsConfig, err := cfg.GetUpstreams()
 	if err != nil {
 		return
 	}
 	upstreams := upstream.NewUpstreams(upstreamsConfig)
 
-	compressesConfig, err := config.GetCompresses()
+	compressesConfig, err := cfg.GetCompresses()
 	if err != nil {
 		return
 	}
@@ -109,7 +112,7 @@ func (ins *Instance) Fetch() (err error) {
 			srv := data.(*Server)
 			srv.Update(conf, locations, upstreams, dispatcher, compress)
 		} else {
-			srv := NewServer(conf, locations, upstreams, dispatcher, compress)
+			srv := NewServer(conf, locations, upstreams, dispatcher, compress, cfg)
 			servers.Store(conf.Name, srv)
 		}
 	}
@@ -147,7 +150,7 @@ func (ins *Instance) Start() (err error) {
 }
 
 // NewServer new a server
-func NewServer(conf *config.Server, locations config.Locations, upstreams *upstream.Upstreams, dispatcher *cache.Dispatcher, compress *config.Compress) *Server {
+func NewServer(conf *config.Server, locations config.Locations, upstreams *upstream.Upstreams, dispatcher *cache.Dispatcher, compress *config.Compress, cfg *config.Config) *Server {
 	server := &http.Server{
 		Addr:              conf.Addr,
 		ReadTimeout:       conf.ReadTimeout,
@@ -158,6 +161,7 @@ func NewServer(conf *config.Server, locations config.Locations, upstreams *upstr
 	}
 	srv := &Server{
 		server: server,
+		cfg:    cfg,
 	}
 	srv.Update(conf, locations, upstreams, dispatcher, compress)
 	server.Handler = srv
@@ -195,9 +199,8 @@ func (s *Server) ListenAndServe() error {
 
 // toggleElton toggle elton
 func (s *Server) toggleElton() *elton.Elton {
-	adminConfig, _ := config.GetAdmin()
 	e := NewElton(&EltonConfig{
-		adminConfig:    adminConfig,
+		cfg:            s.cfg,
 		eTag:           s.eTag,
 		maxConcurrency: s.concurrency,
 		locations:      s.locations,

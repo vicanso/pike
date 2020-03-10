@@ -96,6 +96,10 @@ func TestNewAdminValidateMiddlewares(t *testing.T) {
 }
 
 func TestConfigHandler(t *testing.T) {
+	cfg := config.NewTestConfig()
+	createOrUpdateConfig := newCreateOrUpdateConfigHandler(cfg)
+	getConfigs := newGetConfigHandler(cfg)
+	deleteConfig := newDeleteConfigHandler(cfg)
 	assert := assert.New(t)
 	newContext := func(category string, requestBody []byte) *elton.Context {
 		c := elton.NewContext(nil, nil)
@@ -305,6 +309,7 @@ func TestConfigHandler(t *testing.T) {
 func TestNewAdminServer(t *testing.T) {
 	// 仅简单测试初始化成功
 	assert := assert.New(t)
-	e := NewAdmin("/pike", &EltonConfig{})
+	cfg := config.NewTestConfig()
+	_, e := NewAdmin(cfg)
 	assert.NotNil(e)
 }

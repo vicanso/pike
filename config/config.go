@@ -18,7 +18,6 @@ package config
 
 import (
 	"errors"
-	"os"
 	"path/filepath"
 	"strings"
 
@@ -26,18 +25,11 @@ import (
 )
 
 var (
-	// base path of config
-	basePath string
-
-	configClient Client
-)
-
-var (
 	errKeyIsNil = errors.New("key can't be nil")
 )
 
 const (
-	defaultAdminPrefix = "/admin"
+	defaultAdminPrefix = "/pike"
 
 	// ServersCategory servers category
 	ServersCategory = "servers"
@@ -58,6 +50,7 @@ type IConfig interface {
 	Fetch() error
 	Save() error
 	Delete() error
+	SetClient(*Config)
 }
 
 // ChangeType change key's type
@@ -80,66 +73,72 @@ const (
 	AdminChange
 )
 
-var (
-	changeTypeKeyMap map[ChangeType]string
-)
-
 type (
 	// OnChange config change's event handler
 	OnChange func(ChangeType, string)
+	Config   struct {
+		changeTypeKeyMap map[ChangeType]string
+		basePath         string
+		client           Client
+	}
 )
 
-func init() {
-	// 测试模式自动初始化
-	if os.Getenv("GO_MODE") == "test" {
-		_ = Init("etcd://127.0.0.1:2379", "/test-pike")
-	}
+func NewTestConfig() *Config {
+	cfg, _ := NewConfig("etcd://127.0.0.1:2379", "/test-pike")
+	return cfg
 }
 
-func Init(configPath, bPath string) error {
-	basePath = bPath
+// NewConfig new a config instance
+func NewConfig(configPath, basePath string) (cfg *Config, err error) {
+
+	var configClient Client
 	if strings.HasPrefix(configPath, "etcd://") {
 		etcdClient, err := NewEtcdClient(configPath)
 		if err != nil {
-			return err
+			return nil, err
 		}
 		configClient = etcdClient
 	} else {
 		badgerClient, err := NewBadgerClient(configPath)
 		if err != nil {
-			return err
+			return nil, err
 		}
 		configClient = badgerClient
 	}
-	changeTypeKeyMap = make(map[ChangeType]string)
+	changeTypeKeyMap := make(map[ChangeType]string)
 	changeTypeKeyMap[ServerChange] = filepath.Join(basePath, ServersCategory)
 	changeTypeKeyMap[CompressChange] = filepath.Join(basePath, CompressesCategory)
 	changeTypeKeyMap[CacheChange] = filepath.Join(basePath, CachesCategory)
 	changeTypeKeyMap[UpstreamChange] = filepath.Join(basePath, UpstreamsCategory)
 	changeTypeKeyMap[LocationChange] = filepath.Join(basePath, LocationsCategory)
 	changeTypeKeyMap[AdminChange] = filepath.Join(basePath, AdminCategory)
-	return nil
+	cfg = &Config{
+		client:           configClient,
+		basePath:         basePath,
+		changeTypeKeyMap: changeTypeKeyMap,
+	}
+	return
 }
 
-func getKey(elem ...string) (string, error) {
+func (cfg *Config) getKey(elem ...string) (string, error) {
 	for _, item := range elem {
 		if item == "" {
 			return "", errKeyIsNil
 		}
 	}
 	arr := []string{
-		basePath,
+		cfg.basePath,
 	}
 	arr = append(arr, elem...)
 	return filepath.Join(arr...), nil
 }
 
-func fetchConfig(v interface{}, keys ...string) (err error) {
-	key, err := getKey(keys...)
+func (cfg *Config) fetchConfig(v interface{}, keys ...string) (err error) {
+	key, err := cfg.getKey(keys...)
 	if err != nil {
 		return
 	}
-	data, err := configClient.Get(key)
+	data, err := cfg.client.Get(key)
 	if err != nil {
 		return
 	}
@@ -147,8 +146,8 @@ func fetchConfig(v interface{}, keys ...string) (err error) {
 	return
 }
 
-func saveConfig(v interface{}, keys ...string) (err error) {
-	key, err := getKey(keys...)
+func (cfg *Config) saveConfig(v interface{}, keys ...string) (err error) {
+	key, err := cfg.getKey(keys...)
 	if err != nil {
 		return
 	}
@@ -156,32 +155,32 @@ func saveConfig(v interface{}, keys ...string) (err error) {
 	if err != nil {
 		return
 	}
-	err = configClient.Set(key, data)
+	err = cfg.client.Set(key, data)
 	return
 }
 
-func deleteConfig(keys ...string) (err error) {
-	key, err := getKey(keys...)
+func (cfg *Config) deleteConfig(keys ...string) (err error) {
+	key, err := cfg.getKey(keys...)
 	if err != nil {
 		return
 	}
-	return configClient.Delete(key)
+	return cfg.client.Delete(key)
 }
 
-func listKeys(keyPath string) ([]string, error) {
-	key, err := getKey(keyPath)
+func (cfg *Config) listKeys(keyPath string) ([]string, error) {
+	key, err := cfg.getKey(keyPath)
 	if err != nil {
 		return nil, err
 	}
-	return configClient.List(key)
+	return cfg.client.List(key)
 }
 
-func listKeysExcludePrefix(keyPath string) ([]string, error) {
-	key, err := getKey(keyPath)
+func (cfg *Config) listKeysExcludePrefix(keyPath string) ([]string, error) {
+	key, err := cfg.getKey(keyPath)
 	if err != nil {
 		return nil, err
 	}
-	keys, err := configClient.List(key)
+	keys, err := cfg.client.List(key)
 	if err != nil {
 		return nil, err
 	}
@@ -198,9 +197,9 @@ func listKeysExcludePrefix(keyPath string) ([]string, error) {
 }
 
 // Watch watch config change
-func Watch(onChange OnChange) {
-	configClient.Watch(basePath, func(key string) {
-		for t, prefix := range changeTypeKeyMap {
+func (cfg *Config) Watch(onChange OnChange) {
+	cfg.client.Watch(cfg.basePath, func(key string) {
+		for t, prefix := range cfg.changeTypeKeyMap {
 			if strings.HasPrefix(key, prefix) {
 				value := ""
 				if len(key) > len(prefix) {
@@ -213,6 +212,117 @@ func Watch(onChange OnChange) {
 }
 
 // Close close config client
-func Close() error {
-	return configClient.Close()
+func (cfg *Config) Close() error {
+	return cfg.client.Close()
+}
+
+// GetAdmin get admin config
+func (cfg *Config) GetAdmin() (*Admin, error) {
+	admin := new(Admin)
+	admin.cfg = cfg
+	err := admin.Fetch()
+	return admin, err
+}
+
+// GetCaches get all config config
+func (cfg *Config) GetCaches() (caches Caches, err error) {
+	keys, err := cfg.listKeysExcludePrefix(CachesCategory)
+	if err != nil {
+		return
+	}
+	caches = make(Caches, 0, len(keys))
+	for _, key := range keys {
+		c := &Cache{
+			Name: key,
+			cfg:  cfg,
+		}
+		err = c.Fetch()
+		if err != nil {
+			return
+		}
+		caches = append(caches, c)
+	}
+	return
+}
+
+// GetCompresses get all compress config
+func (cfg *Config) GetCompresses() (compresses Compresses, err error) {
+	keys, err := cfg.listKeysExcludePrefix(CompressesCategory)
+	if err != nil {
+		return
+	}
+	compresses = make(Compresses, 0, len(keys))
+	for _, key := range keys {
+		c := &Compress{
+			Name: key,
+			cfg:  cfg,
+		}
+		err = c.Fetch()
+		if err != nil {
+			return
+		}
+		compresses = append(compresses, c)
+	}
+	return
+}
+
+// GetLocations get locations
+// *Location for better performance)
+func (cfg *Config) GetLocations() (locations Locations, err error) {
+	keys, err := cfg.listKeysExcludePrefix(LocationsCategory)
+	if err != nil {
+		return
+	}
+	locations = make(Locations, 0, len(keys))
+	for _, key := range keys {
+		l := &Location{
+			Name: key,
+			cfg:  cfg,
+		}
+		err = l.Fetch()
+		if err != nil {
+			return
+		}
+		locations = append(locations, l)
+	}
+	return
+}
+
+// GetServers get all server config
+func (cfg *Config) GetServers() (servers Servers, err error) {
+	keys, err := cfg.listKeysExcludePrefix(ServersCategory)
+	if err != nil {
+		return
+	}
+	servers = make(Servers, 0, len(keys))
+	for _, key := range keys {
+		s := &Server{
+			Name: key,
+			cfg:  cfg,
+		}
+		err = s.Fetch()
+		if err != nil {
+			return
+		}
+		servers = append(servers, s)
+	}
+	return
+}
+
+// GetUpstreams get all upstream config
+func (cfg *Config) GetUpstreams() (upstreams Upstreams, err error) {
+	keys, err := cfg.listKeysExcludePrefix(UpstreamsCategory)
+	upstreams = make(Upstreams, 0, len(keys))
+	for _, key := range keys {
+		u := &Upstream{
+			Name: key,
+			cfg:  cfg,
+		}
+		err = u.Fetch()
+		if err != nil {
+			return
+		}
+		upstreams = append(upstreams, u)
+	}
+	return
 }

@@ -18,6 +18,7 @@ package config
 
 // Admin admin config
 type Admin struct {
+	cfg                   *Config
 	Prefix                string `yaml:"prefix,omitempty" json:"prefix,omitempty" valid:"ascii"`
 	User                  string `yaml:"user,omitempty" json:"user,omitempty" valid:"-"`
 	Password              string `yaml:"password,omitempty" json:"password,omitempty" valid:"-"`
@@ -27,7 +28,7 @@ type Admin struct {
 
 // Fetch fetch admin config
 func (admin *Admin) Fetch() (err error) {
-	err = fetchConfig(admin, AdminCategory)
+	err = admin.cfg.fetchConfig(admin, AdminCategory)
 	if err != nil {
 		return
 	}
@@ -39,18 +40,16 @@ func (admin *Admin) Fetch() (err error) {
 
 // Save save admin config
 func (admin *Admin) Save() (err error) {
-	err = saveConfig(admin, AdminCategory)
+	err = admin.cfg.saveConfig(admin, AdminCategory)
 	return
 }
 
 // Delete delete admin config
 func (admin *Admin) Delete() (err error) {
-	return deleteConfig(AdminCategory)
+	return admin.cfg.deleteConfig(AdminCategory)
 }
 
-// GetAdmin get admin config
-func GetAdmin() (*Admin, error) {
-	admin := new(Admin)
-	err := admin.Fetch()
-	return admin, err
+// SetClient set client
+func (admin *Admin) SetClient(cfg *Config) {
+	admin.cfg = cfg
 }

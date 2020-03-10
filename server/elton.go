@@ -60,7 +60,8 @@ var (
 
 // EltonConfig elton config
 type EltonConfig struct {
-	adminConfig    *config.Admin
+	cfg *config.Config
+	// adminConfig    *config.Admin
 	maxConcurrency uint32
 	eTag           bool
 	locations      config.Locations
@@ -91,18 +92,14 @@ func newErrorListener(dispatcher *cache.Dispatcher, logger *zap.Logger) elton.Er
 
 // NewElton new an elton instance
 func NewElton(eltonConfig *EltonConfig) *elton.Elton {
+	cfg := eltonConfig.cfg
 	logger := log.Default()
 	locations := eltonConfig.locations
 	upstreams := eltonConfig.upstreams
 	dispatcher := eltonConfig.dispatcher
 	e := elton.New()
 
-	adminPath := defaultAdminPath
-	adminConfig := eltonConfig.adminConfig
-	if adminConfig != nil && adminConfig.Prefix != "" {
-		adminPath = adminConfig.Prefix
-	}
-	adminElton := NewAdmin(adminPath, eltonConfig)
+	adminPath, adminElton := NewAdmin(cfg)
 
 	// 未处理错误
 	e.OnError(newErrorListener(dispatcher, logger))
@@ -122,13 +119,15 @@ func NewElton(eltonConfig *EltonConfig) *elton.Elton {
 	}
 
 	// 如果是admin路径，则转发至admin elton
-	e.Use(func(c *elton.Context) error {
-		if !strings.HasPrefix(c.Request.RequestURI, adminPath) {
-			return c.Next()
-		}
-		c.Pass(adminElton)
-		return nil
-	})
+	if adminElton != nil {
+		e.Use(func(c *elton.Context) error {
+			if !strings.HasPrefix(c.Request.RequestURI, adminPath) {
+				return c.Next()
+			}
+			c.Pass(adminElton)
+			return nil
+		})
+	}
 
 	e.Use(fresh.NewDefault())
 

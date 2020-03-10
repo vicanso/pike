@@ -22,9 +22,11 @@ import (
 )
 
 func TestServerConfig(t *testing.T) {
+	cfg := NewTestConfig()
 
 	assert := assert.New(t)
 	s := &Server{
+		cfg:  cfg,
 		Name: "tiny",
 	}
 	defer func() {
@@ -71,6 +73,7 @@ func TestServerConfig(t *testing.T) {
 	assert.Nil(err)
 
 	ns := &Server{
+		cfg:  cfg,
 		Name: s.Name,
 	}
 	err = ns.Fetch()
@@ -87,7 +90,7 @@ func TestServerConfig(t *testing.T) {
 	assert.Equal(maxHeaderBytes, ns.MaxHeaderBytes)
 	assert.Equal(description, ns.Description)
 
-	servers, err := GetServers()
+	servers, err := cfg.GetServers()
 	assert.Nil(err)
 	assert.Equal(1, len(servers))
 

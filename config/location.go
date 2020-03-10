@@ -26,6 +26,7 @@ import (
 
 // Location location config
 type Location struct {
+	cfg            *Config
 	Name           string      `yaml:"name,omitempty" json:"name,omitempty" valid:"xName"`
 	Upstream       string      `yaml:"upstream,omitempty" json:"upstream,omitempty" valid:"xName"`
 	Prefixs        []string    `yaml:"prefixs,omitempty" json:"prefixs,omitempty" valid:"xPrefixs,optional"`
@@ -43,7 +44,7 @@ type Locations []*Location
 
 // Fetch fetch location config
 func (l *Location) Fetch() (err error) {
-	err = fetchConfig(l, LocationsCategory, l.Name)
+	err = l.cfg.fetchConfig(l, LocationsCategory, l.Name)
 	if err != nil {
 		return
 	}
@@ -54,12 +55,12 @@ func (l *Location) Fetch() (err error) {
 
 // Save save location config
 func (l *Location) Save() (err error) {
-	return saveConfig(l, LocationsCategory, l.Name)
+	return l.cfg.saveConfig(l, LocationsCategory, l.Name)
 }
 
 // Delete delete location config
 func (l *Location) Delete() (err error) {
-	return deleteConfig(LocationsCategory, l.Name)
+	return l.cfg.deleteConfig(LocationsCategory, l.Name)
 }
 
 // Match check location's hosts and prefixs match host/url
@@ -100,6 +101,11 @@ func (l *Location) getPriority() int {
 		priority -= 2
 	}
 	return priority
+}
+
+// SetClient set client
+func (l *Location) SetClient(cfg *Config) {
+	l.cfg = cfg
 }
 
 // Sort sort locations
@@ -151,25 +157,4 @@ func (locations Locations) ExistsUpstream(name string) bool {
 		}
 	}
 	return false
-}
-
-// GetLocations get locations
-// *Location for better performance)
-func GetLocations() (locations Locations, err error) {
-	keys, err := listKeysExcludePrefix(LocationsCategory)
-	if err != nil {
-		return
-	}
-	locations = make(Locations, 0, len(keys))
-	for _, key := range keys {
-		l := &Location{
-			Name: key,
-		}
-		err = l.Fetch()
-		if err != nil {
-			return
-		}
-		locations = append(locations, l)
-	}
-	return
 }
