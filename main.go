@@ -7,6 +7,7 @@ import (
 	"syscall"
 
 	"github.com/spf13/cobra"
+	"github.com/vicanso/pike/application"
 	"github.com/vicanso/pike/config"
 	"github.com/vicanso/pike/log"
 	"github.com/vicanso/pike/server"
@@ -33,7 +34,8 @@ var (
 var rootCmd = &cobra.Command{
 	Use:   "Pike",
 	Short: "Pike is a very fast http cache server",
-	Long:  `Pike support gzip and brotli compress`,
+	Long: fmt.Sprintf(`Pike support gzip and brotli compress.
+Versions: build at %s, commit id is %s`, BuildedAt, CommitID),
 	Run: func(cmd *cobra.Command, args []string) {
 		cfg, err := config.NewConfig(configPath, configBasePath)
 		if err != nil {
@@ -45,6 +47,9 @@ var rootCmd = &cobra.Command{
 }
 
 func init() {
+	app := application.Default()
+	app.SetBuildedAt(BuildedAt)
+	app.SetCommitID(CommitID)
 	// 测试模式自动添加启动参数
 	if os.Getenv("GO_MODE") == "test" {
 		rootCmd.SetArgs([]string{

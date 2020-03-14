@@ -1,7 +1,6 @@
 import React from "react";
 import axios from "axios";
 import { message, Spin, Button } from "antd";
-import _ from "lodash";
 
 import ExForm from "../exform";
 import ExTable from "../extable";
@@ -32,9 +31,14 @@ class Configs extends React.Component {
     try {
       const { data } = await axios.get(CONFIGS.replace(":category", category));
       let configs = data[category];
-      if (!_.isArray(configs)) {
+      if (!Array.isArray(configs)) {
         configs = [configs];
       }
+      configs.forEach((item, index) => {
+        if (!item.name) {
+          item.name = `${index}`;
+        }
+      });
       this.setState({
         configs
       });
@@ -52,8 +56,11 @@ class Configs extends React.Component {
     try {
       await axios.post(url, data);
       const configs = this.state.configs.slice(0);
-      const index = _.findIndex(configs, item => {
-        return item.name === data.name;
+      let index = -1;
+      configs.forEach((item, i) => {
+        if (item.name === data.name) {
+          index = i;
+        }
       });
       if (index === -1) {
         configs.push(data);
@@ -78,7 +85,7 @@ class Configs extends React.Component {
       item.name
     );
     return axios.delete(url).then(() => {
-      const configs = _.filter(this.state.configs, data => {
+      const configs = this.state.configs.filter(data => {
         return data.name !== item.name;
       });
       this.setState({

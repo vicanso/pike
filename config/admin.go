@@ -48,8 +48,3 @@ func (admin *Admin) Save() (err error) {
 func (admin *Admin) Delete() (err error) {
 	return admin.cfg.deleteConfig(AdminCategory)
 }
-
-// SetClient set client
-func (admin *Admin) SetClient(cfg *Config) {
-	admin.cfg = cfg
-}

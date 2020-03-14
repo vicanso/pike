@@ -53,8 +53,3 @@ func (compresses Compresses) Get(name string) (c *Compress) {
 	}
 	return
 }
-
-// SetClient set client
-func (c *Compress) SetClient(cfg *Config) {
-	c.cfg = cfg
-}

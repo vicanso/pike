@@ -51,11 +51,6 @@ func (u *Upstream) Delete() (err error) {
 	return u.cfg.deleteConfig(UpstreamsCategory, u.Name)
 }
 
-// SetClient set client
-func (u *Upstream) SetClient(cfg *Config) {
-	u.cfg = cfg
-}
-
 // Get get upstream config from upstream list
 func (upstreams Upstreams) Get(name string) (u *Upstream) {
 	for _, item := range upstreams {

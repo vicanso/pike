@@ -50,7 +50,6 @@ type IConfig interface {
 	Fetch() error
 	Save() error
 	Delete() error
-	SetClient(*Config)
 }
 
 // ChangeType change key's type
@@ -325,4 +324,51 @@ func (cfg *Config) GetUpstreams() (upstreams Upstreams, err error) {
 		upstreams = append(upstreams, u)
 	}
 	return
+}
+
+// NewCacheConfig new cache config
+func (cfg *Config) NewCacheConfig(name string) *Cache {
+	return &Cache{
+		Name: name,
+		cfg:  cfg,
+	}
+}
+
+// NewCompressConfig new compress config
+func (cfg *Config) NewCompressConfig(name string) *Compress {
+	return &Compress{
+		Name: name,
+		cfg:  cfg,
+	}
+}
+
+// NewLocationConfig new location config
+func (cfg *Config) NewLocationConfig(name string) *Location {
+	return &Location{
+		Name: name,
+		cfg:  cfg,
+	}
+}
+
+// NewServerConfig new server config
+func (cfg *Config) NewServerConfig(name string) *Server {
+	return &Server{
+		Name: name,
+		cfg:  cfg,
+	}
+}
+
+// NewUpstreamConfig new upstream config
+func (cfg *Config) NewUpstreamConfig(name string) *Upstream {
+	return &Upstream{
+		Name: name,
+		cfg:  cfg,
+	}
+}
+
+// NewAdminConfig new upstream config
+func (cfg *Config) NewAdminConfig() *Admin {
+	return &Admin{
+		cfg: cfg,
+	}
 }

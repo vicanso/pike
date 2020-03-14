@@ -1,5 +1,3 @@
-import _ from "lodash";
-
 const key = "language";
 
 const lang = localStorage.getItem(key) || "en";
@@ -300,6 +298,25 @@ const adminZh = {
   enabledInternetAccess: "外网访问"
 };
 
+const applicationEn = {
+  title: "Application Informations",
+  buildedAt: "Build At",
+  startedAt: "Start At",
+  goos: "OS",
+  maxProcs: "Max CPUS",
+  numGoroutine: "Goroutine",
+  version: "Version",
+};
+const applicationZh = {
+  title: "应用信息",
+  buildedAt: "构建于",
+  startedAt: "启动于" ,
+  goos: "运行系统",
+  maxProcs: "最大CPU数",
+  numGoroutine: "Goroutine数量",
+  version: "版本",
+};
+
 const i18ns = {
   en: {
     common: commonEn,
@@ -309,7 +326,8 @@ const i18ns = {
     upstream: upstreamEn,
     location: locationEn,
     server: serverEn,
-    admin: adminEn
+    admin: adminEn,
+    application: applicationEn,
   },
   zh: {
     common: commonZh,
@@ -319,12 +337,24 @@ const i18ns = {
     upstream: upstreamZh,
     location: locationZh,
     server: serverZh,
-    admin: adminZh
+    admin: adminZh,
+    application: applicationZh,
   }
 };
 
 export default field => {
-  return _.get(i18ns, `${lang}.${field}`) || "";
+  let value = i18ns[lang];
+  if (!value) {
+    return ""
+  }
+  const arr = field.split('.')
+  arr.forEach((key) => {
+    if (!value) {
+      return;
+    }
+    value = value[key];
+  })
+  return value || "";
 };
 
 export function changeToEnglish() {

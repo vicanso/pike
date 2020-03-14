@@ -1,5 +1,3 @@
-import _ from "lodash";
-
 import i18n from "../../i18n";
 import Configs from "../configs";
 
@@ -90,7 +88,7 @@ const fields = [
 class Caches extends Configs {
   constructor(props) {
     super(props);
-    _.assignIn(this.state, {
+    Object.assign(this.state, {
       title: i18n("cache.createUpdateTitle"),
       description: i18n("cache.createUpdateDescription"),
       category,

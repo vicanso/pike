@@ -23,6 +23,7 @@ import (
 	"github.com/vicanso/elton"
 	basicauth "github.com/vicanso/elton-basic-auth"
 	bodyparser "github.com/vicanso/elton-body-parser"
+	compress "github.com/vicanso/elton-compress"
 	errorhandler "github.com/vicanso/elton-error-handler"
 	etag "github.com/vicanso/elton-etag"
 	fresh "github.com/vicanso/elton-fresh"
@@ -30,6 +31,7 @@ import (
 	staticServe "github.com/vicanso/elton-static-serve"
 	"github.com/vicanso/hes"
 	intranetip "github.com/vicanso/intranet-ip"
+	"github.com/vicanso/pike/application"
 	"github.com/vicanso/pike/config"
 )
 
@@ -103,21 +105,20 @@ func newCreateOrUpdateConfigHandler(cfg *config.Config) elton.Handler {
 		var iconfig config.IConfig
 		switch category {
 		case config.CachesCategory:
-			iconfig = new(config.Cache)
+			iconfig = cfg.NewCacheConfig("")
 		case config.CompressesCategory:
-			iconfig = new(config.Compress)
+			iconfig = cfg.NewCompressConfig("")
 		case config.LocationsCategory:
-			iconfig = new(config.Location)
+			iconfig = cfg.NewLocationConfig("")
 		case config.ServersCategory:
-			iconfig = new(config.Server)
+			iconfig = cfg.NewServerConfig("")
 		case config.UpstreamsCategory:
-			iconfig = new(config.Upstream)
+			iconfig = cfg.NewUpstreamConfig("")
 		case config.AdminCategory:
-			iconfig = new(config.Admin)
+			iconfig = cfg.NewAdminConfig()
 		default:
 			err = hes.New(category + " is not support")
 		}
-		iconfig.SetClient(cfg)
 
 		err = doValidate(iconfig, c.RequestBody)
 		if err != nil {
@@ -155,33 +156,22 @@ func newDeleteConfigHandler(cfg *config.Config) elton.Handler {
 		switch category {
 		case config.CachesCategory:
 			shouldBeCheckedByServer = true
-			iconfig = &config.Cache{
-				Name: name,
-			}
+			iconfig = cfg.NewCacheConfig(name)
 		case config.CompressesCategory:
 			shouldBeCheckedByServer = true
-			iconfig = &config.Compress{
-				Name: name,
-			}
+			iconfig = cfg.NewCompressConfig(name)
 		case config.LocationsCategory:
 			shouldBeCheckedByServer = true
-			iconfig = &config.Location{
-				Name: name,
-			}
+			iconfig = cfg.NewLocationConfig(name)
 		case config.ServersCategory:
-			iconfig = &config.Server{
-				Name: name,
-			}
+			iconfig = cfg.NewServerConfig(name)
 		case config.UpstreamsCategory:
 			shouldBeCheckedByLocation = true
-			iconfig = &config.Upstream{
-				Name: name,
-			}
+			iconfig = cfg.NewUpstreamConfig(name)
 		default:
 			err = hes.New(category + " is not support")
 			return
 		}
-		iconfig.SetClient(cfg)
 		// 判断是否在现有server配置中有使用
 		if shouldBeCheckedByServer && serverConfigs.Exists(category, name) {
 			err = hes.New(name + " of " + category + " is used by server, it can't be delelted")
@@ -219,6 +209,8 @@ func NewAdmin(cfg *config.Config) (string, *elton.Elton) {
 		e.Use(newAdminValidateMiddlewares(adminConfig)...)
 	}
 
+	e.Use(compress.NewDefault())
+
 	e.Use(fresh.NewDefault())
 	e.Use(etag.NewDefault())
 
@@ -248,6 +240,25 @@ func NewAdmin(cfg *config.Config) (string, *elton.Elton) {
 		return
 	})
 
+	icons := []string{
+		"favicon.ico",
+		"logo.png",
+	}
+	handleIcon := func(icon string) {
+		g.GET("/"+icon, func(c *elton.Context) (err error) {
+			buf, err := application.DefaultAsset().Find(icon)
+			if err != nil {
+				return
+			}
+			c.SetContentTypeByExt(icon)
+			c.Body = buf
+			return
+		})
+	}
+	for _, icon := range icons {
+		handleIcon(icon)
+	}
+
 	g.GET("/static/*file", staticServe.New(files, staticServe.Config{
 		Path: "/static",
 		// 客户端缓存一年
@@ -257,6 +268,11 @@ func NewAdmin(cfg *config.Config) (string, *elton.Elton) {
 		DenyQueryString:     true,
 		DisableLastModified: true,
 	}))
+
+	g.GET("/application", func(c *elton.Context) error {
+		c.Body = application.Default()
+		return nil
+	})
 
 	e.AddGroup(g)
 	return adminPath, e

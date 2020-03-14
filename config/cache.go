@@ -52,8 +52,3 @@ func (caches Caches) Get(name string) (c *Cache) {
 	}
 	return
 }
-
-// SetClient set client
-func (c *Cache) SetClient(cfg *Config) {
-	c.cfg = cfg
-}

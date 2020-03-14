@@ -58,12 +58,6 @@ func (s *Server) Delete() (err error) {
 	return s.cfg.deleteConfig(ServersCategory, s.Name)
 }
 
-// SetClient set client
-func (s *Server) SetClient(cfg *Config) {
-	s.cfg = cfg
-}
-
-// Get get server config from server list
 func (servers Servers) Get(name string) (s *Server) {
 	for _, item := range servers {
 		if item.Name == name {

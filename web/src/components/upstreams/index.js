@@ -1,5 +1,4 @@
 import React from "react";
-import _ from "lodash";
 
 import i18n from "../../i18n";
 import Configs from "../configs";
@@ -18,7 +17,7 @@ const columns = [
     title: i18n("upstream.servers"),
     dataIndex: "servers",
     render: row => {
-      const servers = _.map(row, item => {
+      const servers = row.map(item => {
         let backupTips = null;
         if (item.backup) {
           backupTips = <span className="backupTips">backup</span>;
@@ -89,7 +88,7 @@ const fields = [
 class Upstreams extends Configs {
   constructor(props) {
     super(props);
-    _.assignIn(this.state, {
+    Object.assign(this.state, {
       title: i18n("upstream.createUpdateTitle"),
       description: i18n("upstream.createUpdateDescription"),
       category,

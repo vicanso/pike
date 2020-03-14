@@ -22,7 +22,7 @@ import (
 )
 
 var (
-	box = packr.New("asset", "../web/build")
+	webBox = packr.New("web-asset", "../web/build")
 )
 
 type (
@@ -30,10 +30,10 @@ type (
 )
 
 func (*assetFiles) Exists(file string) bool {
-	return box.Has(file)
+	return webBox.Has(file)
 }
 func (*assetFiles) Get(file string) ([]byte, error) {
-	return box.Find(file)
+	return webBox.Find(file)
 }
 func (*assetFiles) Stat(file string) os.FileInfo {
 	return nil

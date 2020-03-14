@@ -1,5 +1,4 @@
 import React from "react";
-import _ from "lodash";
 import { message, Switch } from "antd";
 import axios from "axios";
 
@@ -35,7 +34,7 @@ const columns = [
     title: i18n("server.locations"),
     dataIndex: "locations",
     render: row => {
-      const locations = _.map(row, item => {
+      const locations = row.map(item => {
         return <li key={item}>{item}</li>;
       });
       return <ul>{locations}</ul>;
@@ -172,7 +171,7 @@ const fields = [
 class Servers extends Configs {
   constructor(props) {
     super(props);
-    _.assignIn(this.state, {
+    Object.assign(this.state, {
       title: i18n("server.createUpdateTitle"),
       description: i18n("server.createUpdateDescription"),
       columns,
@@ -184,10 +183,10 @@ class Servers extends Configs {
     try {
       const cat = ["caches", "compresses", "locations"].join(",");
       const { data } = await axios.get(CONFIGS.replace(":category", cat));
-      const caches = _.map(data.caches, item => item.name);
-      const compresses = _.map(data.compresses, item => item.name);
-      const locations = _.map(data.locations, item => item.name);
-      _.forEach(fields, item => {
+      const caches = data.caches.map(item => item.name);
+      const compresses = data.compresses.map(item => item.name);
+      const locations = data.locations.map(item => item.name);
+      fields.forEach(item => {
         switch (item.key) {
           case "cache":
             item.options = caches;

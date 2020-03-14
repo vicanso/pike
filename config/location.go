@@ -103,11 +103,6 @@ func (l *Location) getPriority() int {
 	return priority
 }
 
-// SetClient set client
-func (l *Location) SetClient(cfg *Config) {
-	l.cfg = cfg
-}
-
 // Sort sort locations
 func (locations Locations) Sort() {
 	sort.Slice(locations, func(i, j int) bool {

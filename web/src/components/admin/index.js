@@ -1,5 +1,4 @@
 import React from "react";
-import _ from "lodash";
 import { Switch } from "antd";
 
 import i18n from "../../i18n";
@@ -77,7 +76,7 @@ const fields = [
 class Admin extends Configs {
   constructor(props) {
     super(props);
-    _.assignIn(this.state, {
+    Object.assign(this.state, {
       title: i18n("admin.createUpdateTitle"),
       description: i18n("admin.createUpdateDescription"),
       category,

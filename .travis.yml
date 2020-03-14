@@ -16,7 +16,7 @@ script:
 
 after_success:
   - docker build -t pike .
-  - export VERSION=3.0.0
+  - export VERSION=`cat assets/version`
   - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
   - docker tag pike $DOCKER_USERNAME/pike:$VERSION
   - docker tag pike $DOCKER_USERNAME/pike:latest

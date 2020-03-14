@@ -11,7 +11,8 @@ import {
   UPSTREAMS_PATH,
   LOCATIONS_PATH,
   SERVERS_PATH,
-  ADMIN_PATH
+  ADMIN_PATH,
+  HOME_PATH,
 } from "../../paths";
 
 const paths = [
@@ -124,8 +125,17 @@ class AppHeader extends React.Component {
     return (
       <div className="AppHeader clearfix">
         <div className="logo">
-          <img src={logo} alt="logo" />
+          <Link
+            to={HOME_PATH}
+            onClick={() => {
+              this.setState({
+                active: -1,
+              })
+            }}
+          >
+            <img src={logo} alt="logo" />
           Pike
+          </Link>
           {version && <span className="version">{version}</span>}
         </div>
         {this.renderLanguageSelector()}

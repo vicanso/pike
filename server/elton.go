@@ -80,9 +80,13 @@ func newErrorListener(dispatcher *cache.Dispatcher, logger *zap.Logger) elton.Er
 		if dispatcher == nil {
 			return
 		}
-		status, _ := c.Get(statusKey).(int)
+		status := c.GetInt(statusKey)
 		if status == cache.StatusFetching {
-			httpCache, _ := c.Get(httpCacheKey).(*cache.HTTPCache)
+			v, ok := c.Get(httpCacheKey)
+			if !ok {
+				return
+			}
+			httpCache, _ := v.(*cache.HTTPCache)
 			if httpCache != nil {
 				httpCache.HitForPass(dispatcher.HitForPass)
 			}

@@ -1,6 +1,5 @@
 import React from "react";
 import PropTypes from "prop-types";
-import _ from "lodash";
 import {
   Form,
   Input,
@@ -39,7 +38,7 @@ class DurationInput extends React.Component {
     super(props);
     if (props.value) {
       const result = divideDuration(props.value);
-      _.assignIn(this.state, result);
+      Object.assign(this.state, result);
     } else {
       this.state.unit = this.state.units[0].type;
     }
@@ -58,7 +57,7 @@ class DurationInput extends React.Component {
   render() {
     const { props } = this;
     const { units, unit, value } = this.state;
-    const selectItems = _.map(units, item => {
+    const selectItems = units.map(item => {
       return (
         <Option key={item.type} value={item.type}>
           {item.desc}
@@ -113,7 +112,7 @@ class KeyValueListInput extends React.Component {
     super(props);
     const value = props.value || [];
     const keyValueList = [];
-    _.forEach(value, item => {
+    value.forEach(item => {
       const arr = item.split(":");
       keyValueList.push({
         key: arr[0],
@@ -130,7 +129,7 @@ class KeyValueListInput extends React.Component {
     if (!keyValueList[index]) {
       keyValueList[index] = {};
     }
-    _.assignIn(keyValueList[index], data);
+    Object.assign(keyValueList[index], data);
     this.setState({
       keyValueList
     });
@@ -138,7 +137,7 @@ class KeyValueListInput extends React.Component {
     const { onChange } = this.props;
     if (onChange) {
       const values = [];
-      _.forEach(keyValueList, item => {
+      keyValueList.forEach(item => {
         if (item.key && item.value) {
           values.push(`${item.key}:${item.value}`);
         }
@@ -191,7 +190,7 @@ class KeyValueListInput extends React.Component {
   }
   render() {
     const { keyValueList } = this.state;
-    const list = _.map(keyValueList, (item, index) => {
+    const list = keyValueList.map((item, index) => {
       return this.renderKeyValue(item, index);
     });
     return (
@@ -230,12 +229,12 @@ class TextListInput extends React.Component {
     textList[index] = value;
     const { onChange } = this.props;
     if (onChange) {
-      onChange(_.filter(textList, item => !!item));
+      onChange(textList.filter(item => !!item));
     }
   }
   render() {
     const { textList } = this.state;
-    const list = _.map(textList, (item, index) => {
+    const list = textList.map((item, index) => {
       return (
         <Input
           defaultValue={item}
@@ -282,13 +281,13 @@ class UpstreamServersInput extends React.Component {
   }
   handleChange(index, value) {
     const servers = this.state.upstreamServers.slice(0);
-    servers[index] = _.assignIn(servers[index], value);
+    servers[index] = Object.assign(servers[index], value);
     this.setState({
       upstreamServers: servers
     });
     const { onChange } = this.props;
     if (onChange) {
-      onChange(_.filter(servers, item => !!item.addr));
+      onChange(servers.filter(item => !!item.addr));
     }
   }
   renderBackend(backend, index) {
@@ -326,7 +325,7 @@ class UpstreamServersInput extends React.Component {
   }
   render() {
     const { upstreamServers } = this.state;
-    const servers = _.map(upstreamServers, (item, index) => {
+    const servers = upstreamServers.map((item, index) => {
       return this.renderBackend(item, index);
     });
     return (
@@ -359,7 +358,7 @@ class ExForm extends React.Component {
       if (err) {
         return;
       }
-      _.forEach(fields, item => {
+      fields.forEach(item => {
         const { key, type } = item;
         if (type === "number" && values[key]) {
           const v = values[key];
@@ -411,7 +410,7 @@ class ExForm extends React.Component {
 
     const originalData = this.props.originalData || {};
 
-    const items = _.map(fields, item => {
+    const items = fields.map(item => {
       let decorator = null;
       let layout = null;
       const { key, rules } = item;
@@ -431,7 +430,7 @@ class ExForm extends React.Component {
           )(<TextArea rows={5} placeholder={item.placeholder || ""} />);
           break;
         case "select":
-          const opts = _.map(item.options, item => {
+          const opts = item.options.map(item => {
             return (
               <Option key={item} value={item}>
                 {item}
@@ -472,7 +471,7 @@ class ExForm extends React.Component {
         case "switch":
           decorator = getFieldDecorator(
             key,
-            _.assignIn(
+            Object.assign(
               {
                 valuePropName: "checked"
               },

@@ -124,7 +124,7 @@ func createProxyMiddleware(locations config.Locations, upstreams *upstream.Upstr
 
 		reqHeader := c.Request.Header
 		var ifModifiedSince, ifNoneMatch, acceptEncoding string
-		status, _ := c.Get(statusKey).(int)
+		status := c.GetInt(statusKey)
 		// 针对fetching的请求，由于其最终状态未知，因此需要删除有可能导致304的请求，避免无法生成缓存
 		if status == cache.StatusFetching {
 			acceptEncoding = reqHeader.Get(elton.HeaderAcceptEncoding)

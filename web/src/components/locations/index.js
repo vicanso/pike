@@ -1,5 +1,4 @@
 import React from "react";
-import _ from "lodash";
 import { message } from "antd";
 import axios from "axios";
 
@@ -9,7 +8,10 @@ import { CONFIGS } from "../../urls";
 
 const category = "locations";
 const renderList = row => {
-  const items = _.map(row, item => {
+  if (!row) {
+    return;
+  }
+  const items = row.map(item => {
     return <li key={item}>{item}</li>;
   });
   return <ul>{items}</ul>;
@@ -117,7 +119,7 @@ const fields = [
 class Locations extends Configs {
   constructor(props) {
     super(props);
-    _.assignIn(this.state, {
+    Object.assign(this.state, {
       title: i18n("location.createUpdateTitle"),
       description: i18n("location.createUpdateDescription"),
       category,
@@ -130,8 +132,8 @@ class Locations extends Configs {
       const { data } = await axios.get(
         CONFIGS.replace(":category", "upstreams")
       );
-      const upstreams = _.map(data.upstreams, item => item.name);
-      _.forEach(fields, item => {
+      const upstreams = data.upstreams.map(item => item.name);
+      fields.forEach(item => {
         if (item.key === "upstream") {
           item.options = upstreams;
         }

@@ -1,5 +1,3 @@
-import _ from "lodash";
-
 import i18n from "../../i18n";
 import Configs from "../configs";
 
@@ -89,7 +87,7 @@ const fields = [
 class Compresses extends Configs {
   constructor(props) {
     super(props);
-    _.assignIn(this.state, {
+    Object.assign(this.state, {
       title: i18n("compress.createUpdateTitle"),
       description: i18n("compress.createUpdateDescription"),
       category,

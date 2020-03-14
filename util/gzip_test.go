@@ -36,7 +36,7 @@ func TestGzip(t *testing.T) {
 }
 
 func BenchmarkGzip(b *testing.B) {
-	buf, err := ioutil.ReadFile("../assets/jquery-3.4.1.min.js")
+	buf, err := ioutil.ReadFile("../test_assets/jquery-3.4.1.min.js")
 	if err != nil {
 		panic(err)
 	}

@@ -1,5 +1,3 @@
-import _ from "lodash";
-
 const hour = "h";
 const minute = "m";
 const second = "s"
@@ -23,11 +21,12 @@ export function divideDuration(value) {
     return result;
   }
   let done = false
-  _.forEach([
+  const units = [
     hour,
     minute,
     second,
-  ], (unit) => {
+  ];
+  units.forEach((unit) => {
     if (done) {
       return;
     }
@@ -50,5 +49,9 @@ export function numberToDuration(value) {
     return "";
   }
   return result.value  +result.unit;
-  
+}
+
+export function toLocalTime(date) {
+  const d = new Date(date);
+  return `${d.toLocaleDateString()} ${d.toLocaleTimeString()}`;
 }

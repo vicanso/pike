@@ -63,6 +63,7 @@ func TestGetCacheAge(t *testing.T) {
 
 	h.Set(headerAge, "2")
 	assert.Equal(8, getCacheAge(h))
+
 }
 
 func TestCacheDispatchMiddleware(t *testing.T) {
@@ -96,7 +97,7 @@ func TestCacheDispatchMiddleware(t *testing.T) {
 		err := fn(c)
 		assert.Nil(err)
 		assert.Equal(1, count)
-		assert.Equal(cache.StatusFetching, c.Get(statusKey))
+		assert.Equal(cache.StatusFetching, c.GetInt(statusKey))
 		assert.NotEmpty(c.BodyBuffer)
 		assert.NotEmpty(c.GetHeader(elton.HeaderETag))
 		assert.Equal(elton.Gzip, c.GetHeader(elton.HeaderContentEncoding))
@@ -106,7 +107,7 @@ func TestCacheDispatchMiddleware(t *testing.T) {
 		err = fn(c)
 		assert.Nil(err)
 		assert.Equal(2, count)
-		assert.Equal(cache.StatusHitForPass, c.Get(statusKey))
+		assert.Equal(cache.StatusHitForPass, c.GetInt(statusKey))
 		assert.NotEmpty(c.BodyBuffer)
 		assert.NotEmpty(c.GetHeader(elton.HeaderETag))
 		assert.Equal(elton.Gzip, c.GetHeader(elton.HeaderContentEncoding))
@@ -139,7 +140,7 @@ func TestCacheDispatchMiddleware(t *testing.T) {
 		err := fn(c)
 		assert.Nil(err)
 		assert.Equal(1, count)
-		assert.Equal(cache.StatusFetching, c.Get(statusKey))
+		assert.Equal(cache.StatusFetching, c.GetInt(statusKey))
 		assert.NotEmpty(c.BodyBuffer)
 		assert.NotEmpty(c.GetHeader(elton.HeaderETag))
 		assert.Equal(elton.Br, c.GetHeader(elton.HeaderContentEncoding))
@@ -151,7 +152,7 @@ func TestCacheDispatchMiddleware(t *testing.T) {
 		assert.Nil(err)
 		assert.Equal(1, count)
 		assert.NotEmpty(c.GetHeader(headerAge))
-		assert.Equal(cache.StatusCacheable, c.Get(statusKey))
+		assert.Equal(cache.StatusCacheable, c.GetInt(statusKey))
 		assert.NotEmpty(c.BodyBuffer)
 		assert.NotEmpty(c.GetHeader(elton.HeaderETag))
 		assert.Equal(elton.Br, c.GetHeader(elton.HeaderContentEncoding))
@@ -174,7 +175,7 @@ func TestCacheDispatchMiddleware(t *testing.T) {
 		err := fn(c)
 		assert.Nil(err)
 		assert.Equal(1, count)
-		assert.Equal(cache.StatusPassed, c.Get(statusKey))
+		assert.Equal(cache.StatusPassed, c.GetInt(statusKey))
 		assert.NotEmpty(c.BodyBuffer)
 		assert.NotEmpty(c.GetHeader(elton.HeaderETag))
 		assert.Equal(elton.Gzip, c.GetHeader(elton.HeaderContentEncoding))
@@ -184,7 +185,7 @@ func TestCacheDispatchMiddleware(t *testing.T) {
 		err = fn(c)
 		assert.Nil(err)
 		assert.Equal(2, count)
-		assert.Equal(cache.StatusPassed, c.Get(statusKey))
+		assert.Equal(cache.StatusPassed, c.GetInt(statusKey))
 		assert.NotEmpty(c.BodyBuffer)
 		assert.NotEmpty(c.GetHeader(elton.HeaderETag))
 		assert.Equal(elton.Gzip, c.GetHeader(elton.HeaderContentEncoding))
