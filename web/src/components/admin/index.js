@@ -77,6 +77,7 @@ class Admin extends Configs {
   constructor(props) {
     super(props);
     Object.assign(this.state, {
+      disabledDelete: true,
       title: i18n("admin.createUpdateTitle"),
       description: i18n("admin.createUpdateDescription"),
       category,

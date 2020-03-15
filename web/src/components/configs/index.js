@@ -10,6 +10,7 @@ import "./configs.sass";
 
 class Configs extends React.Component {
   state = {
+    disabledDelete: false,
     category: "",
     mode: "",
     title: "",
@@ -100,7 +101,7 @@ class Configs extends React.Component {
     });
   }
   renderConfigs() {
-    const { loading, mode, columns, configs } = this.state;
+    const { loading, mode, columns, configs, disabledDelete } = this.state;
     // 如果其它模式下，则不输出列表
     if (mode) {
       return;
@@ -114,10 +115,11 @@ class Configs extends React.Component {
         ></div>
       );
     }
+    const onDelete = disabledDelete ? null : this.handleDelete.bind(this);
 
     return (
       <ExTable
-        onDelete={this.handleDelete.bind(this)}
+        onDelete={onDelete}
         onUpdate={this.handleUpdate.bind(this)}
         rowKey={"name"}
         dataSource={configs}

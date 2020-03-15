@@ -12,7 +12,7 @@ import {
   LOCATIONS_PATH,
   SERVERS_PATH,
   ADMIN_PATH,
-  HOME_PATH,
+  HOME_PATH
 } from "../../paths";
 
 const paths = [
@@ -129,12 +129,12 @@ class AppHeader extends React.Component {
             to={HOME_PATH}
             onClick={() => {
               this.setState({
-                active: -1,
-              })
+                active: -1
+              });
             }}
           >
             <img src={logo} alt="logo" />
-          Pike
+            Pike
           </Link>
           {version && <span className="version">{version}</span>}
         </div>
