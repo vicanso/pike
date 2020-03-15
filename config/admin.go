@@ -35,6 +35,10 @@ func (admin *Admin) Fetch() (err error) {
 	if admin.Prefix == "" {
 		admin.Prefix = defaultAdminPrefix
 	}
+	// 如果未配置账号时，设置为默认允许外部访问，方便首次配置
+	if admin.User == "" {
+		admin.EnabledInternetAccess = true
+	}
 	return
 }
 
