@@ -38,7 +38,7 @@ func (c *Cache) Save() (err error) {
 	return c.cfg.saveConfig(c, CachesCategory, c.Name)
 }
 
-// Delete delete compress config
+// Delete delete cache config
 func (c *Cache) Delete() (err error) {
 	return c.cfg.deleteConfig(CachesCategory, c.Name)
 }

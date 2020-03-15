@@ -53,6 +53,16 @@ type Server struct {
 	cfg            *config.Config
 }
 
+// ServerOptions server options
+type ServerOptions struct {
+	server     *config.Server
+	locations  config.Locations
+	upstreams  *upstream.Upstreams
+	dispatcher *cache.Dispatcher
+	compress   *config.Compress
+	cfg        *config.Config
+}
+
 // Instance pike server instance
 type Instance struct {
 	Config             *config.Config
@@ -112,7 +122,15 @@ func (ins *Instance) Fetch() (err error) {
 			srv := data.(*Server)
 			srv.Update(conf, locations, upstreams, dispatcher, compress)
 		} else {
-			srv := NewServer(conf, locations, upstreams, dispatcher, compress, cfg)
+			opts := &ServerOptions{
+				server:     conf,
+				locations:  locations,
+				upstreams:  upstreams,
+				dispatcher: dispatcher,
+				compress:   compress,
+				cfg:        cfg,
+			}
+			srv := NewServer(opts)
 			servers.Store(conf.Name, srv)
 		}
 	}
@@ -145,12 +163,14 @@ func (ins *Instance) Start() (err error) {
 	if err != nil {
 		return
 	}
+	// restart 根据当前配置重新启动server
 	ins.Restart()
 	return
 }
 
 // NewServer new a server
-func NewServer(conf *config.Server, locations config.Locations, upstreams *upstream.Upstreams, dispatcher *cache.Dispatcher, compress *config.Compress, cfg *config.Config) *Server {
+func NewServer(opts *ServerOptions) *Server {
+	conf := opts.server
 	server := &http.Server{
 		Addr:              conf.Addr,
 		ReadTimeout:       conf.ReadTimeout,
@@ -161,9 +181,9 @@ func NewServer(conf *config.Server, locations config.Locations, upstreams *upstr
 	}
 	srv := &Server{
 		server: server,
-		cfg:    cfg,
+		cfg:    opts.cfg,
 	}
-	srv.Update(conf, locations, upstreams, dispatcher, compress)
+	srv.Update(opts.server, opts.locations, opts.upstreams, opts.dispatcher, opts.compress)
 	server.Handler = srv
 	return srv
 }

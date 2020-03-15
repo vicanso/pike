@@ -29,6 +29,7 @@ type Server struct {
 	Cache             string        `yaml:"cache,omitempty" json:"cache,omitempty" valid:"xName"`
 	Compress          string        `yaml:"compress,omitempty" json:"compress,omitempty" valid:"xName"`
 	Locations         []string      `yaml:"locations,omitempty" json:"locations,omitempty" valid:"xNames"`
+	Certs             []string      `yaml:"certs,omitempty" json:"certs,omitempty" valid:"-"`
 	ETag              bool          `yaml:"eTag,omitempty" json:"eTag,omitempty" valid:"-"`
 	Addr              string        `yaml:"addr,omitempty" json:"addr,omitempty" valid:"ascii,runelength(1|50)"`
 	Concurrency       uint32        `yaml:"concurrency,omitempty" json:"concurrency,omitempty" valid:"-"`

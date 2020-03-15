@@ -41,6 +41,8 @@ const (
 	UpstreamsCategory = "upstreams"
 	// LocationsCategory locations category
 	LocationsCategory = "locations"
+	// CertCategory cert category
+	CertCategory = "certs"
 	// AdminCategory admin category
 	AdminCategory = "admin"
 )
@@ -79,6 +81,7 @@ type (
 		changeTypeKeyMap map[ChangeType]string
 		basePath         string
 		client           Client
+		events           []OnChange
 	}
 )
 
@@ -116,6 +119,19 @@ func NewConfig(configPath, basePath string) (cfg *Config, err error) {
 		basePath:         basePath,
 		changeTypeKeyMap: changeTypeKeyMap,
 	}
+	go configClient.Watch(basePath, func(key string) {
+		for t, prefix := range changeTypeKeyMap {
+			if strings.HasPrefix(key, prefix) {
+				value := ""
+				if len(key) > len(prefix) {
+					value = key[len(prefix)+1:]
+				}
+				for _, onChange := range cfg.events {
+					onChange(t, value)
+				}
+			}
+		}
+	})
 	return
 }
 
@@ -197,17 +213,10 @@ func (cfg *Config) listKeysExcludePrefix(keyPath string) ([]string, error) {
 
 // Watch watch config change
 func (cfg *Config) Watch(onChange OnChange) {
-	cfg.client.Watch(cfg.basePath, func(key string) {
-		for t, prefix := range cfg.changeTypeKeyMap {
-			if strings.HasPrefix(key, prefix) {
-				value := ""
-				if len(key) > len(prefix) {
-					value = key[len(prefix)+1:]
-				}
-				onChange(t, value)
-			}
-		}
-	})
+	if cfg.events == nil {
+		cfg.events = make([]OnChange, 0)
+	}
+	cfg.events = append(cfg.events, onChange)
 }
 
 // Close close config client
@@ -326,6 +335,27 @@ func (cfg *Config) GetUpstreams() (upstreams Upstreams, err error) {
 	return
 }
 
+// GetCerts get all cert config
+func (cfg *Config) GetCerts() (certs Certs, err error) {
+	keys, err := cfg.listKeysExcludePrefix(CertCategory)
+	if err != nil {
+		return
+	}
+	certs = make(Certs, 0, len(keys))
+	for _, key := range keys {
+		c := &Cert{
+			Name: key,
+			cfg:  cfg,
+		}
+		err = c.Fetch()
+		if err != nil {
+			return
+		}
+		certs = append(certs, c)
+	}
+	return
+}
+
 // NewCacheConfig new cache config
 func (cfg *Config) NewCacheConfig(name string) *Cache {
 	return &Cache{
@@ -369,6 +399,13 @@ func (cfg *Config) NewUpstreamConfig(name string) *Upstream {
 // NewAdminConfig new upstream config
 func (cfg *Config) NewAdminConfig() *Admin {
 	return &Admin{
+		cfg: cfg,
+	}
+}
+
+// NewCertConfig new cert config
+func (cfg *Config) NewCertConfig() *Cert {
+	return &Cert{
 		cfg: cfg,
 	}
 }
