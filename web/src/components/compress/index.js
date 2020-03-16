@@ -1,86 +1,86 @@
-import i18n from "../../i18n";
 import Configs from "../configs";
+import { getCompressI18n, getCommonI18n } from "../../i18n";
 
 const category = "compresses";
 
 const columns = [
   {
-    title: i18n("compress.name"),
+    title: getCompressI18n("name"),
     dataIndex: "name"
   },
   {
-    title: i18n("compress.level"),
+    title: getCompressI18n("level"),
     dataIndex: "level",
     sorter: (a, b) => a.level - b.level
   },
   {
-    title: i18n("compress.minLength"),
+    title: getCompressI18n("minLength"),
     dataIndex: "minLength",
     sorter: (a, b) => a.minLength - b.minLength
   },
   {
-    title: i18n("compress.filter"),
+    title: getCompressI18n("filter"),
     dataIndex: "filter"
   },
   {
-    title: i18n("common.description"),
+    title: getCommonI18n("description"),
     dataIndex: "description"
   }
 ];
 
 const fields = [
   {
-    label: i18n("compress.name"),
+    label: getCompressI18n("name"),
     key: "name",
-    placeholder: i18n("compress.namePlaceHolder"),
+    placeholder: getCompressI18n("namePlaceHolder"),
     rules: [
       {
         required: true,
-        message: i18n("compress.nameRequireMessage")
+        message: getCompressI18n("nameRequireMessage")
       }
     ]
   },
   {
-    label: i18n("compress.level"),
+    label: getCompressI18n("level"),
     key: "level",
     type: "number",
-    placeholder: i18n("compress.levelPlaceHolder"),
+    placeholder: getCompressI18n("levelPlaceHolder"),
     rules: [
       {
         required: true,
-        message: i18n("compress.levelRequireMessage")
+        message: getCompressI18n("levelRequireMessage")
       }
     ]
   },
   {
-    label: i18n("compress.minLength"),
+    label: getCompressI18n("minLength"),
     key: "minLength",
     type: "number",
-    placeholder: i18n("compress.minLengthPlaceHolder"),
+    placeholder: getCompressI18n("minLengthPlaceHolder"),
     rules: [
       {
         required: true,
-        message: i18n("compress.minLengthRequireMessage")
+        message: getCompressI18n("minLengthRequireMessage")
       }
     ]
   },
   {
-    label: i18n("compress.filter"),
+    label: getCompressI18n("filter"),
     key: "filter",
-    placeholder: i18n("compress.filterPlaceHolder"),
+    placeholder: getCompressI18n("filterPlaceHolder"),
     defaultValue: "text|javascript|json",
     rules: [
       {
         required: true,
-        message: i18n("compress.filterRequireMessage")
+        message: getCompressI18n("filterRequireMessage")
       }
     ]
   },
   {
-    label: i18n("common.description"),
+    label: getCommonI18n("description"),
     key: "description",
     type: "textarea",
-    placeholder: i18n("common.descriptionPlaceholder")
+    placeholder: getCommonI18n("descriptionPlaceholder")
   }
 ];
 
@@ -88,8 +88,8 @@ class Compresses extends Configs {
   constructor(props) {
     super(props);
     Object.assign(this.state, {
-      title: i18n("compress.createUpdateTitle"),
-      description: i18n("compress.createUpdateDescription"),
+      title: getCompressI18n("createUpdateTitle"),
+      description: getCompressI18n("createUpdateDescription"),
       category,
       columns,
       fields

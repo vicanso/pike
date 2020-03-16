@@ -17,6 +17,8 @@
 package server
 
 import (
+	"crypto/tls"
+	"encoding/base64"
 	"net/http"
 	"sync"
 	"sync/atomic"
@@ -179,6 +181,33 @@ func NewServer(opts *ServerOptions) *Server {
 		IdleTimeout:       conf.IdleTimeout,
 		MaxHeaderBytes:    conf.MaxHeaderBytes,
 	}
+	if len(conf.Certs) != 0 {
+		tlsConfig := &tls.Config{}
+		tlsConfig.Certificates = make([]tls.Certificate, 0)
+		for _, name := range conf.Certs {
+			c := opts.cfg.NewCertConfig(name)
+			err := c.Fetch()
+			if err != nil {
+				continue
+			}
+			key, err := base64.StdEncoding.DecodeString(c.Key)
+			if err != nil {
+				continue
+			}
+			cert, err := base64.StdEncoding.DecodeString(c.Cert)
+			if err != nil {
+				continue
+			}
+			certificate, err := tls.X509KeyPair(cert, key)
+			if err != nil {
+				continue
+			}
+			tlsConfig.Certificates = append(tlsConfig.Certificates, certificate)
+		}
+		if len(tlsConfig.Certificates) != 0 {
+			server.TLSConfig = tlsConfig
+		}
+	}
 	srv := &Server{
 		server: server,
 		cfg:    opts.cfg,
@@ -200,7 +229,7 @@ func (s *Server) Update(conf *config.Server, locations config.Locations, upstrea
 }
 
 // ListenAndServe call http server's listen and serve
-func (s *Server) ListenAndServe() error {
+func (s *Server) ListenAndServe() (err error) {
 	if s.GetStatus() == serverStatusRunning {
 		return nil
 	}
@@ -209,12 +238,17 @@ func (s *Server) ListenAndServe() error {
 	log.Default().Info("server listening",
 		zap.String("addr", s.server.Addr),
 	)
-	err := s.server.ListenAndServe()
+	if s.server.TLSConfig != nil {
+		err = s.server.ListenAndServeTLS("", "")
+	} else {
+
+		err = s.server.ListenAndServe()
+	}
 	if err != nil {
 		s.message = err.Error()
 	}
 	s.SetStatus(serverStatusStop)
-	return err
+	return
 }
 
 // toggleElton toggle elton

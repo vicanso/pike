@@ -1,18 +1,19 @@
 import React from "react";
 import { Switch } from "antd";
 
-import i18n from "../../i18n";
 import Configs from "../configs";
+
+import { getAdminI18n, getCommonI18n } from "../../i18n";
 
 const category = "admin";
 
 const columns = [
   {
-    title: i18n("admin.user"),
+    title: getAdminI18n("user"),
     dataIndex: "user"
   },
   {
-    title: i18n("admin.password"),
+    title: getAdminI18n("password"),
     dataIndex: "password",
     render: row => {
       if (row) {
@@ -22,54 +23,54 @@ const columns = [
     }
   },
   {
-    title: i18n("admin.prefix"),
+    title: getAdminI18n("prefix"),
     dataIndex: "prefix"
   },
   {
-    title: i18n("admin.enabledInternetAccess"),
+    title: getAdminI18n("enabledInternetAccess"),
     dataIndex: "enabledInternetAccess",
     render: row => {
       return <Switch disabled={true} defaultChecked={row} />;
     }
   },
   {
-    title: i18n("common.description"),
+    title: getCommonI18n("description"),
     dataIndex: "description"
   }
 ];
 
 const fields = [
   {
-    label: i18n("admin.user"),
+    label: getAdminI18n("user"),
     key: "user",
-    placeholder: i18n("admin.userPlaceHolder")
+    placeholder: getAdminI18n("userPlaceHolder")
   },
   {
-    label: i18n("admin.password"),
+    label: getAdminI18n("password"),
     key: "password",
-    placeholder: i18n("admin.passwordPlaceHolder")
+    placeholder: getAdminI18n("passwordPlaceHolder")
   },
   {
-    label: i18n("admin.prefix"),
+    label: getAdminI18n("prefix"),
     key: "prefix",
-    placeholder: i18n("admin.prefixPlaceHolder"),
+    placeholder: getAdminI18n("prefixPlaceHolder"),
     rules: [
       {
         required: true,
-        message: i18n("admin.prefixRequireMessage")
+        message: getAdminI18n("prefixRequireMessage")
       }
     ]
   },
   {
-    label: i18n("admin.enabledInternetAccess"),
+    label: getAdminI18n("enabledInternetAccess"),
     key: "enabledInternetAccess",
     type: "switch"
   },
   {
-    label: i18n("common.description"),
+    label: getCommonI18n("description"),
     key: "description",
     type: "textarea",
-    placeholder: i18n("common.descriptionPlaceholder")
+    placeholder: getCommonI18n("descriptionPlaceholder")
   }
 ];
 
@@ -78,8 +79,8 @@ class Admin extends Configs {
     super(props);
     Object.assign(this.state, {
       disabledDelete: true,
-      title: i18n("admin.createUpdateTitle"),
-      description: i18n("admin.createUpdateDescription"),
+      title: getAdminI18n("createUpdateTitle"),
+      description: getAdminI18n("createUpdateDescription"),
       category,
       columns,
       fields

@@ -8,7 +8,8 @@ const navEn = {
   upstreams: "Upstreams",
   locations: "Locations",
   servers: "Servers",
-  admin: "Admin"
+  admin: "Admin",
+  cert: "Certifications"
 };
 const navZh = {
   caches: "缓存",
@@ -16,7 +17,8 @@ const navZh = {
   upstreams: "Upstreams",
   locations: "Locations",
   servers: "HTTP服务器",
-  admin: "管理配置"
+  admin: "管理配置",
+  cert: "证书"
 };
 
 const commonEn = {
@@ -32,7 +34,8 @@ const commonEn = {
   update: "Update",
   back: "Back",
   delete: "Delete",
-  deleteTips: "Are you sure to delete this config?"
+  deleteTips: "Are you sure to delete this config?",
+  upload: "Upload File"
 };
 const commonZh = {
   lang: "语言",
@@ -47,7 +50,8 @@ const commonZh = {
   update: "更新",
   back: "返回",
   delete: "删除",
-  deleteTips: "确定要删除此配置吗？"
+  deleteTips: "确定要删除此配置吗？",
+  upload: "上传文件"
 };
 
 // 缓存相关文本配置
@@ -223,6 +227,8 @@ const serverEn = {
   locationsPlaceHolder: "Please select the locations config for http server",
   locationsRequireMesage:
     "The locations config for http server can't be empty!",
+  certs: "Certs",
+  certsPlaceHolder: "Please select the certificate for server",
   etag: "ETag",
   addr: "Address",
   addrPlaceHolder:
@@ -255,6 +261,8 @@ const serverZh = {
   locations: "locations",
   locationsPlaceHolder: "请选择HTTP服务器使用的locations配置",
   locationsRequireMesage: "HTTP服务器的locations配置不能为空",
+  certs: "证书",
+  certsPlaceHolder: "请选择服务器使用的证书",
   etag: "ETag",
   addr: "监听地址",
   addrPlaceHolder: "请输入HTTP服务器的监听地址，如：:7000 或者 127.0.0.1:7000",
@@ -317,6 +325,25 @@ const applicationZh = {
   version: "版本"
 };
 
+const certEn = {
+  title: "Certification",
+  name: "Name",
+  namePlaceHolder: "Please input the name of cert",
+  nameRequireMessage: "Name of cert can't be null",
+  key: "Key fiile",
+  cert: "Cert file",
+  fileRequireMessage: "File should be upload success"
+};
+const certZh = {
+  title: "证书",
+  name: "名称",
+  namePlaceHolder: "请输入证书名称",
+  nameRequireMessage: "证书名称不能为空",
+  key: "私钥文件",
+  cert: "证书文件",
+  fileRequireMessage: "请先成功上传文件"
+};
+
 const i18ns = {
   en: {
     common: commonEn,
@@ -327,7 +354,8 @@ const i18ns = {
     location: locationEn,
     server: serverEn,
     admin: adminEn,
-    application: applicationEn
+    application: applicationEn,
+    cert: certEn
   },
   zh: {
     common: commonZh,
@@ -338,11 +366,12 @@ const i18ns = {
     location: locationZh,
     server: serverZh,
     admin: adminZh,
-    application: applicationZh
+    application: applicationZh,
+    cert: certZh
   }
 };
 
-export default field => {
+function get(field) {
   let value = i18ns[lang];
   if (!value) {
     return "";
@@ -355,11 +384,53 @@ export default field => {
     value = value[key];
   });
   return value || "";
-};
+}
+
+export default get;
 
 export function changeToEnglish() {
   localStorage.setItem(key, "en");
 }
 export function changeToChinese() {
   localStorage.setItem(key, "zh");
+}
+
+export function getAdminI18n(name) {
+  return get(`admin.${name}`);
+}
+
+export function getCommonI18n(name) {
+  return get(`common.${name}`);
+}
+
+export function getCacheI18n(name) {
+  return get(`cache.${name}`);
+}
+
+export function getCertI18n(name) {
+  return get(`cert.${name}`);
+}
+
+export function getCompressI18n(name) {
+  return get(`compress.${name}`);
+}
+
+export function getApplicationI18n(name) {
+  return get(`application.${name}`);
+}
+
+export function getLocationI18n(name) {
+  return get(`location.${name}`);
+}
+
+export function getServerI18n(name) {
+  return get(`server.${name}`);
+}
+
+export function getUpstreamI18n(name) {
+  return get(`upstream.${name}`);
+}
+
+export function getNavI18n(name) {
+  return get(`nav.${name}`);
 }

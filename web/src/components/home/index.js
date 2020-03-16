@@ -2,12 +2,10 @@ import React from "react";
 import axios from "axios";
 import { message, Card, Row, Col, Spin } from "antd";
 
-import i18n from "../../i18n";
 import { APPLICATION } from "../../urls";
 import "./home.sass";
 import { toLocalTime } from "../../util";
-
-const getAppI18n = name => i18n("application." + name);
+import { getApplicationI18n } from "../../i18n";
 
 class Home extends React.Component {
   state = {
@@ -46,7 +44,7 @@ class Home extends React.Component {
     const arr = keys.map(key => {
       return (
         <Col className="basicInfos" span={8} key={key}>
-          <span>{getAppI18n(key)}</span>
+          <span>{getApplicationI18n(key)}</span>
           {informations[key]}
         </Col>
       );
@@ -57,7 +55,7 @@ class Home extends React.Component {
     const { loading } = this.state;
     return (
       <div className="Home">
-        <Card title={getAppI18n("title")}>
+        <Card title={getApplicationI18n("title")}>
           <Spin spinning={loading}>{this.renderInformations()}</Spin>
         </Card>
       </div>

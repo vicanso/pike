@@ -2,7 +2,7 @@ import React from "react";
 import PropTypes from "prop-types";
 import { Table, Popconfirm, Icon, Spin, message } from "antd";
 
-import i18n from "../../i18n";
+import { getCommonI18n } from "../../i18n";
 import "./extable.sass";
 
 class ExTable extends React.Component {
@@ -31,13 +31,14 @@ class ExTable extends React.Component {
     // 只有设置了更新或删除函数才添加功能操作列表
     if (onDelete || onUpdate) {
       cloneColumns.push({
-        title: i18n("common.action"),
+        title: getCommonI18n("action"),
+        width: 200,
         render: row => {
           return (
             <div className="action">
               {onDelete && (
                 <Popconfirm
-                  title={i18n("common.deleteTips")}
+                  title={getCommonI18n("deleteTips")}
                   onConfirm={() => {
                     this.handleDelete(row);
                   }}
@@ -49,7 +50,7 @@ class ExTable extends React.Component {
                     }}
                   >
                     <Icon type="delete" />
-                    {i18n("common.delete")}
+                    {getCommonI18n("delete")}
                   </a>
                 </Popconfirm>
               )}
@@ -62,7 +63,7 @@ class ExTable extends React.Component {
                   }}
                 >
                   <Icon type="edit" />
-                  {i18n("common.update")}
+                  {getCommonI18n("update")}
                 </a>
               )}
             </div>

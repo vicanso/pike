@@ -15,28 +15,45 @@
 
 package config
 
+import (
+	"crypto/tls"
+	"encoding/base64"
+)
+
 type Cert struct {
 	cfg  *Config
 	Name string `yaml:"-" json:"name,omitempty" valid:"xName"`
-	Key  []byte `yaml:"key,omitempty" json:"key,omitempty"`
-	Cert []byte `yaml:"cert,omitempty" json:"cert,omitempty"`
+	Key  string `yaml:"key,omitempty" json:"key,omitempty" valid:"base64"`
+	Cert string `yaml:"cert,omitempty" json:"cert,omitempty" valid:"base64"`
 }
 
 type Certs []*Cert
 
 // Fetch fetch cert config
 func (c *Cert) Fetch() (err error) {
-	return c.cfg.fetchConfig(c, CertCategory, c.Name)
+	return c.cfg.fetchConfig(c, CertsCategory, c.Name)
 }
 
 // Save save cert config
 func (c *Cert) Save() (err error) {
-	return c.cfg.saveConfig(c, CertCategory, c.Name)
+	key, err := base64.StdEncoding.DecodeString(c.Key)
+	if err != nil {
+		return
+	}
+	cert, err := base64.StdEncoding.DecodeString(c.Cert)
+	if err != nil {
+		return
+	}
+	_, err = tls.X509KeyPair(cert, key)
+	if err != nil {
+		return
+	}
+	return c.cfg.saveConfig(c, CertsCategory, c.Name)
 }
 
 // Delete delete cert config
 func (c *Cert) Delete() (err error) {
-	return c.cfg.deleteConfig(CertCategory, c.Name)
+	return c.cfg.deleteConfig(CertsCategory, c.Name)
 }
 
 // Get get cert config from cert list

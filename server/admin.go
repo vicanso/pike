@@ -16,6 +16,8 @@ package server
 
 import (
 	"bytes"
+	"encoding/base64"
+	"io/ioutil"
 	"net"
 	"net/http"
 	"strings"
@@ -86,6 +88,8 @@ func newGetConfigHandler(cfg *config.Config) elton.Handler {
 				data, err = cfg.GetUpstreams()
 			case config.AdminCategory:
 				data, err = cfg.GetAdmin()
+			case config.CertsCategory:
+				data, err = cfg.GetCerts()
 			default:
 				err = hes.New(category + " is not support")
 			}
@@ -116,8 +120,11 @@ func newCreateOrUpdateConfigHandler(cfg *config.Config) elton.Handler {
 			iconfig = cfg.NewUpstreamConfig("")
 		case config.AdminCategory:
 			iconfig = cfg.NewAdminConfig()
+		case config.CertsCategory:
+			iconfig = cfg.NewCertConfig("")
 		default:
 			err = hes.New(category + " is not support")
+			return
 		}
 
 		err = doValidate(iconfig, c.RequestBody)
@@ -168,6 +175,9 @@ func newDeleteConfigHandler(cfg *config.Config) elton.Handler {
 		case config.UpstreamsCategory:
 			shouldBeCheckedByLocation = true
 			iconfig = cfg.NewUpstreamConfig(name)
+		case config.CertsCategory:
+			shouldBeCheckedByServer = true
+			iconfig = cfg.NewCertConfig(name)
 		default:
 			err = hes.New(category + " is not support")
 			return
@@ -272,6 +282,22 @@ func NewAdmin(cfg *config.Config) (string, *elton.Elton) {
 	g.GET("/application", func(c *elton.Context) error {
 		c.Body = application.Default()
 		return nil
+	})
+
+	g.POST("/upload", func(c *elton.Context) (err error) {
+		file, fileHeader, err := c.Request.FormFile("file")
+		if err != nil {
+			return
+		}
+		buf, err := ioutil.ReadAll(file)
+		if err != nil {
+			return
+		}
+		c.Body = map[string]string{
+			"contentType": fileHeader.Header.Get("Content-Type"),
+			"data":        base64.StdEncoding.EncodeToString(buf),
+		}
+		return
 	})
 
 	e.AddGroup(g)

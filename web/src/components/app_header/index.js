@@ -4,7 +4,12 @@ import { Menu, Dropdown, Icon } from "antd";
 
 import logo from "../../logo.svg";
 import "./app_header.sass";
-import i18n, { changeToEnglish, changeToChinese } from "../../i18n";
+import {
+  getNavI18n,
+  getCommonI18n,
+  changeToEnglish,
+  changeToChinese
+} from "../../i18n";
 import {
   CACHES_PATH,
   COMPRESSES_PATH,
@@ -12,42 +17,39 @@ import {
   LOCATIONS_PATH,
   SERVERS_PATH,
   ADMIN_PATH,
-  HOME_PATH
+  HOME_PATH,
+  CERT_PATH
 } from "../../paths";
 
 const paths = [
   {
-    name: i18n("nav.caches"),
+    name: getNavI18n("caches"),
     path: CACHES_PATH
   },
   {
-    name: i18n("nav.compresses"),
+    name: getNavI18n("compresses"),
     path: COMPRESSES_PATH
   },
   {
-    name: i18n("nav.upstreams"),
+    name: getNavI18n("upstreams"),
     path: UPSTREAMS_PATH
   },
   {
-    name: i18n("nav.locations"),
+    name: getNavI18n("locations"),
     path: LOCATIONS_PATH
   },
   {
-    name: i18n("nav.servers"),
+    name: getNavI18n("servers"),
     path: SERVERS_PATH
   },
   {
-    name: i18n("nav.admin"),
+    name: getNavI18n("cert"),
+    path: CERT_PATH
+  },
+  {
+    name: getNavI18n("admin"),
     path: ADMIN_PATH
   }
-  // {
-  //   name: "Performance"
-  //   // path: PERFORMANCE_PATH
-  // },
-  // {
-  //   name: "Configs"
-  //   // path: CONFIGS_PATH
-  // }
 ];
 
 class AppHeader extends React.Component {
@@ -92,7 +94,7 @@ class AppHeader extends React.Component {
       <div className="langSelector">
         <Dropdown overlay={menu}>
           <span>
-            {i18n("common.lang")} <Icon type="down" />
+            {getCommonI18n("lang")} <Icon type="down" />
           </span>
         </Dropdown>
       </div>

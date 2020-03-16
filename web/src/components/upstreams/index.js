@@ -1,20 +1,20 @@
 import React from "react";
 
-import i18n from "../../i18n";
 import Configs from "../configs";
+import { getCommonI18n, getUpstreamI18n } from "../../i18n";
 
 const category = "upstreams";
 const columns = [
   {
-    title: i18n("upstream.name"),
+    title: getUpstreamI18n("name"),
     dataIndex: "name"
   },
   {
-    title: i18n("upstream.policy"),
+    title: getUpstreamI18n("policy"),
     dataIndex: "policy"
   },
   {
-    title: i18n("upstream.servers"),
+    title: getUpstreamI18n("servers"),
     dataIndex: "servers",
     render: row => {
       const servers = row.map(item => {
@@ -33,55 +33,55 @@ const columns = [
     }
   },
   {
-    title: i18n("upstream.healthCheck"),
+    title: getUpstreamI18n("healthCheck"),
     dataIndex: "healthCheck"
   },
   {
-    title: i18n("common.description"),
+    title: getCommonI18n("description"),
     dataIndex: "description"
   }
 ];
 const fields = [
   {
-    label: i18n("upstream.name"),
+    label: getUpstreamI18n("name"),
     key: "name",
-    placeholder: i18n("upstream.namePlaceHolder"),
+    placeholder: getUpstreamI18n("namePlaceHolder"),
     rules: [
       {
         required: true,
-        message: i18n("upstream.nameRequireMessage")
+        message: getUpstreamI18n("nameRequireMessage")
       }
     ]
   },
   {
-    label: i18n("upstream.servers"),
+    label: getUpstreamI18n("servers"),
     key: "servers",
     type: "upstreamServers",
-    placeholder: i18n("upstream.serverAddrPlaceHolder"),
+    placeholder: getUpstreamI18n("serverAddrPlaceHolder"),
     rules: [
       {
         required: true,
-        message: i18n("upstream.serversRequireMessage")
+        message: getUpstreamI18n("serversRequireMessage")
       }
     ]
   },
   {
-    label: i18n("upstream.policy"),
+    label: getUpstreamI18n("policy"),
     key: "policy",
-    placeholder: i18n("upstream.policyPlaceHolder"),
+    placeholder: getUpstreamI18n("policyPlaceHolder"),
     type: "select",
     options: ["roundRobin", "first", "random", "leastconn"]
   },
   {
-    label: i18n("upstream.healthCheck"),
+    label: getUpstreamI18n("healthCheck"),
     key: "healthCheck",
-    placeholder: i18n("upstream.healthCheckPlaceHolder")
+    placeholder: getUpstreamI18n("healthCheckPlaceHolder")
   },
   {
-    label: i18n("common.description"),
+    label: getCommonI18n("description"),
     key: "description",
     type: "textarea",
-    placeholder: i18n("common.descriptionPlaceholder")
+    placeholder: getCommonI18n("descriptionPlaceholder")
   }
 ];
 
@@ -89,8 +89,8 @@ class Upstreams extends Configs {
   constructor(props) {
     super(props);
     Object.assign(this.state, {
-      title: i18n("upstream.createUpdateTitle"),
-      description: i18n("upstream.createUpdateDescription"),
+      title: getUpstreamI18n("createUpdateTitle"),
+      description: getUpstreamI18n("createUpdateDescription"),
       category,
       columns,
       fields

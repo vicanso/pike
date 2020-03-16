@@ -7,3 +7,4 @@ if (prefix === '/') {
 export const CONFIGS = `${prefix}configs/:category`;
 export const CONFIG = `${prefix}configs/:category/:name`;
 export const APPLICATION = `${prefix}application`;
+export const UPLOAD = `${prefix}upload`;

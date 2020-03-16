@@ -9,12 +9,14 @@ import {
   Select,
   Switch,
   Row,
-  Col
+  Col,
+  Upload
 } from "antd";
 
 import "./exform.sass";
-import i18n from "../../i18n";
+import { getCommonI18n } from "../../i18n";
 import { durationToNumber, divideDuration } from "../../util";
+import { UPLOAD } from "../../urls";
 
 const { TextArea } = Input;
 const { Option } = Select;
@@ -23,11 +25,11 @@ class DurationInput extends React.Component {
   state = {
     units: [
       {
-        desc: i18n("common.second"),
+        desc: getCommonI18n("second"),
         type: "s"
       },
       {
-        desc: i18n("common.minute"),
+        desc: getCommonI18n("minute"),
         type: "m"
       }
     ],
@@ -205,7 +207,7 @@ class KeyValueListInput extends React.Component {
             });
           }}
         >
-          {i18n("common.add").toUpperCase()}
+          {getCommonI18n("add").toUpperCase()}
         </Button>
       </div>
     );
@@ -260,7 +262,7 @@ class TextListInput extends React.Component {
             });
           }}
         >
-          {i18n("common.add").toUpperCase()}
+          {getCommonI18n("add").toUpperCase()}
         </Button>
       </div>
     );
@@ -281,7 +283,7 @@ class UpstreamServersInput extends React.Component {
   }
   handleChange(index, value) {
     const servers = this.state.upstreamServers.slice(0);
-    servers[index] = Object.assign(servers[index], value);
+    servers[index] = Object.assign({}, servers[index], value);
     this.setState({
       upstreamServers: servers
     });
@@ -340,9 +342,31 @@ class UpstreamServersInput extends React.Component {
             });
           }}
         >
-          {i18n("common.add").toUpperCase()}
+          {getCommonI18n("add").toUpperCase()}
         </Button>
       </div>
+    );
+  }
+}
+
+class FileUpload extends React.Component {
+  render() {
+    const { placeholder, onChange } = this.props;
+    return (
+      <Upload
+        action={UPLOAD}
+        showUploadList={false}
+        onChange={info => {
+          if (info.file.status === "done") {
+            const { response } = info.file;
+            onChange(response.data);
+          }
+        }}
+      >
+        <Button>
+          <Icon type="upload" /> {placeholder}
+        </Button>
+      </Upload>
     );
   }
 }
@@ -485,6 +509,12 @@ class ExForm extends React.Component {
             decoratorOpts
           )(<DurationInput placeholder={item.placeholder} />);
           break;
+        case "upload":
+          decorator = getFieldDecorator(
+            key,
+            decoratorOpts
+          )(<FileUpload placeholder={item.placeholder} />);
+          break;
         default:
           decorator = getFieldDecorator(
             key,
@@ -508,7 +538,7 @@ class ExForm extends React.Component {
     items.push(
       <Form.Item key="submit" {...tailFormItemLayout}>
         <Button type="primary" htmlType="submit">
-          {i18n("common.submit")}
+          {getCommonI18n("submit")}
         </Button>
       </Form.Item>
     );
@@ -527,7 +557,7 @@ class ExForm extends React.Component {
                 }}
               >
                 <Icon type="left" />
-                {i18n("common.back")}
+                {getCommonI18n("back")}
               </a>
             )}
             {title}

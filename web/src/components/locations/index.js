@@ -2,9 +2,9 @@ import React from "react";
 import { message } from "antd";
 import axios from "axios";
 
-import i18n from "../../i18n";
 import Configs from "../configs";
 import { CONFIGS } from "../../urls";
+import { getLocationI18n } from "../../i18n";
 
 const category = "locations";
 const renderList = row => {
@@ -18,99 +18,99 @@ const renderList = row => {
 };
 const columns = [
   {
-    title: i18n("location.name"),
+    title: getLocationI18n("name"),
     dataIndex: "name"
   },
   {
-    title: i18n("location.upstream"),
+    title: getLocationI18n("upstream"),
     dataIndex: "upstream"
   },
   {
-    title: i18n("location.hosts"),
+    title: getLocationI18n("hosts"),
     dataIndex: "hosts",
     render: renderList
   },
   {
-    title: i18n("location.prefixs"),
+    title: getLocationI18n("prefixs"),
     dataIndex: "prefixs",
     render: renderList
   },
   {
-    title: i18n("location.rewrites"),
+    title: getLocationI18n("rewrites"),
     dataIndex: "rewrites",
     render: renderList
   },
   {
-    title: i18n("location.reqHeader"),
+    title: getLocationI18n("reqHeader"),
     dataIndex: "requestHeader",
     render: renderList
   },
   {
-    title: i18n("location.resHeader"),
+    title: getLocationI18n("resHeader"),
     dataIndex: "responseHeader",
     render: renderList
   }
 ];
 const fields = [
   {
-    label: i18n("location.name"),
+    label: getLocationI18n("name"),
     key: "name",
-    placeholder: i18n("location.namePlaceHolder"),
+    placeholder: getLocationI18n("namePlaceHolder"),
     rules: [
       {
         required: true,
-        message: i18n("location.nameRequireMessage")
+        message: getLocationI18n("nameRequireMessage")
       }
     ]
   },
   {
-    label: i18n("location.upstream"),
+    label: getLocationI18n("upstream"),
     key: "upstream",
-    placeholder: i18n("location.upstreamPlaceHolder"),
+    placeholder: getLocationI18n("upstreamPlaceHolder"),
     rules: [
       {
         required: true,
-        message: i18n("location.upstreamRequireMessage")
+        message: getLocationI18n("upstreamRequireMessage")
       }
     ],
     type: "select"
   },
   {
-    label: i18n("location.hosts"),
+    label: getLocationI18n("hosts"),
     key: "hosts",
-    placeholder: i18n("location.hostsPlaceHolder"),
+    placeholder: getLocationI18n("hostsPlaceHolder"),
     type: "textList"
   },
   {
-    label: i18n("location.prefixs"),
+    label: getLocationI18n("prefixs"),
     key: "prefixs",
-    placeholder: i18n("location.prefixsPlaceHolder"),
+    placeholder: getLocationI18n("prefixsPlaceHolder"),
     type: "textList"
   },
   {
-    label: i18n("location.rewrites"),
+    label: getLocationI18n("rewrites"),
     key: "rewrites",
     placeholder: [
-      i18n("location.rewriteOriginalPlaceHolder"),
-      i18n("location.rewriteNewPlaceHolder")
+      getLocationI18n("rewriteOriginalPlaceHolder"),
+      getLocationI18n("rewriteNewPlaceHolder")
     ],
     type: "keyValueList"
   },
   {
-    label: i18n("location.reqHeader"),
+    label: getLocationI18n("reqHeader"),
     key: "requestHeader",
     placeholder: [
-      i18n("location.headerNamePlaceHolder"),
-      i18n("location.headerValuePlaceHolder")
+      getLocationI18n("headerNamePlaceHolder"),
+      getLocationI18n("headerValuePlaceHolder")
     ],
     type: "keyValueList"
   },
   {
-    label: i18n("location.resHeader"),
+    label: getLocationI18n("resHeader"),
     key: "responseHeader",
     placeholder: [
-      i18n("location.headerNamePlaceHolder"),
-      i18n("location.headerValuePlaceHolder")
+      getLocationI18n("headerNamePlaceHolder"),
+      getLocationI18n("headerValuePlaceHolder")
     ],
     type: "keyValueList"
   }
@@ -120,8 +120,8 @@ class Locations extends Configs {
   constructor(props) {
     super(props);
     Object.assign(this.state, {
-      title: i18n("location.createUpdateTitle"),
-      description: i18n("location.createUpdateDescription"),
+      title: getLocationI18n("createUpdateTitle"),
+      description: getLocationI18n("createUpdateDescription"),
       category,
       columns
     });

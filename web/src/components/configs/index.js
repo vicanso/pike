@@ -4,7 +4,7 @@ import { message, Spin, Button } from "antd";
 
 import ExForm from "../exform";
 import ExTable from "../extable";
-import i18n from "../../i18n";
+import { getCommonI18n } from "../../i18n";
 import { CONFIGS, CONFIG } from "../../urls";
 import "./configs.sass";
 
@@ -152,7 +152,7 @@ class Configs extends React.Component {
                 });
               }}
             >
-              {i18n("common.add")}
+              {getCommonI18n("add")}
             </Button>
           )}
           <div className="form">

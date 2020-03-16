@@ -41,8 +41,8 @@ const (
 	UpstreamsCategory = "upstreams"
 	// LocationsCategory locations category
 	LocationsCategory = "locations"
-	// CertCategory cert category
-	CertCategory = "certs"
+	// CertsCategory cert category
+	CertsCategory = "certs"
 	// AdminCategory admin category
 	AdminCategory = "admin"
 )
@@ -337,7 +337,7 @@ func (cfg *Config) GetUpstreams() (upstreams Upstreams, err error) {
 
 // GetCerts get all cert config
 func (cfg *Config) GetCerts() (certs Certs, err error) {
-	keys, err := cfg.listKeysExcludePrefix(CertCategory)
+	keys, err := cfg.listKeysExcludePrefix(CertsCategory)
 	if err != nil {
 		return
 	}
@@ -404,8 +404,9 @@ func (cfg *Config) NewAdminConfig() *Admin {
 }
 
 // NewCertConfig new cert config
-func (cfg *Config) NewCertConfig() *Cert {
+func (cfg *Config) NewCertConfig(name string) *Cert {
 	return &Cert{
-		cfg: cfg,
+		Name: name,
+		cfg:  cfg,
 	}
 }

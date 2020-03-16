@@ -2,169 +2,184 @@ import React from "react";
 import { message, Switch } from "antd";
 import axios from "axios";
 
-import i18n from "../../i18n";
 import Configs from "../configs";
 import { CONFIGS } from "../../urls";
 import { numberToDuration } from "../../util";
-
+import { getServerI18n } from "../../i18n";
 const category = "servers";
 
 const renderDuration = row => {
   return <span>{numberToDuration(row)}</span>;
 };
+const renderList = row => {
+  if (!row) {
+    return;
+  }
+  const items = row.map(item => {
+    return <li key={item}>{item}</li>;
+  });
+  return <ul>{items}</ul>;
+};
 
 const columns = [
   {
-    title: i18n("server.name"),
+    title: getServerI18n("name"),
     dataIndex: "name"
   },
   {
-    title: i18n("server.addr"),
+    title: getServerI18n("addr"),
     dataIndex: "addr"
   },
   {
-    title: i18n("server.cache"),
+    title: getServerI18n("cache"),
     dataIndex: "cache"
   },
   {
-    title: i18n("server.compress"),
+    title: getServerI18n("compress"),
     dataIndex: "compress"
   },
   {
-    title: i18n("server.locations"),
+    title: getServerI18n("locations"),
     dataIndex: "locations",
-    render: row => {
-      const locations = row.map(item => {
-        return <li key={item}>{item}</li>;
-      });
-      return <ul>{locations}</ul>;
-    }
+    render: renderList
   },
   {
-    title: i18n("server.etag"),
+    title: getServerI18n("certs"),
+    dataIndex: "certs",
+    render: renderList
+  },
+  {
+    title: getServerI18n("etag"),
     dataIndex: "eTag",
     render: row => {
       return <Switch disabled={true} defaultChecked={row} />;
     }
   },
   {
-    title: i18n("server.concurrency"),
+    title: getServerI18n("concurrency"),
     dataIndex: "concurrency"
   },
   {
-    title: i18n("server.readTimeout"),
+    title: getServerI18n("readTimeout"),
     dataIndex: "readTimeout",
     render: renderDuration
   },
   {
-    title: i18n("server.writeTimeout"),
+    title: getServerI18n("writeTimeout"),
     dataIndex: "writeTimeout",
     render: renderDuration
   },
   {
-    title: i18n("server.idleTimeout"),
+    title: getServerI18n("idleTimeout"),
     dataIndex: "idleTimeout",
     render: renderDuration
   },
   {
-    title: i18n("server.maxHeaderBytes"),
+    title: getServerI18n("maxHeaderBytes"),
     dataIndex: "maxHeaderBytes"
   }
 ];
 const fields = [
   {
-    label: i18n("server.name"),
+    label: getServerI18n("name"),
     key: "name",
-    placeholder: i18n("server.namePlaceHolder"),
+    placeholder: getServerI18n("namePlaceHolder"),
     rules: [
       {
         required: true,
-        message: i18n("server.nameRequireMessage")
+        message: getServerI18n("nameRequireMessage")
       }
     ]
   },
   {
-    label: i18n("server.addr"),
+    label: getServerI18n("addr"),
     key: "addr",
-    placeholder: i18n("server.addrPlaceHolder"),
+    placeholder: getServerI18n("addrPlaceHolder"),
     rules: [
       {
         required: true,
-        message: i18n("server.addrRequireMessage")
+        message: getServerI18n("addrRequireMessage")
       }
     ]
   },
   {
-    label: i18n("server.cache"),
+    label: getServerI18n("cache"),
     key: "cache",
-    placeholder: i18n("server.cachePlaceHolder"),
+    placeholder: getServerI18n("cachePlaceHolder"),
     type: "select",
     rules: [
       {
         required: true,
-        message: i18n("server.cacheRequireMessage")
+        message: getServerI18n("cacheRequireMessage")
       }
     ]
   },
   {
-    label: i18n("server.compress"),
+    label: getServerI18n("compress"),
     key: "compress",
-    placeholder: i18n("server.compressPlaceHolder"),
+    placeholder: getServerI18n("compressPlaceHolder"),
     type: "select",
     rules: [
       {
         required: true,
-        message: i18n("server.compressRequireMessage")
+        message: getServerI18n("compressRequireMessage")
       }
     ]
   },
   {
-    label: i18n("server.locations"),
+    label: getServerI18n("locations"),
     key: "locations",
-    placeholder: i18n("server.locationsPlaceHolder"),
+    placeholder: getServerI18n("locationsPlaceHolder"),
     type: "select",
     mode: "multiple",
     rules: [
       {
         required: true,
-        message: i18n("server.locationsRequireMesage")
+        message: getServerI18n("locationsRequireMesage")
       }
     ]
   },
   {
-    label: i18n("server.etag"),
+    label: getServerI18n("certs"),
+    key: "certs",
+    placeholder: getServerI18n("certsPlaceHolder"),
+    type: "select",
+    mode: "multiple"
+  },
+  {
+    label: getServerI18n("etag"),
     key: "eTag",
     type: "switch"
   },
   {
-    label: i18n("server.concurrency"),
+    label: getServerI18n("concurrency"),
     key: "concurrency",
     type: "number",
-    placeholder: i18n("server.concurrencyPlaceHolder")
+    placeholder: getServerI18n("concurrencyPlaceHolder")
   },
   {
-    label: i18n("server.readTimeout"),
+    label: getServerI18n("readTimeout"),
     key: "readTimeout",
     type: "duration",
-    placeholder: i18n("server.readTimeoutPlaceHolder")
+    placeholder: getServerI18n("readTimeoutPlaceHolder")
   },
   {
-    label: i18n("server.writeTimeout"),
+    label: getServerI18n("writeTimeout"),
     key: "writeTimeout",
     type: "duration",
-    placeholder: i18n("server.writeTimeoutPlaceHolder")
+    placeholder: getServerI18n("writeTimeoutPlaceHolder")
   },
   {
-    label: i18n("server.idleTimeout"),
+    label: getServerI18n("idleTimeout"),
     key: "idleTimeout",
     type: "duration",
-    placeholder: i18n("server.idleTimeoutPlaceHolder")
+    placeholder: getServerI18n("idleTimeoutPlaceHolder")
   },
   {
-    label: i18n("server.maxHeaderBytes"),
+    label: getServerI18n("maxHeaderBytes"),
     key: "maxHeaderBytes",
     type: "number",
-    placeholder: i18n("server.maxHeaderBytesPlaceHolder")
+    placeholder: getServerI18n("maxHeaderBytesPlaceHolder")
   }
 ];
 
@@ -172,8 +187,8 @@ class Servers extends Configs {
   constructor(props) {
     super(props);
     Object.assign(this.state, {
-      title: i18n("server.createUpdateTitle"),
-      description: i18n("server.createUpdateDescription"),
+      title: getServerI18n("createUpdateTitle"),
+      description: getServerI18n("createUpdateDescription"),
       columns,
       category
     });
@@ -181,11 +196,12 @@ class Servers extends Configs {
   async componentDidMount() {
     super.componentDidMount();
     try {
-      const cat = ["caches", "compresses", "locations"].join(",");
+      const cat = ["caches", "compresses", "locations", "certs"].join(",");
       const { data } = await axios.get(CONFIGS.replace(":category", cat));
       const caches = data.caches.map(item => item.name);
       const compresses = data.compresses.map(item => item.name);
       const locations = data.locations.map(item => item.name);
+      const certs = data.certs.map(item => item.name);
       fields.forEach(item => {
         switch (item.key) {
           case "cache":
@@ -196,6 +212,9 @@ class Servers extends Configs {
             break;
           case "locations":
             item.options = locations;
+            break;
+          case "certs":
+            item.options = certs;
             break;
           default:
             break;

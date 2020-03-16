@@ -84,6 +84,10 @@ func (servers Servers) Exists(category, name string) bool {
 			if util.ContainesString(item.Locations, name) {
 				return true
 			}
+		case CertsCategory:
+			if util.ContainesString(item.Certs, name) {
+				return true
+			}
 		}
 	}
 	return false
