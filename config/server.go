@@ -31,6 +31,7 @@ type Server struct {
 	Locations         []string      `yaml:"locations,omitempty" json:"locations,omitempty" valid:"xNames"`
 	Certs             []string      `yaml:"certs,omitempty" json:"certs,omitempty" valid:"-"`
 	ETag              bool          `yaml:"eTag,omitempty" json:"eTag,omitempty" valid:"-"`
+	HTTP3             bool          `yaml:"http3,omitempty" json:"http3,omitempty" valid:"-"`
 	Addr              string        `yaml:"addr,omitempty" json:"addr,omitempty" valid:"ascii,runelength(1|50)"`
 	Concurrency       uint32        `yaml:"concurrency,omitempty" json:"concurrency,omitempty" valid:"-"`
 	ReadTimeout       time.Duration `yaml:"readTimeout,omitempty" json:"readTimeout,omitempty" valid:"-"`

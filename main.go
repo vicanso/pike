@@ -26,8 +26,6 @@ var (
 var (
 	// 配置保存的路径，支持etcd或者文件形式
 	configPath string
-	// 各配置的前缀路径
-	configBasePath string
 	// initMode模式在首次未配时服务时启用
 	initMode bool
 )
@@ -37,7 +35,7 @@ var rootCmd = &cobra.Command{
 	Long: fmt.Sprintf(`Pike support gzip and brotli compress.
 Versions: build at %s, commit id is %s`, BuildedAt, CommitID),
 	Run: func(cmd *cobra.Command, args []string) {
-		cfg, err := config.NewConfig(configPath, configBasePath)
+		cfg, err := config.NewConfig(configPath)
 		if err != nil {
 			log.Default().Error(err.Error())
 			os.Exit(1)
@@ -54,15 +52,13 @@ func init() {
 	if os.Getenv("GO_MODE") == "test" {
 		rootCmd.SetArgs([]string{
 			"--config",
-			"etcd://127.0.0.1:2379",
+			"etcd://127.0.0.1:2379/pike",
 			"--init",
 		})
 	}
 
-	rootCmd.Flags().StringVarP(&configPath, "config", "c", "", "the config's address, E.g: etcd://127.0.0.1:6379 or /tmp/pike (required)")
+	rootCmd.Flags().StringVarP(&configPath, "config", "c", "", "the config's address, E.g: etcd://127.0.0.1:6379/pike or /tmp/pike (required)")
 	_ = rootCmd.MarkFlagRequired("config")
-
-	rootCmd.Flags().StringVar(&configBasePath, "basePath", "/pike", "the base path of config (default is /pike)")
 
 	rootCmd.Flags().BoolVar(&initMode, "init", false, "init mode will enabled server listen on :3015")
 

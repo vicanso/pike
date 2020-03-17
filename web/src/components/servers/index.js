@@ -24,7 +24,8 @@ const renderList = row => {
 const columns = [
   {
     title: getServerI18n("name"),
-    dataIndex: "name"
+    dataIndex: "name",
+    fixed: "left"
   },
   {
     title: getServerI18n("addr"),
@@ -47,6 +48,13 @@ const columns = [
     title: getServerI18n("certs"),
     dataIndex: "certs",
     render: renderList
+  },
+  {
+    title: getServerI18n("http3"),
+    dataIndex: "http3",
+    render: row => {
+      return <Switch disabled={true} defaultChecked={row} />;
+    }
   },
   {
     title: getServerI18n("etag"),
@@ -147,6 +155,11 @@ const fields = [
     mode: "multiple"
   },
   {
+    label: getServerI18n("http3"),
+    key: "http3",
+    type: "switch"
+  },
+  {
     label: getServerI18n("etag"),
     key: "eTag",
     type: "switch"
@@ -187,6 +200,7 @@ class Servers extends Configs {
   constructor(props) {
     super(props);
     Object.assign(this.state, {
+      minWidth: 1800,
       title: getServerI18n("createUpdateTitle"),
       description: getServerI18n("createUpdateDescription"),
       columns,

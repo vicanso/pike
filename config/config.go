@@ -18,6 +18,7 @@ package config
 
 import (
 	"errors"
+	"path"
 	"path/filepath"
 	"strings"
 
@@ -86,13 +87,17 @@ type (
 )
 
 func NewTestConfig() *Config {
-	cfg, _ := NewConfig("etcd://127.0.0.1:2379", "/test-pike")
+	cfg, _ := NewConfig("etcd://127.0.0.1:2379/test-pike")
 	return cfg
 }
 
 // NewConfig new a config instance
-func NewConfig(configPath, basePath string) (cfg *Config, err error) {
-
+func NewConfig(configPath string) (cfg *Config, err error) {
+	basePath := "/" + path.Base(configPath)
+	if len(basePath) <= 1 {
+		err = errors.New("path of config can't be null")
+		return
+	}
 	var configClient Client
 	if strings.HasPrefix(configPath, "etcd://") {
 		etcdClient, err := NewEtcdClient(configPath)

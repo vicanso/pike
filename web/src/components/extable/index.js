@@ -26,13 +26,28 @@ class ExTable extends React.Component {
   }
   render() {
     const { submitting } = this.state;
-    const { columns, rowKey, dataSource, onDelete, onUpdate } = this.props;
+    const {
+      columns,
+      rowKey,
+      dataSource,
+      onDelete,
+      onUpdate,
+      minWidth
+    } = this.props;
     const cloneColumns = columns.slice(0);
+
+    const scroll = {};
+    let actionColumnFixed = "";
+    if (minWidth && window && minWidth > window.innerWidth) {
+      scroll.x = minWidth;
+      actionColumnFixed = "right";
+    }
     // 只有设置了更新或删除函数才添加功能操作列表
     if (onDelete || onUpdate) {
       cloneColumns.push({
         title: getCommonI18n("action"),
         width: 200,
+        fixed: actionColumnFixed,
         render: row => {
           return (
             <div className="action">
@@ -71,11 +86,11 @@ class ExTable extends React.Component {
         }
       });
     }
-
     return (
       <div className="ExTable">
         <Spin spinning={submitting}>
           <Table
+            scroll={scroll}
             rowKey={rowKey || "name"}
             className="ExTable"
             dataSource={dataSource}
@@ -92,7 +107,8 @@ ExTable.propTypes = {
   dataSource: PropTypes.array,
   rowKey: PropTypes.string,
   onUpdate: PropTypes.func,
-  onDelete: PropTypes.func
+  onDelete: PropTypes.func,
+  minWidth: PropTypes.number
 };
 
 export default ExTable;

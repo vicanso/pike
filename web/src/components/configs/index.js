@@ -15,6 +15,7 @@ class Configs extends React.Component {
     mode: "",
     title: "",
     description: "",
+    minWidth: 0,
     loading: false,
     currentConfig: null,
     columns: null,
@@ -101,7 +102,14 @@ class Configs extends React.Component {
     });
   }
   renderConfigs() {
-    const { loading, mode, columns, configs, disabledDelete } = this.state;
+    const {
+      loading,
+      mode,
+      columns,
+      configs,
+      disabledDelete,
+      minWidth
+    } = this.state;
     // 如果其它模式下，则不输出列表
     if (mode) {
       return;
@@ -119,6 +127,7 @@ class Configs extends React.Component {
 
     return (
       <ExTable
+        minWidth={minWidth}
         onDelete={onDelete}
         onUpdate={this.handleUpdate.bind(this)}
         rowKey={"name"}

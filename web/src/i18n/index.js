@@ -229,6 +229,7 @@ const serverEn = {
     "The locations config for http server can't be empty!",
   certs: "Certs",
   certsPlaceHolder: "Please select the certificate for server",
+  http3: "HTTP3",
   etag: "ETag",
   addr: "Address",
   addrPlaceHolder:
@@ -263,6 +264,7 @@ const serverZh = {
   locationsRequireMesage: "HTTP服务器的locations配置不能为空",
   certs: "证书",
   certsPlaceHolder: "请选择服务器使用的证书",
+  http3: "HTTP3",
   etag: "ETag",
   addr: "监听地址",
   addrPlaceHolder: "请输入HTTP服务器的监听地址，如：:7000 或者 127.0.0.1:7000",
