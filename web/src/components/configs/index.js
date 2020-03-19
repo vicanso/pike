@@ -10,6 +10,7 @@ import "./configs.sass";
 
 class Configs extends React.Component {
   state = {
+    single: false,
     disabledDelete: false,
     category: "",
     mode: "",
@@ -34,7 +35,11 @@ class Configs extends React.Component {
       const { data } = await axios.get(CONFIGS.replace(":category", category));
       let configs = data[category];
       if (!Array.isArray(configs)) {
-        configs = [configs];
+        if (Object.keys(configs).length === 0) {
+          configs = [];
+        } else {
+          configs = [configs];
+        }
       }
       configs.forEach((item, index) => {
         if (!item.name) {
@@ -53,21 +58,25 @@ class Configs extends React.Component {
     }
   }
   async handleSubmit(data, done) {
-    const { category } = this.state;
+    const { category, single } = this.state;
     const url = CONFIGS.replace(":category", category);
     try {
       await axios.post(url, data);
       const configs = this.state.configs.slice(0);
-      let index = -1;
-      configs.forEach((item, i) => {
-        if (item.name === data.name) {
-          index = i;
+      if (!single) {
+        let index = -1;
+        configs.forEach((item, i) => {
+          if (item.name === data.name) {
+            index = i;
+          }
+        });
+        if (index === -1) {
+          configs.push(data);
+        } else {
+          configs[index] = data;
         }
-      });
-      if (index === -1) {
-        configs.push(data);
       } else {
-        configs[index] = data;
+        configs[0] = data;
       }
 
       this.setState({
@@ -136,6 +145,26 @@ class Configs extends React.Component {
       />
     );
   }
+  renderAdd() {
+    const { mode, single, configs } = this.state;
+    if (mode || (single && configs && configs.length !== 0)) {
+      return;
+    }
+    return (
+      <Button
+        className="add"
+        type="primary"
+        onClick={() => {
+          this.setState({
+            mode: "add",
+            currentConfig: null
+          });
+        }}
+      >
+        {getCommonI18n("add")}
+      </Button>
+    );
+  }
   render() {
     const {
       mode,
@@ -150,20 +179,7 @@ class Configs extends React.Component {
       <div className="Configs">
         <Spin spinning={loading}>
           {this.renderConfigs()}
-          {!mode && (
-            <Button
-              className="add"
-              type="primary"
-              onClick={() => {
-                this.setState({
-                  mode: "add",
-                  currentConfig: null
-                });
-              }}
-            >
-              {getCommonI18n("add")}
-            </Button>
-          )}
+          {this.renderAdd()}
           <div className="form">
             {mode && (
               <ExForm

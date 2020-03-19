@@ -44,6 +44,8 @@ const (
 	LocationsCategory = "locations"
 	// CertsCategory cert category
 	CertsCategory = "certs"
+	// InfluxdbCategory influxdb category
+	InfluxdbCategory = "influxdb"
 	// AdminCategory admin category
 	AdminCategory = "admin"
 )
@@ -237,6 +239,14 @@ func (cfg *Config) GetAdmin() (*Admin, error) {
 	return admin, err
 }
 
+// GetInfluxdb get influxdb config
+func (cfg *Config) GetInfluxdb() (*Influxdb, error) {
+	influx := new(Influxdb)
+	influx.cfg = cfg
+	err := influx.Fetch()
+	return influx, err
+}
+
 // GetCaches get all config config
 func (cfg *Config) GetCaches() (caches Caches, err error) {
 	keys, err := cfg.listKeysExcludePrefix(CachesCategory)
@@ -401,7 +411,7 @@ func (cfg *Config) NewUpstreamConfig(name string) *Upstream {
 	}
 }
 
-// NewAdminConfig new upstream config
+// NewAdminConfig new admin config
 func (cfg *Config) NewAdminConfig() *Admin {
 	return &Admin{
 		cfg: cfg,
@@ -413,5 +423,12 @@ func (cfg *Config) NewCertConfig(name string) *Cert {
 	return &Cert{
 		Name: name,
 		cfg:  cfg,
+	}
+}
+
+// NewInfluxdbConfig new influxdb config
+func (cfg *Config) NewInfluxdbConfig() *Influxdb {
+	return &Influxdb{
+		cfg: cfg,
 	}
 }

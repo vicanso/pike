@@ -5,6 +5,7 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
 	"github.com/spf13/cobra"
 	"github.com/vicanso/pike/application"
@@ -49,7 +50,8 @@ func init() {
 	app.SetBuildedAt(BuildedAt)
 	app.SetCommitID(CommitID)
 	// 测试模式自动添加启动参数
-	if os.Getenv("GO_MODE") == "test" {
+	goMode := os.Getenv("GO_MODE")
+	if goMode == "test" || goMode == "dev" {
 		rootCmd.SetArgs([]string{
 			"--config",
 			"etcd://127.0.0.1:2379/pike",
@@ -57,7 +59,7 @@ func init() {
 		})
 	}
 
-	rootCmd.Flags().StringVarP(&configPath, "config", "c", "", "the config's address, E.g: etcd://127.0.0.1:6379/pike or /tmp/pike (required)")
+	rootCmd.Flags().StringVarP(&configPath, "config", "c", "", "the config's address, E.g: etcd://127.0.0.1:2379/pike or /tmp/pike (required)")
 	_ = rootCmd.MarkFlagRequired("config")
 
 	rootCmd.Flags().BoolVar(&initMode, "init", false, "init mode will enabled server listen on :3015")
@@ -79,15 +81,25 @@ func startServer(cfg *config.Config) {
 		panic(err)
 	}
 	logger := log.Default()
-	cfg.Watch(func(changeType config.ChangeType, value string) {
+	var fetchAndRestart func()
+	fetchAndRestart = func() {
 		err := ins.Fetch()
 		if err != nil {
 			logger.Error("fetch config fail",
 				zap.Error(err),
 			)
+			// 如果拉取失败，则在10秒后再次尝试
+			go func() {
+				time.Sleep(10 * time.Second)
+				fetchAndRestart()
+			}()
 			return
 		}
 		ins.Restart()
+	}
+
+	cfg.Watch(func(changeType config.ChangeType, value string) {
+		fetchAndRestart()
 	})
 
 	// TODO 增加监听信息关闭服务
@@ -100,6 +112,9 @@ func startServer(cfg *config.Config) {
 		case syscall.SIGTERM:
 			fallthrough
 		case syscall.SIGQUIT:
+			if ins.InfluxSrv != nil {
+				ins.InfluxSrv.Flush()
+			}
 			cfg.Close()
 			// TODO 将server设置为stop，延时退出
 			os.Exit(0)

@@ -10,6 +10,7 @@ import {
   SERVERS_PATH,
   ADMIN_PATH,
   HOME_PATH,
+  INFLUXDB_PATH,
   CERT_PATH
 } from "./paths";
 import Caches from "./components/caches";
@@ -20,6 +21,7 @@ import Servers from "./components/servers";
 import Admin from "./components/admin";
 import Home from "./components/home";
 import Cert from "./components/cert";
+import Influxdb from "./components/influxdb";
 
 function App() {
   return (
@@ -34,6 +36,7 @@ function App() {
           <Route path={SERVERS_PATH} component={Servers} />
           <Route path={ADMIN_PATH} component={Admin} />
           <Route path={CERT_PATH} component={Cert} />
+          <Route path={INFLUXDB_PATH} component={Influxdb} />
           <Route path={HOME_PATH} exact component={Home} />
         </div>
       </HashRouter>

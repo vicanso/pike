@@ -4,7 +4,7 @@ export GO111MODULE = on
 
 # for dev
 dev:
-	GO_MODE=test fresh
+	GO_MODE=dev fresh
 
 test:
 	GO_MODE=test go test -race -cover ./... 

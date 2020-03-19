@@ -41,6 +41,8 @@ const (
 
 // Server http server
 type Server struct {
+	name           string
+	influxSrv      *InfluxSrv
 	message        string
 	concurrency    uint32
 	eTag           bool
@@ -57,6 +59,7 @@ type Server struct {
 
 // ServerOptions server options
 type ServerOptions struct {
+	influxSrv  *InfluxSrv
 	server     *config.Server
 	locations  config.Locations
 	upstreams  *upstream.Upstreams
@@ -67,6 +70,7 @@ type ServerOptions struct {
 
 // Instance pike server instance
 type Instance struct {
+	InfluxSrv          *InfluxSrv
 	Config             *config.Config
 	EnabledAdminServer bool
 	servers            *sync.Map
@@ -86,6 +90,25 @@ func (ins *Instance) Fetch() (err error) {
 			Addr: ":3015",
 		})
 	}
+
+	influxdbConfig, err := cfg.GetInfluxdb()
+	if err != nil {
+		return
+	}
+	var influxSrv *InfluxSrv
+	if influxdbConfig != nil && influxdbConfig.Enabled {
+		influxSrv, err = NewInfluxSrv(influxdbConfig)
+	}
+	// 初始化influxdb失败只输出日志
+	if err != nil {
+		log.Default().Error("create influxdb service fail",
+			zap.Error(err),
+		)
+	}
+	if ins.InfluxSrv != nil {
+		ins.InfluxSrv.Flush()
+	}
+	ins.InfluxSrv = influxSrv
 
 	cachesConfig, err := cfg.GetCaches()
 	if err != nil {
@@ -122,9 +145,11 @@ func (ins *Instance) Fetch() (err error) {
 		// 如果已存在，仅更新信息
 		if ok {
 			srv := data.(*Server)
+			srv.influxSrv = influxSrv
 			srv.Update(conf, locations, upstreams, dispatcher, compress)
 		} else {
 			opts := &ServerOptions{
+				influxSrv:  influxSrv,
 				server:     conf,
 				locations:  locations,
 				upstreams:  upstreams,
@@ -173,16 +198,14 @@ func (ins *Instance) Start() (err error) {
 // NewServer new a server
 func NewServer(opts *ServerOptions) *Server {
 	conf := opts.server
-	server := &http.Server{
-		Addr:              conf.Addr,
-		ReadTimeout:       conf.ReadTimeout,
-		ReadHeaderTimeout: conf.ReadHeaderTimeout,
-		WriteTimeout:      conf.WriteTimeout,
-		IdleTimeout:       conf.IdleTimeout,
-		MaxHeaderBytes:    conf.MaxHeaderBytes,
+	srv := &Server{
+		name:      conf.Name,
+		cfg:       opts.cfg,
+		influxSrv: opts.influxSrv,
 	}
+	var tlsConfig *tls.Config
 	if len(conf.Certs) != 0 {
-		tlsConfig := &tls.Config{}
+		tlsConfig = &tls.Config{}
 		tlsConfig.Certificates = make([]tls.Certificate, 0)
 		for _, name := range conf.Certs {
 			c := opts.cfg.NewCertConfig(name)
@@ -204,16 +227,24 @@ func NewServer(opts *ServerOptions) *Server {
 			}
 			tlsConfig.Certificates = append(tlsConfig.Certificates, certificate)
 		}
-		if len(tlsConfig.Certificates) != 0 {
-			server.TLSConfig = tlsConfig
-		}
 	}
-	srv := &Server{
-		server: server,
-		cfg:    opts.cfg,
+
+	server := &http.Server{
+		Addr:              conf.Addr,
+		ReadTimeout:       conf.ReadTimeout,
+		ReadHeaderTimeout: conf.ReadHeaderTimeout,
+		WriteTimeout:      conf.WriteTimeout,
+		IdleTimeout:       conf.IdleTimeout,
+		MaxHeaderBytes:    conf.MaxHeaderBytes,
+		Handler:           srv,
 	}
+
+	if tlsConfig != nil {
+		server.TLSConfig = tlsConfig.Clone()
+	}
+	srv.server = server
+
 	srv.Update(opts.server, opts.locations, opts.upstreams, opts.dispatcher, opts.compress)
-	server.Handler = srv
 	return srv
 }
 
@@ -241,7 +272,6 @@ func (s *Server) ListenAndServe() (err error) {
 	if s.server.TLSConfig != nil {
 		err = s.server.ListenAndServeTLS("", "")
 	} else {
-
 		err = s.server.ListenAndServe()
 	}
 	if err != nil {
@@ -253,7 +283,9 @@ func (s *Server) ListenAndServe() (err error) {
 
 // toggleElton toggle elton
 func (s *Server) toggleElton() *elton.Elton {
-	e := NewElton(&EltonConfig{
+	e := NewElton(&EltonOptions{
+		name:           s.name,
+		influxSrv:      s.influxSrv,
 		cfg:            s.cfg,
 		eTag:           s.eTag,
 		maxConcurrency: s.concurrency,

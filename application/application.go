@@ -39,11 +39,10 @@ type application struct {
 func init() {
 	version, _ := assetBox.FindString("version")
 	defaultApp = &application{
-		MaxProcs:     runtime.GOMAXPROCS(0),
-		GOOS:         runtime.GOOS,
-		NumGoroutine: runtime.NumGoroutine(),
-		StartedAt:    time.Now(),
-		Version:      version,
+		MaxProcs:  runtime.GOMAXPROCS(0),
+		GOOS:      runtime.GOOS,
+		StartedAt: time.Now(),
+		Version:   version,
 	}
 }
 
@@ -60,6 +59,7 @@ func (app *application) SetCommitID(id string) {
 }
 
 func Default() *application {
+	defaultApp.NumGoroutine = runtime.NumGoroutine()
 	return defaultApp
 }
 

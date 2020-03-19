@@ -90,6 +90,8 @@ func newGetConfigHandler(cfg *config.Config) elton.Handler {
 				data, err = cfg.GetAdmin()
 			case config.CertsCategory:
 				data, err = cfg.GetCerts()
+			case config.InfluxdbCategory:
+				data, err = cfg.GetInfluxdb()
 			default:
 				err = hes.New(category + " is not support")
 			}
@@ -122,6 +124,8 @@ func newCreateOrUpdateConfigHandler(cfg *config.Config) elton.Handler {
 			iconfig = cfg.NewAdminConfig()
 		case config.CertsCategory:
 			iconfig = cfg.NewCertConfig("")
+		case config.InfluxdbCategory:
+			iconfig = cfg.NewInfluxdbConfig()
 		default:
 			err = hes.New(category + " is not support")
 			return
@@ -178,6 +182,8 @@ func newDeleteConfigHandler(cfg *config.Config) elton.Handler {
 		case config.CertsCategory:
 			shouldBeCheckedByServer = true
 			iconfig = cfg.NewCertConfig(name)
+		case config.InfluxdbCategory:
+			iconfig = cfg.NewInfluxdbConfig()
 		default:
 			err = hes.New(category + " is not support")
 			return

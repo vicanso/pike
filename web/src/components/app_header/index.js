@@ -18,6 +18,7 @@ import {
   SERVERS_PATH,
   ADMIN_PATH,
   HOME_PATH,
+  INFLUXDB_PATH,
   CERT_PATH
 } from "../../paths";
 
@@ -49,6 +50,10 @@ const paths = [
   {
     name: getNavI18n("admin"),
     path: ADMIN_PATH
+  },
+  {
+    name: getNavI18n("influxdb"),
+    path: INFLUXDB_PATH
   }
 ];
 

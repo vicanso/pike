@@ -9,7 +9,8 @@ const navEn = {
   locations: "Locations",
   servers: "Servers",
   admin: "Admin",
-  cert: "Certifications"
+  cert: "Certifications",
+  influxdb: "Influxdb"
 };
 const navZh = {
   caches: "缓存",
@@ -18,7 +19,8 @@ const navZh = {
   locations: "Locations",
   servers: "HTTP服务器",
   admin: "管理配置",
-  cert: "证书"
+  cert: "证书",
+  influxdb: "Influxdb"
 };
 
 const commonEn = {
@@ -346,6 +348,37 @@ const certZh = {
   fileRequireMessage: "请先成功上传文件"
 };
 
+const influxdbEn = {
+  title: "Influxdb",
+  description: "Set influxdb's config for http stats",
+  uri: "URI",
+  uriPlaceHolder: "Please input the endpoint of influxdb",
+  bucket: "Bucket",
+  bucketPlaceHolder: "Please input the bucket's name",
+  org: "Organization",
+  orgPlaceHolder: "Please input the organization's name",
+  token: "Token",
+  tokenPlaceHolder: "Please input the token",
+  batchSize: "Batch Size",
+  batchSizePlaceHolder: "Please input the batch size",
+  enabled: "Enabled"
+};
+const influxdbZh = {
+  title: "Influxdb",
+  description: "设置influxdb的配置，用于http请求的相关统计",
+  uri: "URI",
+  uriPlaceHolder: "请输入influxdb的请求地址",
+  bucket: "存储桶",
+  bucketPlaceHolder: "请输入存储桶的名称",
+  org: "组织",
+  orgPlaceHolder: "请输入组织名称",
+  token: "令牌",
+  tokenPlaceHolder: "请输入令牌",
+  batchSize: "批量大小",
+  batchSizePlaceHolder: "请输入批量提交数据大小",
+  enabled: "启用"
+};
+
 const i18ns = {
   en: {
     common: commonEn,
@@ -357,7 +390,8 @@ const i18ns = {
     server: serverEn,
     admin: adminEn,
     application: applicationEn,
-    cert: certEn
+    cert: certEn,
+    influxdb: influxdbEn
   },
   zh: {
     common: commonZh,
@@ -369,7 +403,8 @@ const i18ns = {
     server: serverZh,
     admin: adminZh,
     application: applicationZh,
-    cert: certZh
+    cert: certZh,
+    influxdb: influxdbZh
   }
 };
 
@@ -435,4 +470,8 @@ export function getUpstreamI18n(name) {
 
 export function getNavI18n(name) {
   return get(`nav.${name}`);
+}
+
+export function getInfluxdbI18n(name) {
+  return get(`influxdb.${name}`);
 }

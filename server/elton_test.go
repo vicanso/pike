@@ -190,7 +190,7 @@ func TestNewElton(t *testing.T) {
 		Upstream: "testUpstream",
 	})
 
-	eltonConfig := &EltonConfig{
+	eltonOptions := &EltonOptions{
 		cfg:            cfg,
 		maxConcurrency: 1024,
 		eTag:           true,
@@ -208,7 +208,7 @@ func TestNewElton(t *testing.T) {
 		},
 	}
 
-	e := NewElton(eltonConfig)
+	e := NewElton(eltonOptions)
 
 	// 可缓存请求，count不变
 	t.Run("get cache count", func(t *testing.T) {

@@ -19,6 +19,7 @@ import (
 	"regexp"
 	"strings"
 	"sync/atomic"
+	"time"
 
 	"github.com/vicanso/elton"
 	fresh "github.com/vicanso/elton-fresh"
@@ -58,9 +59,11 @@ var (
 	}
 )
 
-// EltonConfig elton config
-type EltonConfig struct {
-	cfg *config.Config
+// EltonOptions elton options
+type EltonOptions struct {
+	name      string
+	influxSrv *InfluxSrv
+	cfg       *config.Config
 	// adminConfig    *config.Admin
 	maxConcurrency uint32
 	eTag           bool
@@ -95,12 +98,12 @@ func newErrorListener(dispatcher *cache.Dispatcher, logger *zap.Logger) elton.Er
 }
 
 // NewElton new an elton instance
-func NewElton(eltonConfig *EltonConfig) *elton.Elton {
-	cfg := eltonConfig.cfg
+func NewElton(eltonOptions *EltonOptions) *elton.Elton {
+	cfg := eltonOptions.cfg
 	logger := log.Default()
-	locations := eltonConfig.locations
-	upstreams := eltonConfig.upstreams
-	dispatcher := eltonConfig.dispatcher
+	locations := eltonOptions.locations
+	upstreams := eltonOptions.upstreams
+	dispatcher := eltonOptions.dispatcher
 	e := elton.New()
 
 	adminPath, adminElton := NewAdmin(cfg)
@@ -108,9 +111,38 @@ func NewElton(eltonConfig *EltonConfig) *elton.Elton {
 	// 未处理错误
 	e.OnError(newErrorListener(dispatcher, logger))
 	e.Use(recover.New())
+	influxSrv := eltonOptions.influxSrv
+	if influxSrv != nil {
+		e.Use(func(c *elton.Context) error {
+			startedAt := time.Now()
+			req := c.Request
+			fields := map[string]interface{}{
+				"url":  req.RequestURI,
+				"ip":   c.RealIP(),
+				"path": req.URL.Path,
+			}
+			tags := map[string]string{
+				"method": req.Method,
+				"server": eltonOptions.name,
+			}
+			err := c.Next()
+			fields["use"] = time.Since(startedAt).Milliseconds()
+			if err != nil {
+				he := hes.Wrap(err)
+				fields["statusCode"] = he.StatusCode
+			} else {
+				fields["statusCode"] = c.StatusCode
+			}
+			if c.BodyBuffer != nil {
+				fields["size"] = c.BodyBuffer.Len()
+			}
+			influxSrv.Write("pike-http", fields, tags)
+			return err
+		})
+	}
 
 	var concurrency uint32
-	maxConcurrency := eltonConfig.maxConcurrency
+	maxConcurrency := eltonOptions.maxConcurrency
 	if maxConcurrency > 0 {
 		e.Use(func(c *elton.Context) error {
 			v := atomic.AddUint32(&concurrency, 1)
@@ -136,7 +168,7 @@ func NewElton(eltonConfig *EltonConfig) *elton.Elton {
 	e.Use(fresh.NewDefault())
 
 	// get http cache
-	e.Use(newCacheDispatchMiddleware(dispatcher, eltonConfig.compress, eltonConfig.eTag))
+	e.Use(newCacheDispatchMiddleware(dispatcher, eltonOptions.compress, eltonOptions.eTag))
 
 	// http request proxy
 	e.Use(createProxyMiddleware(locations, upstreams))
