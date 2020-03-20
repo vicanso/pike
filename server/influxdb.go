@@ -62,8 +62,8 @@ func (srv *InfluxSrv) Write(measurement string, fields map[string]interface{}, t
 	if size == 0 {
 		srv.metrics = make([]influxdb.Metric, 0, srv.BatchSize)
 	}
-	srv.metrics[size] = metric
-	if size+1 == srv.BatchSize {
+	srv.metrics = append(srv.metrics, metric)
+	if size+1 >= srv.BatchSize {
 		metrics := srv.metrics
 		go func() {
 			srv.writeMetrics(metrics)

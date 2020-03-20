@@ -76,6 +76,7 @@ type EltonOptions struct {
 func newErrorListener(dispatcher *cache.Dispatcher, logger *zap.Logger) elton.ErrorListener {
 	return func(c *elton.Context, err error) {
 		logger.Error("uncaught exception",
+			zap.String("host", c.Request.Host),
 			zap.String("url", c.Request.RequestURI),
 			zap.Error(err),
 		)
@@ -123,6 +124,7 @@ func NewElton(eltonOptions *EltonOptions) *elton.Elton {
 			}
 			tags := map[string]string{
 				"method": req.Method,
+				"host":   req.Host,
 				"server": eltonOptions.name,
 			}
 			err := c.Next()
