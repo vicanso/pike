@@ -50,13 +50,6 @@ const columns = [
     render: renderList
   },
   {
-    title: getServerI18n("http3"),
-    dataIndex: "http3",
-    render: row => {
-      return <Switch disabled={true} defaultChecked={row} />;
-    }
-  },
-  {
     title: getServerI18n("etag"),
     dataIndex: "eTag",
     render: row => {
@@ -153,11 +146,6 @@ const fields = [
     placeholder: getServerI18n("certsPlaceHolder"),
     type: "select",
     mode: "multiple"
-  },
-  {
-    label: getServerI18n("http3"),
-    key: "http3",
-    type: "switch"
   },
   {
     label: getServerI18n("etag"),
