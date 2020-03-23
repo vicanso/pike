@@ -73,8 +73,12 @@ const (
 	UpstreamChange
 	// LocationChange location's config change
 	LocationChange
-	// AdminChange admin's config chage
+	// AdminChange admin's config change
 	AdminChange
+	// CertChange cert's config change
+	CertChange
+	// InfluxdbChange influxdb's config change
+	InfluxdbChange
 )
 
 type (
@@ -121,6 +125,8 @@ func NewConfig(configPath string) (cfg *Config, err error) {
 	changeTypeKeyMap[UpstreamChange] = filepath.Join(basePath, UpstreamsCategory)
 	changeTypeKeyMap[LocationChange] = filepath.Join(basePath, LocationsCategory)
 	changeTypeKeyMap[AdminChange] = filepath.Join(basePath, AdminCategory)
+	changeTypeKeyMap[CertChange] = filepath.Join(basePath, CertsCategory)
+	changeTypeKeyMap[InfluxdbChange] = filepath.Join(basePath, InfluxdbCategory)
 	cfg = &Config{
 		client:           configClient,
 		basePath:         basePath,
