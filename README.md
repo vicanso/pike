@@ -2,11 +2,15 @@
 
 HTTP cache server such as varnish.
 
-## script
+## Flow
+
+![](./docs/flow.jpg)
+
+## Script
 
 ### dev
 
-You shuld install go and nodejs, then run the scripts:
+You should install go and nodejs, then run the scripts:
 ```bash
 # use etcd for config's storage
 go run main.go --config etcd://127.0.0.1:2379/pike --init
@@ -20,3 +24,15 @@ cd web && yarn start
 ```
 
 then open `http://127.0.0.1:3015/` in the browser.
+
+### build
+
+You should install packr2 to pack the resources.
+
+```bash
+go get -u github.com/gobuffalo/packr/v2/packr2 
+```
+
+```bash
+make build-web && make build
+```

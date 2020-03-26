@@ -12,6 +12,9 @@ test:
 test-cover:
 	GO_MODE=test go test -race -coverprofile=test.out ./... && go tool cover --html=test.out
 
+build-web:
+	cd web && yarn build
+
 build:
 	packr2
 	go build -ldflags "-X main.BuildedAt=`date -u +%Y%m%d.%H%M%S` -X main.CommitID=`git rev-parse --short HEAD`" -o pike
