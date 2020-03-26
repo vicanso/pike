@@ -4,7 +4,9 @@ HTTP cache server such as varnish.
 
 ## Flow
 
-![](./docs/flow.jpg)
+<p align="center">
+<img src="./docs/flow.jpg"/>
+</p>
 
 ## Script
 
