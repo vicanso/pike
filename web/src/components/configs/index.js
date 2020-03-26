@@ -46,6 +46,7 @@ class Configs extends React.Component {
           item.name = `${index}`;
         }
       });
+      await this.handleConfigs(configs);
       this.setState({
         configs
       });
@@ -55,6 +56,12 @@ class Configs extends React.Component {
       this.setState({
         loading: false
       });
+    }
+  }
+  async handleConfigs(configs) {
+    const { handleConfigs } = this.state;
+    if (handleConfigs) {
+      await handleConfigs(configs);
     }
   }
   async handleSubmit(data, done) {
@@ -78,6 +85,7 @@ class Configs extends React.Component {
       } else {
         configs[0] = data;
       }
+      await this.handleConfigs(configs);
 
       this.setState({
         mode: "",

@@ -1,7 +1,10 @@
 import React from "react";
+import axios from "axios";
+import { Icon } from "antd";
 
 import Configs from "../configs";
 import { getCommonI18n, getUpstreamI18n } from "../../i18n";
+import { UPSTREAMS } from "../../urls";
 
 const category = "upstreams";
 const columns = [
@@ -20,11 +23,29 @@ const columns = [
       const servers = row.map(item => {
         let backupTips = null;
         if (item.backup) {
-          backupTips = <span className="backupTips">backup</span>;
+          backupTips = <span className="tips">backup</span>;
+        }
+        let iconType = "";
+        const style = {
+          margin: "0 5px"
+        };
+        switch (item.status) {
+          case "healthy":
+            style.color = "#1890ff";
+            iconType = "check-circle";
+            break;
+          case "sick":
+            style.color = "#ff4d4f";
+            iconType = "close-circle";
+            break;
+          default:
+            iconType = "question-circle";
+            break;
         }
         return (
           <li key={item.addr}>
             {item.addr}
+            <Icon style={style} type={iconType} />
             {backupTips}
           </li>
         );
@@ -91,9 +112,27 @@ class Upstreams extends Configs {
     Object.assign(this.state, {
       title: getUpstreamI18n("createUpdateTitle"),
       description: getUpstreamI18n("createUpdateDescription"),
+      handleConfigs: this.updateServerInfo,
       category,
       columns,
       fields
+    });
+  }
+  async updateServerInfo(servers) {
+    const { data } = await axios.get(UPSTREAMS);
+    servers.forEach(item => {
+      const upstreams = data[item.name];
+      if (!upstreams) {
+        return;
+      }
+      // 获取server中upstream的状态
+      item.servers.forEach(server => {
+        upstreams.forEach(upstream => {
+          if (upstream.url === server.addr) {
+            server.status = upstream.status;
+          }
+        });
+      });
     });
   }
 }

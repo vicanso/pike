@@ -190,12 +190,14 @@ func TestNewElton(t *testing.T) {
 		Upstream: "testUpstream",
 	})
 
-	eltonOptions := &EltonOptions{
-		cfg:            cfg,
-		maxConcurrency: 1024,
-		eTag:           true,
-		locations:      locations,
-		upstreams:      upstreams,
+	e := NewElton(&ServerOptions{
+		cfg: cfg,
+		server: &config.Server{
+			Concurrency: 1024,
+			ETag:        true,
+		},
+		locations: locations,
+		upstreams: upstreams,
 		dispatcher: cache.NewDispatcher(&config.Cache{
 			Size:       100,
 			Zone:       100,
@@ -206,9 +208,7 @@ func TestNewElton(t *testing.T) {
 			MinLength: 1024,
 			Filter:    "text|json|javascript",
 		},
-	}
-
-	e := NewElton(eltonOptions)
+	})
 
 	// 可缓存请求，count不变
 	t.Run("get cache count", func(t *testing.T) {

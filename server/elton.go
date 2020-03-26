@@ -17,6 +17,7 @@ package server
 import (
 	"net/http"
 	"regexp"
+	"strconv"
 	"strings"
 	"sync/atomic"
 	"time"
@@ -26,9 +27,7 @@ import (
 	recover "github.com/vicanso/elton-recover"
 	"github.com/vicanso/hes"
 	"github.com/vicanso/pike/cache"
-	"github.com/vicanso/pike/config"
 	"github.com/vicanso/pike/log"
-	"github.com/vicanso/pike/upstream"
 	"go.uber.org/zap"
 )
 
@@ -59,20 +58,6 @@ var (
 	}
 )
 
-// EltonOptions elton options
-type EltonOptions struct {
-	name      string
-	influxSrv *InfluxSrv
-	cfg       *config.Config
-	// adminConfig    *config.Admin
-	maxConcurrency uint32
-	eTag           bool
-	locations      config.Locations
-	upstreams      *upstream.Upstreams
-	dispatcher     *cache.Dispatcher
-	compress       *config.Compress
-}
-
 func newErrorListener(dispatcher *cache.Dispatcher, logger *zap.Logger) elton.ErrorListener {
 	return func(c *elton.Context, err error) {
 		logger.Error("uncaught exception",
@@ -99,20 +84,19 @@ func newErrorListener(dispatcher *cache.Dispatcher, logger *zap.Logger) elton.Er
 }
 
 // NewElton new an elton instance
-func NewElton(eltonOptions *EltonOptions) *elton.Elton {
-	cfg := eltonOptions.cfg
+func NewElton(opts *ServerOptions) *elton.Elton {
 	logger := log.Default()
-	locations := eltonOptions.locations
-	upstreams := eltonOptions.upstreams
-	dispatcher := eltonOptions.dispatcher
+	locations := opts.locations
+	upstreams := opts.upstreams
+	dispatcher := opts.dispatcher
 	e := elton.New()
 
-	adminPath, adminElton := NewAdmin(cfg)
+	adminPath, adminElton := NewAdmin(opts)
 
 	// 未处理错误
 	e.OnError(newErrorListener(dispatcher, logger))
 	e.Use(recover.New())
-	influxSrv := eltonOptions.influxSrv
+	influxSrv := opts.influxSrv
 	if influxSrv != nil {
 		e.Use(func(c *elton.Context) error {
 			startedAt := time.Now()
@@ -122,10 +106,12 @@ func NewElton(eltonOptions *EltonOptions) *elton.Elton {
 				"ip":   c.RealIP(),
 				"path": req.URL.Path,
 			}
+			cacheStatus := c.GetInt(statusKey)
 			tags := map[string]string{
-				"method": req.Method,
-				"host":   req.Host,
-				"server": eltonOptions.name,
+				"method":      req.Method,
+				"host":        req.Host,
+				"server":      opts.name,
+				"cacheStatus": strconv.Itoa(cacheStatus),
 			}
 			err := c.Next()
 			fields["use"] = time.Since(startedAt).Milliseconds()
@@ -144,7 +130,7 @@ func NewElton(eltonOptions *EltonOptions) *elton.Elton {
 	}
 
 	var concurrency uint32
-	maxConcurrency := eltonOptions.maxConcurrency
+	maxConcurrency := opts.server.Concurrency
 	if maxConcurrency > 0 {
 		e.Use(func(c *elton.Context) error {
 			v := atomic.AddUint32(&concurrency, 1)
@@ -170,7 +156,7 @@ func NewElton(eltonOptions *EltonOptions) *elton.Elton {
 	e.Use(fresh.NewDefault())
 
 	// get http cache
-	e.Use(newCacheDispatchMiddleware(dispatcher, eltonOptions.compress, eltonOptions.eTag))
+	e.Use(newCacheDispatchMiddleware(dispatcher, opts.compress, opts.server.ETag))
 
 	// http request proxy
 	e.Use(createProxyMiddleware(locations, upstreams))

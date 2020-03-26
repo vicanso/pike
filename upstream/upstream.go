@@ -27,6 +27,11 @@ type (
 	Upstreams struct {
 		httpUps map[string]*us.HTTP
 	}
+	// UpStream upstream status
+	UpStream struct {
+		URL    string `json:"url,omitempty"`
+		Status string `json:"status,omitempty"`
+	}
 )
 
 // NewUpstreams create a new upstreams
@@ -70,4 +75,20 @@ func (upstreams *Upstreams) Destroy() {
 	for _, item := range upstreams.httpUps {
 		item.StopHealthCheck()
 	}
+}
+
+// Status get upstreams status
+func (upstreams *Upstreams) Status() map[string][]UpStream {
+	data := make(map[string][]UpStream)
+	for name, item := range upstreams.httpUps {
+		ups := make([]UpStream, 0)
+		for _, up := range item.GetUpstreamList() {
+			ups = append(ups, UpStream{
+				URL:    up.URL.String(),
+				Status: up.StatusDesc(),
+			})
+		}
+		data[name] = ups
+	}
+	return data
 }

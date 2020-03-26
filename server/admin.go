@@ -209,7 +209,8 @@ func newDeleteConfigHandler(cfg *config.Config) elton.Handler {
 }
 
 // NewAdmin new an admin elton istance
-func NewAdmin(cfg *config.Config) (string, *elton.Elton) {
+func NewAdmin(opts *ServerOptions) (string, *elton.Elton) {
+	cfg := opts.cfg
 	adminConfig, _ := cfg.GetAdmin()
 	if adminConfig == nil {
 		return "", nil
@@ -285,11 +286,19 @@ func NewAdmin(cfg *config.Config) (string, *elton.Elton) {
 		DisableLastModified: true,
 	}))
 
+	// 获取应用状态
 	g.GET("/application", func(c *elton.Context) error {
 		c.Body = application.Default()
 		return nil
 	})
 
+	// 获取upstream的状态
+	g.GET("/upstreams", func(c *elton.Context) error {
+		c.Body = opts.upstreams.Status()
+		return nil
+	})
+
+	// 上传
 	g.POST("/upload", func(c *elton.Context) (err error) {
 		file, fileHeader, err := c.Request.FormFile("file")
 		if err != nil {

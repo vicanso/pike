@@ -32,6 +32,7 @@ func TestNewAdminValidateMiddlewares(t *testing.T) {
 		User:                  "tree.xie",
 		Password:              "password",
 	}
+
 	handlers := newAdminValidateMiddlewares(adminConfig)
 	assert.Equal(2, len(handlers))
 
@@ -310,6 +311,8 @@ func TestNewAdminServer(t *testing.T) {
 	// 仅简单测试初始化成功
 	assert := assert.New(t)
 	cfg := config.NewTestConfig()
-	_, e := NewAdmin(cfg)
+	_, e := NewAdmin(&ServerOptions{
+		cfg: cfg,
+	})
 	assert.NotNil(e)
 }

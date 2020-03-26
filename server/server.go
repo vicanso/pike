@@ -41,24 +41,16 @@ const (
 
 // Server http server
 type Server struct {
-	name           string
-	influxSrv      *InfluxSrv
-	message        string
-	concurrency    uint32
-	eTag           bool
-	maxConcurrency uint32
-	status         int32
-	server         *http.Server
-	e              *elton.Elton
-	locations      config.Locations
-	upstreams      *upstream.Upstreams
-	dispatcher     *cache.Dispatcher
-	compress       *config.Compress
-	cfg            *config.Config
+	opts    *ServerOptions
+	message string
+	status  int32
+	server  *http.Server
+	e       *elton.Elton
 }
 
 // ServerOptions server options
 type ServerOptions struct {
+	name       string
 	influxSrv  *InfluxSrv
 	server     *config.Server
 	locations  config.Locations
@@ -143,23 +135,25 @@ func (ins *Instance) Fetch() (err error) {
 
 		data, ok := servers.Load(conf.Name)
 		// 如果已存在，仅更新信息
+		opts := &ServerOptions{
+			name:       conf.Name,
+			influxSrv:  influxSrv,
+			server:     conf,
+			locations:  locations,
+			upstreams:  upstreams,
+			dispatcher: dispatcher,
+			compress:   compress,
+			cfg:        cfg,
+		}
+		var srv *Server
 		if ok {
-			srv := data.(*Server)
-			srv.influxSrv = influxSrv
-			srv.Update(conf, locations, upstreams, dispatcher, compress)
+			srv = data.(*Server)
+			srv.opts = opts
 		} else {
-			opts := &ServerOptions{
-				influxSrv:  influxSrv,
-				server:     conf,
-				locations:  locations,
-				upstreams:  upstreams,
-				dispatcher: dispatcher,
-				compress:   compress,
-				cfg:        cfg,
-			}
-			srv := NewServer(opts)
+			srv = NewServer(opts)
 			servers.Store(conf.Name, srv)
 		}
+		srv.toggleElton()
 	}
 	oldUpstreams := ins.upstreams
 	// 如果已有upstreams存在，则将原有upstream销毁
@@ -199,9 +193,7 @@ func (ins *Instance) Start() (err error) {
 func NewServer(opts *ServerOptions) *Server {
 	conf := opts.server
 	srv := &Server{
-		name:      conf.Name,
-		cfg:       opts.cfg,
-		influxSrv: opts.influxSrv,
+		opts: opts,
 	}
 	var tlsConfig *tls.Config
 	if len(conf.Certs) != 0 {
@@ -244,19 +236,7 @@ func NewServer(opts *ServerOptions) *Server {
 	}
 	srv.server = server
 
-	srv.Update(opts.server, opts.locations, opts.upstreams, opts.dispatcher, opts.compress)
 	return srv
-}
-
-// Update update server config
-func (s *Server) Update(conf *config.Server, locations config.Locations, upstreams *upstream.Upstreams, dispatcher *cache.Dispatcher, compress *config.Compress) {
-	s.maxConcurrency = conf.Concurrency
-	s.eTag = conf.ETag
-	s.locations = locations
-	s.dispatcher = dispatcher
-	s.compress = compress
-	s.upstreams = upstreams
-	s.toggleElton()
 }
 
 // ListenAndServe call http server's listen and serve
@@ -283,17 +263,7 @@ func (s *Server) ListenAndServe() (err error) {
 
 // toggleElton toggle elton
 func (s *Server) toggleElton() *elton.Elton {
-	e := NewElton(&EltonOptions{
-		name:           s.name,
-		influxSrv:      s.influxSrv,
-		cfg:            s.cfg,
-		eTag:           s.eTag,
-		maxConcurrency: s.concurrency,
-		locations:      s.locations,
-		upstreams:      s.upstreams,
-		dispatcher:     s.dispatcher,
-		compress:       s.compress,
-	})
+	e := NewElton(s.opts)
 	return s.SetElton(e)
 }
 
