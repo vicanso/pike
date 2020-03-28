@@ -1,4 +1,4 @@
-// Copyright 2019 tree xie
+// Copyright 2020 tree xie
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,42 +15,56 @@
 package config
 
 import (
+	"os"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	"github.com/vicanso/pike/util"
 )
 
-func TestEtdClient(t *testing.T) {
+func TestBadger(t *testing.T) {
 	assert := assert.New(t)
-	name := util.RandomString(10)
-	client, err := NewEtcdClient("etcd://127.0.0.1:2379")
-	assert.Nil(err)
+	client, err := NewBadgerClient(os.TempDir())
 	defer client.Close()
+	assert.Nil(err)
 
-	upstream1Name := name + "/upstreams/1"
-	upstream1Data := []byte("abcd")
+	prefix := "/prefix/"
+	key := prefix + "foo"
+	value := []byte("bar")
+
 	t.Run("set", func(t *testing.T) {
-		err := client.Set(upstream1Name, upstream1Data)
+		err := client.Set(key, value)
 		assert.Nil(err)
 	})
+
 	t.Run("get", func(t *testing.T) {
-		data, err := client.Get(upstream1Name)
+		data, err := client.Get(key)
 		assert.Nil(err)
-		assert.Equal(upstream1Data, data)
+		assert.Equal(value, data)
 	})
+
 	t.Run("list", func(t *testing.T) {
-		keys, err := client.List(name)
+		keys, err := client.List(prefix)
 		assert.Nil(err)
 		assert.Equal(1, len(keys))
-		assert.Equal(upstream1Name, keys[0])
+		assert.Equal(key, keys[0])
 	})
-	t.Run("delete", func(t *testing.T) {
-		err := client.Delete(upstream1Name)
-		assert.Nil(err)
 
-		data, err := client.Get(upstream1Name)
+	t.Run("delete", func(t *testing.T) {
+		err := client.Delete(key)
 		assert.Nil(err)
-		assert.Empty(data)
+		data, err := client.Get(key)
+		assert.Nil(err)
+		assert.Nil(data)
 	})
+
+	t.Run("watch", func(t *testing.T) {
+		changed := false
+		client.Watch(prefix, func(k string) {
+			changed = true
+		})
+		err := client.Set(key, value)
+		assert.Nil(err)
+		assert.True(changed)
+	})
+
 }

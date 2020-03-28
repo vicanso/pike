@@ -43,7 +43,10 @@ func TestDispatcher(t *testing.T) {
 	name := "test"
 	cachesConfig := config.Caches{
 		&config.Cache{
-			Name: name,
+			Name:       name,
+			Size:       10,
+			Zone:       1024,
+			HitForPass: 10,
 		},
 	}
 	dispatchers := NewDispatchers(cachesConfig)

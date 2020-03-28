@@ -42,6 +42,14 @@ const (
 	StatusPassed
 )
 
+const (
+	statusFetchingDesc   = "fetching"
+	statusHitForPassDesc = "hitForPass"
+	statusCacheableDesc  = "cacheable"
+	statusPassedDesc     = "passed"
+	statusUnknownDesc    = "unknown"
+)
+
 type (
 	// HTTPHeader http header
 	HTTPHeader [][]byte
@@ -70,15 +78,15 @@ type (
 func StatusString(status int) string {
 	switch status {
 	case StatusFetching:
-		return "fetching"
+		return statusFetchingDesc
 	case StatusHitForPass:
-		return "hitForPass"
+		return statusHitForPassDesc
 	case StatusCacheable:
-		return "cacheable"
+		return statusCacheableDesc
 	case StatusPassed:
-		return "passed"
+		return statusPassedDesc
 	default:
-		return "unknown"
+		return statusUnknownDesc
 	}
 }
 

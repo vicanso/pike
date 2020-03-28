@@ -366,3 +366,25 @@ func TestNewElton(t *testing.T) {
 		assert.Equal(`"123"`, resp.Header().Get(elton.HeaderETag))
 	})
 }
+
+func TestStatsHandler(t *testing.T) {
+	assert := assert.New(t)
+	done := false
+	name := "pike"
+	fn := func(fields map[string]interface{}, tags map[string]string) {
+		assert.NotNil(fields)
+		assert.NotNil(tags)
+		assert.Equal(name, tags["server"])
+		done = true
+	}
+	req := httptest.NewRequest("GET", "/", nil)
+	resp := httptest.NewRecorder()
+	c := elton.NewContext(resp, req)
+	c.BodyBuffer = bytes.NewBufferString("abcd")
+	c.Next = func() error {
+		return nil
+	}
+	err := newStatsHandler(name, fn)(c)
+	assert.Nil(err)
+	assert.True(done)
+}

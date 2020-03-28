@@ -26,6 +26,16 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestStatusString(t *testing.T) {
+	assert := assert.New(t)
+
+	assert.Equal(statusFetchingDesc, StatusString(StatusFetching))
+	assert.Equal(statusHitForPassDesc, StatusString(StatusHitForPass))
+	assert.Equal(statusCacheableDesc, StatusString(StatusCacheable))
+	assert.Equal(statusPassedDesc, StatusString(StatusPassed))
+	assert.Equal(statusUnknownDesc, StatusString(StatusUnknown))
+}
+
 func TestHTTPHeaders(t *testing.T) {
 	assert := assert.New(t)
 	header := make(http.Header)

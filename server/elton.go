@@ -83,6 +83,42 @@ func newErrorListener(dispatcher *cache.Dispatcher, logger *zap.Logger) elton.Er
 	}
 }
 
+// onStats on stats function
+type onStats func(map[string]interface{}, map[string]string)
+
+// newStatsHandler create a new stats handler milldeware
+func newStatsHandler(name string, fn onStats) elton.Handler {
+	return func(c *elton.Context) error {
+		startedAt := time.Now()
+		req := c.Request
+		fields := map[string]interface{}{
+			"url":  req.RequestURI,
+			"ip":   c.RealIP(),
+			"path": req.URL.Path,
+		}
+		cacheStatus := c.GetInt(statusKey)
+		tags := map[string]string{
+			"method":      req.Method,
+			"host":        req.Host,
+			"server":      name,
+			"cacheStatus": strconv.Itoa(cacheStatus),
+		}
+		err := c.Next()
+		fields["use"] = time.Since(startedAt).Milliseconds()
+		if err != nil {
+			he := hes.Wrap(err)
+			fields["statusCode"] = he.StatusCode
+		} else {
+			fields["statusCode"] = c.StatusCode
+		}
+		if c.BodyBuffer != nil {
+			fields["size"] = c.BodyBuffer.Len()
+		}
+		fn(fields, tags)
+		return err
+	}
+}
+
 // NewElton new an elton instance
 func NewElton(opts *ServerOptions) *elton.Elton {
 	logger := log.Default()
@@ -98,35 +134,9 @@ func NewElton(opts *ServerOptions) *elton.Elton {
 	e.Use(recover.New())
 	influxSrv := opts.influxSrv
 	if influxSrv != nil {
-		e.Use(func(c *elton.Context) error {
-			startedAt := time.Now()
-			req := c.Request
-			fields := map[string]interface{}{
-				"url":  req.RequestURI,
-				"ip":   c.RealIP(),
-				"path": req.URL.Path,
-			}
-			cacheStatus := c.GetInt(statusKey)
-			tags := map[string]string{
-				"method":      req.Method,
-				"host":        req.Host,
-				"server":      opts.name,
-				"cacheStatus": strconv.Itoa(cacheStatus),
-			}
-			err := c.Next()
-			fields["use"] = time.Since(startedAt).Milliseconds()
-			if err != nil {
-				he := hes.Wrap(err)
-				fields["statusCode"] = he.StatusCode
-			} else {
-				fields["statusCode"] = c.StatusCode
-			}
-			if c.BodyBuffer != nil {
-				fields["size"] = c.BodyBuffer.Len()
-			}
+		e.Use(newStatsHandler(opts.name, func(fields map[string]interface{}, tags map[string]string) {
 			influxSrv.Write("pike-http", fields, tags)
-			return err
-		})
+		}))
 	}
 
 	var concurrency uint32

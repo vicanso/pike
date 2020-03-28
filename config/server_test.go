@@ -51,6 +51,9 @@ func TestServerConfig(t *testing.T) {
 		"test",
 		"ip2location",
 	}
+	certs := []string{
+		"me.dev",
+	}
 	concurrency := uint32(1000)
 	readTimeout := 1 * time.Second
 	readHeaderTimeout := 2 * time.Second
@@ -69,6 +72,7 @@ func TestServerConfig(t *testing.T) {
 	s.IdleTimeout = ideleTimeout
 	s.MaxHeaderBytes = maxHeaderBytes
 	s.Description = description
+	s.Certs = certs
 	err = s.Save()
 	assert.Nil(err)
 
@@ -105,4 +109,6 @@ func TestServerConfig(t *testing.T) {
 
 	assert.True(servers.Exists(LocationsCategory, locations[0]))
 	assert.False(servers.Exists(LocationsCategory, locations[0]+"1"))
+
+	assert.True(servers.Exists(CertsCategory, certs[0]))
 }

@@ -59,5 +59,8 @@ func TestUpstreams(t *testing.T) {
 		httpUpstream, _ := us.Next()
 		assert.Equal(addr, httpUpstream.URL.String())
 	}
+	data := upstreams.Status()
+	assert.Equal(1, len(data))
+
 	upstreams.Destroy()
 }
