@@ -1,8 +1,4 @@
-# Summary
+# Table of contents
 
-* [Performance](./docs/performance.md)
+* [Initial page](README.md)
 
-
-## 中文
-
-* [Performance](./docs/performance_zh.md)
