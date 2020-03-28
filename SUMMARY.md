@@ -1,6 +1,7 @@
 # Summary
 
 * [Performance](./docs/performance.md)
+* [Cache](./docs/cache.md)
 
 
 ## 中文
