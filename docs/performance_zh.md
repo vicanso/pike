@@ -1,5 +1,5 @@
 ---
-description: performance
+description: 性能测试 
 ---
 
 缓存服务最重要的是性能指标，varnish号称的是性能瓶颈在于服务器网卡，pike虽然达不到varnish性能指标，但测试结果也是十分可观。
