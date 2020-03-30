@@ -60,7 +60,7 @@ func TestHTTPHeaders(t *testing.T) {
 	assert.Equal("3", fieldB)
 }
 
-func TestHTTPCacheGet(t *testing.T) {
+func TestHTTPCache(t *testing.T) {
 	t.Run("fetching", func(t *testing.T) {
 		assert := assert.New(t)
 		hc := NewHTTPCache()
@@ -140,6 +140,18 @@ func TestHTTPCacheGet(t *testing.T) {
 			createdAt: int(time.Now().Unix()) - age,
 		}
 		assert.Equal(age, hc.Age())
+	})
+
+	t.Run("is expired", func(t *testing.T) {
+		assert := assert.New(t)
+		hc := HTTPCache{}
+		assert.False(hc.IsExpired())
+
+		hc.expiredAt = 1
+		assert.True(hc.IsExpired())
+
+		hc.expiredAt = int(time.Now().Unix()) + 10
+		assert.False(hc.IsExpired())
 	})
 }
 

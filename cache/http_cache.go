@@ -234,3 +234,12 @@ func (hc *HTTPCache) Age() int {
 func (hc *HTTPCache) GetStatus() int {
 	return hc.status
 }
+
+// IsExpired the cache is expired
+func (hc *HTTPCache) IsExpired() bool {
+	if hc.expiredAt == 0 {
+		return false
+	}
+	now := int(time.Now().Unix())
+	return hc.expiredAt < now
+}

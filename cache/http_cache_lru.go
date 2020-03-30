@@ -153,3 +153,14 @@ func (c *HTTPCacheLRU) ForEach(fn Iterator) {
 		fn(kv.key, kv.value)
 	}
 }
+
+// RemoveExpired remove expired cache
+func (c *HTTPCacheLRU) RemoveExpired() {
+	c.Lock()
+	defer c.Unlock()
+	c.ForEach(func(key string, item *HTTPCache) {
+		if item.IsExpired() {
+			c.Remove(key)
+		}
+	})
+}

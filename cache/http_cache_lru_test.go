@@ -20,7 +20,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestStatusLRU(t *testing.T) {
+func TestHTTPCacheLRU(t *testing.T) {
 	assert := assert.New(t)
 	lru := NewHTTPCacheLRU(10)
 	key1 := "abcd"
@@ -58,4 +58,10 @@ func TestStatusLRU(t *testing.T) {
 
 	v = lru.FindOrCreate(key1)
 	assert.NotNil(v)
+
+	// 设置该缓存为过期
+	v.expiredAt = 1
+	lru.RemoveExpired()
+	_, ok = lru.Get(key1)
+	assert.False(ok)
 }
