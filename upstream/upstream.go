@@ -29,9 +29,12 @@ type (
 	}
 	// UpStream upstream status
 	UpStream struct {
+		Name   string `json:"name,omitempty"`
 		URL    string `json:"url,omitempty"`
 		Status string `json:"status,omitempty"`
 	}
+	// OnStatus on status listener
+	OnStatus func(UpStream)
 )
 
 // NewUpstreams create a new upstreams
@@ -91,4 +94,18 @@ func (upstreams *Upstreams) Status() map[string][]UpStream {
 		data[name] = ups
 	}
 	return data
+}
+
+// OnStatus add event listener to watch upstream's status
+func (upstreams *Upstreams) OnStatus(onStats OnStatus) {
+	for name, item := range upstreams.httpUps {
+		item.OnStatus(func(status int32, upstream *us.HTTPUpstream) {
+			info := UpStream{
+				Name:   name,
+				URL:    upstream.URL.String(),
+				Status: us.ConvertStatusToString(status),
+			}
+			onStats(info)
+		})
+	}
 }

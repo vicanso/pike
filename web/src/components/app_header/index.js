@@ -19,7 +19,8 @@ import {
   ADMIN_PATH,
   HOME_PATH,
   INFLUXDB_PATH,
-  CERT_PATH
+  CERTS_PATH,
+  ALARMS_PATH
 } from "../../paths";
 
 const paths = [
@@ -45,11 +46,15 @@ const paths = [
   },
   {
     name: getNavI18n("cert"),
-    path: CERT_PATH
+    path: CERTS_PATH
   },
   {
     name: getNavI18n("admin"),
     path: ADMIN_PATH
+  },
+  {
+    name: getNavI18n("alarms"),
+    path: ALARMS_PATH
   },
   {
     name: getNavI18n("influxdb"),

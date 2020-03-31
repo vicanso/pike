@@ -48,6 +48,8 @@ const (
 	InfluxdbCategory = "influxdb"
 	// AdminCategory admin category
 	AdminCategory = "admin"
+	// AlarmsCategory alarm category
+	AlarmsCategory = "alarms"
 )
 
 // IConfig config interface
@@ -79,6 +81,8 @@ const (
 	CertChange
 	// InfluxdbChange influxdb's config change
 	InfluxdbChange
+	// AlarmChange alarm's config change
+	AlarmChange
 )
 
 type (
@@ -127,6 +131,7 @@ func NewConfig(configPath string) (cfg *Config, err error) {
 	changeTypeKeyMap[AdminChange] = filepath.Join(basePath, AdminCategory)
 	changeTypeKeyMap[CertChange] = filepath.Join(basePath, CertsCategory)
 	changeTypeKeyMap[InfluxdbChange] = filepath.Join(basePath, InfluxdbCategory)
+	changeTypeKeyMap[AlarmChange] = filepath.Join(basePath, AlarmsCategory)
 	cfg = &Config{
 		client:           configClient,
 		basePath:         basePath,
@@ -377,6 +382,27 @@ func (cfg *Config) GetCerts() (certs Certs, err error) {
 	return
 }
 
+// GetAlarms get all alarm config
+func (cfg *Config) GetAlarms() (alarms Alarms, err error) {
+	keys, err := cfg.listKeysExcludePrefix(AlarmsCategory)
+	if err != nil {
+		return
+	}
+	alarms = make(Alarms, 0, len(keys))
+	for _, key := range keys {
+		a := &Alarm{
+			Name: key,
+			cfg:  cfg,
+		}
+		err = a.Fetch()
+		if err != nil {
+			return
+		}
+		alarms = append(alarms, a)
+	}
+	return
+}
+
 // NewCacheConfig new cache config
 func (cfg *Config) NewCacheConfig(name string) *Cache {
 	return &Cache{
@@ -435,6 +461,14 @@ func (cfg *Config) NewCertConfig(name string) *Cert {
 // NewInfluxdbConfig new influxdb config
 func (cfg *Config) NewInfluxdbConfig() *Influxdb {
 	return &Influxdb{
+		cfg: cfg,
+	}
+}
+
+// NewAlarmConfig new alarm config
+func (cfg *Config) NewAlarmConfig(name string) *Alarm {
+	return &Alarm{
+		Name: name,
 		cfg: cfg,
 	}
 }

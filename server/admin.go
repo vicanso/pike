@@ -92,6 +92,8 @@ func newGetConfigHandler(cfg *config.Config) elton.Handler {
 				data, err = cfg.GetCerts()
 			case config.InfluxdbCategory:
 				data, err = cfg.GetInfluxdb()
+			case config.AlarmsCategory:
+				data, err = cfg.GetAlarms()
 			default:
 				err = hes.New(category + " is not support")
 			}
@@ -126,6 +128,8 @@ func newCreateOrUpdateConfigHandler(cfg *config.Config) elton.Handler {
 			iconfig = cfg.NewCertConfig("")
 		case config.InfluxdbCategory:
 			iconfig = cfg.NewInfluxdbConfig()
+		case config.AlarmsCategory:
+			iconfig = cfg.NewAlarmConfig("")
 		default:
 			err = hes.New(category + " is not support")
 			return
@@ -184,6 +188,8 @@ func newDeleteConfigHandler(cfg *config.Config) elton.Handler {
 			iconfig = cfg.NewCertConfig(name)
 		case config.InfluxdbCategory:
 			iconfig = cfg.NewInfluxdbConfig()
+		case config.AlarmsCategory:
+			iconfig = cfg.NewAlarmConfig(name)
 		default:
 			err = hes.New(category + " is not support")
 			return

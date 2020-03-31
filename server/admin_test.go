@@ -366,6 +366,39 @@ func TestConfigHandler(t *testing.T) {
 		err = deleteConfig(c)
 		assert.Nil(err)
 	})
+
+	t.Run("alarm config", func(t *testing.T) {
+		name := "upstream"
+		category := config.AlarmsCategory
+		c := newContext(category, []byte(`{
+			"name": "`+name+`",
+			"uri": "http://127.0.0.1/send-alarm",
+			"template": "{}"
+		}`))
+
+		err := createOrUpdateConfig(c)
+		assert.Nil(err)
+
+		c = newContext(category, nil)
+		err = getConfigs(c)
+		assert.Nil(err)
+		alarms := c.Body.(map[string]interface{})[category].(config.Alarms)
+		assert.Equal(name, alarms.Get(name).Name)
+
+		c = elton.NewContext(nil, nil)
+		c.Params = map[string]string{
+			"category": category,
+			"name":     name,
+		}
+		err = deleteConfig(c)
+		assert.Nil(err)
+
+		c = newContext(category, nil)
+		err = getConfigs(c)
+		assert.Nil(err)
+		alarms = c.Body.(map[string]interface{})[category].(config.Alarms)
+		assert.Empty(alarms)
+	})
 }
 
 func TestNewAdminServer(t *testing.T) {

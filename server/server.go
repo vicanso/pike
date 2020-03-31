@@ -17,9 +17,12 @@
 package server
 
 import (
+	"bytes"
 	"crypto/tls"
 	"encoding/base64"
+	"errors"
 	"net/http"
+	"strings"
 	"sync"
 	"sync/atomic"
 	"unsafe"
@@ -67,6 +70,23 @@ type Instance struct {
 	EnabledAdminServer bool
 	servers            *sync.Map
 	upstreams          *upstream.Upstreams
+}
+
+// upstreamAlarmHandle upstream状态变化的告警
+func upstreamAlarmHandle(alarmConfig *config.Alarm, info upstream.UpStream) {
+	data := alarmConfig.Template
+	data = strings.Replace(data, "{{name}}", info.Name, -1)
+	data = strings.Replace(data, "{{url}}", info.URL, -1)
+	data = strings.Replace(data, "{{status}}", info.Status, -1)
+	resp, err := http.Post(alarmConfig.URI, "application/json", bytes.NewBufferString(data))
+	if resp != nil && resp.StatusCode >= 400 {
+		err = errors.New("status:" + resp.Status)
+	}
+	if err != nil {
+		log.Default().Error("alarm fail",
+			zap.Error(err),
+		)
+	}
 }
 
 // Fetch fetch config for instance
@@ -118,7 +138,22 @@ func (ins *Instance) Fetch() (err error) {
 	if err != nil {
 		return
 	}
+	alarmsConfig, err := cfg.GetAlarms()
+	if err != nil {
+		return
+	}
 	upstreams := upstream.NewUpstreams(upstreamsConfig)
+	upstreamAlarm := alarmsConfig.Get("upstream")
+	upstreams.OnStatus(func(info upstream.UpStream) {
+		log.Default().Info("upstream status change",
+			zap.String("name", info.Name),
+			zap.String("url", info.URL),
+			zap.String("status", info.Status),
+		)
+		if upstreamAlarm != nil {
+			upstreamAlarmHandle(upstreamAlarm, info)
+		}
+	})
 
 	compressesConfig, err := cfg.GetCompresses()
 	if err != nil {
@@ -256,6 +291,10 @@ func (s *Server) ListenAndServe() (err error) {
 	}
 	if err != nil {
 		s.message = err.Error()
+		log.Default().Error("server listen fail",
+			zap.String("addr", s.server.Addr),
+			zap.Error(err),
+		)
 	}
 	s.SetStatus(serverStatusStop)
 	return

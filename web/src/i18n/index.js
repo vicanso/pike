@@ -10,7 +10,8 @@ const navEn = {
   servers: "Servers",
   admin: "Admin",
   cert: "Certifications",
-  influxdb: "Influxdb"
+  influxdb: "Influxdb",
+  alarms: "Alarms"
 };
 const navZh = {
   caches: "缓存",
@@ -20,7 +21,8 @@ const navZh = {
   servers: "HTTP服务器",
   admin: "管理配置",
   cert: "证书",
-  influxdb: "Influxdb"
+  influxdb: "Influxdb",
+  alarms: "告警"
 };
 
 const commonEn = {
@@ -379,6 +381,38 @@ const influxdbZh = {
   enabled: "启用"
 };
 
+const alarmEn = {
+  createUpdateTitle: "Create or update alarm config",
+  createUpdateDescription:
+    "Create or update alarm config, it support upstream's status change alarm.",
+  name: "Name",
+  namePlaceHolder: "Please select the alarm's name",
+  nameRequireMessage: "The alarm's name can't be null",
+  uri: "URI",
+  uriPlaceHolder: "Please input the uri of alarm",
+  uriRequireMessage: "The uri of alarm can't be null",
+  template: "Template",
+  templatePlaceHolder:
+    "Please input the alarm template(json), {{name}} will be replaced by upstream's name, {{url}} will be replaced by upstream's url, {{status}} will be replaced by upstream's status",
+  templateRequireMessage: "Template can't be null"
+};
+
+const alarmZh = {
+  createUpdateTitle: "创建或更新告警配置",
+  createUpdateDescription:
+    "创建蒌更新告警配置，暂时仅支持upstream状态变更的告警",
+  name: "名称",
+  namePlaceHolder: "请选择该告警名称",
+  nameRequireMessage: "告警名称不能为空",
+  uri: "URI",
+  uriPlaceHolder: "请输入告警地址",
+  uriRequireMessage: "告警地址不能为空",
+  template: "模板",
+  templatePlaceHolder:
+    "请输入告警模板内容(json), {{name}} will be replaced by upstream's name, {{url}} will be replaced by upstream's url, {{status}} will be replaced by upstream's status",
+  templateRequireMessage: "告警模板不能为空"
+};
+
 const i18ns = {
   en: {
     common: commonEn,
@@ -391,7 +425,8 @@ const i18ns = {
     admin: adminEn,
     application: applicationEn,
     cert: certEn,
-    influxdb: influxdbEn
+    influxdb: influxdbEn,
+    alarm: alarmEn
   },
   zh: {
     common: commonZh,
@@ -404,7 +439,8 @@ const i18ns = {
     admin: adminZh,
     application: applicationZh,
     cert: certZh,
-    influxdb: influxdbZh
+    influxdb: influxdbZh,
+    alarm: alarmZh
   }
 };
 
@@ -474,4 +510,8 @@ export function getNavI18n(name) {
 
 export function getInfluxdbI18n(name) {
   return get(`influxdb.${name}`);
+}
+
+export function getAlarmI18n(name) {
+  return get(`alarm.${name}`);
 }
