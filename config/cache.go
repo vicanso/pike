@@ -15,6 +15,8 @@
 
 package config
 
+import "github.com/robfig/cron/v3"
+
 // Cache cache config
 type Cache struct {
 	cfg         *Config
@@ -22,6 +24,7 @@ type Cache struct {
 	Zone        int    `yaml:"zone,omitempty" json:"zone,omitempty" valid:"numeric,range(1|10000)"`
 	Size        int    `yaml:"size,omitempty" json:"size,omitempty" valid:"numeric,range(1|10000)"`
 	HitForPass  int    `yaml:"hitForPass,omitempty" json:"hitForPass,omitempty" valid:"numeric,range(1|3600)"`
+	PurgedAt    string `yaml:"purgedAt,omitempty" json:"purgedAt,omitempty" valid:"-"`
 	Description string `yaml:"description,omitempty" json:"description,omitempty" valid:"-"`
 }
 
@@ -35,6 +38,12 @@ func (c *Cache) Fetch() (err error) {
 
 // Save save ccache config
 func (c *Cache) Save() (err error) {
+	if c.PurgedAt != "" {
+		_, err = cron.New().AddFunc(c.PurgedAt, nil)
+		if err != nil {
+			return
+		}
+	}
 	return c.cfg.saveConfig(c, CachesCategory, c.Name)
 }
 

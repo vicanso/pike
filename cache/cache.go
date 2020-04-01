@@ -79,6 +79,13 @@ func (d *Dispatcher) GetHTTPCache(key []byte) *HTTPCache {
 	return lru.FindOrCreate(util.ByteSliceToString(key))
 }
 
+// RemoveExpired remove expired cache
+func (d *Dispatcher) RemoveExpired() {
+	for _, lruCache := range d.list {
+		lruCache.RemoveExpired()
+	}
+}
+
 // Get get dispatcher
 func (ds *Dispatchers) Get(name string) *Dispatcher {
 	return ds.dispatchers[name]

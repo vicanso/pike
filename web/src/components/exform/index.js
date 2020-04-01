@@ -439,8 +439,10 @@ class ExForm extends React.Component {
       let layout = null;
       const { key, rules } = item;
       const inputProps = {};
+      const selectProps = {};
       if (key === "name" && originalData[key]) {
         inputProps.disabled = true;
+        selectProps.disabled = true;
       }
       const decoratorOpts = {
         rules,
@@ -466,6 +468,7 @@ class ExForm extends React.Component {
             decoratorOpts
           )(
             <Select
+              {...selectProps}
               allowClear
               mode={item.mode}
               placeholder={item.placeholder || ""}

@@ -41,10 +41,12 @@ func TestCacheConfig(t *testing.T) {
 	zone := 1
 	size := 10
 	description := "cache description"
+	purgedAt := "@every 5m"
 	c.HitForPass = hitForPass
 	c.Zone = zone
 	c.Size = size
 	c.Description = description
+	c.PurgedAt = purgedAt
 	err = c.Save()
 	assert.Nil(err)
 
@@ -58,6 +60,7 @@ func TestCacheConfig(t *testing.T) {
 	assert.Equal(zone, nc.Zone)
 	assert.Equal(size, nc.Size)
 	assert.Equal(description, nc.Description)
+	assert.Equal(purgedAt, nc.PurgedAt)
 
 	caches, err := cfg.GetCaches()
 	assert.Nil(err)

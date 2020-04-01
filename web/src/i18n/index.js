@@ -74,7 +74,10 @@ const cacheEn = {
   sizeRequireMessage: "The cache's size should be gt 0",
   hitForPass: "Hit For Pass",
   hitForPassPlaceholder: "Please input hit for pass ttl for cache",
-  hitForPassRequireMessage: "The cache's hit for pass should be gt 0"
+  hitForPassRequireMessage: "The cache's hit for pass should be gt 0",
+  purgedAt: "PurgedAt",
+  purgedAtPlaceholder:
+    "Please input the regular purges, support cron format, eg: 0 0 * * *"
 };
 const cacheZh = {
   createUpdateTitle: "创建或更新缓存",
@@ -91,7 +94,9 @@ const cacheZh = {
   sizeRequireMessage: "缓存的长度必须大于0",
   hitForPass: "Hit For Pass",
   hitForPassPlaceholder: "请输入hit for pass的有效期",
-  hitForPassRequireMessage: "hit for pass的有效期必须大于0"
+  hitForPassRequireMessage: "hit for pass的有效期必须大于0",
+  purgedAt: "定期清除",
+  purgedAtPlaceholder: "请输入定期清除配置，支持cron表达式，如：0 0 * * *"
 };
 
 const compressEn = {

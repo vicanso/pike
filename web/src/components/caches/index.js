@@ -1,3 +1,4 @@
+import React from "react";
 import Configs from "../configs";
 import { getCacheI18n, getCommonI18n } from "../../i18n";
 
@@ -22,6 +23,26 @@ const columns = [
     title: getCacheI18n("hitForPass"),
     dataIndex: "hitForPass",
     sorter: (a, b) => a.hitForPass - b.hitForPass
+  },
+  {
+    title: getCacheI18n("purgedAt"),
+    dataIndex: "purgedAt",
+    render: row => {
+      if (!row) {
+        return;
+      }
+      const arr = row.split(" ");
+      return arr.map((item, index) => (
+        <span
+          style={{
+            marginRight: "10px"
+          }}
+          key={index}
+        >
+          {item}
+        </span>
+      ));
+    }
   },
   {
     title: getCommonI18n("description"),
@@ -76,6 +97,11 @@ const fields = [
         message: getCacheI18n("hitForPassRequireMessage")
       }
     ]
+  },
+  {
+    label: getCacheI18n("purgedAt"),
+    key: "purgedAt",
+    placeholder: getCacheI18n("purgedAtPlaceholder")
   },
   {
     label: getCommonI18n("description"),

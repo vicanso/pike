@@ -27,6 +27,7 @@ import (
 	"sync/atomic"
 	"unsafe"
 
+	"github.com/robfig/cron/v3"
 	"github.com/vicanso/elton"
 
 	"github.com/vicanso/pike/cache"
@@ -70,6 +71,7 @@ type Instance struct {
 	EnabledAdminServer bool
 	servers            *sync.Map
 	upstreams          *upstream.Upstreams
+	cron               *cron.Cron
 }
 
 // upstreamAlarmHandle upstream状态变化的告警
@@ -91,6 +93,8 @@ func upstreamAlarmHandle(alarmConfig *config.Alarm, info upstream.UpStream) {
 
 // Fetch fetch config for instance
 func (ins *Instance) Fetch() (err error) {
+	logger := log.Default()
+	cronIns := cron.New()
 	cfg := ins.Config
 	serversConfig, err := cfg.GetServers()
 	if err != nil {
@@ -127,6 +131,25 @@ func (ins *Instance) Fetch() (err error) {
 		return
 	}
 	dispatchers := cache.NewDispatchers(cachesConfig)
+	// 缓存的定期清除任务
+	for _, cacheConfig := range cachesConfig {
+		if cacheConfig.PurgedAt != "" {
+			func(name string) {
+				_, err := cronIns.AddFunc(cacheConfig.PurgedAt, func() {
+					dispatchers.Get(name).RemoveExpired()
+					logger.Info("purge cahce by cron successful",
+						zap.String("name", name),
+					)
+				})
+				if err != nil {
+					logger.Error("create cache purge cron fail",
+						zap.String("name", name),
+						zap.Error(err),
+					)
+				}
+			}(cacheConfig.Name)
+		}
+	}
 
 	locationsConfig, err := cfg.GetLocations()
 	if err != nil {
@@ -145,7 +168,7 @@ func (ins *Instance) Fetch() (err error) {
 	upstreams := upstream.NewUpstreams(upstreamsConfig)
 	upstreamAlarm := alarmsConfig.Get("upstream")
 	upstreams.OnStatus(func(info upstream.UpStream) {
-		log.Default().Info("upstream status change",
+		logger.Info("upstream status change",
 			zap.String("name", info.Name),
 			zap.String("url", info.URL),
 			zap.String("status", info.Status),
@@ -197,6 +220,12 @@ func (ins *Instance) Fetch() (err error) {
 	}
 	ins.servers = servers
 	ins.upstreams = upstreams
+	if ins.cron != nil {
+		go ins.cron.Stop()
+	}
+	ins.cron = cronIns
+	cronIns.Start()
+
 	return
 }
 
