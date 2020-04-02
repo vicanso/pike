@@ -4,7 +4,7 @@ go 1.14
 
 require (
 	github.com/andybalholm/brotli v1.0.0
-	github.com/asaskevich/govalidator v0.0.0-20200108200545-475eaeb16496
+	github.com/asaskevich/govalidator v0.0.0-20190424111038-f61b66f89f4a
 	github.com/coreos/etcd v3.3.18+incompatible // indirect
 	github.com/dgraph-io/badger v1.6.0
 	github.com/go-yaml/yaml v2.1.0+incompatible
