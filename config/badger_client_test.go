@@ -24,7 +24,9 @@ import (
 func TestBadger(t *testing.T) {
 	assert := assert.New(t)
 	client, err := NewBadgerClient(os.TempDir())
-	defer client.Close()
+	defer func() {
+		_ = client.Close()
+	}()
 	assert.Nil(err)
 
 	prefix := "/prefix/"
