@@ -80,10 +80,12 @@ func (d *Dispatcher) GetHTTPCache(key []byte) *HTTPCache {
 }
 
 // RemoveExpired remove expired cache
-func (d *Dispatcher) RemoveExpired() {
+func (d *Dispatcher) RemoveExpired() int {
+	count := 0
 	for _, lruCache := range d.list {
-		lruCache.RemoveExpired()
+		count += lruCache.RemoveExpired()
 	}
+	return count
 }
 
 // Get get dispatcher

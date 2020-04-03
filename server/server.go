@@ -136,9 +136,10 @@ func (ins *Instance) Fetch() (err error) {
 		if cacheConfig.PurgedAt != "" {
 			func(name string) {
 				_, err := cronIns.AddFunc(cacheConfig.PurgedAt, func() {
-					dispatchers.Get(name).RemoveExpired()
+					count := dispatchers.Get(name).RemoveExpired()
 					logger.Info("purge cahce by cron successful",
 						zap.String("name", name),
+						zap.Int("count", count),
 					)
 				})
 				if err != nil {
