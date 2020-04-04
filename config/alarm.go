@@ -16,10 +16,11 @@ package config
 
 // Alarm alarm config
 type Alarm struct {
-	cfg      *Config
-	Name     string `yaml:"-" json:"name,omitempty" valid:"xName"`
-	URI      string `yaml:"uri" json:"uri,omitempty" valid:"url"`
-	Template string `yaml:"template,omitempty" json:"template,omitempty" valid:"json"`
+	cfg         *Config
+	Name        string `yaml:"-" json:"name,omitempty" valid:"xName"`
+	URI         string `yaml:"uri" json:"uri,omitempty" valid:"url"`
+	Template    string `yaml:"template,omitempty" json:"template,omitempty" valid:"json"`
+	Description string `yaml:"description,omitempty" json:"description,omitempty" valid:"-"`
 }
 
 // Alarms alarm configs

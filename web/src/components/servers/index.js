@@ -5,7 +5,7 @@ import axios from "axios";
 import Configs from "../configs";
 import { CONFIGS } from "../../urls";
 import { numberToDuration } from "../../util";
-import { getServerI18n } from "../../i18n";
+import { getServerI18n, getCommonI18n } from "../../i18n";
 const category = "servers";
 
 const renderDuration = row => {
@@ -78,6 +78,10 @@ const columns = [
   {
     title: getServerI18n("maxHeaderBytes"),
     dataIndex: "maxHeaderBytes"
+  },
+  {
+    title: getCommonI18n("description"),
+    dataIndex: "description"
   }
 ];
 const fields = [
@@ -181,6 +185,12 @@ const fields = [
     key: "maxHeaderBytes",
     type: "number",
     placeholder: getServerI18n("maxHeaderBytesPlaceHolder")
+  },
+  {
+    label: getCommonI18n("description"),
+    key: "description",
+    type: "textarea",
+    placeholder: getCommonI18n("descriptionPlaceholder")
   }
 ];
 

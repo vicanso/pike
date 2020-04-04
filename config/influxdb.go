@@ -17,13 +17,14 @@ package config
 
 // Influxdb influxdb config
 type Influxdb struct {
-	cfg       *Config
-	URI       string `yaml:"uri" json:"uri,omitempty" valid:"url"`
-	Bucket    string `yaml:"bucket" json:"bucket,omitempty" valid:"runelength(1|100)"`
-	Org       string `yaml:"org" json:"org,omitempty" valid:"runelength(1|100)"`
-	Token     string `yaml:"token" json:"token,omitempty" valid:"ascii,runelength(1|200)"`
-	BatchSize int    `yaml:"batchSize" json:"batchSize,omitempty" valid:"numeric,range(1|10000)"`
-	Enabled   bool   `yaml:"enabled,omitempty" json:"enabled,omitempty" valid:"-"`
+	cfg         *Config
+	URI         string `yaml:"uri" json:"uri,omitempty" valid:"url"`
+	Bucket      string `yaml:"bucket" json:"bucket,omitempty" valid:"runelength(1|100)"`
+	Org         string `yaml:"org" json:"org,omitempty" valid:"runelength(1|100)"`
+	Token       string `yaml:"token" json:"token,omitempty" valid:"ascii,runelength(1|200)"`
+	BatchSize   int    `yaml:"batchSize" json:"batchSize,omitempty" valid:"numeric,range(1|10000)"`
+	Enabled     bool   `yaml:"enabled,omitempty" json:"enabled,omitempty" valid:"-"`
+	Description string `yaml:"description,omitempty" json:"description,omitempty" valid:"-"`
 }
 
 // Fetch fetch influxdb config

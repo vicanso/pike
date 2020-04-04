@@ -19,7 +19,7 @@ package config
 // Admin admin config
 type Admin struct {
 	cfg                   *Config
-	Prefix                string `yaml:"prefix,omitempty" json:"prefix,omitempty" valid:"ascii"`
+	Prefix                string `yaml:"prefix,omitempty" json:"prefix,omitempty" valid:"xURLPath"`
 	User                  string `yaml:"user,omitempty" json:"user,omitempty" valid:"-"`
 	Password              string `yaml:"password,omitempty" json:"password,omitempty" valid:"-"`
 	EnabledInternetAccess bool   `yaml:"enabledInternetAccess,omitempty" json:"enabledInternetAccess,omitempty" valid:"-"`

@@ -1,6 +1,6 @@
 import React from "react";
 import Configs from "../configs";
-import { getAlarmI18n } from "../../i18n";
+import { getAlarmI18n, getCommonI18n } from "../../i18n";
 
 const category = "alarms";
 
@@ -22,6 +22,10 @@ const columns = [
       }
       return <pre>{row}</pre>;
     }
+  },
+  {
+    title: getCommonI18n("description"),
+    dataIndex: "description"
   }
 ];
 
@@ -61,6 +65,12 @@ const fields = [
       }
     ],
     type: "textarea"
+  },
+  {
+    label: getCommonI18n("description"),
+    key: "description",
+    type: "textarea",
+    placeholder: getCommonI18n("descriptionPlaceholder")
   }
 ];
 

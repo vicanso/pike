@@ -21,10 +21,11 @@ import (
 )
 
 type Cert struct {
-	cfg  *Config
-	Name string `yaml:"-" json:"name,omitempty" valid:"xName"`
-	Key  string `yaml:"key,omitempty" json:"key,omitempty" valid:"base64"`
-	Cert string `yaml:"cert,omitempty" json:"cert,omitempty" valid:"base64"`
+	cfg         *Config
+	Name        string `yaml:"-" json:"name,omitempty" valid:"xName"`
+	Key         string `yaml:"key,omitempty" json:"key,omitempty" valid:"base64"`
+	Cert        string `yaml:"cert,omitempty" json:"cert,omitempty" valid:"base64"`
+	Description string `yaml:"description,omitempty" json:"description,omitempty" valid:"-"`
 }
 
 type Certs []*Cert

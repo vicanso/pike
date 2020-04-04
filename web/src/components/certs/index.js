@@ -24,6 +24,10 @@ const columns = [
     title: getCertI18n("cert"),
     dataIndex: "cert",
     render: renderFile
+  },
+  {
+    title: getCommonI18n("description"),
+    dataIndex: "description"
   }
 ];
 
@@ -62,6 +66,12 @@ const fields = [
         message: getCertI18n("fileRequireMessage")
       }
     ]
+  },
+  {
+    label: getCommonI18n("description"),
+    key: "description",
+    type: "textarea",
+    placeholder: getCommonI18n("descriptionPlaceholder")
   }
 ];
 

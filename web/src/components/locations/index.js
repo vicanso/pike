@@ -4,7 +4,7 @@ import axios from "axios";
 
 import Configs from "../configs";
 import { CONFIGS } from "../../urls";
-import { getLocationI18n } from "../../i18n";
+import { getLocationI18n, getCommonI18n } from "../../i18n";
 
 const category = "locations";
 const renderList = row => {
@@ -49,6 +49,10 @@ const columns = [
     title: getLocationI18n("resHeader"),
     dataIndex: "responseHeader",
     render: renderList
+  },
+  {
+    title: getCommonI18n("description"),
+    dataIndex: "description"
   }
 ];
 const fields = [
@@ -113,6 +117,12 @@ const fields = [
       getLocationI18n("headerValuePlaceHolder")
     ],
     type: "keyValueList"
+  },
+  {
+    label: getCommonI18n("description"),
+    key: "description",
+    type: "textarea",
+    placeholder: getCommonI18n("descriptionPlaceholder")
   }
 ];
 

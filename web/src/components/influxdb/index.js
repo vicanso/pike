@@ -3,7 +3,7 @@ import { Switch } from "antd";
 
 import Configs from "../configs";
 
-import { getInfluxdbI18n } from "../../i18n";
+import { getInfluxdbI18n, getCommonI18n } from "../../i18n";
 
 const category = "influxdb";
 
@@ -40,6 +40,10 @@ const columns = [
     render: row => {
       return <Switch disabled={true} defaultChecked={row} />;
     }
+  },
+  {
+    title: getCommonI18n("description"),
+    dataIndex: "description"
   }
 ];
 
@@ -99,6 +103,12 @@ const fields = [
     label: getInfluxdbI18n("enabled"),
     key: "enabled",
     type: "switch"
+  },
+  {
+    label: getCommonI18n("description"),
+    key: "description",
+    type: "textarea",
+    placeholder: getCommonI18n("descriptionPlaceholder")
   }
 ];
 
