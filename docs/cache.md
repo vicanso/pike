@@ -11,7 +11,7 @@ The http cache uses memory cache bucket(lru). Multiple buckets can be used for b
 - get the cache from bucket
 
 <p align="center">
-<img src="./docs/cache-flow.jpg"/>
+<img src="../images/cache-flow.jpg"/>
 </p>
 
 Get http cache from buckets is very simple, and the lru guarantees the timeliness of cache and help prevent using too many memories.
@@ -21,7 +21,7 @@ Get http cache from buckets is very simple, and the lru guarantees the timelines
 The max age of http cache get from `Cache-Control`, the flow is:
 
 <p align="center">
-<img src="./docs/cache-age.jpg"/>
+<img src="../images/cache-age.jpg"/>
 </p>
 
 ## Suggestion

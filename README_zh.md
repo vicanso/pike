@@ -9,7 +9,7 @@
 ## 流程图
 
 <p align="center">
-<img src="./docs/flow.jpg"/>
+<img src="./images/flow.jpg"/>
 </p>
 
 ## 相关脚本

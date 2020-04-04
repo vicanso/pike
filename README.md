@@ -11,7 +11,7 @@ HTTP cache server such as varnish.
 ## Flow
 
 <p align="center">
-<img src="./docs/flow.jpg"/>
+<img src="./images/flow.jpg"/>
 </p>
 
 ## Script
