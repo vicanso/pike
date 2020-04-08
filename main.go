@@ -113,7 +113,7 @@ func startServer(cfg *config.Config) {
 			fallthrough
 		case syscall.SIGQUIT:
 			if ins.InfluxSrv != nil {
-				ins.InfluxSrv.Flush()
+				ins.InfluxSrv.Close()
 			}
 			cfg.Close()
 			// TODO 将server设置为stop，延时退出

@@ -35,6 +35,10 @@ const columns = [
     dataIndex: "batchSize"
   },
   {
+    title: getInfluxdbI18n("flushInterval"),
+    dataIndex: "flushInterval"
+  },
+  {
     title: getInfluxdbI18n("enabled"),
     dataIndex: "enabled",
     render: row => {
@@ -98,6 +102,12 @@ const fields = [
         required: true
       }
     ]
+  },
+  {
+    label: getInfluxdbI18n("flushInterval"),
+    key: "flushInterval",
+    type: "number",
+    placeholder: getInfluxdbI18n("flushIntervalPlaceHolder")
   },
   {
     label: getInfluxdbI18n("enabled"),

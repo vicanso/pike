@@ -384,10 +384,12 @@ class ExForm extends React.Component {
       }
       fields.forEach(item => {
         const { key, type } = item;
-        if (type === "number" && values[key]) {
+        if (type === "number") {
           const v = values[key];
           if (v) {
             values[key] = Number(v);
+          } else {
+            delete values[key];
           }
         }
       });

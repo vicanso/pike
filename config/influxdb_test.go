@@ -42,13 +42,15 @@ func TestInfluxdbConfig(t *testing.T) {
 	bucket := "bucket"
 	org := "org"
 	token := "token"
-	batchSize := 100
+	batchSize := uint(100)
+	flushInterval := uint(5000)
 	enabled := true
 	influxdb.URI = uri
 	influxdb.Bucket = bucket
 	influxdb.Org = org
 	influxdb.Token = token
 	influxdb.BatchSize = batchSize
+	influxdb.FlushInterval = flushInterval
 	influxdb.Enabled = enabled
 	err = influxdb.Save()
 	assert.Nil(err)
@@ -63,5 +65,6 @@ func TestInfluxdbConfig(t *testing.T) {
 	assert.Equal(org, influxdb.Org)
 	assert.Equal(token, influxdb.Token)
 	assert.Equal(batchSize, influxdb.BatchSize)
+	assert.Equal(flushInterval, influxdb.FlushInterval)
 	assert.True(influxdb.Enabled)
 }

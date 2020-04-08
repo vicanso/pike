@@ -10,7 +10,7 @@ require (
 	github.com/go-yaml/yaml v2.1.0+incompatible
 	github.com/gobuffalo/packr/v2 v2.8.0
 	github.com/google/uuid v1.1.1 // indirect
-	github.com/influxdata/influxdb-client-go v0.1.5
+	github.com/influxdata/influxdb-client-go v1.0.0
 	github.com/robfig/cron/v3 v3.0.1
 	github.com/spf13/cobra v0.0.6
 	github.com/stretchr/testify v1.5.1

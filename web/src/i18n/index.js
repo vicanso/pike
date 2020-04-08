@@ -368,6 +368,8 @@ const influxdbEn = {
   tokenPlaceHolder: "Please input the token",
   batchSize: "Batch Size",
   batchSizePlaceHolder: "Please input the batch size",
+  flushInterval: "Flush Interval(ms)",
+  flushIntervalPlaceHolder: "Please input the flush interval",
   enabled: "Enabled"
 };
 const influxdbZh = {
@@ -383,6 +385,8 @@ const influxdbZh = {
   tokenPlaceHolder: "请输入令牌",
   batchSize: "批量大小",
   batchSizePlaceHolder: "请输入批量提交数据大小",
+  flushInterval: "定时提交间隔(ms)",
+  flushIntervalPlaceHolder: "请输入定时提交间隔",
   enabled: "启用"
 };
 

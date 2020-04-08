@@ -122,7 +122,7 @@ func (ins *Instance) Fetch() (err error) {
 		)
 	}
 	if ins.InfluxSrv != nil {
-		ins.InfluxSrv.Flush()
+		ins.InfluxSrv.Close()
 	}
 	ins.InfluxSrv = influxSrv
 
