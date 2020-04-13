@@ -103,11 +103,11 @@ func TestConfigHandler(t *testing.T) {
 	deleteConfig := newDeleteConfigHandler(cfg)
 	assert := assert.New(t)
 	newContext := func(category string, requestBody []byte) *elton.Context {
-		c := elton.NewContext(nil, nil)
+		resp := httptest.NewRecorder()
+		c := elton.NewContext(resp, nil)
 		c.RequestBody = requestBody
-		c.Params = map[string]string{
-			"category": category,
-		}
+		c.Params = new(elton.RouteParams)
+		c.Params.Add("category", category)
 		return c
 	}
 	t.Run("cache config", func(t *testing.T) {
@@ -127,11 +127,10 @@ func TestConfigHandler(t *testing.T) {
 		caches := c.Body.(map[string]interface{})[category].(config.Caches)
 		assert.NotEmpty(caches)
 
-		c = elton.NewContext(nil, nil)
-		c.Params = map[string]string{
-			"category": category,
-			"name":     "testCache",
-		}
+		c = elton.NewContext(httptest.NewRecorder(), nil)
+		c.Params = new(elton.RouteParams)
+		c.Params.Add("category", category)
+		c.Params.Add("name", "testCache")
 		err = deleteConfig(c)
 		assert.Nil(err)
 
@@ -159,11 +158,11 @@ func TestConfigHandler(t *testing.T) {
 		compresses := c.Body.(map[string]interface{})[category].(config.Compresses)
 		assert.NotEmpty(compresses)
 
-		c = elton.NewContext(nil, nil)
-		c.Params = map[string]string{
-			"category": category,
-			"name":     "testCompress",
-		}
+		c = newContext(category, nil)
+		c.Params = new(elton.RouteParams)
+		c.Params.Add("category", category)
+		c.Params.Add("name", "testCompress")
+
 		err = deleteConfig(c)
 		assert.Nil(err)
 
@@ -194,11 +193,10 @@ func TestConfigHandler(t *testing.T) {
 		locations := c.Body.(map[string]interface{})[category].(config.Locations)
 		assert.NotEmpty(locations)
 
-		c = elton.NewContext(nil, nil)
-		c.Params = map[string]string{
-			"category": category,
-			"name":     "testLocation",
-		}
+		c = newContext(category, nil)
+		c.Params.Add("category", category)
+		c.Params.Add("name", "testLocation")
+
 		err = deleteConfig(c)
 		assert.Nil(err)
 
@@ -233,11 +231,9 @@ func TestConfigHandler(t *testing.T) {
 		servers := c.Body.(map[string]interface{})[category].(config.Servers)
 		assert.NotEmpty(servers)
 
-		c = elton.NewContext(nil, nil)
-		c.Params = map[string]string{
-			"category": category,
-			"name":     "testServer",
-		}
+		c = newContext(category, nil)
+		c.Params.Add("category", category)
+		c.Params.Add("name", "testServer")
 		err = deleteConfig(c)
 		assert.Nil(err)
 
@@ -270,11 +266,9 @@ func TestConfigHandler(t *testing.T) {
 		upstreams := c.Body.(map[string]interface{})[category].(config.Upstreams)
 		assert.NotEmpty(upstreams)
 
-		c = elton.NewContext(nil, nil)
-		c.Params = map[string]string{
-			"category": category,
-			"name":     "testUpstream",
-		}
+		c = newContext(category, nil)
+		c.Params.Add("category", category)
+		c.Params.Add("name", "testUpstream")
 		err = deleteConfig(c)
 		assert.Nil(err)
 
@@ -324,11 +318,9 @@ func TestConfigHandler(t *testing.T) {
 		certs := c.Body.(map[string]interface{})[category].(config.Certs)
 		assert.Equal(name, certs.Get(name).Name)
 
-		c = elton.NewContext(nil, nil)
-		c.Params = map[string]string{
-			"category": category,
-			"name":     name,
-		}
+		c = newContext(category, nil)
+		c.Params.Add("category", category)
+		c.Params.Add("name", name)
 		err = deleteConfig(c)
 		assert.Nil(err)
 
@@ -359,10 +351,8 @@ func TestConfigHandler(t *testing.T) {
 		influxdb := c.Body.(map[string]interface{})[category].(*config.Influxdb)
 		assert.NotNil(influxdb)
 
-		c = elton.NewContext(nil, nil)
-		c.Params = map[string]string{
-			"category": category,
-		}
+		c = newContext(category, nil)
+		c.Params.Add("category", category)
 		err = deleteConfig(c)
 		assert.Nil(err)
 	})
@@ -385,11 +375,9 @@ func TestConfigHandler(t *testing.T) {
 		alarms := c.Body.(map[string]interface{})[category].(config.Alarms)
 		assert.Equal(name, alarms.Get(name).Name)
 
-		c = elton.NewContext(nil, nil)
-		c.Params = map[string]string{
-			"category": category,
-			"name":     name,
-		}
+		c = newContext(category, nil)
+		c.Params.Add("category", category)
+		c.Params.Add("name", name)
 		err = deleteConfig(c)
 		assert.Nil(err)
 

@@ -34,7 +34,7 @@ import (
 	"github.com/vicanso/pike/upstream"
 	"github.com/vicanso/pike/util"
 
-	responder "github.com/vicanso/elton-responder"
+	"github.com/vicanso/elton/middleware"
 )
 
 func TestNewErrorListener(t *testing.T) {
@@ -92,7 +92,7 @@ func newTestServer(ln net.Listener) {
 		return c.Next()
 	}
 
-	e.Use(responder.NewDefault())
+	e.Use(middleware.NewDefaultResponder())
 
 	e.GET("/ping", func(c *elton.Context) error {
 		c.BodyBuffer = bytes.NewBufferString("pong")

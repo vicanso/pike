@@ -88,7 +88,7 @@ func createCompressHandler(compressConfig *config.Compress) CompressHandler {
 			}
 		}
 
-		headers := c.Headers
+		headers := c.Header()
 		httpData = &cache.HTTPData{
 			StatusCode: c.StatusCode,
 			RawBody:    rawBody,

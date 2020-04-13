@@ -125,7 +125,7 @@ func newCacheDispatchMiddleware(dispatcher *cache.Dispatcher, compress *config.C
 		}
 
 		// 执行proxy成功之后
-		headers := c.Headers
+		headers := c.Header()
 		encoding := headers.Get(elton.HeaderContentEncoding)
 		var body []byte
 		if c.BodyBuffer != nil {
@@ -151,7 +151,7 @@ func newCacheDispatchMiddleware(dispatcher *cache.Dispatcher, compress *config.C
 		// 如果是pass的请求，都不可以缓存
 		if !passed {
 			if status == cache.StatusFetching {
-				cacheAge = getCacheAge(c.Headers)
+				cacheAge = getCacheAge(c.Header())
 			}
 			// 缓存时长大于0
 			if cacheAge != 0 {

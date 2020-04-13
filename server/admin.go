@@ -23,14 +23,8 @@ import (
 	"strings"
 
 	"github.com/vicanso/elton"
-	basicauth "github.com/vicanso/elton-basic-auth"
-	bodyparser "github.com/vicanso/elton-body-parser"
 	compress "github.com/vicanso/elton-compress"
-	errorhandler "github.com/vicanso/elton-error-handler"
-	etag "github.com/vicanso/elton-etag"
-	fresh "github.com/vicanso/elton-fresh"
-	responder "github.com/vicanso/elton-responder"
-	staticServe "github.com/vicanso/elton-static-serve"
+	"github.com/vicanso/elton/middleware"
 	"github.com/vicanso/hes"
 	intranetip "github.com/vicanso/intranet-ip"
 	"github.com/vicanso/pike/application"
@@ -56,7 +50,7 @@ func newAdminValidateMiddlewares(adminConfig *config.Admin) []elton.Handler {
 	password := adminConfig.Password
 	// 如果配置了认证
 	if user != "" && password != "" {
-		fn := basicauth.New(basicauth.Config{
+		fn := middleware.NewBasicAuth(middleware.BasicAuthConfig{
 			Validate: func(account, pwd string, c *elton.Context) (bool, error) {
 				if account == user && pwd == password {
 					return true, nil
@@ -234,21 +228,21 @@ func NewAdmin(opts *ServerOptions) (string, *elton.Elton) {
 
 	e.Use(compress.NewDefault())
 
-	e.Use(fresh.NewDefault())
-	e.Use(etag.NewDefault())
+	e.Use(middleware.NewDefaultFresh())
+	e.Use(middleware.NewDefaultETag())
 
-	e.Use(responder.NewDefault())
-	e.Use(errorhandler.NewDefault())
-	e.Use(bodyparser.NewDefault())
+	e.Use(middleware.NewDefaultError())
+	e.Use(middleware.NewDefaultResponder())
+	e.Use(middleware.NewDefaultBodyParser())
 
 	g := elton.NewGroup(adminPath)
 
 	// 按分类获取配置
-	g.GET("/configs/:category", newGetConfigHandler(cfg))
+	g.GET("/configs/{category}", newGetConfigHandler(cfg))
 	// 添加与更新使用相同处理
-	g.POST("/configs/:category", newCreateOrUpdateConfigHandler(cfg))
+	g.POST("/configs/{category}", newCreateOrUpdateConfigHandler(cfg))
 	// 删除配置
-	g.DELETE("/configs/:category/:name", newDeleteConfigHandler(cfg))
+	g.DELETE("/configs/{category}/{name}", newDeleteConfigHandler(cfg))
 
 	files := new(assetFiles)
 
@@ -282,7 +276,7 @@ func NewAdmin(opts *ServerOptions) (string, *elton.Elton) {
 		handleIcon(icon)
 	}
 
-	g.GET("/static/*file", staticServe.New(files, staticServe.Config{
+	g.GET("/static/*", middleware.NewStaticServe(files, middleware.StaticServeConfig{
 		Path: "/static",
 		// 客户端缓存一年
 		MaxAge: 365 * 24 * 3600,

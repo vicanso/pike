@@ -23,8 +23,7 @@ import (
 	"time"
 
 	"github.com/vicanso/elton"
-	fresh "github.com/vicanso/elton-fresh"
-	recover "github.com/vicanso/elton-recover"
+	"github.com/vicanso/elton/middleware"
 	"github.com/vicanso/hes"
 	"github.com/vicanso/pike/cache"
 	"github.com/vicanso/pike/log"
@@ -131,7 +130,7 @@ func NewElton(opts *ServerOptions) *elton.Elton {
 
 	// 未处理错误
 	e.OnError(newErrorListener(dispatcher, logger))
-	e.Use(recover.New())
+	e.Use(middleware.NewRecover())
 	influxSrv := opts.influxSrv
 	if influxSrv != nil {
 		e.Use(newStatsHandler(opts.name, func(fields map[string]interface{}, tags map[string]string) {
@@ -163,7 +162,7 @@ func NewElton(opts *ServerOptions) *elton.Elton {
 		})
 	}
 
-	e.Use(fresh.NewDefault())
+	e.Use(middleware.NewDefaultFresh())
 
 	// get http cache
 	e.Use(newCacheDispatchMiddleware(dispatcher, opts.compress, opts.server.ETag))
@@ -171,7 +170,7 @@ func NewElton(opts *ServerOptions) *elton.Elton {
 	// http request proxy
 	e.Use(createProxyMiddleware(locations, upstreams))
 
-	e.ALL("/*url", func(c *elton.Context) error {
+	e.ALL("/*", func(c *elton.Context) error {
 		return nil
 	})
 	return e

@@ -22,7 +22,7 @@ import (
 	"time"
 
 	"github.com/vicanso/elton"
-	proxy "github.com/vicanso/elton-proxy"
+	"github.com/vicanso/elton/middleware"
 	"github.com/vicanso/pike/cache"
 	"github.com/vicanso/pike/config"
 	"github.com/vicanso/pike/upstream"
@@ -61,10 +61,10 @@ func newProxyHandlers(locations config.Locations, upstreams *upstream.Upstreams)
 		if up == nil {
 			continue
 		}
-		proxyMids[item.Name] = proxy.New(proxy.Config{
+		proxyMids[item.Name] = middleware.NewProxy(middleware.ProxyConfig{
 			Rewrites:  item.Rewrites,
 			Transport: defaultTransport,
-			TargetPicker: func(c *elton.Context) (*url.URL, proxy.Done, error) {
+			TargetPicker: func(c *elton.Context) (*url.URL, middleware.ProxyDone, error) {
 				httpUpstream, done := up.Next()
 				if httpUpstream == nil {
 					return nil, nil, errServiceUnavailable
