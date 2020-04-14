@@ -29,6 +29,8 @@ import (
 
 	"github.com/robfig/cron/v3"
 	"github.com/vicanso/elton"
+	"github.com/vicanso/elton/middleware"
+	"github.com/vicanso/hes"
 
 	"github.com/vicanso/pike/cache"
 	"github.com/vicanso/pike/config"
@@ -74,13 +76,20 @@ type Instance struct {
 	cron               *cron.Cron
 }
 
-// upstreamAlarmHandle upstream状态变化的告警
-func upstreamAlarmHandle(alarmConfig *config.Alarm, info upstream.UpStream) {
-	data := alarmConfig.Template
-	data = strings.Replace(data, "{{name}}", info.Name, -1)
-	data = strings.Replace(data, "{{url}}", info.URL, -1)
-	data = strings.Replace(data, "{{status}}", info.Status, -1)
-	resp, err := http.Post(alarmConfig.URI, "application/json", bytes.NewBufferString(data))
+type panicInfo struct {
+	Name    string
+	Host    string
+	URL     string
+	Message string
+}
+
+const (
+	upstreamAlarm = "upstream"
+	panicAlarm    = "panic"
+)
+
+func alarmPost(uri string, data *bytes.Buffer) {
+	resp, err := http.Post(uri, "application/json", data)
 	if resp != nil && resp.StatusCode >= 400 {
 		err = errors.New("status:" + resp.Status)
 	}
@@ -89,6 +98,25 @@ func upstreamAlarmHandle(alarmConfig *config.Alarm, info upstream.UpStream) {
 			zap.Error(err),
 		)
 	}
+}
+
+// upstreamAlarmHandle upstream状态变化的告警
+func upstreamAlarmHandle(alarmConfig *config.Alarm, info upstream.UpStream) {
+	data := alarmConfig.Template
+	data = strings.Replace(data, "{{name}}", info.Name, -1)
+	data = strings.Replace(data, "{{url}}", info.URL, -1)
+	data = strings.Replace(data, "{{status}}", info.Status, -1)
+	alarmPost(alarmConfig.URI, bytes.NewBufferString(data))
+}
+
+// panicAlarmHandle panic的出错处理告警
+func panicAlarmHandle(alarmConfig *config.Alarm, info panicInfo) {
+	data := alarmConfig.Template
+	data = strings.Replace(data, "{{name}}", info.Name, -1)
+	data = strings.Replace(data, "{{host}}", info.Host, -1)
+	data = strings.Replace(data, "{{url}}", info.URL, -1)
+	data = strings.Replace(data, "{{message}}", info.Message, -1)
+	alarmPost(alarmConfig.URI, bytes.NewBufferString(data))
 }
 
 // Fetch fetch config for instance
@@ -167,15 +195,15 @@ func (ins *Instance) Fetch() (err error) {
 		return
 	}
 	upstreams := upstream.NewUpstreams(upstreamsConfig)
-	upstreamAlarm := alarmsConfig.Get("upstream")
+	upstreamAlarmConfig := alarmsConfig.Get(upstreamAlarm)
 	upstreams.OnStatus(func(info upstream.UpStream) {
 		logger.Info("upstream status change",
 			zap.String("name", info.Name),
 			zap.String("url", info.URL),
 			zap.String("status", info.Status),
 		)
-		if upstreamAlarm != nil {
-			upstreamAlarmHandle(upstreamAlarm, info)
+		if upstreamAlarmConfig != nil {
+			upstreamAlarmHandle(upstreamAlarmConfig, info)
 		}
 	})
 
@@ -213,6 +241,31 @@ func (ins *Instance) Fetch() (err error) {
 			servers.Store(conf.Name, srv)
 		}
 		srv.toggleElton()
+		// 添加异常的日志与alarm
+		func(e *elton.Elton, name string) {
+			panicAlarmConfig := alarmsConfig.Get(panicAlarm)
+			e.OnError(func(c *elton.Context, err error) {
+				he, ok := err.(*hes.Error)
+				// 如果不是从recover中恢复的panic异常，忽略
+				if !ok || he.Category != middleware.ErrRecoverCategory {
+					return
+				}
+				logger.Info("uncaught error",
+					zap.String("name", name),
+					zap.String("host", c.Request.Host),
+					zap.String("url", c.Request.RequestURI),
+					zap.Error(err),
+				)
+				if panicAlarmConfig != nil {
+					panicAlarmHandle(panicAlarmConfig, panicInfo{
+						Name:    name,
+						Host:    c.Request.Host,
+						URL:     c.Request.RequestURI,
+						Message: err.Error(),
+					})
+				}
+			})
+		}(srv.GetElton(), conf.Name)
 	}
 	oldUpstreams := ins.upstreams
 	// 如果已有upstreams存在，则将原有upstream销毁

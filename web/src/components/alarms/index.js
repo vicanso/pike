@@ -40,7 +40,7 @@ const fields = [
         message: getAlarmI18n("nameRequireMessage")
       }
     ],
-    options: ["upstream"],
+    options: ["upstream", "panic"],
     type: "select"
   },
   {
