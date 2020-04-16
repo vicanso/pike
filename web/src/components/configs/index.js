@@ -21,7 +21,8 @@ class Configs extends React.Component {
     currentConfig: null,
     columns: null,
     fields: null,
-    configs: null
+    configs: null,
+    actions: null
   };
   async componentDidMount() {
     const { category, loading } = this.state;
@@ -125,7 +126,8 @@ class Configs extends React.Component {
       columns,
       configs,
       disabledDelete,
-      minWidth
+      minWidth,
+      actions
     } = this.state;
     // 如果其它模式下，则不输出列表
     if (mode) {
@@ -144,6 +146,7 @@ class Configs extends React.Component {
 
     return (
       <ExTable
+        actions={actions}
         minWidth={minWidth}
         onDelete={onDelete}
         onUpdate={this.handleUpdate.bind(this)}

@@ -1,6 +1,10 @@
 import React from "react";
 import Configs from "../configs";
+import axios from "axios";
+import { message } from "antd";
+
 import { getAlarmI18n, getCommonI18n } from "../../i18n";
+import { ALARMS_TRY } from "../../urls";
 
 const category = "alarms";
 
@@ -82,7 +86,22 @@ class Alarms extends Configs {
       description: getAlarmI18n("createUpdateDescription"),
       category,
       columns,
-      fields
+      fields,
+      actions: [
+        {
+          key: "test",
+          text: getAlarmI18n("try"),
+          icon: "thunderbolt",
+          handle: async row => {
+            try {
+              await axios.post(ALARMS_TRY.replace(":name", row.name));
+              message.info("done");
+            } catch (err) {
+              message.error(err.message);
+            }
+          }
+        }
+      ]
     });
   }
 }

@@ -20,8 +20,10 @@ import (
 	"bytes"
 	"crypto/tls"
 	"encoding/base64"
+	"encoding/json"
 	"errors"
 	"net/http"
+	"regexp"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -88,8 +90,26 @@ const (
 	panicAlarm    = "panic"
 )
 
-func alarmPost(uri string, data *bytes.Buffer) {
-	resp, err := http.Post(uri, "application/json", data)
+func struct2map(value interface{}) map[string]string {
+	// 内部使用，忽略出错
+	m := make(map[string]string)
+	buf, _ := json.Marshal(value)
+	_ = json.Unmarshal(buf, &m)
+	return m
+}
+
+func alarmHandle(alarmConfig *config.Alarm, data map[string]string) {
+	template := alarmConfig.Template
+	if data != nil {
+		reg := regexp.MustCompile(`{{\S+?}}`)
+		keys := reg.FindAllString(template, -1)
+		for _, key := range keys {
+			k := key[2 : len(key)-2]
+			value := data[k]
+			template = strings.ReplaceAll(template, key, value)
+		}
+	}
+	resp, err := http.Post(alarmConfig.URI, "application/json", bytes.NewBufferString(template))
 	if resp != nil && resp.StatusCode >= 400 {
 		err = errors.New("status:" + resp.Status)
 	}
@@ -98,25 +118,6 @@ func alarmPost(uri string, data *bytes.Buffer) {
 			zap.Error(err),
 		)
 	}
-}
-
-// upstreamAlarmHandle upstream状态变化的告警
-func upstreamAlarmHandle(alarmConfig *config.Alarm, info upstream.UpStream) {
-	data := alarmConfig.Template
-	data = strings.Replace(data, "{{name}}", info.Name, -1)
-	data = strings.Replace(data, "{{url}}", info.URL, -1)
-	data = strings.Replace(data, "{{status}}", info.Status, -1)
-	alarmPost(alarmConfig.URI, bytes.NewBufferString(data))
-}
-
-// panicAlarmHandle panic的出错处理告警
-func panicAlarmHandle(alarmConfig *config.Alarm, info panicInfo) {
-	data := alarmConfig.Template
-	data = strings.Replace(data, "{{name}}", info.Name, -1)
-	data = strings.Replace(data, "{{host}}", info.Host, -1)
-	data = strings.Replace(data, "{{url}}", info.URL, -1)
-	data = strings.Replace(data, "{{message}}", info.Message, -1)
-	alarmPost(alarmConfig.URI, bytes.NewBufferString(data))
 }
 
 // Fetch fetch config for instance
@@ -203,7 +204,7 @@ func (ins *Instance) Fetch() (err error) {
 			zap.String("status", info.Status),
 		)
 		if upstreamAlarmConfig != nil {
-			upstreamAlarmHandle(upstreamAlarmConfig, info)
+			alarmHandle(upstreamAlarmConfig, struct2map(info))
 		}
 	})
 
@@ -257,12 +258,12 @@ func (ins *Instance) Fetch() (err error) {
 					zap.Error(err),
 				)
 				if panicAlarmConfig != nil {
-					panicAlarmHandle(panicAlarmConfig, panicInfo{
+					alarmHandle(panicAlarmConfig, struct2map(panicInfo{
 						Name:    name,
 						Host:    c.Request.Host,
 						URL:     c.Request.RequestURI,
 						Message: err.Error(),
-					})
+					}))
 				}
 			})
 		}(srv.GetElton(), conf.Name)

@@ -7,6 +7,7 @@ HTTP cache server such as varnish.
 - TTL of cache is set through response header: `Cache-Control`
 - Web UI is easy
 - Support br and gzip
+- Support non-interrupted update config
 
 ## Flow
 

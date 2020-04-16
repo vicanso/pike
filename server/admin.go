@@ -314,6 +314,22 @@ func NewAdmin(opts *ServerOptions) (string, *elton.Elton) {
 		}
 		return
 	})
+	// alarm 测试
+	g.POST("/alarms/{name}/try", func(c *elton.Context) (err error) {
+		name := c.Param("name")
+		alarms, err := cfg.GetAlarms()
+		if err != nil {
+			return
+		}
+		alarm := alarms.Get(name)
+		if alarm == nil {
+			err = hes.New("alarm is nil, please check the alarm configs")
+			return
+		}
+		alarmHandle(alarm, nil)
+		c.NoContent()
+		return
+	})
 
 	e.AddGroup(g)
 	return adminPath, e

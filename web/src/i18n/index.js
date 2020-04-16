@@ -402,7 +402,8 @@ const alarmEn = {
   uriRequireMessage: "The uri of alarm can't be null",
   template: "Template",
   templatePlaceHolder: `upstream alarm:{"category":"upstream","message":"{{name}}({{url}})'s status change to {{status}}"}\npanic alarm:{"category":"panic","message":"{{name}}({{host}}{{url}}) error:{{message}}"}`,
-  templateRequireMessage: "Template can't be null"
+  templateRequireMessage: "Template can't be null",
+  try: "Try"
 };
 
 const alarmZh = {
@@ -417,7 +418,8 @@ const alarmZh = {
   uriRequireMessage: "告警地址不能为空",
   template: "模板",
   templatePlaceHolder: `upstream alarm:{"category":"upstream","message":"{{name}}({{url}})'s status change to {{status}}"}\npanic alarm:{"category":"panic","message":"{{name}}({{host}}{{url}}) error:{{message}}"}`,
-  templateRequireMessage: "告警模板不能为空"
+  templateRequireMessage: "告警模板不能为空",
+  try: "测试"
 };
 
 const i18ns = {

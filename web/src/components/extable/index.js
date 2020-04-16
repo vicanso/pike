@@ -32,7 +32,8 @@ class ExTable extends React.Component {
       dataSource,
       onDelete,
       onUpdate,
-      minWidth
+      minWidth,
+      actions
     } = this.props;
     const cloneColumns = columns.slice(0);
 
@@ -43,46 +44,74 @@ class ExTable extends React.Component {
       actionColumnFixed = "right";
     }
     // 只有设置了更新或删除函数才添加功能操作列表
+    let width = 200;
+    if (actions) {
+      width += 100 * actions.length;
+    }
     if (onDelete || onUpdate) {
       cloneColumns.push({
         title: getCommonI18n("action"),
-        width: 200,
+        width,
         fixed: actionColumnFixed,
         render: row => {
-          return (
-            <div className="action">
-              {onDelete && (
-                <Popconfirm
-                  title={getCommonI18n("deleteTips")}
-                  onConfirm={() => {
-                    this.handleDelete(row);
-                  }}
-                >
-                  <a
-                    href="/delete"
-                    onClick={e => {
-                      e.preventDefault();
-                    }}
-                  >
-                    <Icon type="delete" />
-                    {getCommonI18n("delete")}
-                  </a>
-                </Popconfirm>
-              )}
-              {onUpdate && (
+          const rowActions = [];
+          if (onDelete) {
+            rowActions.push(
+              <Popconfirm
+                key="ondelete"
+                title={getCommonI18n("deleteTips")}
+                onConfirm={() => {
+                  this.handleDelete(row);
+                }}
+              >
                 <a
-                  href="/update"
+                  href="/delete"
                   onClick={e => {
                     e.preventDefault();
-                    onUpdate(row);
                   }}
                 >
-                  <Icon type="edit" />
-                  {getCommonI18n("update")}
+                  <Icon type="delete" />
+                  {getCommonI18n("delete")}
                 </a>
-              )}
-            </div>
-          );
+              </Popconfirm>
+            );
+          }
+          if (onUpdate) {
+            rowActions.push(
+              <a
+                key="onupdate"
+                href="/update"
+                onClick={e => {
+                  e.preventDefault();
+                  onUpdate(row);
+                }}
+              >
+                <Icon type="edit" />
+                {getCommonI18n("update")}
+              </a>
+            );
+          }
+          if (actions) {
+            actions.forEach(item => {
+              rowActions.push(
+                <a
+                  key={item.key}
+                  href={item.key}
+                  onClick={e => {
+                    e.preventDefault();
+                    if (item.handle) {
+                      item.handle(row);
+                    }
+                  }}
+                >
+                  <Icon type={item.icon} />
+                  {item.text}
+                </a>
+              );
+            });
+          }
+
+          return <div className="action">{rowActions}</div>;
         }
       });
     }
@@ -108,7 +137,8 @@ ExTable.propTypes = {
   rowKey: PropTypes.string,
   onUpdate: PropTypes.func,
   onDelete: PropTypes.func,
-  minWidth: PropTypes.number
+  minWidth: PropTypes.number,
+  actions: PropTypes.array
 };
 
 export default ExTable;
