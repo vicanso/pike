@@ -152,7 +152,11 @@ const upstreamEn = {
   serverAddrRequireMessage: "The address of upstream server can't be empty!",
   backup: "Backup",
   healthCheck: "Health Check",
-  healthCheckPlaceHolder: "Please input the url path of health check, eg: /ping"
+  healthCheckPlaceHolder:
+    "Please input the url path of health check, eg: /ping",
+  h2c: "H2C",
+  h2cTitle:
+    "Enable http2 transport for upstream, the upstream should be supported h2c"
 };
 const upstreamZh = {
   createUpdateTitle: "创建或更新Upstream",
@@ -170,7 +174,9 @@ const upstreamZh = {
   serverAddrRequireMessage: "upstream服务的地址不能为空！",
   backup: "备用",
   healthCheck: "健康检测",
-  healthCheckPlaceHolder: "请输入健康检测的路径，如： /ping"
+  healthCheckPlaceHolder: "请输入健康检测的路径，如： /ping",
+  h2c: "H2C",
+  h2cTitle: "使用HTTP2的传输方式，upstream必须能够支持h2c的形式"
 };
 
 const locationEn = {

@@ -225,8 +225,11 @@ func NewAdmin(opts *ServerOptions) (string, *elton.Elton) {
 	if adminConfig != nil {
 		e.Use(newAdminValidateMiddlewares(adminConfig)...)
 	}
-
-	e.Use(compress.NewDefault())
+	compressConfig := middleware.NewCompressConfig(
+		new(compress.BrCompressor),
+		new(middleware.GzipCompressor),
+	)
+	e.Use(middleware.NewCompress(compressConfig))
 
 	e.Use(middleware.NewDefaultFresh())
 	e.Use(middleware.NewDefaultETag())

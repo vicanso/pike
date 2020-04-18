@@ -14,12 +14,13 @@ require (
 	github.com/robfig/cron/v3 v3.0.1
 	github.com/spf13/cobra v1.0.0
 	github.com/stretchr/testify v1.5.1
-	github.com/vicanso/elton v0.5.0
-	github.com/vicanso/elton-compress v0.3.2
+	github.com/vicanso/elton v1.0.0
+	github.com/vicanso/elton-compress v1.0.0
 	github.com/vicanso/hes v0.2.1
 	github.com/vicanso/intranet-ip v0.0.1
 	github.com/vicanso/upstream v0.0.5
 	go.etcd.io/etcd v3.3.20+incompatible
 	go.uber.org/automaxprocs v1.3.0
 	go.uber.org/zap v1.14.1
+	golang.org/x/net v0.0.0-20200226121028-0de0cce0169b
 )

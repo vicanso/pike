@@ -29,6 +29,7 @@ type Upstream struct {
 	HealthCheck string           `yaml:"healthCheck,omitempty" json:"healthCheck,omitempty" valid:"xURLPath,optional"`
 	Policy      string           `yaml:"policy,omitempty" json:"policy,omitempty" valid:"-"`
 	Name        string           `yaml:"-" json:"name,omitempty" valid:"xName"`
+	EnableH2C   bool             `yaml:"enableH2C,omitempty" json:"enableH2C,omitempty" valid:"-"`
 	Servers     []UpstreamServer `yaml:"servers,omitempty" json:"servers,omitempty" valid:"xServers"`
 	Description string           `yaml:"description,omitempty" json:"description,omitempty" valid:"-"`
 }

@@ -1,6 +1,6 @@
 import React from "react";
 import axios from "axios";
-import { Icon } from "antd";
+import { Icon, Switch } from "antd";
 
 import Configs from "../configs";
 import { getCommonI18n, getUpstreamI18n } from "../../i18n";
@@ -58,6 +58,13 @@ const columns = [
     dataIndex: "healthCheck"
   },
   {
+    title: getUpstreamI18n("h2c"),
+    dataIndex: "enableH2C",
+    render: row => {
+      return <Switch disabled={true} defaultChecked={row} />;
+    }
+  },
+  {
     title: getCommonI18n("description"),
     dataIndex: "description"
   }
@@ -97,6 +104,12 @@ const fields = [
     label: getUpstreamI18n("healthCheck"),
     key: "healthCheck",
     placeholder: getUpstreamI18n("healthCheckPlaceHolder")
+  },
+  {
+    label: getUpstreamI18n("h2c"),
+    key: "enableH2C",
+    type: "switch",
+    title: getUpstreamI18n("h2cTitle"),
   },
   {
     label: getCommonI18n("description"),

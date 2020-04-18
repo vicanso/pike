@@ -8,6 +8,7 @@ HTTP cache server such as varnish.
 - Web UI is easy
 - Support br and gzip
 - Support non-interrupted update config
+- Support h2c upstream proxy
 
 ## Flow
 

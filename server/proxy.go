@@ -15,6 +15,7 @@
 package server
 
 import (
+	"crypto/tls"
 	"net"
 	"net/http"
 	"net/url"
@@ -27,6 +28,7 @@ import (
 	"github.com/vicanso/pike/config"
 	"github.com/vicanso/pike/upstream"
 	"github.com/vicanso/pike/util"
+	"golang.org/x/net/http2"
 )
 
 var (
@@ -40,30 +42,43 @@ var (
 
 func newProxyHandlers(locations config.Locations, upstreams *upstream.Upstreams) map[string]elton.Handler {
 	proxyMids := make(map[string]elton.Handler)
-	defaultTransport := &http.Transport{
-		Proxy: http.ProxyFromEnvironment,
-		DialContext: (&net.Dialer{
-			Timeout:   30 * time.Second,
-			KeepAlive: 30 * time.Second,
-			DualStack: true,
-		}).DialContext,
-		// 与backend的请求都是内网，不使用http2
-		ForceAttemptHTTP2: false,
-		MaxIdleConns:      1000,
-		// 调整默认的每个host的最大连接因为缓存服务与backend调用较多
-		MaxIdleConnsPerHost:   50,
-		IdleConnTimeout:       90 * time.Second,
-		TLSHandshakeTimeout:   10 * time.Second,
-		ExpectContinueTimeout: 1 * time.Second,
-	}
+
 	for _, item := range locations {
 		up := upstreams.Get(item.Upstream)
 		if up == nil {
 			continue
 		}
+		var transport http.RoundTripper
+		if upstreams.H2CIsEnabled(item.Name) {
+			transport = &http2.Transport{
+				// 允许使用http的方式
+				AllowHTTP: true,
+				// tls的dial覆盖
+				DialTLS: func(network, addr string, cfg *tls.Config) (net.Conn, error) {
+					return net.Dial(network, addr)
+				},
+			}
+		} else {
+			transport = &http.Transport{
+				Proxy: http.ProxyFromEnvironment,
+				DialContext: (&net.Dialer{
+					Timeout:   30 * time.Second,
+					KeepAlive: 30 * time.Second,
+					DualStack: true,
+				}).DialContext,
+				ForceAttemptHTTP2: true,
+				MaxIdleConns:      1000,
+				// 调整默认的每个host的最大连接因为缓存服务与backend调用较多
+				MaxIdleConnsPerHost:   50,
+				IdleConnTimeout:       90 * time.Second,
+				TLSHandshakeTimeout:   10 * time.Second,
+				ExpectContinueTimeout: 1 * time.Second,
+			}
+		}
+
 		proxyMids[item.Name] = middleware.NewProxy(middleware.ProxyConfig{
 			Rewrites:  item.Rewrites,
-			Transport: defaultTransport,
+			Transport: transport,
 			TargetPicker: func(c *elton.Context) (*url.URL, middleware.ProxyDone, error) {
 				httpUpstream, done := up.Next()
 				if httpUpstream == nil {

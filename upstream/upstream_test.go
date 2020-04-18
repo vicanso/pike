@@ -40,7 +40,8 @@ func TestUpstreams(t *testing.T) {
 	name := "test"
 	upstreamsConfig := config.Upstreams{
 		&config.Upstream{
-			Name: name,
+			EnableH2C: true,
+			Name:      name,
 			Servers: []config.UpstreamServer{
 				config.UpstreamServer{
 					Addr: addr,
@@ -61,6 +62,7 @@ func TestUpstreams(t *testing.T) {
 	}
 	data := upstreams.Status()
 	assert.Equal(1, len(data))
+	assert.True(upstreams.H2CIsEnabled(name))
 
 	upstreams.Destroy()
 }

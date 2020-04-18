@@ -25,6 +25,7 @@ import (
 type (
 	// Upstreams upstream servers
 	Upstreams struct {
+		configs config.Upstreams
 		httpUps map[string]*us.HTTP
 	}
 	// UpStream upstream status
@@ -64,6 +65,7 @@ func NewUpstreams(upstreamsConfig config.Upstreams) *Upstreams {
 	}
 
 	return &Upstreams{
+		configs: upstreamsConfig,
 		httpUps: upstreams,
 	}
 }
@@ -71,6 +73,17 @@ func NewUpstreams(upstreamsConfig config.Upstreams) *Upstreams {
 // Get get http upstream
 func (upstreams *Upstreams) Get(name string) *us.HTTP {
 	return upstreams.httpUps[name]
+}
+
+// H2CIsEnabled is the upstream h2c enabled
+func (upstreams *Upstreams) H2CIsEnabled(name string) bool {
+	enabled := false
+	for _, item := range upstreams.configs {
+		if item.Name == name {
+			enabled = item.EnableH2C
+		}
+	}
+	return enabled
 }
 
 // Destroy destroy all upstreams

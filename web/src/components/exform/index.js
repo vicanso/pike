@@ -506,7 +506,7 @@ class ExForm extends React.Component {
               },
               decoratorOpts
             )
-          )(<Switch />);
+          )(<Switch title={item.title} />);
           break;
         case "duration":
           decorator = getFieldDecorator(
