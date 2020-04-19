@@ -10,65 +10,65 @@ description: 性能测试
 
 ## gzip
 
-客户端支持gzip压缩，pike返回已压缩的gzip数据(wrk运行于同一台机器中，大概占用2U的资源)。从下面的测试结果可以看出，每秒的处理请求数为73k，1GB的数据传输，这已能满足大部分的应用场景。
+客户端支持gzip压缩，pike返回已压缩的gzip数据(wrk运行于同一台机器中，大概占用2U的资源)。从下面的测试结果可以看出，每秒的处理请求数与传输的数据量，这已能满足大部分的应用场景。
 
 ```bash
 wrk -c1000 -t10 -d1m -H 'Accept-Encoding: gzip, deflate' --latency 'http://127.0.0.1:8080/'
 Running 1m test @ http://127.0.0.1:8080/
   10 threads and 1000 connections
   Thread Stats   Avg      Stdev     Max   +/- Stdev
-    Latency    13.73ms   10.19ms 174.52ms   83.55%
-    Req/Sec     7.37k     1.43k   14.14k    70.48%
+    Latency    13.89ms   10.33ms 192.87ms   79.01%
+    Req/Sec     7.47k     1.53k   30.82k    71.94%
   Latency Distribution
-     50%   11.77ms
-     75%   15.84ms
-     90%   23.45ms
-     99%   54.41ms
-  4389008 requests in 1.00m, 61.85GB read
-Requests/sec:  73028.57
-Transfer/sec:      1.03GB
+     50%   12.83ms
+     75%   16.84ms
+     90%   23.29ms
+     99%   51.84ms
+  4453517 requests in 1.00m, 44.42GB read
+Requests/sec:  74102.53
+Transfer/sec:    756.79MB
 ```
 
 ## br
 
-客户端支持br压缩，pike返回已压缩的br数据(wrk运行于同一台机器中，大概占用2U的资源)。从下面的测试结果可以看出，每秒的处理请求数为74k(与gzip基本相同)，0.91GB的数据传输(br的压缩率比gzip高），这已能满足大部分的应用场景。
+客户端支持br压缩，pike返回已压缩的br数据(wrk运行于同一台机器中，大概占用2U的资源)。从下面的测试结果可以看出，每秒的处理请求数为与gzip基本一致且数据量更少，这已能满足大部分的应用场景。
 
 ```bash
 wrk -c1000 -t10 -d1m -H 'Accept-Encoding: br, gzip, deflate' --latency 'http://127.0.0.1:8080/'
 Running 1m test @ http://127.0.0.1:8080/
   10 threads and 1000 connections
   Thread Stats   Avg      Stdev     Max   +/- Stdev
-    Latency    13.57ms    9.85ms 163.54ms   83.15%
-    Req/Sec     7.47k     1.44k   17.56k    71.21%
+    Latency    13.54ms    9.83ms 173.94ms   77.98%
+    Req/Sec     7.60k     1.56k   15.71k    70.23%
   Latency Distribution
-     50%   11.69ms
-     75%   15.60ms
-     90%   23.15ms
-     99%   53.68ms
-  4447442 requests in 1.00m, 54.41GB read
-Requests/sec:  74003.72
-Transfer/sec:      0.91GB
+     50%   12.48ms
+     75%   16.56ms
+     90%   23.14ms
+     99%   49.92ms
+  4527025 requests in 1.00m, 37.32GB read
+Requests/sec:  75352.10
+Transfer/sec:    636.17MB
 ```
 
 
 ## 不支持压缩
 
-客户端不支持压缩，pike解压gzip数据返回(wrk运行于同一台机器中，大概占用1U的资源)。从下面的测试结果可以看出，每秒仅能处理请求数为5k，790MB的数据传输。由于基本所有的客户端都能支持`gzip`压缩，大部分的也支持`br`，所以pike在缓存数据时，对于可压缩数据则会预压缩生成gzip与br数据，对于不支持压缩的从gzip数据中解压获取，因此解压会占用大量CPU资源导致响应更慢。
+客户端不支持压缩，pike解压gzip数据返回(wrk运行于同一台机器中，大概占用1U的资源)。从下面的测试结果可以看出，每秒处理的请求数下降比较明显。由于基本所有的客户端都能支持`gzip`压缩，大部分的也支持`br`，所以pike在缓存数据时，对于可压缩数据则会预压缩生成gzip与br数据，对于不支持压缩的从gzip数据中解压获取，因此解压会占用大量CPU资源导致响应更慢。
 
 ```bash
 wrk -c1000 -t10 -d1m --latency 'http://127.0.0.1:8080/'
 Running 1m test @ http://127.0.0.1:8080/
   10 threads and 1000 connections
   Thread Stats   Avg      Stdev     Max   +/- Stdev
-    Latency   319.58ms  395.73ms   2.00s    82.30%
-    Req/Sec   536.33    156.85     1.40k    70.79%
+    Latency   313.85ms  397.12ms   2.00s    82.40%
+    Req/Sec   581.74    163.59     1.55k    69.50%
   Latency Distribution
-     50%   76.09ms
-     75%  569.69ms
-     90%  905.92ms
-     99%    1.57s
-  319657 requests in 1.00m, 46.65GB read
-  Socket errors: connect 0, read 0, write 0, timeout 2105
-Requests/sec:   5321.82
-Transfer/sec:    795.24MB
+     50%   67.44ms
+     75%  555.22ms
+     90%  902.45ms
+     99%    1.60s
+  347280 requests in 1.00m, 52.49GB read
+  Socket errors: connect 0, read 0, write 0, timeout 2159
+Requests/sec:   5783.48
+Transfer/sec:      0.87GB
 ```
