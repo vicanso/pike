@@ -39,7 +39,8 @@ const commonEn = {
   back: "Back",
   delete: "Delete",
   deleteTips: "Are you sure to delete this config?",
-  upload: "Upload File"
+  upload: "Upload File",
+  search: "search"
 };
 const commonZh = {
   lang: "语言",
@@ -55,7 +56,8 @@ const commonZh = {
   back: "返回",
   delete: "删除",
   deleteTips: "确定要删除此配置吗？",
-  upload: "上传文件"
+  upload: "上传文件",
+  search: "查询"
 };
 
 // 缓存相关文本配置
@@ -77,7 +79,13 @@ const cacheEn = {
   hitForPassRequireMessage: "The cache's hit for pass should be gt 0",
   purgedAt: "PurgedAt",
   purgedAtPlaceholder:
-    "Please input the regular purges, support cron format, eg: 0 0 * * *"
+    "Please input the regular purges, support cron format, eg: 0 0 * * *",
+  caches: "Caches",
+  key: "Key",
+  limit: "Limit",
+  keyword: "Keyword",
+  createdAt: "Created At",
+  expiredAt: "Expired At"
 };
 const cacheZh = {
   createUpdateTitle: "创建或更新缓存",
@@ -96,7 +104,13 @@ const cacheZh = {
   hitForPassPlaceholder: "请输入hit for pass的有效期",
   hitForPassRequireMessage: "hit for pass的有效期必须大于0",
   purgedAt: "定期清除",
-  purgedAtPlaceholder: "请输入定期清除配置，支持cron表达式，如：0 0 * * *"
+  purgedAtPlaceholder: "请输入定期清除配置，支持cron表达式，如：0 0 * * *",
+  caches: "缓存列表",
+  key: "标识",
+  limit: "限制",
+  keyword: "关键字",
+  createdAt: "创建于",
+  expiredAt: "失效于"
 };
 
 const compressEn = {

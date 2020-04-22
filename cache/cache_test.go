@@ -17,6 +17,7 @@ package cache
 import (
 	"crypto/sha256"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/vicanso/pike/config"
@@ -57,4 +58,9 @@ func TestDispatcher(t *testing.T) {
 	c1 := disp.GetHTTPCache(key)
 	c2 := disp.GetHTTPCache(key)
 	assert.Equal(c1, c2)
+	c1.expiredAt = int(time.Now().Unix()) + 100
+	c1.status = StatusCacheable
+
+	cacheSummaryList := disp.List(StatusCacheable, 10, "")
+	assert.Equal(1, len(cacheSummaryList))
 }

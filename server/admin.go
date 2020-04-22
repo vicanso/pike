@@ -20,6 +20,7 @@ import (
 	"io/ioutil"
 	"net"
 	"net/http"
+	"strconv"
 	"strings"
 
 	"github.com/vicanso/elton"
@@ -28,6 +29,7 @@ import (
 	"github.com/vicanso/hes"
 	intranetip "github.com/vicanso/intranet-ip"
 	"github.com/vicanso/pike/application"
+	"github.com/vicanso/pike/cache"
 	"github.com/vicanso/pike/config"
 )
 
@@ -329,7 +331,41 @@ func NewAdmin(opts *ServerOptions) (string, *elton.Elton) {
 			err = hes.New("alarm is nil, please check the alarm configs")
 			return
 		}
-		alarmHandle(alarm, nil)
+		err = alarmHandle(alarm, nil)
+		if err != nil {
+			return
+		}
+		c.NoContent()
+		return
+	})
+
+	// list caches 获取缓存列表
+	g.GET("/caches/{name}", func(c *elton.Context) (err error) {
+		disp := opts.dispatchers.Get(c.Param("name"))
+		if disp == nil {
+			err = hes.New("cache not found")
+			return
+		}
+		status, _ := strconv.Atoi(c.QueryParam("status"))
+		limit, _ := strconv.Atoi(c.QueryParam("limit"))
+		if status <= 0 {
+			status = cache.StatusCacheable
+		}
+		if limit <= 0 {
+			limit = 100
+		}
+
+		c.Body = disp.List(status, limit, c.QueryParam("keyword"))
+		return
+	})
+	// delete cache 删除缓存
+	g.DELETE("/caches/{name}", func(c *elton.Context) (err error) {
+		disp := opts.dispatchers.Get(c.Param("name"))
+		if disp == nil {
+			err = hes.New("cache not found")
+			return
+		}
+		disp.Remove([]byte(c.QueryParam("key")))
 		c.NoContent()
 		return
 	})

@@ -9,6 +9,7 @@ HTTP cache server such as varnish.
 - Support br and gzip
 - Support non-interrupted update config
 - Support h2c upstream proxy
+- Custom alarm for upstream or panic
 
 ## Flow
 

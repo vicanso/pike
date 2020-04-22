@@ -109,7 +109,7 @@ const fields = [
     label: getUpstreamI18n("h2c"),
     key: "enableH2C",
     type: "switch",
-    title: getUpstreamI18n("h2cTitle"),
+    title: getUpstreamI18n("h2cTitle")
   },
   {
     label: getCommonI18n("description"),

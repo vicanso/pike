@@ -94,6 +94,7 @@ class Alarms extends Configs {
           icon: "thunderbolt",
           handle: async row => {
             try {
+              await new Promise(resolve => setTimeout(resolve, 5000));
               await axios.post(ALARMS_TRY.replace(":name", row.name));
               message.info("done");
             } catch (err) {

@@ -17,6 +17,9 @@
 package cache
 
 import (
+	"strings"
+	"time"
+
 	"github.com/vicanso/pike/config"
 	"github.com/vicanso/pike/util"
 )
@@ -37,6 +40,12 @@ type (
 	// Dispatchers http cache dispatcher list
 	Dispatchers struct {
 		dispatchers map[string]*Dispatcher
+	}
+	// CacheSummary cache summary
+	CacheSummary struct {
+		Key       string `json:"key,omitempty"`
+		CreatedAt int    `json:"createdAt,omitempty"`
+		ExpiredAt int    `json:"expiredAt,omitempty"`
 	}
 )
 
@@ -70,12 +79,16 @@ func NewDispatcher(cacheConfig *config.Cache) *Dispatcher {
 	}
 }
 
-// GetHTTPCache get http cache through key
-func (d *Dispatcher) GetHTTPCache(key []byte) *HTTPCache {
+func (d *Dispatcher) getLRU(key []byte) *HTTPCacheLRU {
 	// 计算hash值
 	index := MemHash(key) % d.size
 	// 从预定义的列表中取对应的缓存
-	lru := d.list[index]
+	return d.list[index]
+}
+
+// GetHTTPCache get http cache through key
+func (d *Dispatcher) GetHTTPCache(key []byte) *HTTPCache {
+	lru := d.getLRU(key)
 	return lru.FindOrCreate(util.ByteSliceToString(key))
 }
 
@@ -86,6 +99,47 @@ func (d *Dispatcher) RemoveExpired() int {
 		count += lruCache.RemoveExpired()
 	}
 	return count
+}
+
+// List list the cache
+func (d *Dispatcher) List(status int, limit int, keyword string) (summaryList []*CacheSummary) {
+	count := 0
+	done := false
+	summaryList = make([]*CacheSummary, 0, limit)
+	now := int(time.Now().Unix())
+	for _, lruCache := range d.list {
+		if done {
+			break
+		}
+		lruCache.ForEach(func(key string, item *HTTPCache) {
+			if done {
+				return
+			}
+			// 状态不符合或者未过期
+			if item.status != status || item.expiredAt < now {
+				return
+			}
+			// 如果指定了筛选关键字
+			if keyword != "" && !strings.Contains(key, keyword) {
+				return
+			}
+			summaryList = append(summaryList, &CacheSummary{
+				Key:       key,
+				CreatedAt: item.createdAt,
+				ExpiredAt: item.expiredAt,
+			})
+			count++
+		})
+	}
+	return
+}
+
+// Remove remove the cache
+func (d *Dispatcher) Remove(key []byte) {
+	lru := d.getLRU(key)
+	lru.Lock()
+	defer lru.Unlock()
+	lru.Remove(util.ByteSliceToString(key))
 }
 
 // Get get dispatcher

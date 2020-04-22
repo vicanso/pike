@@ -58,14 +58,15 @@ type Server struct {
 
 // ServerOptions server options
 type ServerOptions struct {
-	name       string
-	influxSrv  *InfluxSrv
-	server     *config.Server
-	locations  config.Locations
-	upstreams  *upstream.Upstreams
-	dispatcher *cache.Dispatcher
-	compress   *config.Compress
-	cfg        *config.Config
+	name        string
+	influxSrv   *InfluxSrv
+	server      *config.Server
+	locations   config.Locations
+	upstreams   *upstream.Upstreams
+	dispatchers *cache.Dispatchers
+	dispatcher  *cache.Dispatcher
+	compress    *config.Compress
+	cfg         *config.Config
 }
 
 // Instance pike server instance
@@ -98,7 +99,7 @@ func struct2map(value interface{}) map[string]string {
 	return m
 }
 
-func alarmHandle(alarmConfig *config.Alarm, data map[string]string) {
+func alarmHandle(alarmConfig *config.Alarm, data map[string]string) (err error) {
 	template := alarmConfig.Template
 	if data != nil {
 		reg := regexp.MustCompile(`{{\S+?}}`)
@@ -118,6 +119,7 @@ func alarmHandle(alarmConfig *config.Alarm, data map[string]string) {
 			zap.Error(err),
 		)
 	}
+	return
 }
 
 // Fetch fetch config for instance
@@ -204,7 +206,8 @@ func (ins *Instance) Fetch() (err error) {
 			zap.String("status", info.Status),
 		)
 		if upstreamAlarmConfig != nil {
-			alarmHandle(upstreamAlarmConfig, struct2map(info))
+			// 已输出日志，忽略出错
+			_ = alarmHandle(upstreamAlarmConfig, struct2map(info))
 		}
 	})
 
@@ -224,14 +227,15 @@ func (ins *Instance) Fetch() (err error) {
 		data, ok := servers.Load(conf.Name)
 		// 如果已存在，仅更新信息
 		opts := &ServerOptions{
-			name:       conf.Name,
-			influxSrv:  influxSrv,
-			server:     conf,
-			locations:  locations,
-			upstreams:  upstreams,
-			dispatcher: dispatcher,
-			compress:   compress,
-			cfg:        cfg,
+			name:        conf.Name,
+			influxSrv:   influxSrv,
+			server:      conf,
+			locations:   locations,
+			upstreams:   upstreams,
+			dispatchers: dispatchers,
+			dispatcher:  dispatcher,
+			compress:    compress,
+			cfg:         cfg,
 		}
 		var srv *Server
 		if ok {
@@ -258,7 +262,7 @@ func (ins *Instance) Fetch() (err error) {
 					zap.Error(err),
 				)
 				if panicAlarmConfig != nil {
-					alarmHandle(panicAlarmConfig, struct2map(panicInfo{
+					_ = alarmHandle(panicAlarmConfig, struct2map(panicInfo{
 						Name:    name,
 						Host:    c.Request.Host,
 						URL:     c.Request.RequestURI,

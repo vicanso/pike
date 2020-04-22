@@ -97,10 +97,21 @@ class ExTable extends React.Component {
                 <a
                   key={item.key}
                   href={item.key}
-                  onClick={e => {
+                  onClick={async e => {
                     e.preventDefault();
                     if (item.handle) {
-                      item.handle(row);
+                      try {
+                        this.setState({
+                          submitting: true
+                        });
+                        await item.handle(row);
+                      } catch (err) {
+                        message.error(err.message);
+                      } finally {
+                        this.setState({
+                          submitting: false
+                        });
+                      }
                     }
                   }}
                 >
