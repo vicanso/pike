@@ -212,7 +212,7 @@ func (ins *Instance) Fetch() (err error) {
 			zap.String("url", info.URL),
 			zap.String("status", info.Status),
 		)
-		if upstreamAlarmConfig != nil {
+		if upstreamAlarmConfig != nil && upstreamAlarmConfig.Enabled {
 			// 已输出日志，忽略出错
 			_ = alarmHandle(upstreamAlarmConfig, struct2map(info))
 		}
@@ -263,7 +263,7 @@ func (ins *Instance) Fetch() (err error) {
 					zap.String("url", c.Request.RequestURI),
 					zap.Error(err),
 				)
-				if uncaughtErrorAlarmConfig != nil {
+				if uncaughtErrorAlarmConfig != nil && uncaughtErrorAlarmConfig.Enabled {
 					_ = alarmHandle(uncaughtErrorAlarmConfig, struct2map(uncaughtErrorInfo{
 						Name:    name,
 						Host:    c.Request.Host,

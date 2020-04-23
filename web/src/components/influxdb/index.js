@@ -39,7 +39,7 @@ const columns = [
     dataIndex: "flushInterval"
   },
   {
-    title: getInfluxdbI18n("enabled"),
+    title: getCommonI18n("enabled"),
     dataIndex: "enabled",
     render: row => {
       return <Switch disabled={true} defaultChecked={row} />;
@@ -110,7 +110,7 @@ const fields = [
     placeholder: getInfluxdbI18n("flushIntervalPlaceHolder")
   },
   {
-    label: getInfluxdbI18n("enabled"),
+    label: getCommonI18n("enabled"),
     key: "enabled",
     type: "switch"
   },

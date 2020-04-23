@@ -40,7 +40,8 @@ const commonEn = {
   delete: "Delete",
   deleteTips: "Are you sure to delete this config?",
   upload: "Upload File",
-  search: "search"
+  search: "search",
+  enabled: "Enabled"
 };
 const commonZh = {
   lang: "语言",
@@ -57,7 +58,8 @@ const commonZh = {
   delete: "删除",
   deleteTips: "确定要删除此配置吗？",
   upload: "上传文件",
-  search: "查询"
+  search: "查询",
+  enabled: "启用"
 };
 
 // 缓存相关文本配置
@@ -389,8 +391,7 @@ const influxdbEn = {
   batchSize: "Batch Size",
   batchSizePlaceHolder: "Please input the batch size",
   flushInterval: "Flush Interval(ms)",
-  flushIntervalPlaceHolder: "Please input the flush interval",
-  enabled: "Enabled"
+  flushIntervalPlaceHolder: "Please input the flush interval"
 };
 const influxdbZh = {
   title: "Influxdb",
@@ -406,8 +407,7 @@ const influxdbZh = {
   batchSize: "批量大小",
   batchSizePlaceHolder: "请输入批量提交数据大小",
   flushInterval: "定时提交间隔(ms)",
-  flushIntervalPlaceHolder: "请输入定时提交间隔",
-  enabled: "启用"
+  flushIntervalPlaceHolder: "请输入定时提交间隔"
 };
 
 const alarmEn = {

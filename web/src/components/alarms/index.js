@@ -1,7 +1,7 @@
 import React from "react";
 import Configs from "../configs";
 import axios from "axios";
-import { message } from "antd";
+import { message, Switch } from "antd";
 
 import { getAlarmI18n, getCommonI18n } from "../../i18n";
 import { ALARMS_TRY } from "../../urls";
@@ -25,6 +25,13 @@ const columns = [
         return;
       }
       return <pre>{row}</pre>;
+    }
+  },
+  {
+    title: getCommonI18n("enabled"),
+    dataIndex: "enabled",
+    render: row => {
+      return <Switch disabled={true} defaultChecked={row} />;
     }
   },
   {
@@ -69,6 +76,11 @@ const fields = [
       }
     ],
     type: "textarea"
+  },
+  {
+    label: getCommonI18n("enabled"),
+    key: "enabled",
+    type: "switch"
   },
   {
     label: getCommonI18n("description"),

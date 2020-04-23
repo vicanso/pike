@@ -20,6 +20,7 @@ type Alarm struct {
 	Name        string `yaml:"-" json:"name,omitempty" valid:"xName"`
 	URI         string `yaml:"uri" json:"uri,omitempty" valid:"url"`
 	Template    string `yaml:"template,omitempty" json:"template,omitempty" valid:"json"`
+	Enabled     bool   `yaml:"enabled,omitempty" json:"enabled,omitempty" valid:"-"`
 	Description string `yaml:"description,omitempty" json:"description,omitempty" valid:"-"`
 }
 
