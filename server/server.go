@@ -77,7 +77,7 @@ type Instance struct {
 	cron               *cron.Cron
 }
 
-type panicInfo struct {
+type uncaughtErrorInfo struct {
 	Name    string `json:"name,omitempty"`
 	Host    string `json:"host,omitempty"`
 	URL     string `json:"url,omitempty"`
@@ -255,7 +255,7 @@ func (ins *Instance) Fetch() (err error) {
 					zap.Error(err),
 				)
 				if uncaughtErrorAlarmConfig != nil {
-					_ = alarmHandle(uncaughtErrorAlarmConfig, struct2map(panicInfo{
+					_ = alarmHandle(uncaughtErrorAlarmConfig, struct2map(uncaughtErrorInfo{
 						Name:    name,
 						Host:    c.Request.Host,
 						URL:     c.Request.RequestURI,
