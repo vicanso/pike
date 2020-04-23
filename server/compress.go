@@ -72,6 +72,7 @@ func createCompressHandler(compressConfig *config.Compress) CompressHandler {
 				c.BodyBuffer == nil || c.BodyBuffer.Len() < compressConfig.MinLength {
 				return
 			}
+			// 未压缩的则使用压缩处理
 			compressForNotCacheable(c, compressConfig.Level)
 			return
 		}

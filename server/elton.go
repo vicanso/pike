@@ -59,11 +59,6 @@ var (
 
 func newErrorListener(dispatcher *cache.Dispatcher, logger *zap.Logger) elton.ErrorListener {
 	return func(c *elton.Context, err error) {
-		logger.Error("uncaught exception",
-			zap.String("host", c.Request.Host),
-			zap.String("url", c.Request.RequestURI),
-			zap.Error(err),
-		)
 		// 如果没有设置dispatcher，则无需要处理以下流程
 		if dispatcher == nil {
 			return

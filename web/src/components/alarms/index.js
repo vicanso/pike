@@ -44,7 +44,7 @@ const fields = [
         message: getAlarmI18n("nameRequireMessage")
       }
     ],
-    options: ["upstream", "panic"],
+    options: ["upstream", "uncaught-error"],
     type: "select"
   },
   {

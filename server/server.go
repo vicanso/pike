@@ -31,8 +31,6 @@ import (
 
 	"github.com/robfig/cron/v3"
 	"github.com/vicanso/elton"
-	"github.com/vicanso/elton/middleware"
-	"github.com/vicanso/hes"
 
 	"github.com/vicanso/pike/cache"
 	"github.com/vicanso/pike/config"
@@ -80,15 +78,15 @@ type Instance struct {
 }
 
 type panicInfo struct {
-	Name    string
-	Host    string
-	URL     string
-	Message string
+	Name    string `json:"name,omitempty"`
+	Host    string `json:"host,omitempty"`
+	URL     string `json:"url,omitempty"`
+	Message string `json:"message,omitempty"`
 }
 
 const (
-	upstreamAlarm = "upstream"
-	panicAlarm    = "panic"
+	upstreamAlarm      = "upstream"
+	uncaughtErrorAlarm = "uncaught-error"
 )
 
 func struct2map(value interface{}) map[string]string {
@@ -248,21 +246,16 @@ func (ins *Instance) Fetch() (err error) {
 		srv.toggleElton()
 		// 添加异常的日志与alarm
 		func(e *elton.Elton, name string) {
-			panicAlarmConfig := alarmsConfig.Get(panicAlarm)
+			uncaughtErrorAlarmConfig := alarmsConfig.Get(uncaughtErrorAlarm)
 			e.OnError(func(c *elton.Context, err error) {
-				he, ok := err.(*hes.Error)
-				// 如果不是从recover中恢复的panic异常，忽略
-				if !ok || he.Category != middleware.ErrRecoverCategory {
-					return
-				}
 				logger.Info("uncaught error",
 					zap.String("name", name),
 					zap.String("host", c.Request.Host),
 					zap.String("url", c.Request.RequestURI),
 					zap.Error(err),
 				)
-				if panicAlarmConfig != nil {
-					_ = alarmHandle(panicAlarmConfig, struct2map(panicInfo{
+				if uncaughtErrorAlarmConfig != nil {
+					_ = alarmHandle(uncaughtErrorAlarmConfig, struct2map(panicInfo{
 						Name:    name,
 						Host:    c.Request.Host,
 						URL:     c.Request.RequestURI,
