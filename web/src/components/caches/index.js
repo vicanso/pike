@@ -25,6 +25,8 @@ const { Option } = Select;
 const oneSecond = 1000;
 const oneMinute = 60 * oneSecond;
 const oneHour = 60 * oneMinute;
+const oneDay = 24 * oneHour;
+const oneWeek = 7 * oneDay;
 
 const columns = [
   {
@@ -242,6 +244,12 @@ class Caches extends Configs {
           }
           if (ms < oneHour) {
             return `${Math.round(ms / oneMinute)}m`;
+          }
+          if (ms < oneDay) {
+            return `${ms / oneHour}.toFixed(1)h`;
+          }
+          if (ms < oneWeek) {
+            return `${ms / oneDay}.toFixed(1)d`;
           }
           return new Date(value).toLocaleString();
         }
