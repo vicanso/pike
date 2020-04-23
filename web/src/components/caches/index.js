@@ -246,10 +246,10 @@ class Caches extends Configs {
             return `${Math.round(ms / oneMinute)}m`;
           }
           if (ms < oneDay) {
-            return `${ms / oneHour}.toFixed(1)h`;
+            return `${(ms / oneHour).toFixed(1)}h`;
           }
           if (ms < oneWeek) {
-            return `${ms / oneDay}.toFixed(1)d`;
+            return `${(ms / oneDay).toFixed(1)}d`;
           }
           return new Date(value).toLocaleString();
         }

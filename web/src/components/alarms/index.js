@@ -20,6 +20,7 @@ const columns = [
   {
     title: getAlarmI18n("template"),
     dataIndex: "template",
+    width: 400,
     render: row => {
       if (!row) {
         return;
