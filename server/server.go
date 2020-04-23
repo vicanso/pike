@@ -24,6 +24,7 @@ import (
 	"errors"
 	"net/http"
 	"regexp"
+	"runtime"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -82,6 +83,7 @@ type uncaughtErrorInfo struct {
 	Host    string `json:"host,omitempty"`
 	URL     string `json:"url,omitempty"`
 	Message string `json:"message,omitempty"`
+	Stack   string `json:"stack,omitempty"`
 }
 
 const (
@@ -118,6 +120,13 @@ func alarmHandle(alarmConfig *config.Alarm, data map[string]string) (err error) 
 		)
 	}
 	return
+}
+
+func getStack() []byte {
+	size := 2 << 10
+	stack := make([]byte, size)
+	runtime.Stack(stack, true)
+	return stack
 }
 
 // Fetch fetch config for instance
@@ -260,6 +269,7 @@ func (ins *Instance) Fetch() (err error) {
 						Host:    c.Request.Host,
 						URL:     c.Request.RequestURI,
 						Message: err.Error(),
+						Stack:   string(getStack()),
 					}))
 				}
 			})
