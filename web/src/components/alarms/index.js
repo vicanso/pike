@@ -25,7 +25,16 @@ const columns = [
       if (!row) {
         return;
       }
-      return <pre>{row}</pre>;
+      return (
+        <pre
+          style={{
+            "white-space": "pre-wrap",
+            "word-wrap": "break-word"
+          }}
+        >
+          {row}
+        </pre>
+      );
     }
   },
   {
