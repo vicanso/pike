@@ -135,6 +135,13 @@ const fields = [
   }
 ];
 
+function toFixed(value) {
+  if (value % 1 === 0) {
+    return `${value}`;
+  }
+  return value.toFixed(1);
+}
+
 class Caches extends Configs {
   constructor(props) {
     super(props);
@@ -246,10 +253,10 @@ class Caches extends Configs {
             return `${Math.round(ms / oneMinute)}m`;
           }
           if (ms < oneDay) {
-            return `${(ms / oneHour).toFixed(1)}h`;
+            return `${toFixed(ms / oneHour)}h`;
           }
           if (ms < oneWeek) {
-            return `${(ms / oneDay).toFixed(1)}d`;
+            return `${toFixed(ms / oneDay)}d`;
           }
           return new Date(value).toLocaleString();
         }
