@@ -168,7 +168,8 @@ class Caches extends Configs {
       return;
     }
     this.setState({
-      processing: true
+      processing: true,
+      caches: null
     });
     try {
       const name = currentCache || configs[0].name;
