@@ -59,6 +59,7 @@ docker run -it --rm -p 3015:3015 vicanso/pike --init --config etcd://192.168.1.8
 - `Servers` 应用服务地址，由协议、IP与端口组成，如`http://192.168.1.8:3000`，如果打开`backup`标记，则表示该应用地址为备选服务，只有非backup的服务都不可用时才使用备选
 - `Policy` 应用服务的选择方式，提供常用的几种策略，一般使用roundRobin则可
 - `HealthCheck` 应用服务健康检测，如果不配置则健康检测是通过判断端口是否有监听的形式，建议配置此参数为特定的检测url，该url的处理最好仅是用于判断服务是否可用，不建议使用逻辑特别复杂的url
+- `H2C` 是否支持http2 Clear Text的模式，在非tls加密的场景下使用http2，如果upstream支持则可启用此配置，否则不要启用
 - `Description` 描述
 
 Policy的服务选择策略并没有提供会话保持的形式，对于需要会话保持的使用数据库来实现。
@@ -142,11 +143,16 @@ Pike的大部分配置修改都可立即生效，但是Server中的几个配置�
 
 ## 告警配置
 
-应用告警配置，如upstream状态变化(失败或成功)，参数如下：
+应用告警配置，如upstream状态变化(失败或成功)，暂时支持两种告警：
+- uncaught-error 异常出错时触发
+- upstream upstream状态变化时触发
+
+配置的参数如下：
 
 - `Name` 告警名称，只能选择支持的告警，暂仅支持upstream的告警
 - `URI` 请求地址，当告警触发时，将相应的告警数据发送至此地址
 - `Template` 数据模板，当告警触发时，填充相应字段后则将数据发送
+- `Enabled` 是否启用
 - `Description` 描述
 
 <p align="center">
