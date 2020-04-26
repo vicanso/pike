@@ -241,6 +241,7 @@ class Caches extends Configs {
       {
         title: getCacheI18n("expiredAt"),
         dataIndex: "expiredAt",
+        defaultSortOrder: "ascend",
         width: 220,
         sorter: (a, b) => a.expiredAt - b.expiredAt,
         render: row => {

@@ -15,6 +15,9 @@ test-cover:
 build-web:
 	cd web && yarn build
 
+format:
+	cd web && yarn format
+
 build:
 	packr2
 	go build -ldflags "-X main.BuildedAt=`date -u +%Y%m%d.%H%M%S` -X main.CommitID=`git rev-parse --short HEAD`" -o pike
