@@ -66,6 +66,11 @@ const columns = [
     render: renderDuration
   },
   {
+    title: getServerI18n("readHeaderTimeout"),
+    dataIndex: "readHeaderTimeout",
+    render: renderDuration
+  },
+  {
     title: getServerI18n("writeTimeout"),
     dataIndex: "writeTimeout",
     render: renderDuration
@@ -169,6 +174,12 @@ const fields = [
     placeholder: getServerI18n("readTimeoutPlaceHolder")
   },
   {
+    label: getServerI18n("readHeaderTimeout"),
+    key: "readHeaderTimeout",
+    type: "duration",
+    placeholder: getServerI18n("readHeaderTimeoutPlaceHolder")
+  },
+  {
     label: getServerI18n("writeTimeout"),
     key: "writeTimeout",
     type: "duration",
@@ -198,7 +209,7 @@ class Servers extends Configs {
   constructor(props) {
     super(props);
     Object.assign(this.state, {
-      minWidth: 1800,
+      minWidth: 2000,
       title: getServerI18n("createUpdateTitle"),
       description: getServerI18n("createUpdateDescription"),
       columns,
