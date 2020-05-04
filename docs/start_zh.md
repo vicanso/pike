@@ -27,11 +27,11 @@ docker run -it --rm -p 3015:3015 vicanso/pike --init --config etcd://192.168.1.8
 - `PurgedAt` 定时清除过期缓存，建议设置为服务不活跃的时间，如深夜2点等。因为使用的是lru缓存，缓存不会超过最大容量，因此如果内存不是特别紧缺，可以只设置一天清除一次
 - `Description` 描述
 
-`HitForPass`不要设置过长或者过短的时间，因为Pike是对于当多个相同请求时，如果其状态未知是否可缓存请求(GET/HEAD)，仅会发送一个请求，根据返回的`Cache-Control`来判断是否可缓存。如果可缓存则直接响应数据并处理等待中的请求。对于不可缓存，返回数据，设置它为hit for pass，并让等待中的请求转发至upstream。之后相同的请求就会命中hit for pass，直接转发至upstream。因此设置不要太短的请求可以保证不可缓存的请求避免过多的等待状态。那么如果设置过长是否会有问题呢？如果upstream的服务保证接口的缓存性（可缓存或不可缓存）无论怎样都不会变化，那可以设置更长的有效期，避免经常性的因为缓存状态未知而等待。
+`HitForPass`不要设置过长或者过短的时间，Pike对于当多个相同请求时，如果其状态未知是否可缓存请求(GET/HEAD)，仅会发送一个请求，根据返回的`Cache-Control`来判断是否可缓存。如果可缓存则直接响应数据并处理等待中的请求。对于不可缓存的返回数据，设置它为hit for pass，并让等待中的请求转发至upstream。之后相同的请求就会命中hit for pass，直接转发至upstream。因此设置不要太短的请求可以保证不可缓存的请求避免过多的等待状态。那么如果设置过长是否会有问题呢？如果upstream的服务保证接口的缓存性（可缓存或不可缓存）无论怎样都不会变化，那可以设置更长的有效期，避免经常性的因为缓存状态未知而等待。
 
 <p align="center">
-<img src="../images/caches-update.png"/>
-<img src="../images/caches.png"/>
+<img src="../images/caches-update.jpg"/>
+<img src="../images/caches.jpg"/>
 </p>
 
 ## 压缩配置
@@ -39,16 +39,16 @@ docker run -it --rm -p 3015:3015 vicanso/pike --init --config etcd://192.168.1.8
 指定HTTP数据压缩的参数，参数配置如下：
 
 - `Name` 压缩配置名称，用于`Server`配置中勾选其使用的压缩配置
-- `Level` 压缩级别，gzip与br使用相同的压缩级别，对于互联网应用，建议使用9。若是局域网应用，可选择较低的压缩级别以提升压缩效率
-- `MinLength` 压缩的最小字节长度，一般选择1KB则可，因为过小的数据压缩有可能反而数据量变大。对于有特殊应用场景可根据场景选择更大的配置
+- `Level` 压缩级别，gzip与br使用相同的压缩级别，对于互联网应用，建议使用9，若CPU资源紧张可降低压缩级别。若是局域网应用，可选择较低的压缩级别以提升压缩效率
+- `MinLength` 压缩的最小字节长度，一般选择1KB则可，因为过小的数据压缩反而有可能数据量变大。对于有特殊应用场景可根据场景设置更高的限制
 - `Filter` 指定哪些数据类型压缩，默认为`text|javascript|json`，包括了常用的字符类数据，它根据正则匹配HTTP响应的Content-Type判断是否需要压缩
 - `Description` 描述
 
-数据压缩能节约带宽，提升应用体现（因为网络传输的时长比压缩损耗的时长大的多），对于互联网类应用，尽可能配置数据压缩。数据是否压缩根据`Content-Type`是否匹配filter，数据长度是否大于MinLength，符合这两个条件的才会被压缩。
+数据压缩能节约带宽，提升应用体现（因为网络传输的时长比压缩损耗的时长大的多），对于互联网类应用，尽可能配置数据压缩。数据是否压缩根据`Content-Type`是否匹配Filter，数据长度是否大于MinLength，符合这两个条件的才会被压缩。
 
 <p align="center">
-<img src="../images/compresses-update.png"/>
-<img src="../images/compresses.png"/>
+<img src="../images/compresses-update.jpg"/>
+<img src="../images/compresses.jpg"/>
 </p>
 
 ## Upstream配置
@@ -65,8 +65,8 @@ docker run -it --rm -p 3015:3015 vicanso/pike --init --config etcd://192.168.1.8
 Policy的服务选择策略并没有提供会话保持的形式，对于需要会话保持的使用数据库来实现。
 
 <p align="center">
-<img src="../images/upstreams-update.png"/>
-<img src="../images/upstreams.png"/>
+<img src="../images/upstreams-update.jpg"/>
+<img src="../images/upstreams.jpg"/>
 </p>
 
 ## Location配置
@@ -83,8 +83,8 @@ Policy的服务选择策略并没有提供会话保持的形式，对于需要�
 - `Description` 描述
 
 <p align="center">
-<img src="../images/locations-update.png"/>
-<img src="../images/locations.png"/>
+<img src="../images/locations-update.jpg"/>
+<img src="../images/locations.jpg"/>
 </p>
 
 ## Server配置
@@ -106,11 +106,11 @@ Policy的服务选择策略并没有提供会话保持的形式，对于需要�
 - `MaxHeaderBytes` http.Server的MaxHeaderBytes配置
 - `Description` 描述
 
-Pike的大部分配置修改都可立即生效，但是Server中的几个配置修改是需要重启程序的，包括：`Adress`, `ReadTimeout`, `ReadHeaderTimeout`, `WriteTimeout`, `IdleTimeout`, `MaxHeaderBytes`，因此这些参数是在创建http.Server是初始化使用，在造成完成后则不会再更新。
+Pike的大部分配置修改都可立即生效，但是Server中的几个配置修改是需要重启程序的，包括：`Adress`, `ReadTimeout`, `ReadHeaderTimeout`, `WriteTimeout`, `IdleTimeout`, `MaxHeaderBytes`，因此这些参数是在创建http.Server是初始化使用，在初始化实例后不会再更新。
 
 <p align="center">
-<img src="../images/servers-update.png"/>
-<img src="../images/servers.png"/>
+<img src="../images/servers-update.jpg"/>
+<img src="../images/servers.jpg"/>
 </p>
 
 ## 证书配置
@@ -123,7 +123,7 @@ Pike的大部分配置修改都可立即生效，但是Server中的几个配置�
 - `Description` 描述
 
 <p align="center">
-<img src="../images/certs-update.png"/>
+<img src="../images/certs-update.jpg"/>
 </p>
 
 ## 管理配置
@@ -137,15 +137,15 @@ Pike的大部分配置修改都可立即生效，但是Server中的几个配置�
 - `Description` 描述
 
 <p align="center">
-<img src="../images/admin-update.png"/>
-<img src="../images/admin.png"/>
+<img src="../images/admin-update.jpg"/>
+<img src="../images/admin.jpg"/>
 </p>
 
 ## 告警配置
 
-应用告警配置，如upstream状态变化(失败或成功)，暂时支持两种告警：
-- uncaught-error 异常出错时触发
-- upstream upstream状态变化时触发
+应用告警配置，触发告警的时候它会根据配置的模板替换相应的数据后触发告警调用。如upstream状态变化(失败或成功)，暂时支持两种告警：
+- `uncaught-error` 异常出错时触发
+- `upstream` upstream状态变化时触发
 
 配置的参数如下：
 
@@ -155,9 +155,46 @@ Pike的大部分配置修改都可立即生效，但是Server中的几个配置�
 - `Enabled` 是否启用
 - `Description` 描述
 
+### uncaught-error
+
+异常告警的相关替换参数如下：
+
+- `name` 服务名称
+- `host` 异常出错的请求host
+- `url` 异常出错的url
+- `message` 异常出错信息
+- `stack` 异常出错调用栈
+
+如我使用的异常告警模板如下：
+
+```json
+{
+  "service": "pike",
+  "category": "uncaught-error",
+  "message": "{{name}}({{host}}) url:{{url}} message:{{message}}\n stack:{{stack}}"
+}
+```
+
+### upstream
+
+upstream状态变化的相关替换参数如下：
+
+- `name` 服务名称
+- `url` upstream状态检测的url
+- `status` upstream当前状态
+
+如我使用的upstream状态变更告警模板如下：
+```json
+{
+  "service": "pike",
+  "category": "upstream",
+  "message": "{{name}}({{url}}) status is {{status}}"
+}
+```
+
 <p align="center">
-<img src="../images/alarms-update.png"/>
-<img src="../images/alarms.png"/>
+<img src="../images/alarms-update.jpg"/>
+<img src="../images/alarms.jpg"/>
 </p>
 
 ## influxdb配置
@@ -173,6 +210,6 @@ influxdb的配置，用于将http请求的统计信息写入influxdb，参数如
 - `Description` 描述
 
 <p align="center">
-<img src="../images/influxdb-update.png"/>
-<img src="../images/influxdb.png"/>
+<img src="../images/influxdb-update.jpg"/>
+<img src="../images/influxdb.jpg"/>
 </p>
