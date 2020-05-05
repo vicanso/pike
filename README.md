@@ -8,8 +8,12 @@ HTTP cache server such as varnish.
 - Web UI is easy
 - Support br and gzip
 - Support non-interrupted update config
+- Support multi port listen for multi http servers
 - Support h2c upstream proxy
 - Custom alarm for upstream or panic
+- Support add cert for http2
+- Support influxdb for performance statistics
+
 
 ## Flow
 

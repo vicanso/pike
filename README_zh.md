@@ -6,6 +6,7 @@
 - 简单易用的Web UI
 - 支持br与gzip压缩，根据客户端动态选择压缩方式，预压缩缓存数据大幅度提升系统性能
 - 支持无中断更新配置，更新配置后自动以新的配置启用新的HTTP服务并无中断式切换
+- 多端口监听，可启动多个HTTP服务
 - 支持h2c的upstream转发
 - 可针对upstream或未处理异常配置自定义告警
 - 支持配置加密证书后自动支持http2
@@ -49,3 +50,7 @@ go get -u github.com/gobuffalo/packr/v2/packr2
 ```bash
 make build-web && make build 
 ```
+
+## 如何使用
+
+介绍在启动pike之后，如何配置并使用pike。[开始使用pike](https://treexie.gitbook.io/pike/zhong-wen/start_zh)。
