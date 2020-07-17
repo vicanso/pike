@@ -58,6 +58,16 @@ const columns = [
     dataIndex: "healthCheck"
   },
   {
+    title: getUpstreamI18n("acceptEncodings"),
+    dataIndex: "acceptEncodings",
+    render: row => {
+      if (!row) {
+        return;
+      }
+      return row.join(', '); 
+    }
+  },
+  {
     title: getUpstreamI18n("h2c"),
     dataIndex: "enableH2C",
     render: row => {
@@ -104,6 +114,14 @@ const fields = [
     label: getUpstreamI18n("healthCheck"),
     key: "healthCheck",
     placeholder: getUpstreamI18n("healthCheckPlaceHolder")
+  },
+  {
+    label: getUpstreamI18n("acceptEncodings"),
+    key: "acceptEncodings",
+    placeholder: getUpstreamI18n("acceptEncodingsPlaceHolder"),
+    type: "select",
+    mode: "multiple",
+    options: ["snz", "lz4", "gzip"]
   },
   {
     label: getUpstreamI18n("h2c"),

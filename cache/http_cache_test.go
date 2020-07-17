@@ -43,7 +43,9 @@ func TestHTTPHeaders(t *testing.T) {
 	header.Add("A", "2")
 	header.Add("B", "3")
 	header.Add("D", "4")
-	headers := NewHTTPHeaders(header, "D")
+	httpData := HTTPData{}
+	httpData.CacheHeaders(header, "D")
+	headers := httpData.Headers
 	assert.Equal(3, len(headers))
 	fieldA := ""
 	fieldB := ""

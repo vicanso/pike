@@ -121,17 +121,9 @@ func (httpData *HTTPData) SetResponse(c *elton.Context) {
 	c.BodyBuffer = buf
 }
 
-// NewHTTPHeader new a http header
-func NewHTTPHeader(key, value []byte) HTTPHeader {
-	header := make([][]byte, 2)
-	header[0] = key
-	header[1] = value
-	return header
-}
-
-// NewHTTPHeaders new a http headers
-func NewHTTPHeaders(header http.Header, ignoreHeaders ...string) (headers HTTPHeaders) {
-	headers = make(HTTPHeaders, 0, 10)
+// CacheHeaders 设置要缓存的http头
+func (httpData *HTTPData) CacheHeaders(header http.Header, ignoreHeaders ...string) {
+	headers := make(HTTPHeaders, 0, 10)
 	for key, values := range header {
 		ignore := false
 		for _, ignoreHeader := range ignoreHeaders {
@@ -149,7 +141,52 @@ func NewHTTPHeaders(header http.Header, ignoreHeaders ...string) (headers HTTPHe
 			headers = append(headers, h)
 		}
 	}
+	httpData.Headers = headers
+}
+
+// DoGzip 数据做gzip压缩处理
+func (httpData *HTTPData) DoGzip(level int) (err error) {
+	// 已压缩
+	if len(httpData.GzipBody) != 0 {
+		return
+	}
+	// 不存在原始数据
+	if len(httpData.RawBody) == 0 {
+		return
+	}
+	httpData.GzipBody, err = util.Gzip(httpData.RawBody, level)
+	if err != nil {
+		return
+	}
 	return
+}
+
+func (httpData *HTTPData) DoBrotli(level int) (err error) {
+	// 已压缩
+	if len(httpData.BrBody) != 0 {
+		return
+	}
+	rawBody := httpData.RawBody
+	if len(rawBody) == 0 && len(httpData.GzipBody) != 0 {
+		rawBody, _ = util.Gunzip(httpData.GzipBody)
+	}
+	// 无原始数据
+	if len(rawBody) == 0 {
+		return
+	}
+	httpData.BrBody, err = util.Brotli(rawBody, level)
+	if err != nil {
+		return
+	}
+	return
+}
+
+// NewHTTPHeader new a http header
+func NewHTTPHeader(key, value []byte) HTTPHeader {
+	header := make([][]byte, 2)
+	header[0] = key
+	header[1] = value
+	return header
 }
 
 // NewHTTPCache new a http cache

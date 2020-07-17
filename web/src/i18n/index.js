@@ -172,7 +172,9 @@ const upstreamEn = {
     "Please input the url path of health check, eg: /ping",
   h2c: "H2C",
   h2cTitle:
-    "Enable http2 transport for upstream, the upstream should be supported h2c"
+    "Enable http2 transport for upstream, the upstream should be supported h2c",
+  acceptEncodings: "Accept Encodings",
+  acceptEncodingsPlaceHolder: "Please select the accept encodings of upstream proxy",
 };
 const upstreamZh = {
   createUpdateTitle: "创建或更新Upstream",
@@ -192,7 +194,9 @@ const upstreamZh = {
   healthCheck: "健康检测",
   healthCheckPlaceHolder: "请输入健康检测的路径，如： /ping",
   h2c: "H2C",
-  h2cTitle: "使用HTTP2的传输方式，upstream必须能够支持h2c的形式"
+  h2cTitle: "使用HTTP2的传输方式，upstream必须能够支持h2c的形式",
+  acceptEncodings: "接受编码",
+  acceptEncodingsPlaceHolder: "请选择upstream代理可支持的编码类型",
 };
 
 const locationEn = {

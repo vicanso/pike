@@ -160,6 +160,7 @@ func newCacheDispatchMiddleware(dispatcher *cache.Dispatcher, compress *config.C
 		}
 
 		httpData = compressHandler(c, cacheable)
+		// 如果是可缓存的，则缓存数据
 		if cacheable {
 			httpCache.Cachable(cacheAge, httpData)
 		}

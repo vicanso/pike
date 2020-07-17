@@ -63,23 +63,11 @@ func createCompressHandler(compressConfig *config.Compress) CompressHandler {
 		// 前置已针对未支持的encoding过滤，因此data只可能为未压缩或者gzip数据
 		encoding := c.GetHeader(elton.HeaderContentEncoding)
 
-		// 不可缓存的，响应仅用于本次
-		if !cacheable {
-			// 如果未指定filter，或者已压缩过，或者数据长度较小，则直接返回
-			// 对于不可缓存数据，不做动态压缩匹配（br gzip)
-			if filter == nil ||
-				encoding != "" ||
-				c.BodyBuffer == nil || c.BodyBuffer.Len() < compressConfig.MinLength {
-				return
-			}
-			// 未压缩的则使用压缩处理
-			compressForNotCacheable(c, compressConfig.Level)
-			return
-		}
 		var rawBody []byte
 		var gzipBody []byte
 		bufLength := 0
 		if c.BodyBuffer != nil {
+			// 如果后端程序已压缩，则简单使用压缩后的长度来判断
 			if encoding == elton.Gzip {
 				gzipBody = c.BodyBuffer.Bytes()
 				bufLength = len(gzipBody)
@@ -95,29 +83,34 @@ func createCompressHandler(compressConfig *config.Compress) CompressHandler {
 			RawBody:    rawBody,
 			GzipBody:   gzipBody,
 		}
-		httpData.Headers = cache.NewHTTPHeaders(headers, elton.HeaderContentEncoding, elton.HeaderContentLength)
+		httpData.CacheHeaders(headers, elton.HeaderContentEncoding, elton.HeaderContentLength)
 
-		// 如果未指定filter的数据或少于最小压缩长度
-		if filter == nil || bufLength < compressConfig.MinLength {
-			return
-		}
-		contentType := headers.Get(elton.HeaderContentType)
-		if !filter.MatchString(contentType) {
-			return
-		}
-		// 如果有gzip数据
-		if len(gzipBody) != 0 {
-			rawBody, _ = util.Gunzip(gzipBody)
-		} else {
-			// 从原始数据中压缩gzip
-			httpData.GzipBody, _ = util.Gzip(rawBody, compressConfig.Level)
-			// 如果gzip压缩成功，则删除rawBody（因为基本所有客户端都支持gzip，若不支持则从gzip解压获取），减少内存占用
+		// 如果指定压缩数据类型的filter
+		// 数据长度大于等于最小压缩长度
+		// 而且数据类型符合filter
+		if filter != nil &&
+			bufLength >= compressConfig.MinLength &&
+			filter.MatchString(headers.Get(elton.HeaderContentType)) {
+			// TODO 对于不可缓存请求，是否可以pipe的形式返回
+			// 不可缓存的请求，只按需压缩
+			if !cacheable {
+				acceptEncoding := c.GetRequestHeader(elton.HeaderAcceptEncoding)
+				if strings.Contains(acceptEncoding, elton.Br) {
+					_ = httpData.DoBrotli(compressConfig.Level)
+				} else if strings.Contains(acceptEncoding, elton.Gzip) {
+					_ = httpData.DoGzip(compressConfig.Level)
+				}
+			} else {
+				// 可缓存的则预压缩
+				// 如果出错忽略
+				_ = httpData.DoGzip(compressConfig.Level)
+				_ = httpData.DoBrotli(compressConfig.Level)
+			}
+
+			// 如果有压缩gzip成功，则删除raw body，因为绝大部分客户端都支持gzip，不支持也可以通过gzip解压
 			if len(httpData.GzipBody) != 0 {
 				httpData.RawBody = nil
 			}
-		}
-		if len(rawBody) != 0 {
-			httpData.BrBody, _ = util.Brotli(rawBody, compressConfig.Level)
 		}
 		httpData.SetResponse(c)
 		return

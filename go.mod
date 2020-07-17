@@ -9,8 +9,10 @@ require (
 	github.com/dgraph-io/badger v1.6.1
 	github.com/go-yaml/yaml v2.1.0+incompatible
 	github.com/gobuffalo/packr/v2 v2.8.0
+	github.com/golang/snappy v0.0.1
 	github.com/google/uuid v1.1.1 // indirect
 	github.com/influxdata/influxdb-client-go v1.3.0
+	github.com/pierrec/lz4 v2.5.2+incompatible
 	github.com/robfig/cron/v3 v3.0.1
 	github.com/spf13/cobra v1.0.0
 	github.com/stretchr/testify v1.6.1

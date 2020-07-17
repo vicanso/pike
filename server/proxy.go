@@ -15,11 +15,11 @@
 package server
 
 import (
+	"bytes"
 	"crypto/tls"
 	"net"
 	"net/http"
 	"net/url"
-	"strings"
 	"time"
 
 	"github.com/vicanso/elton"
@@ -40,8 +40,17 @@ var (
 	}
 )
 
-func newProxyHandlers(locations config.Locations, upstreams *upstream.Upstreams) map[string]elton.Handler {
-	proxyMids := make(map[string]elton.Handler)
+const (
+	snappyEncoding = "snz"
+	lz4Encoding    = "lz4"
+)
+
+// 解压函数
+type Decompression func([]byte) ([]byte, error)
+
+func newProxyHandlers(locations config.Locations, upstreams *upstream.Upstreams) (proxyMids map[string]elton.Handler, acceptEncodings map[string]string) {
+	proxyMids = make(map[string]elton.Handler)
+	acceptEncodings = make(map[string]string)
 
 	for _, item := range locations {
 		up := upstreams.Get(item.Upstream)
@@ -49,7 +58,8 @@ func newProxyHandlers(locations config.Locations, upstreams *upstream.Upstreams)
 			continue
 		}
 		var transport http.RoundTripper
-		if upstreams.H2CIsEnabled(item.Name) {
+		// 判断该upstream是否支持h2c的形式
+		if upstreams.H2CIsEnabled(item.Upstream) {
 			transport = &http2.Transport{
 				// 允许使用http的方式
 				AllowHTTP: true,
@@ -75,6 +85,12 @@ func newProxyHandlers(locations config.Locations, upstreams *upstream.Upstreams)
 				ExpectContinueTimeout: 1 * time.Second,
 			}
 		}
+		// location 对应的upstream接受的编码
+		acceptEncoding := upstreams.GetAcceptEncoding(item.Upstream)
+		// 如果配置了则设置该location对应的编码
+		if acceptEncoding != "" {
+			acceptEncodings[item.Name] = acceptEncoding
+		}
 
 		proxyMids[item.Name] = middleware.NewProxy(middleware.ProxyConfig{
 			Rewrites:  item.Rewrites,
@@ -94,14 +110,35 @@ func newProxyHandlers(locations config.Locations, upstreams *upstream.Upstreams)
 				}, nil
 			},
 		})
-
 	}
-	return proxyMids
+	return
+}
+
+// decompress 对于snappy与lz4的压缩解压
+func decompress(c *elton.Context) (err error) {
+	var fn Decompression
+	switch c.GetHeader(elton.HeaderContentEncoding) {
+	case snappyEncoding:
+		fn = util.DecodeSnappy
+	case lz4Encoding:
+		fn = util.DecodeLz4
+	}
+	// 如果无匹配的压缩处理，则返回
+	if fn == nil {
+		return
+	}
+	buf, err := fn(c.BodyBuffer.Bytes())
+	if err != nil {
+		return err
+	}
+	c.BodyBuffer = bytes.NewBuffer(buf)
+	c.Header().Del(elton.HeaderContentEncoding)
+	return
 }
 
 // createProxyMiddleware create proxy middleware handler
 func createProxyMiddleware(locations config.Locations, upstreams *upstream.Upstreams) elton.Handler {
-	proxyMids := newProxyHandlers(locations, upstreams)
+	proxyMids, acceptEncodings := newProxyHandlers(locations, upstreams)
 	return func(c *elton.Context) (err error) {
 		originalNext := c.Next
 		// 由于proxy中间件会调用next，因此直接覆盖，
@@ -138,11 +175,11 @@ func createProxyMiddleware(locations config.Locations, upstreams *upstream.Upstr
 		}
 
 		reqHeader := c.Request.Header
-		var ifModifiedSince, ifNoneMatch, acceptEncoding string
+		var ifModifiedSince, ifNoneMatch string
 		status := c.GetInt(statusKey)
+		acceptEncoding := reqHeader.Get(elton.HeaderAcceptEncoding)
 		// 针对fetching的请求，由于其最终状态未知，因此需要删除有可能导致304的请求，避免无法生成缓存
 		if status == cache.StatusFetching {
-			acceptEncoding = reqHeader.Get(elton.HeaderAcceptEncoding)
 			ifModifiedSince = reqHeader.Get(elton.HeaderIfModifiedSince)
 			ifNoneMatch = reqHeader.Get(elton.HeaderIfNoneMatch)
 			if ifModifiedSince != "" {
@@ -151,20 +188,22 @@ func createProxyMiddleware(locations config.Locations, upstreams *upstream.Upstr
 			if ifNoneMatch != "" {
 				reqHeader.Del(elton.HeaderIfNoneMatch)
 			}
-
-			if strings.Contains(acceptEncoding, elton.Gzip) {
-				reqHeader.Set(elton.HeaderAcceptEncoding, elton.Gzip)
-			} else {
-				reqHeader.Del(elton.HeaderAcceptEncoding)
-			}
 		}
+		// TODO 支持界面配置
+		// 设置默认支持snappy lz4与gzip压缩
+		reqAcceptEncoding, ok := acceptEncodings[l.Name]
+		if !ok {
+			reqAcceptEncoding = elton.Gzip
+		}
+		reqHeader.Set(elton.HeaderAcceptEncoding, reqAcceptEncoding)
 
 		err = fn(c)
 
+		// 解压处理，解压出错的忽略
+		_ = decompress(c)
+
 		// 将原有的请求头恢复（就算出错也需要恢复）
-		if acceptEncoding != "" {
-			reqHeader.Set(elton.HeaderAcceptEncoding, acceptEncoding)
-		}
+		reqHeader.Set(elton.HeaderAcceptEncoding, acceptEncoding)
 		if ifModifiedSince != "" {
 			reqHeader.Set(elton.HeaderIfModifiedSince, ifModifiedSince)
 		}

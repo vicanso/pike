@@ -25,13 +25,14 @@ type UpstreamServer struct {
 
 // Upstream upstream config
 type Upstream struct {
-	cfg         *Config
-	HealthCheck string           `yaml:"healthCheck,omitempty" json:"healthCheck,omitempty" valid:"xURLPath,optional"`
-	Policy      string           `yaml:"policy,omitempty" json:"policy,omitempty" valid:"-"`
-	Name        string           `yaml:"-" json:"name,omitempty" valid:"xName"`
-	EnableH2C   bool             `yaml:"enableH2C,omitempty" json:"enableH2C,omitempty" valid:"-"`
-	Servers     []UpstreamServer `yaml:"servers,omitempty" json:"servers,omitempty" valid:"xServers"`
-	Description string           `yaml:"description,omitempty" json:"description,omitempty" valid:"-"`
+	cfg             *Config
+	HealthCheck     string           `yaml:"healthCheck,omitempty" json:"healthCheck,omitempty" valid:"xURLPath,optional"`
+	Policy          string           `yaml:"policy,omitempty" json:"policy,omitempty" valid:"-"`
+	Name            string           `yaml:"-" json:"name,omitempty" valid:"xName"`
+	EnableH2C       bool             `yaml:"enableH2C,omitempty" json:"enableH2C,omitempty" valid:"-"`
+	AcceptEncodings []string         `yaml:"acceptEncodings,omitempty" json:"acceptEncodings,omitempty" valid:"-"`
+	Servers         []UpstreamServer `yaml:"servers,omitempty" json:"servers,omitempty" valid:"xServers"`
+	Description     string           `yaml:"description,omitempty" json:"description,omitempty" valid:"-"`
 }
 
 // Upstreams upstream config list

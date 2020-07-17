@@ -17,6 +17,8 @@
 package upstream
 
 import (
+	"strings"
+
 	"github.com/vicanso/pike/config"
 
 	us "github.com/vicanso/upstream"
@@ -75,13 +77,31 @@ func (upstreams *Upstreams) Get(name string) *us.HTTP {
 	return upstreams.httpUps[name]
 }
 
+// getUpstreamConfig get upstream's config
+func (upstreams *Upstreams) getUpstreamConfig(name string) *config.Upstream {
+	for _, item := range upstreams.configs {
+		if item.Name == name {
+			return item
+		}
+	}
+	return nil
+}
+
+// GetAcceptEncoding get upstream's accept encoding
+func (upstreams *Upstreams) GetAcceptEncoding(name string) (encoding string) {
+	conf := upstreams.getUpstreamConfig(name)
+	if conf != nil {
+		encoding = strings.Join(conf.AcceptEncodings, ", ")
+	}
+	return
+}
+
 // H2CIsEnabled is the upstream h2c enabled
 func (upstreams *Upstreams) H2CIsEnabled(name string) bool {
 	enabled := false
-	for _, item := range upstreams.configs {
-		if item.Name == name {
-			enabled = item.EnableH2C
-		}
+	conf := upstreams.getUpstreamConfig(name)
+	if conf != nil {
+		enabled = conf.EnableH2C
 	}
 	return enabled
 }
