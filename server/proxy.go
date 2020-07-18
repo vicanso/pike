@@ -189,7 +189,6 @@ func createProxyMiddleware(locations config.Locations, upstreams *upstream.Upstr
 				reqHeader.Del(elton.HeaderIfNoneMatch)
 			}
 		}
-		// TODO 支持界面配置
 		// 设置默认支持snappy lz4与gzip压缩
 		reqAcceptEncoding, ok := acceptEncodings[l.Name]
 		if !ok {

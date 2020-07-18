@@ -111,13 +111,17 @@ func (httpData *HTTPData) SetResponse(c *elton.Context) {
 		if len(rawBody) == 0 && len(httpData.GzipBody) != 0 {
 			rawBody, _ = util.Gunzip(httpData.GzipBody)
 		}
-		buf = bytes.NewBuffer(rawBody)
+		if len(rawBody) != 0 {
+			buf = bytes.NewBuffer(rawBody)
+		}
 	}
 	for _, httpHeader := range httpData.Headers {
 		c.SetHeader(util.ByteSliceToString(httpHeader[0]), util.ByteSliceToString(httpHeader[1]))
 	}
-	c.SetHeader(elton.HeaderContentLength, strconv.Itoa(buf.Len()))
-	c.SetHeader(elton.HeaderContentEncoding, encoding)
+	if buf != nil {
+		c.SetHeader(elton.HeaderContentLength, strconv.Itoa(buf.Len()))
+		c.SetHeader(elton.HeaderContentEncoding, encoding)
+	}
 	c.BodyBuffer = buf
 }
 

@@ -70,7 +70,8 @@ func TestCreateCompressHandler(t *testing.T) {
 		buf := []byte("abcd")
 		c.BodyBuffer = bytes.NewBuffer(buf)
 		httpData := fn(c, false)
-		assert.Nil(httpData)
+		assert.Nil(httpData.BrBody)
+		assert.Nil(httpData.GzipBody)
 		assert.Equal(buf, c.BodyBuffer.Bytes())
 
 		// content encoding is set
@@ -85,7 +86,8 @@ func TestCreateCompressHandler(t *testing.T) {
 		buf = []byte("abcd")
 		c.BodyBuffer = bytes.NewBuffer(buf)
 		httpData = fn(c, false)
-		assert.Nil(httpData)
+		assert.Nil(httpData.BrBody)
+		assert.NotNil(httpData.GzipBody)
 		assert.Equal(buf, c.BodyBuffer.Bytes())
 
 		// buffer's length less than min compress length
@@ -100,7 +102,8 @@ func TestCreateCompressHandler(t *testing.T) {
 		buf = []byte("abcd")
 		c.BodyBuffer = bytes.NewBuffer(buf)
 		httpData = fn(c, false)
-		assert.Nil(httpData)
+		assert.Nil(httpData.BrBody)
+		assert.Nil(httpData.GzipBody)
 		assert.Equal(buf, c.BodyBuffer.Bytes())
 	})
 

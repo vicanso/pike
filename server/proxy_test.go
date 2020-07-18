@@ -110,7 +110,7 @@ func TestNewProxyHandlers(t *testing.T) {
 
 	defer upstreams.Destroy()
 
-	fns := newProxyHandlers(locations, upstreams)
+	fns, _ := newProxyHandlers(locations, upstreams)
 
 	req := httptest.NewRequest("GET", "/", nil)
 	resp := httptest.NewRecorder()
@@ -180,7 +180,7 @@ func TestCreateProxyMiddleware(t *testing.T) {
 		err = json.Unmarshal(c.BodyBuffer.Bytes(), &m)
 
 		assert.Nil(err)
-		assert.Equal("br, gzip", m[elton.HeaderAcceptEncoding])
+		assert.Equal("gzip", m[elton.HeaderAcceptEncoding])
 		assert.NotEmpty(m[elton.HeaderIfModifiedSince])
 		assert.NotEmpty(m[elton.HeaderIfNoneMatch])
 		assert.Equal("/check", m["url"])
