@@ -17,10 +17,18 @@
 package util
 
 import (
+	"bytes"
+	"io/ioutil"
+
 	"github.com/golang/snappy"
 )
 
 func DecodeSnappy(buf []byte) ([]byte, error) {
+	// 如果是0xff，表示通过new writer的形式压缩
+	if buf[0] == 0xff {
+		r := snappy.NewReader(bytes.NewReader(buf))
+		return ioutil.ReadAll(r)
+	}
 	var dst []byte
 	return snappy.Decode(dst, buf)
 }
