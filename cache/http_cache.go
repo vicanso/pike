@@ -116,7 +116,7 @@ func (httpData *HTTPData) SetResponse(c *elton.Context) {
 		}
 	}
 	for _, httpHeader := range httpData.Headers {
-		c.SetHeader(util.ByteSliceToString(httpHeader[0]), util.ByteSliceToString(httpHeader[1]))
+		c.AddHeader(util.ByteSliceToString(httpHeader[0]), util.ByteSliceToString(httpHeader[1]))
 	}
 	if buf != nil {
 		c.SetHeader(elton.HeaderContentLength, strconv.Itoa(buf.Len()))

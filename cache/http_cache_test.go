@@ -165,10 +165,14 @@ func TestSetResponse(t *testing.T) {
 		req.Header.Set(elton.HeaderAcceptEncoding, "gzip, deflate, br")
 		c := elton.NewContext(resp, req)
 		brBody := []byte("br data")
-		headers := make(HTTPHeaders, 1)
+		headers := make(HTTPHeaders, 2)
 		headers[0] = HTTPHeader{
-			[]byte("a"),
+			[]byte("A"),
 			[]byte("1"),
+		}
+		headers[1] = HTTPHeader{
+			[]byte("A"),
+			[]byte("2"),
 		}
 		httpData := HTTPData{
 			BrBody:   brBody,
@@ -179,7 +183,7 @@ func TestSetResponse(t *testing.T) {
 		assert.Equal(brBody, c.BodyBuffer.Bytes())
 		assert.Equal("7", c.GetHeader(elton.HeaderContentLength))
 		assert.Equal("br", c.GetHeader(elton.HeaderContentEncoding))
-		assert.Equal("1", c.GetHeader("a"))
+		assert.Equal([]string{"1", "2"}, c.Header()["A"])
 	})
 
 	t.Run("gzip", func(t *testing.T) {
