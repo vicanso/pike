@@ -93,7 +93,7 @@ func newCacheDispatchMiddleware(dispatcher *cache.Dispatcher, compress *config.C
 			c.Set(statusKey, status)
 			// 如果获取到缓存，则直接返回
 			if status == cache.StatusCacheable {
-				httpData.SetResponse(c)
+				httpData.SetResponse(c, false)
 				// 设置Age
 				age := httpCache.Age()
 				if age > 0 {

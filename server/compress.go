@@ -112,7 +112,7 @@ func createCompressHandler(compressConfig *config.Compress) CompressHandler {
 				httpData.RawBody = nil
 			}
 		}
-		httpData.SetResponse(c)
+		httpData.SetResponse(c, true)
 		return
 	}
 }

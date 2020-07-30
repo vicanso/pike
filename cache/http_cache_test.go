@@ -179,7 +179,7 @@ func TestSetResponse(t *testing.T) {
 			GzipBody: []byte("gzip data"),
 			Headers:  headers,
 		}
-		httpData.SetResponse(c)
+		httpData.SetResponse(c, false)
 		assert.Equal(brBody, c.BodyBuffer.Bytes())
 		assert.Equal("7", c.GetHeader(elton.HeaderContentLength))
 		assert.Equal("br", c.GetHeader(elton.HeaderContentEncoding))
@@ -196,7 +196,7 @@ func TestSetResponse(t *testing.T) {
 		httpData := HTTPData{
 			GzipBody: gzipBody,
 		}
-		httpData.SetResponse(c)
+		httpData.SetResponse(c, false)
 		assert.Equal(gzipBody, c.BodyBuffer.Bytes())
 		assert.Equal("9", c.GetHeader(elton.HeaderContentLength))
 		assert.Equal("gzip", c.GetHeader(elton.HeaderContentEncoding))
@@ -211,7 +211,7 @@ func TestSetResponse(t *testing.T) {
 		httpData := HTTPData{
 			RawBody: rawBody,
 		}
-		httpData.SetResponse(c)
+		httpData.SetResponse(c, false)
 		assert.Equal(rawBody, c.BodyBuffer.Bytes())
 		assert.Equal("8", c.GetHeader(elton.HeaderContentLength))
 		assert.Empty(c.GetHeader(elton.HeaderContentEncoding))
@@ -227,7 +227,7 @@ func TestSetResponse(t *testing.T) {
 		httpData := HTTPData{
 			GzipBody: gzipBody,
 		}
-		httpData.SetResponse(c)
+		httpData.SetResponse(c, false)
 		assert.Equal(rawBody, c.BodyBuffer.Bytes())
 		assert.Equal("8", c.GetHeader(elton.HeaderContentLength))
 		assert.Empty(c.GetHeader(elton.HeaderContentEncoding))

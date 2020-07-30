@@ -91,7 +91,7 @@ func StatusString(status int) string {
 }
 
 // SetResponse set response
-func (httpData *HTTPData) SetResponse(c *elton.Context) {
+func (httpData *HTTPData) SetResponse(c *elton.Context, ignoreHeader bool) {
 	c.StatusCode = httpData.StatusCode
 	acceptEncoding := c.GetRequestHeader(elton.HeaderAcceptEncoding)
 	var buf *bytes.Buffer
@@ -115,9 +115,12 @@ func (httpData *HTTPData) SetResponse(c *elton.Context) {
 			buf = bytes.NewBuffer(rawBody)
 		}
 	}
-	for _, httpHeader := range httpData.Headers {
-		c.AddHeader(util.ByteSliceToString(httpHeader[0]), util.ByteSliceToString(httpHeader[1]))
+	if !ignoreHeader {
+		for _, httpHeader := range httpData.Headers {
+			c.AddHeader(util.ByteSliceToString(httpHeader[0]), util.ByteSliceToString(httpHeader[1]))
+		}
 	}
+
 	if buf != nil {
 		c.SetHeader(elton.HeaderContentLength, strconv.Itoa(buf.Len()))
 		c.SetHeader(elton.HeaderContentEncoding, encoding)
