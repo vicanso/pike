@@ -24,10 +24,13 @@ import (
 )
 
 func DecodeSnappy(buf []byte) ([]byte, error) {
-	// 如果是0xff，表示通过new writer的形式压缩
+	// 如果是0xff，优先使用new reader的形式解压
 	if buf[0] == 0xff {
 		r := snappy.NewReader(bytes.NewReader(buf))
-		return ioutil.ReadAll(r)
+		buf, err := ioutil.ReadAll(r)
+		if err != snappy.ErrUnsupported {
+			return buf, err
+		}
 	}
 	var dst []byte
 	return snappy.Decode(dst, buf)
