@@ -9,8 +9,6 @@ analyzer:
     - test/_data/**
     - test/mock_packages/**
     - test/rules/**
-    # model中的代码大部分由插件生成，因为不校验
-    - lib/model/**
 linter:
   rules:
 #    - always_put_control_body_on_new_line

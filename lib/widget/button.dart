@@ -21,7 +21,7 @@ class XFullButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final currentPadding = padding ?? EdgeInsets.all(15.0);
+    final currentPadding = padding ?? EdgeInsets.all(20.0);
     final currentMargin = margin ?? EdgeInsets.all(15.0);
     return Container(
       width: double.infinity,

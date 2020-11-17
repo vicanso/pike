@@ -1,14 +1,15 @@
 ///
 /// 用户信息相关bloc
 ///
+import 'dart:convert';
 import 'package:bloc/bloc.dart';
 
-import './user_event.dart';
-import './user_state.dart';
 import '../config/url.dart' as urls;
 import '../helper/request.dart';
 import '../helper/util.dart';
 import '../model/user.dart';
+import './user_event.dart';
+import './user_state.dart';
 
 class UserBloc extends Bloc<UserEvent, UserState> {
   UserBloc() : super(UserMeState());
@@ -27,7 +28,7 @@ class UserBloc extends Bloc<UserEvent, UserState> {
         yield UserMeState(
           user: user,
         );
-      } catch (e) {
+      } on Exception catch (e) {
         yield UserErrorState(
           message: e.toString(),
         );
@@ -41,11 +42,15 @@ class UserBloc extends Bloc<UserEvent, UserState> {
       );
       try {
         // 登录时对密码进去sha256处理
+        final data = json.encode({
+          'account': event.account,
+          'password': hashPassword(event.password),
+        });
         final resp = await getClient().post(
           getURL(urls.userLogin),
-          body: {
-            "account": event.account,
-            "password": hashPassword(event.password),
+          body: data,
+          headers: {
+            'Content-Type': 'application/json',
           },
         );
         throwErrorIfFail(resp);
@@ -53,7 +58,7 @@ class UserBloc extends Bloc<UserEvent, UserState> {
         yield UserMeState(
           user: user,
         );
-      } catch (e) {
+      } on Exception catch (e) {
         yield UserErrorState(
           message: e.toString(),
         );

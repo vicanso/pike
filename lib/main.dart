@@ -1,12 +1,12 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:fluro/fluro.dart';
-import 'dart:async';
 
 import './bloc/bloc.dart';
 import './config/application.dart';
-import './service/store.dart' as store;
 import './router/routes.dart';
+import './service/store.dart' as store;
 
 Future main() async {
   WidgetsFlutterBinding.ensureInitialized();

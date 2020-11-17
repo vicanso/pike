@@ -41,7 +41,7 @@ class Routes {
     _define(_login, (context, parameters) => LoginPage());
   }
 
-  void _navigateTo(context, path) {
+  void _navigateTo(BuildContext context, String path) {
     router.navigateTo(
       context,
       path,

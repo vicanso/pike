@@ -3,9 +3,9 @@
 ///
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:web/config/application.dart';
 
 import '../bloc/bloc.dart';
+import '../config/application.dart';
 import '../widget/button.dart';
 import '../widget/error_message.dart';
 
@@ -103,9 +103,8 @@ class _LoginPageState extends State<LoginPage> {
     formItems.add(Padding(
       padding: const EdgeInsets.only(top: 28.0),
       child: XFullButton(
-        padding: EdgeInsets.all(20.0),
         margin: EdgeInsets.all(0),
-        text: Text(isProcessing ? "Login..." : "Login"),
+        text: Text(isProcessing ? 'Login...' : 'Login'),
         onPressed: () {
           // 避免多次点击登录
           if (isProcessing) {
@@ -116,12 +115,6 @@ class _LoginPageState extends State<LoginPage> {
             _login();
             return;
           }
-          //   if (_isLoginMode) {
-          //     _login();
-          //   } else {
-          //     _register();
-          //   }
-          // }
         },
       ),
     ));
@@ -155,7 +148,7 @@ class _LoginPageState extends State<LoginPage> {
         }
         return Scaffold(
           appBar: AppBar(
-            title: Text("Login"),
+            title: Text('Login'),
           ),
           body: _renderBody(state),
         );

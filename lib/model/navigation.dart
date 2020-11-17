@@ -1,6 +1,8 @@
 ///
 /// 应用导航条配置
 ///
+// ignore_for_file: argument_type_not_assignable
+// ignore_for_file:  prefer_expression_function_bodies
 import 'dart:convert';
 
 import 'package:flutter/material.dart';

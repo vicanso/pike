@@ -24,6 +24,15 @@ class ConfigCurrentState extends ConfigState {
   @override
   String toString() =>
       'ConfigCurrentState(config: $config, processing: $processing)';
+
+  ConfigCurrentState copyWith({
+    Config config,
+    bool processing,
+  }) =>
+      ConfigCurrentState(
+        config: config ?? this.config,
+        processing: processing ?? this.processing,
+      );
 }
 
 // 拉取配置信息出错

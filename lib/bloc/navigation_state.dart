@@ -21,7 +21,7 @@ class MainNavigationFailure extends NavigationState {}
 class MainNavigationSuccess extends NavigationState {
   final List<NavItem> navs;
   final int currentIndex;
-  MainNavigationSuccess({
+  const MainNavigationSuccess({
     this.navs,
     this.currentIndex,
   });
@@ -29,13 +29,13 @@ class MainNavigationSuccess extends NavigationState {
   factory MainNavigationSuccess.newDefault() => MainNavigationSuccess(
         currentIndex: 0,
         navs: [
-          NavItem(title: 'Home', icon: Icons.home),
-          NavItem(title: 'Compress', icon: Icons.home),
-          NavItem(title: 'Cache', icon: Icons.category),
-          NavItem(title: 'Upstram', icon: Icons.shopping_cart),
-          NavItem(title: 'Location', icon: Icons.perm_identity),
-          NavItem(title: 'Server', icon: Icons.perm_identity),
-          NavItem(title: 'Admin', icon: Icons.perm_identity),
+          NavItem(title: 'Home', icon: Icons.sensor_window),
+          NavItem(title: 'Compress', icon: Icons.filter_frames),
+          NavItem(title: 'Cache', icon: Icons.storage),
+          NavItem(title: 'Upstram', icon: Icons.dvr),
+          NavItem(title: 'Location', icon: Icons.alt_route),
+          NavItem(title: 'Server', icon: Icons.widgets),
+          NavItem(title: 'Admin', icon: Icons.admin_panel_settings),
         ],
       );
 
@@ -45,12 +45,11 @@ class MainNavigationSuccess extends NavigationState {
   MainNavigationSuccess copyWith({
     List<NavItem> navs,
     int currentIndex,
-  }) {
-    return MainNavigationSuccess(
-      navs: navs ?? this.navs,
-      currentIndex: currentIndex ?? this.currentIndex,
-    );
-  }
+  }) =>
+      MainNavigationSuccess(
+        navs: navs ?? this.navs,
+        currentIndex: currentIndex ?? this.currentIndex,
+      );
 
   @override
   String toString() =>

@@ -1,9 +1,9 @@
 ///
 /// HTTP请求库
 ///
+import 'dart:convert' as convert;
 import 'package:http/browser_client.dart';
 import 'package:http/http.dart' as http;
-import 'dart:convert' as convert;
 
 class PikeClient extends http.BaseClient {
   final http.Client client;
@@ -11,9 +11,9 @@ class PikeClient extends http.BaseClient {
     this.client,
   });
 
-  Future<http.StreamedResponse> send(http.BaseRequest request) {
-    return client.send(request);
-  }
+  @override
+  Future<http.StreamedResponse> send(http.BaseRequest request) =>
+      client.send(request);
 }
 
 http.Client initClient() {

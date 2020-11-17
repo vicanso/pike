@@ -1,5 +1,3 @@
-import 'package:web/model/config.dart';
-
 ///
 /// 配置事件
 ///

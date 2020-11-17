@@ -28,6 +28,7 @@ class MainNavigationBloc extends Bloc<NavigationEvent, NavigationState> {
     // 首页导航当前index变化
     if (event is MainNavigationCurrentIndexChange) {
       final index = event.index;
+
       yield (state as MainNavigationSuccess).copyWith(
         currentIndex: index,
       );

@@ -7,6 +7,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../bloc/bloc.dart';
 import '../config/application.dart';
 import '../widget/error_message.dart';
+import './compress.dart';
 
 @immutable
 class HomePage extends StatefulWidget {
@@ -36,21 +37,25 @@ class _HomePageState extends State<HomePage>
     }
     final tabs = state.navs
         .map((e) => Tab(
+              iconMargin: EdgeInsets.only(
+                bottom: 5,
+              ),
               icon: Icon(
                 e.icon,
               ),
               text: e.title,
             ))
         .toList();
-    if (_tabController == null) {
-      _tabController = TabController(
-        length: tabs.length,
-        vsync: this,
-      )..addListener(_handleNavigationSelect);
-    }
+    _tabController ??= TabController(
+      length: tabs.length,
+      vsync: this,
+    )..addListener(_handleNavigationSelect);
     return PreferredSize(
       preferredSize: Size.fromHeight(Application.navigationHeight),
       child: Container(
+        padding: EdgeInsets.only(
+          top: Application.defaultPadding,
+        ),
         color: Theme.of(context).primaryColor,
         child: TabBar(
           labelColor: Application.fontColorOfPrimaryColor,
@@ -73,11 +78,13 @@ class _HomePageState extends State<HomePage>
   }
 
   Widget _renderYAMLConfig(ConfigCurrentState state) {
-    RegExp exp = new RegExp(r"(password:[\S\s]+?\n)");
-    final yaml = state.config.yaml.replaceFirst(exp, "password: ***\n");
-    return Container(
-      margin: EdgeInsets.all(2 * Application.defaultPadding),
-      child: Text(yaml),
+    final exp = RegExp(r'(password:[\S\s]+?\n)');
+    final yaml = state.config.yaml.replaceFirst(exp, 'password: ***\n');
+    return SingleChildScrollView(
+      child: Container(
+        margin: EdgeInsets.all(2 * Application.defaultPadding),
+        child: Text(yaml),
+      ),
     );
   }
 
@@ -85,20 +92,24 @@ class _HomePageState extends State<HomePage>
     if (state is ConfigErrorState) {
       return XErrorMessage(
         message: state.message,
-        title: "Fetch config fail",
+        title: 'Fetch config fail',
       );
     }
     final configState = state as ConfigCurrentState;
     // 如果未加载到配置，展示拉取中
     if (configState.config == null) {
       return Center(
-        child: Text("Fetching config..."),
+        child: Text('Fetching config...'),
       );
     }
     switch (_currentIndex) {
       case 0:
         // 渲染yaml详细配置
         return _renderYAMLConfig(configState);
+        break;
+      case 1:
+        // 压缩配置
+        return CompressPage();
         break;
       default:
     }
@@ -108,7 +119,7 @@ class _HomePageState extends State<HomePage>
   Widget _renderBody() {
     if (_isFetchingUserInfo) {
       return Center(
-        child: Text("Fetching user informations..."),
+        child: Text('Fetching user informations...'),
       );
     }
     return BlocProvider(
@@ -121,9 +132,7 @@ class _HomePageState extends State<HomePage>
         return _configBloc;
       },
       child: BlocBuilder<ConfigBloc, ConfigState>(
-        builder: (context, state) {
-          return _renderConfig(state);
-        },
+        builder: (context, state) => _renderConfig(state),
       ),
     );
   }

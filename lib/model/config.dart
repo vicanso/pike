@@ -3,6 +3,8 @@
 /// 需要注意，由于后端返回配置有部分配置可能为空，如[]string hosts，
 /// 自动生成的代码List.from时，对于为空的数据会导致异常，因此需要填充为List()
 ///
+// ignore_for_file: argument_type_not_assignable
+// ignore_for_file:  prefer_expression_function_bodies
 import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
@@ -17,16 +19,12 @@ void fillEmptyList(Map<String, dynamic> m) {
       'reqHeaders',
       'hosts',
     ].forEach((key) {
-      if (e[key] == null) {
-        e[key] = List();
-      }
+      e[key] ??= [];
     });
   });
 
   m['servers']?.forEach((e) {
-    if (e['locations'] == null) {
-      e['locations'] = List();
-    }
+    e['locations'] ??= [];
   });
 }
 
@@ -95,19 +93,23 @@ class AdminConfig {
 
 class CompressConfig {
   final String name;
-  final Map levels;
+  final Map<String, int> levels;
+  final String remark;
   CompressConfig({
     this.name,
     this.levels,
+    this.remark,
   });
 
   CompressConfig copyWith({
     String name,
-    Map levels,
+    Map<String, int> levels,
+    String remark,
   }) {
     return CompressConfig(
       name: name ?? this.name,
       levels: levels ?? this.levels,
+      remark: remark ?? this.remark,
     );
   }
 
@@ -115,6 +117,7 @@ class CompressConfig {
     return {
       'name': name,
       'levels': levels,
+      'remark': remark,
     };
   }
 
@@ -123,7 +126,8 @@ class CompressConfig {
 
     return CompressConfig(
       name: map['name'],
-      levels: Map.from(map['levels']),
+      levels: Map<String, int>.from(map['levels']),
+      remark: map['remark'],
     );
   }
 
@@ -133,38 +137,47 @@ class CompressConfig {
       CompressConfig.fromMap(json.decode(source));
 
   @override
-  String toString() => 'CompressConfig(name: $name, levels: $levels)';
+  String toString() =>
+      'CompressConfig(name: $name, levels: $levels, remark: $remark)';
 
   @override
   bool operator ==(Object o) {
     if (identical(this, o)) return true;
 
-    return o is CompressConfig && o.name == name && mapEquals(o.levels, levels);
+    return o is CompressConfig &&
+        o.name == name &&
+        mapEquals(o.levels, levels) &&
+        o.remark == remark;
   }
 
   @override
-  int get hashCode => name.hashCode ^ levels.hashCode;
+  int get hashCode => name.hashCode ^ levels.hashCode ^ remark.hashCode;
 }
 
 class CacheConfig {
   final String name;
   final int size;
   final String hitForPass;
+  final String remark;
+
   CacheConfig({
     this.name,
     this.size,
     this.hitForPass,
+    this.remark,
   });
 
   CacheConfig copyWith({
     String name,
     int size,
     String hitForPass,
+    String remark,
   }) {
     return CacheConfig(
       name: name ?? this.name,
       size: size ?? this.size,
       hitForPass: hitForPass ?? this.hitForPass,
+      remark: remark ?? this.remark,
     );
   }
 
@@ -173,6 +186,7 @@ class CacheConfig {
       'name': name,
       'size': size,
       'hitForPass': hitForPass,
+      'remark': remark,
     };
   }
 
@@ -183,6 +197,7 @@ class CacheConfig {
       name: map['name'],
       size: map['size'],
       hitForPass: map['hitForPass'],
+      remark: map['remark'],
     );
   }
 
@@ -192,8 +207,9 @@ class CacheConfig {
       CacheConfig.fromMap(json.decode(source));
 
   @override
-  String toString() =>
-      'CacheConfig(name: $name, size: $size, hitForPass: $hitForPass)';
+  String toString() {
+    return 'CacheConfig(name: $name, size: $size, hitForPass: $hitForPass, remark: $remark)';
+  }
 
   @override
   bool operator ==(Object o) {
@@ -202,11 +218,17 @@ class CacheConfig {
     return o is CacheConfig &&
         o.name == name &&
         o.size == size &&
-        o.hitForPass == hitForPass;
+        o.hitForPass == hitForPass &&
+        o.remark == remark;
   }
 
   @override
-  int get hashCode => name.hashCode ^ size.hashCode ^ hitForPass.hashCode;
+  int get hashCode {
+    return name.hashCode ^
+        size.hashCode ^
+        hitForPass.hashCode ^
+        remark.hashCode;
+  }
 }
 
 class UpstreamServerConfig {
@@ -269,6 +291,8 @@ class UpstreamConfig {
   final bool enableH2C;
   final String acceptEncoding;
   final List<UpstreamServerConfig> servers;
+  final String remark;
+
   UpstreamConfig({
     this.name,
     this.healthCheck,
@@ -276,6 +300,7 @@ class UpstreamConfig {
     this.enableH2C,
     this.acceptEncoding,
     this.servers,
+    this.remark,
   });
 
   UpstreamConfig copyWith({
@@ -285,6 +310,7 @@ class UpstreamConfig {
     bool enableH2C,
     String acceptEncoding,
     List<UpstreamServerConfig> servers,
+    String remark,
   }) {
     return UpstreamConfig(
       name: name ?? this.name,
@@ -293,6 +319,7 @@ class UpstreamConfig {
       enableH2C: enableH2C ?? this.enableH2C,
       acceptEncoding: acceptEncoding ?? this.acceptEncoding,
       servers: servers ?? this.servers,
+      remark: remark ?? this.remark,
     );
   }
 
@@ -304,6 +331,7 @@ class UpstreamConfig {
       'enableH2C': enableH2C,
       'acceptEncoding': acceptEncoding,
       'servers': servers?.map((x) => x?.toMap())?.toList(),
+      'remark': remark,
     };
   }
 
@@ -318,6 +346,7 @@ class UpstreamConfig {
       acceptEncoding: map['acceptEncoding'],
       servers: List<UpstreamServerConfig>.from(
           map['servers']?.map((x) => UpstreamServerConfig.fromMap(x))),
+      remark: map['remark'],
     );
   }
 
@@ -328,7 +357,7 @@ class UpstreamConfig {
 
   @override
   String toString() {
-    return 'UpstreamConfig(name: $name, healthCheck: $healthCheck, policy: $policy, enableH2C: $enableH2C, acceptEncoding: $acceptEncoding, servers: $servers)';
+    return 'UpstreamConfig(name: $name, healthCheck: $healthCheck, policy: $policy, enableH2C: $enableH2C, acceptEncoding: $acceptEncoding, servers: $servers, remark: $remark)';
   }
 
   @override
@@ -341,7 +370,8 @@ class UpstreamConfig {
         o.policy == policy &&
         o.enableH2C == enableH2C &&
         o.acceptEncoding == acceptEncoding &&
-        listEquals(o.servers, servers);
+        listEquals(o.servers, servers) &&
+        o.remark == remark;
   }
 
   @override
@@ -351,7 +381,8 @@ class UpstreamConfig {
         policy.hashCode ^
         enableH2C.hashCode ^
         acceptEncoding.hashCode ^
-        servers.hashCode;
+        servers.hashCode ^
+        remark.hashCode;
   }
 }
 
@@ -364,6 +395,8 @@ class LocationConfig {
   final List<String> reqHeaders;
   final List<String> hosts;
   final String proxyTimeout;
+  final String remark;
+
   LocationConfig({
     this.name,
     this.upstream,
@@ -373,6 +406,7 @@ class LocationConfig {
     this.reqHeaders,
     this.hosts,
     this.proxyTimeout,
+    this.remark,
   });
 
   LocationConfig copyWith({
@@ -384,6 +418,7 @@ class LocationConfig {
     List<String> reqHeaders,
     List<String> hosts,
     String proxyTimeout,
+    String remark,
   }) {
     return LocationConfig(
       name: name ?? this.name,
@@ -394,6 +429,7 @@ class LocationConfig {
       reqHeaders: reqHeaders ?? this.reqHeaders,
       hosts: hosts ?? this.hosts,
       proxyTimeout: proxyTimeout ?? this.proxyTimeout,
+      remark: remark ?? this.remark,
     );
   }
 
@@ -407,6 +443,7 @@ class LocationConfig {
       'reqHeaders': reqHeaders,
       'hosts': hosts,
       'proxyTimeout': proxyTimeout,
+      'remark': remark,
     };
   }
 
@@ -422,6 +459,7 @@ class LocationConfig {
       reqHeaders: List<String>.from(map['reqHeaders']),
       hosts: List<String>.from(map['hosts']),
       proxyTimeout: map['proxyTimeout'],
+      remark: map['remark'],
     );
   }
 
@@ -432,7 +470,7 @@ class LocationConfig {
 
   @override
   String toString() {
-    return 'LocationConfig(name: $name, upstream: $upstream, prefixes: $prefixes, rewrites: $rewrites, respHeaders: $respHeaders, reqHeaders: $reqHeaders, hosts: $hosts, proxyTimeout: $proxyTimeout)';
+    return 'LocationConfig(name: $name, upstream: $upstream, prefixes: $prefixes, rewrites: $rewrites, respHeaders: $respHeaders, reqHeaders: $reqHeaders, hosts: $hosts, proxyTimeout: $proxyTimeout, remark: $remark)';
   }
 
   @override
@@ -447,7 +485,8 @@ class LocationConfig {
         listEquals(o.respHeaders, respHeaders) &&
         listEquals(o.reqHeaders, reqHeaders) &&
         listEquals(o.hosts, hosts) &&
-        o.proxyTimeout == proxyTimeout;
+        o.proxyTimeout == proxyTimeout &&
+        o.remark == remark;
   }
 
   @override
@@ -459,7 +498,8 @@ class LocationConfig {
         respHeaders.hashCode ^
         reqHeaders.hashCode ^
         hosts.hashCode ^
-        proxyTimeout.hashCode;
+        proxyTimeout.hashCode ^
+        remark.hashCode;
   }
 }
 
@@ -471,6 +511,8 @@ class ServerConfig {
   final String compress;
   final String compressMinLength;
   final String compressContentTypeFilter;
+  final String remark;
+
   ServerConfig({
     this.logFormat,
     this.addr,
@@ -479,6 +521,7 @@ class ServerConfig {
     this.compress,
     this.compressMinLength,
     this.compressContentTypeFilter,
+    this.remark,
   });
 
   ServerConfig copyWith({
@@ -489,6 +532,7 @@ class ServerConfig {
     String compress,
     String compressMinLength,
     String compressContentTypeFilter,
+    String remark,
   }) {
     return ServerConfig(
       logFormat: logFormat ?? this.logFormat,
@@ -499,6 +543,7 @@ class ServerConfig {
       compressMinLength: compressMinLength ?? this.compressMinLength,
       compressContentTypeFilter:
           compressContentTypeFilter ?? this.compressContentTypeFilter,
+      remark: remark ?? this.remark,
     );
   }
 
@@ -511,6 +556,7 @@ class ServerConfig {
       'compress': compress,
       'compressMinLength': compressMinLength,
       'compressContentTypeFilter': compressContentTypeFilter,
+      'remark': remark,
     };
   }
 
@@ -525,6 +571,7 @@ class ServerConfig {
       compress: map['compress'],
       compressMinLength: map['compressMinLength'],
       compressContentTypeFilter: map['compressContentTypeFilter'],
+      remark: map['remark'],
     );
   }
 
@@ -535,7 +582,7 @@ class ServerConfig {
 
   @override
   String toString() {
-    return 'ServerConfig(logFormat: $logFormat, addr: $addr, locations: $locations, cache: $cache, compress: $compress, compressMinLength: $compressMinLength, compressContentTypeFilter: $compressContentTypeFilter)';
+    return 'ServerConfig(logFormat: $logFormat, addr: $addr, locations: $locations, cache: $cache, compress: $compress, compressMinLength: $compressMinLength, compressContentTypeFilter: $compressContentTypeFilter, remark: $remark)';
   }
 
   @override
@@ -549,7 +596,8 @@ class ServerConfig {
         o.cache == cache &&
         o.compress == compress &&
         o.compressMinLength == compressMinLength &&
-        o.compressContentTypeFilter == compressContentTypeFilter;
+        o.compressContentTypeFilter == compressContentTypeFilter &&
+        o.remark == remark;
   }
 
   @override
@@ -560,7 +608,8 @@ class ServerConfig {
         cache.hashCode ^
         compress.hashCode ^
         compressMinLength.hashCode ^
-        compressContentTypeFilter.hashCode;
+        compressContentTypeFilter.hashCode ^
+        remark.hashCode;
   }
 }
 
@@ -581,6 +630,23 @@ class Config {
     this.locations,
     this.servers,
   });
+
+  // validateForDelete 校验该字段是否可删除
+  bool validateForDelete(String category, String name) {
+    var valid = true;
+    switch (category) {
+      case 'compress':
+        servers?.forEach((element) {
+          if (element.compress == name) {
+            valid = false;
+          }
+        });
+        break;
+      default:
+        valid = false;
+    }
+    return valid;
+  }
 
   Config copyWith({
     String yaml,

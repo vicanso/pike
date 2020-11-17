@@ -1,6 +1,8 @@
 ///
 /// 用户信息
 ///
+// ignore_for_file: argument_type_not_assignable
+// ignore_for_file:  prefer_expression_function_bodies
 import 'dart:convert';
 
 class User {
