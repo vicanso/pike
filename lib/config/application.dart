@@ -9,10 +9,10 @@ class Application {
   static Routes routes;
 
   // 导航条高度
-  static double navigationHeight = 63.0;
+  static double navigationHeight = 60.0;
 
   // 主颜色
-  static Color primaryColor = Color.fromARGB(255, 60, 60, 60);
+  static Color primaryColor = Color.fromARGB(255, 3, 0, 28);
   // 主颜色上使用的字体颜色
   static Color fontColorOfPrimaryColor = Colors.white;
 

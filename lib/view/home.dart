@@ -7,7 +7,9 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../bloc/bloc.dart';
 import '../config/application.dart';
 import '../widget/error_message.dart';
+import './cache.dart';
 import './compress.dart';
+import './upstream.dart';
 
 @immutable
 class HomePage extends StatefulWidget {
@@ -38,7 +40,7 @@ class _HomePageState extends State<HomePage>
     final tabs = state.navs
         .map((e) => Tab(
               iconMargin: EdgeInsets.only(
-                bottom: 5,
+                bottom: 0.5 * Application.defaultPadding,
               ),
               icon: Icon(
                 e.icon,
@@ -54,7 +56,7 @@ class _HomePageState extends State<HomePage>
       preferredSize: Size.fromHeight(Application.navigationHeight),
       child: Container(
         padding: EdgeInsets.only(
-          top: Application.defaultPadding,
+          top: 0.5 * Application.defaultPadding,
         ),
         color: Theme.of(context).primaryColor,
         child: TabBar(
@@ -110,6 +112,14 @@ class _HomePageState extends State<HomePage>
       case 1:
         // 压缩配置
         return CompressPage();
+        break;
+      case 2:
+        // 缓存配置
+        return CachePage();
+        break;
+      case 3:
+        // upstream配置
+        return UpstreamPage();
         break;
       default:
     }

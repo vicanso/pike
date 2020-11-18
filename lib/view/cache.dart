@@ -1,8 +1,9 @@
 ///
-/// 压缩配置页
+/// 缓存配置页
 ///
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:intl/intl.dart';
 
 import '../bloc/bloc.dart';
 import '../config/application.dart';
@@ -12,27 +13,27 @@ import '../widget/button.dart';
 import '../widget/error_message.dart';
 
 @immutable
-class CompressPage extends StatefulWidget {
-  const CompressPage({
+class CachePage extends StatefulWidget {
+  const CachePage({
     Key key,
   }) : super(key: key);
   @override
-  _CompressPageState createState() => _CompressPageState();
+  _CachePageState createState() => _CachePageState();
 }
 
-class _CompressPageState extends State<CompressPage> {
+class _CachePageState extends State<CachePage> {
   final GlobalKey _formKey = GlobalKey<FormState>();
   final TextEditingController _nameController = TextEditingController();
-  final TextEditingController _gzipController = TextEditingController();
-  final TextEditingController _brController = TextEditingController();
+  final TextEditingController _sizeController = TextEditingController();
+  final TextEditingController _hitForPassController = TextEditingController();
   final TextEditingController _remarkController = TextEditingController();
+
+  ConfigBloc _configBloc;
+  final numberFormat = NumberFormat('#,##0', 'en_US');
+
   String _mode = '';
   final _editMode = 'eidt';
   final _updateMode = 'update';
-  final _gzipName = 'gzip';
-  final _brName = 'br';
-
-  ConfigBloc _configBloc;
 
   @override
   void initState() {
@@ -44,48 +45,42 @@ class _CompressPageState extends State<CompressPage> {
 
   bool get _isUpdateding => _mode == _updateMode;
 
-  // _getLevelDesc 获取压缩级别的描述
-  String _getLevelDesc(Map<String, int> levels, String name) {
-    final value = levels[name];
-    if (value == null) {
-      return '--';
-    }
-    return value.toString();
-  }
-
-  // _getLevel 获取压缩级别
-  String _getLevel(Map<String, int> levels, String name) {
-    final value = levels[name];
-    if (value == null) {
-      return '';
-    }
-    return value.toString();
-  }
-
   // _reset 重置表单所有元素
   void _reset() {
     _nameController.clear();
-    _gzipController.clear();
-    _brController.clear();
+    _sizeController.clear();
+    _hitForPassController.clear();
     _remarkController.clear();
   }
 
   // _fillTextEditor 填充编辑数据
-  void _fillTextEditor(CompressConfig element) {
-    _nameController.value = TextEditingValue(text: element.name ?? '');
-    _gzipController.value = TextEditingValue(
-        text: _getLevel(
-      element.levels,
-      _gzipName,
+  void _fillTextEditor(CacheConfig element) {
+    _nameController.value = TextEditingValue(text: element.name);
+    _sizeController.value = TextEditingValue(text: element.size.toString());
+    _hitForPassController.value = TextEditingValue(text: element.hitForPass);
+    _remarkController.value = TextEditingValue(text: element.remark ?? '');
+  }
+
+  // _deleteCache 删除缓存配置
+  void _deleteCache(ConfigCurrentState state, String name) {
+    // 校验该缓存是否被其它配置使用
+    if (!state.config.validateForDelete('cache', name)) {
+      showErrorMessage('$name is used, it can not be deleted');
+      return;
+    }
+    final cacheList = <CacheConfig>[];
+    state.config.caches?.forEach((element) {
+      if (element.name != name) {
+        cacheList.add(element);
+      }
+    });
+
+    // 更新配置
+    _configBloc.add(ConfigUpdate(
+      config: state.config.copyWith(
+        caches: cacheList,
+      ),
     ));
-    _brController.value = TextEditingValue(
-        text: _getLevel(
-      element.levels,
-      _brName,
-    ));
-    _remarkController.value = TextEditingValue(
-      text: element.remark ?? '',
-    );
   }
 
   // _createRowItem 生成表单元素
@@ -100,49 +95,28 @@ class _CompressPageState extends State<CompressPage> {
         ),
       );
 
-  // _deleteCompress 删除压缩
-  void _deleteCompress(ConfigCurrentState state, String name) {
-    // 校验该压缩是否被其它配置使用
-    if (!state.config.validateForDelete('compress', name)) {
-      showErrorMessage('$name is used, it can not be deleted');
-      return;
-    }
-    final compressList = <CompressConfig>[];
-
-    state.config.compresses?.forEach((element) {
-      if (element.name != name) {
-        compressList.add(element);
-      }
-    });
-    // 更新配置
-    _configBloc.add(ConfigUpdate(
-      config: state.config.copyWith(
-        compresses: compressList,
-      ),
-    ));
-  }
-
-  // _renderCompressList 渲染当前压缩服务列表
-  Widget _renderCompressList(ConfigCurrentState state) {
+  // _renderCacheList 渲染当前缓存服务列表
+  Widget _renderCacheList(ConfigCurrentState state) {
     // 表头
     final rows = <TableRow>[
       TableRow(
         children: [
           _createRowItem('Name'),
-          _createRowItem(_gzipName[0].toUpperCase() + _gzipName.substring(1)),
-          _createRowItem(_brName[0].toLowerCase() + _brName.substring(1)),
+          _createRowItem('Size'),
+          _createRowItem('Hit For Pass'),
           _createRowItem('Remark'),
           _createRowItem('Operations'),
         ],
       ),
     ];
-    // 表格内容，压缩服务的相关配置
-    state.config.compresses?.forEach((element) {
+
+    // 表格内容，缓存服务的相关配置
+    state.config.caches?.forEach((element) {
       rows.add(TableRow(
         children: [
           _createRowItem(element.name),
-          _createRowItem(_getLevelDesc(element.levels, _gzipName)),
-          _createRowItem(_getLevelDesc(element.levels, _brName)),
+          _createRowItem(numberFormat.format(element.size)),
+          _createRowItem(element.hitForPass),
           _createRowItem(element.remark),
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -161,7 +135,7 @@ class _CompressPageState extends State<CompressPage> {
               ),
               TextButton(
                 onPressed: () {
-                  _deleteCompress(state, element.name);
+                  _deleteCache(state, element.name);
                 },
                 child: Text('Delete'),
               ),
@@ -174,8 +148,8 @@ class _CompressPageState extends State<CompressPage> {
     return Table(
       columnWidths: {
         // 指定表格列宽
-        1: FixedColumnWidth(80),
-        2: FixedColumnWidth(80),
+        1: FixedColumnWidth(100),
+        2: FixedColumnWidth(100),
         4: FixedColumnWidth(150),
       },
       border: TableBorder.all(
@@ -185,44 +159,76 @@ class _CompressPageState extends State<CompressPage> {
     );
   }
 
+  // _addCache 添加缓存服务，如果存在相同服务，则替换
+  void _addCache(ConfigCurrentState state) {
+    final cacheConfig = CacheConfig(
+      name: _nameController.text?.trim(),
+      size: int.parse(_sizeController.text),
+      hitForPass: _hitForPassController.text?.trim(),
+      remark: _remarkController.text?.trim(),
+    );
+    final cacheList = <CacheConfig>[];
+    state.config.caches?.forEach((element) {
+      if (element.name != cacheConfig.name) {
+        cacheList.add(element);
+      }
+    });
+    cacheList.add(cacheConfig);
+
+    _configBloc.add(ConfigUpdate(
+      config: state.config.copyWith(
+        caches: cacheList,
+      ),
+    ));
+    // 重置当前模式
+    setState(() {
+      _mode = '';
+    });
+  }
+
   // _renderEditor 渲染编辑表单
   Widget _renderEditor() {
     if (!_isEditting) {
       return Container();
     }
-    final fn =
-        createNumberValidator('compress level should be number and gt 0');
     final formItems = <Widget>[];
-    // 名称
+    // 缓存名称
     formItems.add(TextFormField(
       autofocus: true,
       readOnly: _isUpdateding,
       controller: _nameController,
       decoration: InputDecoration(
         labelText: 'Name',
-        hintText: 'Please input the name of compress',
+        hintText: 'Please input the name of cache',
       ),
       validator: (v) => v.trim().isNotEmpty ? null : 'name can not be null',
     ));
 
-    // gzip 压缩级别
+    // 缓存大小
     formItems.add(TextFormField(
-      controller: _gzipController,
+      controller: _sizeController,
       decoration: InputDecoration(
-        labelText: 'Gzip Level',
-        hintText: 'Please input the compress level of gzip(1-9)',
+        labelText: 'Size',
+        hintText: 'Please input the size of cache',
       ),
-      validator: fn,
+      validator:
+          createNumberValidator('size of cache should be number and gt 0'),
     ));
 
-    // br 压缩级别
+    // hit for pass时长
     formItems.add(TextFormField(
-      controller: _brController,
+      controller: _hitForPassController,
       decoration: InputDecoration(
-        labelText: 'Br Level',
-        hintText: 'Please input the compress level of br(1-11)',
+        labelText: 'HitForPass',
+        hintText: 'Please input the duration of hit for pass(5m, 30s)',
       ),
-      validator: fn,
+      validator: (value) {
+        final reg = RegExp(r'^\d+[sm]$');
+        if (value == null || !reg.hasMatch(value)) {
+          return 'duration of hit for pass is invalid';
+        }
+        return null;
+      },
     ));
 
     // remark
@@ -232,7 +238,7 @@ class _CompressPageState extends State<CompressPage> {
       maxLines: 3,
       decoration: InputDecoration(
         labelText: 'Remark',
-        hintText: 'Please input the remark for compress',
+        hintText: 'Please input the remark for cache',
       ),
     ));
 
@@ -249,44 +255,13 @@ class _CompressPageState extends State<CompressPage> {
     );
   }
 
-  // _addCompress 添加压缩服务，如果添加的服务名称与当前服务相同，则替换
-  void _addCompress(ConfigCurrentState state) {
-    final name = _nameController.text?.trim();
-    final levels = <String, int>{
-      'gzip': int.parse(_gzipController.text),
-      'br': int.parse(_brController.text),
-    };
-    final compressConfig = CompressConfig(
-      name: name,
-      levels: levels,
-      remark: _remarkController.text?.trim(),
-    );
-    final compressList = <CompressConfig>[];
-    state.config.compresses?.forEach((element) {
-      if (element.name != name) {
-        compressList.add(element);
-      }
-    });
-    compressList.add(compressConfig);
-
-    _configBloc.add(ConfigUpdate(
-      config: state.config.copyWith(
-        compresses: compressList,
-      ),
-    ));
-    // 重置当前模式
-    setState(() {
-      _mode = '';
-    });
-  }
-
   @override
   Widget build(BuildContext context) =>
       BlocBuilder<ConfigBloc, ConfigState>(builder: (context, state) {
         if (state is ConfigErrorState) {
           return XErrorMessage(
             message: state.message,
-            title: 'Get compress config fail',
+            title: 'Get cache config fail',
           );
         }
         final currentConfig = state as ConfigCurrentState;
@@ -295,7 +270,7 @@ class _CompressPageState extends State<CompressPage> {
             margin: EdgeInsets.all(3 * Application.defaultPadding),
             child: Column(
               children: [
-                _renderCompressList(currentConfig),
+                _renderCacheList(currentConfig),
                 _renderEditor(),
                 XFullButton(
                   margin: EdgeInsets.only(
@@ -308,7 +283,7 @@ class _CompressPageState extends State<CompressPage> {
                     // 如果是编辑模式，则是添加或更新
                     if (_isEditting) {
                       if ((_formKey.currentState as FormState).validate()) {
-                        _addCompress(currentConfig);
+                        _addCache(currentConfig);
                       }
                       return;
                     }
@@ -318,7 +293,7 @@ class _CompressPageState extends State<CompressPage> {
                       _mode = _editMode;
                     });
                   },
-                  text: Text(_isEditting ? 'Save Compress' : 'Add Compress'),
+                  text: Text(_isEditting ? 'Save Cache' : 'Add Cache'),
                 ),
               ],
             ),

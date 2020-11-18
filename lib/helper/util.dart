@@ -54,3 +54,16 @@ void showErrorMessage(String error) {
     webBgColor: '#fe6c6f',
   );
 }
+
+// createNumberValidator create number validator
+String Function(String) createNumberValidator(String message) {
+  final reg = RegExp(r'^\d+$');
+
+  final fn = (String value) {
+    if (value == null || !reg.hasMatch(value) || int.parse(value) == 0) {
+      return message;
+    }
+    return null;
+  };
+  return fn;
+}

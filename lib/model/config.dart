@@ -642,6 +642,20 @@ class Config {
           }
         });
         break;
+      case 'cache':
+        servers?.forEach((element) {
+          if (element.cache == name) {
+            valid = false;
+          }
+        });
+        break;
+      case 'upstream':
+        locations?.forEach((element) {
+          if (element.name == name) {
+            valid = false;
+          }
+        });
+        break;
       default:
         valid = false;
     }
