@@ -16,6 +16,11 @@ class Application {
   // 主颜色上使用的字体颜色
   static Color fontColorOfPrimaryColor = Colors.white;
 
+  // 次要颜色
+  static Color secondaryColor = Colors.grey[100];
+  // 次要颜色上使用的字体颜色
+  static Color fontColorOfSecondaryColor = Colors.black87;
+
   // 蓝色
   static Color blueColor = Colors.blueAccent;
 

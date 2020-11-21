@@ -35,7 +35,7 @@ class _UpstreamPageState extends State<UpstreamPage> {
   final TextEditingController _acceptEncodingController =
       TextEditingController();
   final TextEditingController _remarkController = TextEditingController();
-  final _serverEditors = <_ServerEditor>[_ServerEditor()];
+  final _serverEditors = <_ServerEditor>[];
 
   String _policy = policyList.first;
   bool _enableH2C = false;
@@ -57,10 +57,35 @@ class _UpstreamPageState extends State<UpstreamPage> {
   bool get _isUpdateding => _mode == _updateMode;
 
   // _reset 重置表单所有元素
-  void _reset() {}
+  void _reset() {
+    _nameController.clear();
+    _healthCheckController.clear();
+    _acceptEncodingController.clear();
+    _remarkController.clear();
+    _policy = policyList.first;
+    _enableH2C = false;
+    _serverEditors.clear();
+    _serverEditors.add(_ServerEditor());
+  }
 
   // _fillTextEditor 填充编辑数据
-  void _fillTextEditor(UpstreamConfig element) {}
+  void _fillTextEditor(UpstreamConfig element) {
+    _nameController.value = TextEditingValue(text: element.name ?? '');
+    _healthCheckController.value =
+        TextEditingValue(text: element.healthCheck ?? '');
+    _acceptEncodingController.value =
+        TextEditingValue(text: element.acceptEncoding ?? '');
+    _remarkController.value = TextEditingValue(text: element.remark ?? '');
+    _policy = element.policy ?? policyList.first;
+    _enableH2C = element.enableH2C ?? false;
+    _serverEditors.clear();
+    element.servers?.forEach((element) {
+      final s = _ServerEditor();
+      s.addrController.value = TextEditingValue(text: element.addr ?? '');
+      s.backup = element.backup ?? false;
+      _serverEditors.add(s);
+    });
+  }
 
   // _createRowItem 生成表单元素
   Widget _createRowItem(String text) => Padding(
@@ -94,6 +119,52 @@ class _UpstreamPageState extends State<UpstreamPage> {
     ));
   }
 
+  // _addUpstream 添加upstream配置，如果有当前相同配置，则替换
+  void _addUpstream(ConfigCurrentState state) {
+    final name = _nameController.text?.trim();
+    final healthCheck = _healthCheckController.text?.trim();
+    final acceptEncoding = _acceptEncodingController.text?.trim();
+    final remark = _remarkController.text?.trim();
+
+    final servers = <UpstreamServerConfig>[];
+    _serverEditors.forEach((element) {
+      final addr = element.addrController.text?.trim();
+      if (addr != null && addr.isNotEmpty) {
+        servers.add(UpstreamServerConfig(
+          addr: addr,
+          backup: element.backup,
+        ));
+      }
+    });
+
+    final upstreamConfig = UpstreamConfig(
+      name: name,
+      healthCheck: healthCheck,
+      policy: _policy,
+      enableH2C: _enableH2C,
+      acceptEncoding: acceptEncoding,
+      servers: servers,
+      remark: remark,
+    );
+    final upstreamList = <UpstreamConfig>[];
+    state.config.upstreams?.forEach((element) {
+      if (element.name != name) {
+        upstreamList.add(element);
+      }
+    });
+    upstreamList.add(upstreamConfig);
+    _configBloc.add(ConfigUpdate(
+      delay: '2s',
+      config: state.config.copyWith(
+        upstreams: upstreamList,
+      ),
+    ));
+    // 重置当前模式
+    setState(() {
+      _mode = '';
+    });
+  }
+
   // _renderServerList 渲染服务器列表
   Widget _renderServerList(List<UpstreamServerConfig> servers) {
     final items = servers?.map((element) {
@@ -101,7 +172,28 @@ class _UpstreamPageState extends State<UpstreamPage> {
       if (element.backup != null && element.backup) {
         addr += ' (backup)';
       }
-      return Text(addr);
+      var icon = Icon(
+        Icons.check,
+        color: Colors.green,
+        size: Application.defaultFontSize,
+      );
+      if (element.healthy == null || !element.healthy) {
+        icon = Icon(
+          Icons.close,
+          color: Colors.red,
+          size: Application.defaultFontSize,
+        );
+      }
+      return Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Text(addr),
+          Container(
+            width: 5,
+          ),
+          icon,
+        ],
+      );
     })?.toList();
     return Padding(
       padding: EdgeInsets.only(
@@ -127,6 +219,15 @@ class _UpstreamPageState extends State<UpstreamPage> {
             hintText:
                 'Please input the server addr, eg: http://127.0.0.1:3015 ',
           ),
+          validator: (v) {
+            if (v == null || v.isEmpty) {
+              return null;
+            }
+            if (RegExp(r'^http(s?)://').hasMatch(v)) {
+              return null;
+            }
+            return 'Server addr should be http://xxx or https://xxx';
+          },
         ),
       );
       // 是否备份节点
@@ -173,9 +274,17 @@ class _UpstreamPageState extends State<UpstreamPage> {
             top: Application.defaultPadding,
           ),
           width: double.infinity,
-          child: Text(
-            'Servers',
-            textAlign: TextAlign.left,
+          child: Row(
+            children: [
+              Text('Servers'),
+              Text(
+                '(upstream server list)',
+                style: TextStyle(
+                  color: Application.fontColorOfSecondaryColor,
+                  fontSize: Application.smallFontSize,
+                ),
+              )
+            ],
           ),
         ));
     // 添加服务器按钮
@@ -214,7 +323,7 @@ class _UpstreamPageState extends State<UpstreamPage> {
         labelText: 'Name',
         hintText: 'Please input the name of upstream',
       ),
-      validator: (v) => v.trim().isNotEmpty ? null : 'name can not be null',
+      validator: (v) => v.trim().isNotEmpty ? null : 'Name can not be null',
     ));
 
     // health check
@@ -374,6 +483,10 @@ class _UpstreamPageState extends State<UpstreamPage> {
     return Table(
       columnWidths: {
         // 指定表格列宽
+        1: FixedColumnWidth(150),
+        2: FixedColumnWidth(120),
+        3: FixedColumnWidth(100),
+        4: FixedColumnWidth(140),
         7: FixedColumnWidth(150),
       },
       border: TableBorder.all(
@@ -393,6 +506,10 @@ class _UpstreamPageState extends State<UpstreamPage> {
           );
         }
         final currentConfig = state as ConfigCurrentState;
+        var btnText = _isEditting ? 'Save Upstream' : 'Add Upstream';
+        if (currentConfig.isProcessing) {
+          btnText = 'Processing...';
+        }
         return SingleChildScrollView(
           child: Container(
             margin: EdgeInsets.all(3 * Application.defaultPadding),
@@ -411,7 +528,7 @@ class _UpstreamPageState extends State<UpstreamPage> {
                     // 如果是编辑模式，则是添加或更新
                     if (_isEditting) {
                       if ((_formKey.currentState as FormState).validate()) {
-                        // _ad(currentConfig);
+                        _addUpstream(currentConfig);
                       }
                       return;
                     }
@@ -421,7 +538,7 @@ class _UpstreamPageState extends State<UpstreamPage> {
                       _mode = _editMode;
                     });
                   },
-                  text: Text(_isEditting ? 'Save Upstream' : 'Add Upstream'),
+                  text: Text(btnText),
                 ),
               ],
             ),

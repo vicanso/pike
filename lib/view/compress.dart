@@ -290,6 +290,10 @@ class _CompressPageState extends State<CompressPage> {
           );
         }
         final currentConfig = state as ConfigCurrentState;
+        var btnText = _isEditting ? 'Save Compress' : 'Add Compress';
+        if (currentConfig.isProcessing) {
+          btnText = 'Processing...';
+        }
         return SingleChildScrollView(
           child: Container(
             margin: EdgeInsets.all(3 * Application.defaultPadding),
@@ -318,7 +322,7 @@ class _CompressPageState extends State<CompressPage> {
                       _mode = _editMode;
                     });
                   },
-                  text: Text(_isEditting ? 'Save Compress' : 'Add Compress'),
+                  text: Text(btnText),
                 ),
               ],
             ),

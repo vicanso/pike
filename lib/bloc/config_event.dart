@@ -11,7 +11,9 @@ class ConfigFetch extends ConfigEvent {}
 // 更新配置信息
 class ConfigUpdate extends ConfigEvent {
   final Config config;
+  final String delay;
   ConfigUpdate({
     this.config,
+    this.delay,
   });
 }

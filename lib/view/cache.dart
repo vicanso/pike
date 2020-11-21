@@ -265,6 +265,10 @@ class _CachePageState extends State<CachePage> {
           );
         }
         final currentConfig = state as ConfigCurrentState;
+        var btnText = _isEditting ? 'Save Cache' : 'Add Cache';
+        if (currentConfig.isProcessing) {
+          btnText = 'Processing...';
+        }
         return SingleChildScrollView(
           child: Container(
             margin: EdgeInsets.all(3 * Application.defaultPadding),
@@ -293,7 +297,7 @@ class _CachePageState extends State<CachePage> {
                       _mode = _editMode;
                     });
                   },
-                  text: Text(_isEditting ? 'Save Cache' : 'Add Cache'),
+                  text: Text(btnText),
                 ),
               ],
             ),

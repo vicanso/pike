@@ -42,8 +42,9 @@ class ConfigBloc extends Bloc<ConfigEvent, ConfigState> {
       }
       try {
         final data = event.config.toJson();
+
         final resp = await getClient().put(
-          getURL(urls.config),
+          '${getURL(urls.config)}?delay=${event.delay ?? ""}',
           body: data,
           headers: {
             'Content-Type': 'application/json',

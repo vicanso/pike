@@ -11,7 +11,7 @@ import 'package:flutter/foundation.dart';
 
 // fillEmptyList 填充空列表，用于在Config.fromMap中使用
 void fillEmptyList(Map<String, dynamic> m) {
-  m['locations']?.forEach((e) {
+  m['locations']?.forEach((element) {
     [
       'prefixes',
       'rewrites',
@@ -19,12 +19,15 @@ void fillEmptyList(Map<String, dynamic> m) {
       'reqHeaders',
       'hosts',
     ].forEach((key) {
-      e[key] ??= [];
+      element[key] ??= [];
     });
   });
+  m['upstreams']?.forEach((element) {
+    element['servers'] ??= [];
+  });
 
-  m['servers']?.forEach((e) {
-    e['locations'] ??= [];
+  m['servers']?.forEach((element) {
+    element['locations'] ??= [];
   });
 }
 
@@ -234,18 +237,22 @@ class CacheConfig {
 class UpstreamServerConfig {
   final String addr;
   final bool backup;
+  final bool healthy;
   UpstreamServerConfig({
     this.addr,
     this.backup,
+    this.healthy,
   });
 
   UpstreamServerConfig copyWith({
     String addr,
     bool backup,
+    bool healthy,
   }) {
     return UpstreamServerConfig(
       addr: addr ?? this.addr,
       backup: backup ?? this.backup,
+      healthy: healthy ?? this.healthy,
     );
   }
 
@@ -253,6 +260,7 @@ class UpstreamServerConfig {
     return {
       'addr': addr,
       'backup': backup,
+      'healthy': healthy,
     };
   }
 
@@ -262,6 +270,7 @@ class UpstreamServerConfig {
     return UpstreamServerConfig(
       addr: map['addr'],
       backup: map['backup'],
+      healthy: map['healthy'],
     );
   }
 
@@ -271,17 +280,21 @@ class UpstreamServerConfig {
       UpstreamServerConfig.fromMap(json.decode(source));
 
   @override
-  String toString() => 'UpstreamServerConfig(addr: $addr, backup: $backup)';
+  String toString() =>
+      'UpstreamServerConfig(addr: $addr, backup: $backup, healthy: $healthy)';
 
   @override
   bool operator ==(Object o) {
     if (identical(this, o)) return true;
 
-    return o is UpstreamServerConfig && o.addr == addr && o.backup == backup;
+    return o is UpstreamServerConfig &&
+        o.addr == addr &&
+        o.backup == backup &&
+        o.healthy == healthy;
   }
 
   @override
-  int get hashCode => addr.hashCode ^ backup.hashCode;
+  int get hashCode => addr.hashCode ^ backup.hashCode ^ healthy.hashCode;
 }
 
 class UpstreamConfig {
@@ -651,7 +664,7 @@ class Config {
         break;
       case 'upstream':
         locations?.forEach((element) {
-          if (element.name == name) {
+          if (element.upstream == name) {
             valid = false;
           }
         });
