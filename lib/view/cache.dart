@@ -54,8 +54,8 @@ class _CachePageState extends State<CachePage> {
     _remarkCtrl.clear();
   }
 
-  // _fillTextEditor 填充编辑数据
-  void _fillTextEditor(CacheConfig element) {
+  // _fillEditor 填充编辑数据
+  void _fillEditor(CacheConfig element) {
     _nameCtrl.value = TextEditingValue(text: element.name);
     _sizeCtrl.value = TextEditingValue(text: element.size.toString());
     _hitForPassCtrl.value = TextEditingValue(text: element.hitForPass);
@@ -114,7 +114,7 @@ class _CachePageState extends State<CachePage> {
                 onPressed: () {
                   // 重置当前数据，并将需要更新的配置填充
                   _reset();
-                  _fillTextEditor(element);
+                  _fillEditor(element);
 
                   setState(() {
                     _mode = _updateMode;

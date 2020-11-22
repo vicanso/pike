@@ -69,8 +69,8 @@ class _UpstreamPageState extends State<UpstreamPage> {
     _serverEditors.add(_ServerEditor());
   }
 
-  // _fillTextEditor 填充编辑数据
-  void _fillTextEditor(UpstreamConfig element) {
+  // _fillEditor 填充编辑数据
+  void _fillEditor(UpstreamConfig element) {
     _nameCtrl.value = TextEditingValue(text: element.name ?? '');
     _healthCheckCtrl.value = TextEditingValue(text: element.healthCheck ?? '');
     _acceptEncodingCtrl.value =
@@ -442,7 +442,7 @@ class _UpstreamPageState extends State<UpstreamPage> {
                 onPressed: () {
                   // 重置当前数据，并将需要更新的配置填充
                   _reset();
-                  _fillTextEditor(element);
+                  _fillEditor(element);
 
                   setState(() {
                     _mode = _updateMode;

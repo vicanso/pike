@@ -103,8 +103,8 @@ class _LocationPageState extends State<LocationPage> {
     });
   }
 
-  // _fillTextEditor 填充数据
-  void _fillTextEditor(LocationConfig element) {
+  // _fillEditor 填充数据
+  void _fillEditor(LocationConfig element) {
     _nameCtrl.value = TextEditingValue(text: element.name ?? '');
     _upstream = element.upstream;
     _fillList(_prefixCtrlList, element.prefixes);
@@ -376,7 +376,7 @@ class _LocationPageState extends State<LocationPage> {
                 onPressed: () {
                   // 重置当前数据，并将需要更新的配置填充
                   _reset();
-                  _fillTextEditor(element);
+                  _fillEditor(element);
 
                   setState(() {
                     _mode = _updateMode;

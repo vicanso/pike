@@ -51,7 +51,42 @@ class _ServerPageState extends State<ServerPage> {
 
   bool get _isUpdating => _mode == _updateMode;
 
-  void _reset() {}
+  void _reset() {
+    _addrCtrl.clear();
+    _locations = <String>[];
+    _cache = '';
+    _compress = '';
+    _compressMinLengthCtrl.clear();
+    _compressContentFilterCtrl.clear();
+    _logFormatCtrl.clear();
+    _remarkCtrl.clear();
+  }
+
+  void _fillEditor(ServerConfig element) {
+    _addrCtrl.value = TextEditingValue(text: element.addr ?? '');
+    _locations = element.locations;
+    _cache = element.cache;
+    _compress = element.compress;
+    _compressMinLengthCtrl.value =
+        TextEditingValue(text: element.compressMinLength ?? '');
+    _compressContentFilterCtrl.value =
+        TextEditingValue(text: element.compressContentTypeFilter ?? '');
+    _logFormatCtrl.value = TextEditingValue(text: element.logFormat ?? '');
+    _remarkCtrl.value = TextEditingValue(text: element.remark ?? '');
+  }
+
+  void _deleteServer(ConfigCurrentState state, String addr) {
+    final serverList = <ServerConfig>[];
+    state.config.servers?.forEach((element) {
+      if (element.addr != addr) {
+        serverList.add(element);
+      }
+    });
+    _configBloc.add(ConfigUpdate(
+        config: state.config.copyWith(
+      servers: serverList,
+    )));
+  }
 
   Widget _renderServerList(ConfigCurrentState state) {
     final rows = <TableRow>[
@@ -87,7 +122,7 @@ class _ServerPageState extends State<ServerPage> {
                 onPressed: () {
                   // 重置当前数据，并将需要更新的配置填充
                   _reset();
-                  // _fillTextEditor(element);
+                  _fillEditor(element);
 
                   setState(() {
                     _mode = _updateMode;
@@ -97,7 +132,7 @@ class _ServerPageState extends State<ServerPage> {
               ),
               TextButton(
                 onPressed: () {
-                  // _deleteCompress(state, element.name);
+                  _deleteServer(state, element.addr);
                 },
                 child: Text('Delete'),
               ),
