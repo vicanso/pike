@@ -22,11 +22,11 @@ class CachePage extends StatefulWidget {
 }
 
 class _CachePageState extends State<CachePage> {
-  final GlobalKey _formKey = GlobalKey<FormState>();
-  final TextEditingController _nameController = TextEditingController();
-  final TextEditingController _sizeController = TextEditingController();
-  final TextEditingController _hitForPassController = TextEditingController();
-  final TextEditingController _remarkController = TextEditingController();
+  final _formKey = GlobalKey<FormState>();
+  final _nameCtrl = TextEditingController();
+  final _sizeCtrl = TextEditingController();
+  final _hitForPassCtrl = TextEditingController();
+  final _remarkCtrl = TextEditingController();
 
   ConfigBloc _configBloc;
   final numberFormat = NumberFormat('#,##0', 'en_US');
@@ -47,18 +47,18 @@ class _CachePageState extends State<CachePage> {
 
   // _reset 重置表单所有元素
   void _reset() {
-    _nameController.clear();
-    _sizeController.clear();
-    _hitForPassController.clear();
-    _remarkController.clear();
+    _nameCtrl.clear();
+    _sizeCtrl.clear();
+    _hitForPassCtrl.clear();
+    _remarkCtrl.clear();
   }
 
   // _fillTextEditor 填充编辑数据
   void _fillTextEditor(CacheConfig element) {
-    _nameController.value = TextEditingValue(text: element.name);
-    _sizeController.value = TextEditingValue(text: element.size.toString());
-    _hitForPassController.value = TextEditingValue(text: element.hitForPass);
-    _remarkController.value = TextEditingValue(text: element.remark ?? '');
+    _nameCtrl.value = TextEditingValue(text: element.name);
+    _sizeCtrl.value = TextEditingValue(text: element.size.toString());
+    _hitForPassCtrl.value = TextEditingValue(text: element.hitForPass);
+    _remarkCtrl.value = TextEditingValue(text: element.remark ?? '');
   }
 
   // _deleteCache 删除缓存配置
@@ -162,10 +162,10 @@ class _CachePageState extends State<CachePage> {
   // _addCache 添加缓存服务，如果存在相同服务，则替换
   void _addCache(ConfigCurrentState state) {
     final cacheConfig = CacheConfig(
-      name: _nameController.text?.trim(),
-      size: int.parse(_sizeController.text),
-      hitForPass: _hitForPassController.text?.trim(),
-      remark: _remarkController.text?.trim(),
+      name: _nameCtrl.text?.trim(),
+      size: int.parse(_sizeCtrl.text),
+      hitForPass: _hitForPassCtrl.text?.trim(),
+      remark: _remarkCtrl.text?.trim(),
     );
     final cacheList = <CacheConfig>[];
     state.config.caches?.forEach((element) {
@@ -196,7 +196,7 @@ class _CachePageState extends State<CachePage> {
     formItems.add(TextFormField(
       autofocus: true,
       readOnly: _isUpdateding,
-      controller: _nameController,
+      controller: _nameCtrl,
       decoration: InputDecoration(
         labelText: 'Name',
         hintText: 'Please input the name of cache',
@@ -206,7 +206,7 @@ class _CachePageState extends State<CachePage> {
 
     // 缓存大小
     formItems.add(TextFormField(
-      controller: _sizeController,
+      controller: _sizeCtrl,
       decoration: InputDecoration(
         labelText: 'Size',
         hintText: 'Please input the size of cache',
@@ -217,7 +217,7 @@ class _CachePageState extends State<CachePage> {
 
     // hit for pass时长
     formItems.add(TextFormField(
-      controller: _hitForPassController,
+      controller: _hitForPassCtrl,
       decoration: InputDecoration(
         labelText: 'HitForPass',
         hintText: 'Please input the duration of hit for pass(5m, 30s)',
@@ -233,7 +233,7 @@ class _CachePageState extends State<CachePage> {
 
     // remark
     formItems.add(TextFormField(
-      controller: _remarkController,
+      controller: _remarkCtrl,
       minLines: 3,
       maxLines: 3,
       decoration: InputDecoration(
@@ -286,7 +286,7 @@ class _CachePageState extends State<CachePage> {
                     }
                     // 如果是编辑模式，则是添加或更新
                     if (_isEditting) {
-                      if ((_formKey.currentState as FormState).validate()) {
+                      if (_formKey.currentState.validate()) {
                         _addCache(currentConfig);
                       }
                       return;

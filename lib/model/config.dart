@@ -403,10 +403,10 @@ class LocationConfig {
   final String name;
   final String upstream;
   final List<String> prefixes;
+  final List<String> hosts;
   final List<String> rewrites;
   final List<String> respHeaders;
   final List<String> reqHeaders;
-  final List<String> hosts;
   final String proxyTimeout;
   final String remark;
 
@@ -667,6 +667,15 @@ class Config {
           if (element.upstream == name) {
             valid = false;
           }
+        });
+        break;
+      case 'location':
+        servers?.forEach((element) {
+          element.locations?.forEach((location) {
+            if (location == name) {
+              valid = false;
+            }
+          });
         });
         break;
       default:

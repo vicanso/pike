@@ -10,6 +10,7 @@ import '../helper/util.dart';
 import '../model/config.dart';
 import '../widget/button.dart';
 import '../widget/error_message.dart';
+import '../widget/selector.dart';
 
 @immutable
 class UpstreamPage extends StatefulWidget {
@@ -28,13 +29,12 @@ class _ServerEditor {
 }
 
 class _UpstreamPageState extends State<UpstreamPage> {
-  final GlobalKey _formKey = GlobalKey<FormState>();
+  final _formKey = GlobalKey<FormState>();
 
-  final TextEditingController _nameController = TextEditingController();
-  final TextEditingController _healthCheckController = TextEditingController();
-  final TextEditingController _acceptEncodingController =
-      TextEditingController();
-  final TextEditingController _remarkController = TextEditingController();
+  final _nameCtrl = TextEditingController();
+  final _healthCheckCtrl = TextEditingController();
+  final _acceptEncodingCtrl = TextEditingController();
+  final _remarkCtrl = TextEditingController();
   final _serverEditors = <_ServerEditor>[];
 
   String _policy = policyList.first;
@@ -58,10 +58,10 @@ class _UpstreamPageState extends State<UpstreamPage> {
 
   // _reset 重置表单所有元素
   void _reset() {
-    _nameController.clear();
-    _healthCheckController.clear();
-    _acceptEncodingController.clear();
-    _remarkController.clear();
+    _nameCtrl.clear();
+    _healthCheckCtrl.clear();
+    _acceptEncodingCtrl.clear();
+    _remarkCtrl.clear();
     _policy = policyList.first;
     _enableH2C = false;
     _serverEditors.clear();
@@ -70,12 +70,11 @@ class _UpstreamPageState extends State<UpstreamPage> {
 
   // _fillTextEditor 填充编辑数据
   void _fillTextEditor(UpstreamConfig element) {
-    _nameController.value = TextEditingValue(text: element.name ?? '');
-    _healthCheckController.value =
-        TextEditingValue(text: element.healthCheck ?? '');
-    _acceptEncodingController.value =
+    _nameCtrl.value = TextEditingValue(text: element.name ?? '');
+    _healthCheckCtrl.value = TextEditingValue(text: element.healthCheck ?? '');
+    _acceptEncodingCtrl.value =
         TextEditingValue(text: element.acceptEncoding ?? '');
-    _remarkController.value = TextEditingValue(text: element.remark ?? '');
+    _remarkCtrl.value = TextEditingValue(text: element.remark ?? '');
     _policy = element.policy ?? policyList.first;
     _enableH2C = element.enableH2C ?? false;
     _serverEditors.clear();
@@ -121,10 +120,10 @@ class _UpstreamPageState extends State<UpstreamPage> {
 
   // _addUpstream 添加upstream配置，如果有当前相同配置，则替换
   void _addUpstream(ConfigCurrentState state) {
-    final name = _nameController.text?.trim();
-    final healthCheck = _healthCheckController.text?.trim();
-    final acceptEncoding = _acceptEncodingController.text?.trim();
-    final remark = _remarkController.text?.trim();
+    final name = _nameCtrl.text?.trim();
+    final healthCheck = _healthCheckCtrl.text?.trim();
+    final acceptEncoding = _acceptEncodingCtrl.text?.trim();
+    final remark = _remarkCtrl.text?.trim();
 
     final servers = <UpstreamServerConfig>[];
     _serverEditors.forEach((element) {
@@ -217,7 +216,7 @@ class _UpstreamPageState extends State<UpstreamPage> {
           decoration: InputDecoration(
             labelText: 'Addr',
             hintText:
-                'Please input the server addr, eg: http://127.0.0.1:3015 ',
+                'Please input the server addr, e.g.: http://127.0.0.1:3015 ',
           ),
           validator: (v) {
             if (v == null || v.isEmpty) {
@@ -318,7 +317,7 @@ class _UpstreamPageState extends State<UpstreamPage> {
     formItems.add(TextFormField(
       autofocus: true,
       readOnly: _isUpdateding,
-      controller: _nameController,
+      controller: _nameCtrl,
       decoration: InputDecoration(
         labelText: 'Name',
         hintText: 'Please input the name of upstream',
@@ -328,10 +327,10 @@ class _UpstreamPageState extends State<UpstreamPage> {
 
     // health check
     formItems.add(TextFormField(
-      controller: _healthCheckController,
+      controller: _healthCheckCtrl,
       decoration: InputDecoration(
         labelText: 'Health Check',
-        hintText: 'Please input the health check url, eg: /ping',
+        hintText: 'Please input the health check url, e.g.: /ping',
       ),
       validator: (v) {
         // 允许不配置
@@ -346,27 +345,15 @@ class _UpstreamPageState extends State<UpstreamPage> {
     ));
 
     // policy选择器
-    formItems.add(Row(
-      children: [
-        Text('Policy'),
-        Container(
-          width: Application.defaultPadding,
-        ),
-        DropdownButton(
-            value: _policy ?? policyList.first,
-            items: policyList
-                .map<DropdownMenuItem<String>>(
-                    (String value) => DropdownMenuItem<String>(
-                          value: value,
-                          child: Text(value),
-                        ))
-                .toList(),
-            onChanged: (String newValue) {
-              setState(() {
-                _policy = newValue;
-              });
-            }),
-      ],
+    formItems.add(XFormSelector(
+      value: _policy ?? policyList.first,
+      values: policyList,
+      title: 'Policy',
+      onChanged: (String policy) {
+        setState(() {
+          _policy = policy;
+        });
+      },
     ));
 
     // 是否启用 h2c
@@ -389,11 +376,11 @@ class _UpstreamPageState extends State<UpstreamPage> {
 
     // accept encoding
     formItems.add(TextFormField(
-      controller: _acceptEncodingController,
+      controller: _acceptEncodingCtrl,
       decoration: InputDecoration(
         labelText: 'Accept Encoding',
         hintText:
-            'Please input the accept encoding of proxy, eg: gzip, br [optional]',
+            'Please input the accept encoding of proxy, e.g.: gzip, br [optional]',
       ),
     ));
 
@@ -401,7 +388,7 @@ class _UpstreamPageState extends State<UpstreamPage> {
 
     // remark
     formItems.add(TextFormField(
-      controller: _remarkController,
+      controller: _remarkCtrl,
       minLines: 3,
       maxLines: 3,
       decoration: InputDecoration(
@@ -448,10 +435,10 @@ class _UpstreamPageState extends State<UpstreamPage> {
       rows.add(TableRow(
         children: [
           _createRowItem(element.name),
-          _createRowItem(element.healthCheck ?? ''),
-          _createRowItem(element.policy ?? ''),
+          _createRowItem(element.healthCheck),
+          _createRowItem(element.policy),
           _createRowItem(enableH2C),
-          _createRowItem(element.acceptEncoding ?? ''),
+          _createRowItem(element.acceptEncoding),
           _renderServerList(element.servers),
           _createRowItem(element.remark),
           Row(
@@ -527,7 +514,7 @@ class _UpstreamPageState extends State<UpstreamPage> {
                     }
                     // 如果是编辑模式，则是添加或更新
                     if (_isEditting) {
-                      if ((_formKey.currentState as FormState).validate()) {
+                      if (_formKey.currentState.validate()) {
                         _addUpstream(currentConfig);
                       }
                       return;

@@ -21,11 +21,11 @@ class CompressPage extends StatefulWidget {
 }
 
 class _CompressPageState extends State<CompressPage> {
-  final GlobalKey _formKey = GlobalKey<FormState>();
-  final TextEditingController _nameController = TextEditingController();
-  final TextEditingController _gzipController = TextEditingController();
-  final TextEditingController _brController = TextEditingController();
-  final TextEditingController _remarkController = TextEditingController();
+  final _formKey = GlobalKey<FormState>();
+  final _nameCtrl = TextEditingController();
+  final _gzipCtrl = TextEditingController();
+  final _brCtrl = TextEditingController();
+  final _remarkCtrl = TextEditingController();
   String _mode = '';
   final _editMode = 'eidt';
   final _updateMode = 'update';
@@ -64,26 +64,26 @@ class _CompressPageState extends State<CompressPage> {
 
   // _reset 重置表单所有元素
   void _reset() {
-    _nameController.clear();
-    _gzipController.clear();
-    _brController.clear();
-    _remarkController.clear();
+    _nameCtrl.clear();
+    _gzipCtrl.clear();
+    _brCtrl.clear();
+    _remarkCtrl.clear();
   }
 
   // _fillTextEditor 填充编辑数据
   void _fillTextEditor(CompressConfig element) {
-    _nameController.value = TextEditingValue(text: element.name ?? '');
-    _gzipController.value = TextEditingValue(
+    _nameCtrl.value = TextEditingValue(text: element.name ?? '');
+    _gzipCtrl.value = TextEditingValue(
         text: _getLevel(
       element.levels,
       _gzipName,
     ));
-    _brController.value = TextEditingValue(
+    _brCtrl.value = TextEditingValue(
         text: _getLevel(
       element.levels,
       _brName,
     ));
-    _remarkController.value = TextEditingValue(
+    _remarkCtrl.value = TextEditingValue(
       text: element.remark ?? '',
     );
   }
@@ -197,7 +197,7 @@ class _CompressPageState extends State<CompressPage> {
     formItems.add(TextFormField(
       autofocus: true,
       readOnly: _isUpdateding,
-      controller: _nameController,
+      controller: _nameCtrl,
       decoration: InputDecoration(
         labelText: 'Name',
         hintText: 'Please input the name of compress',
@@ -207,7 +207,7 @@ class _CompressPageState extends State<CompressPage> {
 
     // gzip 压缩级别
     formItems.add(TextFormField(
-      controller: _gzipController,
+      controller: _gzipCtrl,
       decoration: InputDecoration(
         labelText: 'Gzip Level',
         hintText: 'Please input the compress level of gzip(1-9)',
@@ -217,7 +217,7 @@ class _CompressPageState extends State<CompressPage> {
 
     // br 压缩级别
     formItems.add(TextFormField(
-      controller: _brController,
+      controller: _brCtrl,
       decoration: InputDecoration(
         labelText: 'Br Level',
         hintText: 'Please input the compress level of br(1-11)',
@@ -227,7 +227,7 @@ class _CompressPageState extends State<CompressPage> {
 
     // remark
     formItems.add(TextFormField(
-      controller: _remarkController,
+      controller: _remarkCtrl,
       minLines: 3,
       maxLines: 3,
       decoration: InputDecoration(
@@ -251,15 +251,15 @@ class _CompressPageState extends State<CompressPage> {
 
   // _addCompress 添加压缩服务，如果添加的服务名称与当前服务相同，则替换
   void _addCompress(ConfigCurrentState state) {
-    final name = _nameController.text?.trim();
+    final name = _nameCtrl.text?.trim();
     final levels = <String, int>{
-      'gzip': int.parse(_gzipController.text),
-      'br': int.parse(_brController.text),
+      'gzip': int.parse(_gzipCtrl.text),
+      'br': int.parse(_brCtrl.text),
     };
     final compressConfig = CompressConfig(
       name: name,
       levels: levels,
-      remark: _remarkController.text?.trim(),
+      remark: _remarkCtrl.text?.trim(),
     );
     final compressList = <CompressConfig>[];
     state.config.compresses?.forEach((element) {
@@ -311,7 +311,7 @@ class _CompressPageState extends State<CompressPage> {
                     }
                     // 如果是编辑模式，则是添加或更新
                     if (_isEditting) {
-                      if ((_formKey.currentState as FormState).validate()) {
+                      if (_formKey.currentState.validate()) {
                         _addCompress(currentConfig);
                       }
                       return;
