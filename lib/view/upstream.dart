@@ -11,6 +11,7 @@ import '../model/config.dart';
 import '../widget/button.dart';
 import '../widget/error_message.dart';
 import '../widget/selector.dart';
+import './common.dart';
 
 @immutable
 class UpstreamPage extends StatefulWidget {
@@ -54,7 +55,7 @@ class _UpstreamPageState extends State<UpstreamPage> {
 
   bool get _isEditting => _mode.isNotEmpty;
 
-  bool get _isUpdateding => _mode == _updateMode;
+  bool get _isUpdating => _mode == _updateMode;
 
   // _reset 重置表单所有元素
   void _reset() {
@@ -85,18 +86,6 @@ class _UpstreamPageState extends State<UpstreamPage> {
       _serverEditors.add(s);
     });
   }
-
-  // _createRowItem 生成表单元素
-  Widget _createRowItem(String text) => Padding(
-        padding: EdgeInsets.only(
-          top: Application.defaultPadding,
-          bottom: Application.defaultPadding,
-        ),
-        child: Text(
-          text ?? '--',
-          textAlign: TextAlign.center,
-        ),
-      );
 
   void _deleteUpstream(ConfigCurrentState state, String name) {
     // 校验该upstream是否被其它配置使用
@@ -316,7 +305,7 @@ class _UpstreamPageState extends State<UpstreamPage> {
     // 名称
     formItems.add(TextFormField(
       autofocus: true,
-      readOnly: _isUpdateding,
+      readOnly: _isUpdating,
       controller: _nameCtrl,
       decoration: InputDecoration(
         labelText: 'Name',
@@ -345,15 +334,20 @@ class _UpstreamPageState extends State<UpstreamPage> {
     ));
 
     // policy选择器
-    formItems.add(XFormSelector(
-      value: _policy ?? policyList.first,
-      values: policyList,
-      title: 'Policy',
-      onChanged: (String policy) {
-        setState(() {
-          _policy = policy;
-        });
-      },
+    formItems.add(Container(
+      margin: EdgeInsets.only(
+        top: Application.defaultPadding,
+      ),
+      child: XFormSelector(
+        value: _policy ?? policyList.first,
+        options: policyList,
+        title: 'Policy',
+        onChanged: (String policy) {
+          setState(() {
+            _policy = policy;
+          });
+        },
+      ),
     ));
 
     // 是否启用 h2c
@@ -416,14 +410,14 @@ class _UpstreamPageState extends State<UpstreamPage> {
     final rows = <TableRow>[
       TableRow(
         children: [
-          _createRowItem('Name'),
-          _createRowItem('Health Check'),
-          _createRowItem('Policy'),
-          _createRowItem('Enable H2C'),
-          _createRowItem('Accept Encoding'),
-          _createRowItem('Servers'),
-          _createRowItem('Remark'),
-          _createRowItem('Operations'),
+          createRowItem('Name'),
+          createRowItem('Health Check'),
+          createRowItem('Policy'),
+          createRowItem('Enable H2C'),
+          createRowItem('Accept Encoding'),
+          createRowItem('Servers'),
+          createRowItem('Remark'),
+          createRowItem('Operations'),
         ],
       ),
     ];
@@ -434,13 +428,13 @@ class _UpstreamPageState extends State<UpstreamPage> {
       }
       rows.add(TableRow(
         children: [
-          _createRowItem(element.name),
-          _createRowItem(element.healthCheck),
-          _createRowItem(element.policy),
-          _createRowItem(enableH2C),
-          _createRowItem(element.acceptEncoding),
+          createRowItem(element.name),
+          createRowItem(element.healthCheck),
+          createRowItem(element.policy),
+          createRowItem(enableH2C),
+          createRowItem(element.acceptEncoding),
           _renderServerList(element.servers),
-          _createRowItem(element.remark),
+          createRowItem(element.remark),
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [

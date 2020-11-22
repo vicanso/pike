@@ -11,6 +11,7 @@ import '../model/config.dart';
 import '../widget/button.dart';
 import '../widget/error_message.dart';
 import '../widget/selector.dart';
+import './common.dart';
 
 @immutable
 class LocationPage extends StatefulWidget {
@@ -116,29 +117,6 @@ class _LocationPageState extends State<LocationPage> {
     _remarkCtrl.value = TextEditingValue(text: element.remark ?? '');
   }
 
-  // _createRowItem 生成表单元素
-  Widget _createRowItem(String text) => Padding(
-        padding: EdgeInsets.only(
-          top: Application.defaultPadding,
-          bottom: Application.defaultPadding,
-        ),
-        child: Text(
-          text ?? '--',
-          textAlign: TextAlign.center,
-        ),
-      );
-
-  // _createRowListItem create row list item
-  Widget _createRowListItem(List<String> arr) => Padding(
-        padding: EdgeInsets.only(
-          top: Application.defaultPadding,
-          bottom: Application.defaultPadding,
-        ),
-        child: Column(
-          children: arr?.map((e) => Text(e))?.toList(),
-        ),
-      );
-
   // _renderLocationEditor 渲染location编辑表单
   Widget _renderLocationEditor(ConfigCurrentState state) {
     if (!_isEditting) {
@@ -158,18 +136,22 @@ class _LocationPageState extends State<LocationPage> {
     ));
 
     final upstreamList = state.config.upstreams?.map((e) => e.name)?.toList();
-    upstreamList.insert(0, '');
 
     // upstream选择器（如果无则不需要展示）
-    formItems.add(XFormSelector(
-      title: 'Upstream',
-      value: _upstream ?? '',
-      values: upstreamList,
-      onChanged: (String upstream) {
-        setState(() {
-          _upstream = upstream;
-        });
-      },
+    formItems.add(Container(
+      margin: EdgeInsets.only(
+        top: Application.defaultPadding,
+      ),
+      child: XFormSelector(
+        title: 'Upstream',
+        value: _upstream ?? '',
+        options: upstreamList,
+        onChanged: (String upstream) {
+          setState(() {
+            _upstream = upstream;
+          });
+        },
+      ),
     ));
 
     // url prefix编辑列表
@@ -339,7 +321,7 @@ class _LocationPageState extends State<LocationPage> {
       maxLines: 3,
       decoration: InputDecoration(
         labelText: 'Remark',
-        hintText: 'Please input the remark for compress',
+        hintText: 'Please input the remark for location',
       ),
     ));
 
@@ -362,31 +344,31 @@ class _LocationPageState extends State<LocationPage> {
     final rows = <TableRow>[
       TableRow(
         children: [
-          _createRowItem('Name'),
-          _createRowItem('Upstream'),
-          _createRowItem('Prefixes'),
-          _createRowItem('Hosts'),
-          _createRowItem('Rewrites'),
-          _createRowItem('Resp Headers'),
-          _createRowItem('Req Headers'),
-          _createRowItem('Proxy Timeout'),
-          _createRowItem('Remark'),
-          _createRowItem('Operations'),
+          createRowItem('Name'),
+          createRowItem('Upstream'),
+          createRowItem('Prefixes'),
+          createRowItem('Hosts'),
+          createRowItem('Rewrites'),
+          createRowItem('Resp Headers'),
+          createRowItem('Req Headers'),
+          createRowItem('Proxy Timeout'),
+          createRowItem('Remark'),
+          createRowItem('Operations'),
         ],
       ),
     ];
     state.config.locations?.forEach((element) {
       rows.add(TableRow(
         children: [
-          _createRowItem(element.name),
-          _createRowItem(element.upstream),
-          _createRowListItem(element.prefixes),
-          _createRowListItem(element.hosts),
-          _createRowListItem(element.rewrites),
-          _createRowListItem(element.respHeaders),
-          _createRowListItem(element.reqHeaders),
-          _createRowItem(element.proxyTimeout),
-          _createRowItem(element.remark),
+          createRowItem(element.name),
+          createRowItem(element.upstream),
+          createRowListItem(element.prefixes),
+          createRowListItem(element.hosts),
+          createRowListItem(element.rewrites),
+          createRowListItem(element.respHeaders),
+          createRowListItem(element.reqHeaders),
+          createRowItem(element.proxyTimeout),
+          createRowItem(element.remark),
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
@@ -462,6 +444,10 @@ class _LocationPageState extends State<LocationPage> {
 
   // _addLocation 添加location配置，如果添加的配置已存在，则替换
   void _addLocation(ConfigCurrentState state) {
+    if (_upstream == null || _upstream.isEmpty) {
+      showErrorMessage('upstream is required');
+      return;
+    }
     final name = _nameCtrl.text?.trim();
     final locationConfig = LocationConfig(
       name: name,

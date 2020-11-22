@@ -10,35 +10,93 @@ class XFormSelector extends StatelessWidget {
   final String title;
   final String value;
   final List<String> values;
+  final List<String> options;
   final ValueChanged<String> onChanged;
+  final bool toggled;
+  final bool mutiple;
 
   const XFormSelector({
     @required this.title,
-    @required this.value,
-    @required this.values,
+    @required this.options,
     @required this.onChanged,
+    this.value,
+    this.toggled,
+    this.mutiple,
+    this.values,
     Key key,
   }) : super(key: key);
+
+  bool get _isSupportToggled => toggled != null && toggled;
+  bool get _isSupportMultiple => mutiple != null && mutiple;
   @override
   Widget build(BuildContext context) {
-    final items = values
-        .map<DropdownMenuItem<String>>((String v) => DropdownMenuItem<String>(
-              value: v,
-              child: Text(v),
-            ))
-        .toList();
-    return Row(
-      children: [
-        Text(title),
-        Container(
-          width: Application.defaultPadding,
+    final items = <Widget>[
+      Text(title),
+      Container(
+        width: Application.defaultPadding,
+      ),
+    ];
+    options.forEach((element) {
+      var iconColor = Colors.green;
+      if (_isSupportMultiple) {
+        if (!(values?.contains(element) ?? false)) {
+          iconColor = Colors.grey;
+        }
+      } else {
+        if (value != element) {
+          iconColor = Colors.grey;
+        }
+      }
+      items.add(RaisedButton(
+        color: Colors.white,
+        onPressed: () {
+          if (_isSupportMultiple) {
+            final result = <String>[];
+            result.addAll(values ?? <String>[]);
+            if (result.contains(element)) {
+              if (_isSupportToggled) {
+                result.remove(element);
+              }
+            } else {
+              result.add(element);
+            }
+            onChanged(result.join(','));
+            return;
+          }
+          if (element == value) {
+            // 如果支持切换选中
+            if (_isSupportToggled) {
+              onChanged('');
+            }
+            return;
+          }
+          onChanged(element);
+        },
+        child: Row(
+          children: [
+            Icon(
+              Icons.check,
+              size: Application.smallFontSize,
+              color: iconColor,
+            ),
+            Container(
+              width: 3,
+            ),
+            Text(
+              element,
+              style: TextStyle(
+                color: Application.fontColorOfSecondaryColor,
+              ),
+            ),
+          ],
         ),
-        DropdownButton(
-          value: value,
-          items: items,
-          onChanged: onChanged,
-        )
-      ],
+      ));
+      items.add(Container(
+        width: Application.defaultPadding,
+      ));
+    });
+    return Row(
+      children: items,
     );
   }
 }

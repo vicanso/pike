@@ -11,6 +11,7 @@ import '../helper/util.dart';
 import '../model/config.dart';
 import '../widget/button.dart';
 import '../widget/error_message.dart';
+import './common.dart';
 
 @immutable
 class CachePage extends StatefulWidget {
@@ -43,7 +44,7 @@ class _CachePageState extends State<CachePage> {
 
   bool get _isEditting => _mode.isNotEmpty;
 
-  bool get _isUpdateding => _mode == _updateMode;
+  bool get _isUpdating => _mode == _updateMode;
 
   // _reset 重置表单所有元素
   void _reset() {
@@ -83,29 +84,17 @@ class _CachePageState extends State<CachePage> {
     ));
   }
 
-  // _createRowItem 生成表单元素
-  Widget _createRowItem(String text) => Padding(
-        padding: EdgeInsets.only(
-          top: Application.defaultPadding,
-          bottom: Application.defaultPadding,
-        ),
-        child: Text(
-          text ?? '--',
-          textAlign: TextAlign.center,
-        ),
-      );
-
   // _renderCacheList 渲染当前缓存服务列表
   Widget _renderCacheList(ConfigCurrentState state) {
     // 表头
     final rows = <TableRow>[
       TableRow(
         children: [
-          _createRowItem('Name'),
-          _createRowItem('Size'),
-          _createRowItem('Hit For Pass'),
-          _createRowItem('Remark'),
-          _createRowItem('Operations'),
+          createRowItem('Name'),
+          createRowItem('Size'),
+          createRowItem('Hit For Pass'),
+          createRowItem('Remark'),
+          createRowItem('Operations'),
         ],
       ),
     ];
@@ -114,10 +103,10 @@ class _CachePageState extends State<CachePage> {
     state.config.caches?.forEach((element) {
       rows.add(TableRow(
         children: [
-          _createRowItem(element.name),
-          _createRowItem(numberFormat.format(element.size)),
-          _createRowItem(element.hitForPass),
-          _createRowItem(element.remark),
+          createRowItem(element.name),
+          createRowItem(numberFormat.format(element.size)),
+          createRowItem(element.hitForPass),
+          createRowItem(element.remark),
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
@@ -195,7 +184,7 @@ class _CachePageState extends State<CachePage> {
     // 缓存名称
     formItems.add(TextFormField(
       autofocus: true,
-      readOnly: _isUpdateding,
+      readOnly: _isUpdating,
       controller: _nameCtrl,
       decoration: InputDecoration(
         labelText: 'Name',

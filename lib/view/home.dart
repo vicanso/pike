@@ -10,6 +10,7 @@ import '../widget/error_message.dart';
 import './cache.dart';
 import './compress.dart';
 import './location.dart';
+import './server.dart';
 import './upstream.dart';
 
 @immutable
@@ -125,6 +126,10 @@ class _HomePageState extends State<HomePage>
       case 4:
         // location配置
         return LocationPage();
+        break;
+      case 5:
+        // server配置
+        return ServerPage();
         break;
       default:
     }

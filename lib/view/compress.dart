@@ -10,6 +10,7 @@ import '../helper/util.dart';
 import '../model/config.dart';
 import '../widget/button.dart';
 import '../widget/error_message.dart';
+import './common.dart';
 
 @immutable
 class CompressPage extends StatefulWidget {
@@ -42,7 +43,7 @@ class _CompressPageState extends State<CompressPage> {
 
   bool get _isEditting => _mode.isNotEmpty;
 
-  bool get _isUpdateding => _mode == _updateMode;
+  bool get _isUpdating => _mode == _updateMode;
 
   // _getLevelDesc 获取压缩级别的描述
   String _getLevelDesc(Map<String, int> levels, String name) {
@@ -88,18 +89,6 @@ class _CompressPageState extends State<CompressPage> {
     );
   }
 
-  // _createRowItem 生成表单元素
-  Widget _createRowItem(String text) => Padding(
-        padding: EdgeInsets.only(
-          top: Application.defaultPadding,
-          bottom: Application.defaultPadding,
-        ),
-        child: Text(
-          text ?? '--',
-          textAlign: TextAlign.center,
-        ),
-      );
-
   // _deleteCompress 删除压缩
   void _deleteCompress(ConfigCurrentState state, String name) {
     // 校验该压缩是否被其它配置使用
@@ -128,11 +117,11 @@ class _CompressPageState extends State<CompressPage> {
     final rows = <TableRow>[
       TableRow(
         children: [
-          _createRowItem('Name'),
-          _createRowItem(_gzipName[0].toUpperCase() + _gzipName.substring(1)),
-          _createRowItem(_brName[0].toLowerCase() + _brName.substring(1)),
-          _createRowItem('Remark'),
-          _createRowItem('Operations'),
+          createRowItem('Name'),
+          createRowItem(_gzipName[0].toUpperCase() + _gzipName.substring(1)),
+          createRowItem(_brName[0].toLowerCase() + _brName.substring(1)),
+          createRowItem('Remark'),
+          createRowItem('Operations'),
         ],
       ),
     ];
@@ -140,10 +129,10 @@ class _CompressPageState extends State<CompressPage> {
     state.config.compresses?.forEach((element) {
       rows.add(TableRow(
         children: [
-          _createRowItem(element.name),
-          _createRowItem(_getLevelDesc(element.levels, _gzipName)),
-          _createRowItem(_getLevelDesc(element.levels, _brName)),
-          _createRowItem(element.remark),
+          createRowItem(element.name),
+          createRowItem(_getLevelDesc(element.levels, _gzipName)),
+          createRowItem(_getLevelDesc(element.levels, _brName)),
+          createRowItem(element.remark),
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
@@ -196,7 +185,7 @@ class _CompressPageState extends State<CompressPage> {
     // 名称
     formItems.add(TextFormField(
       autofocus: true,
-      readOnly: _isUpdateding,
+      readOnly: _isUpdating,
       controller: _nameCtrl,
       decoration: InputDecoration(
         labelText: 'Name',
