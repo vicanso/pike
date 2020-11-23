@@ -7,6 +7,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../bloc/bloc.dart';
 import '../config/application.dart';
 import '../widget/error_message.dart';
+import './admin.dart';
 import './cache.dart';
 import './compress.dart';
 import './location.dart';
@@ -130,6 +131,10 @@ class _HomePageState extends State<HomePage>
       case 5:
         // server配置
         return ServerPage();
+        break;
+      case 6:
+        // admin配置
+        return AdminPage();
         break;
       default:
     }
