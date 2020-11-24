@@ -270,7 +270,7 @@ class _ServerPageState extends State<ServerPage> {
       controller: _compressMinLengthCtrl,
       decoration: InputDecoration(
         labelText: 'Compress Min Length',
-        hintText: 'Please input the compress min lenght(1kb, 1mb)',
+        hintText: 'Please input the compress min length(1kb, 1mb)',
       ),
       validator: (v) {
         if (v == null || v.isEmpty) {
@@ -289,7 +289,8 @@ class _ServerPageState extends State<ServerPage> {
       controller: _compressContentFilterCtrl,
       decoration: InputDecoration(
         labelText: 'Compress Content Filter',
-        hintText: 'Please int the compress content filter, e.g.: text|json',
+        hintText:
+            'Please int the compress content filter, e.g.: text|javascript|json|wasm|xml, optional',
       ),
     ));
 

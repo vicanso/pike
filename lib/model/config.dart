@@ -11,6 +11,18 @@ import 'package:flutter/foundation.dart';
 
 // fillEmptyList 填充空列表，用于在Config.fromMap中使用
 void fillEmptyList(Map<String, dynamic> m) {
+  m['admin'] ??= <String, dynamic>{};
+
+  [
+    'compresses',
+    'caches',
+    'upstreams',
+    'locations',
+    'servers',
+  ].forEach((element) {
+    m[element] ??= [];
+  });
+
   m['locations']?.forEach((element) {
     [
       'prefixes',

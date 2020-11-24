@@ -84,11 +84,11 @@ class _HomePageState extends State<HomePage>
 
   Widget _renderYAMLConfig(ConfigCurrentState state) {
     final exp = RegExp(r'(password:[\S\s]+?\n)');
-    final yaml = state.config.yaml.replaceFirst(exp, 'password: ***\n');
+    final yaml = state.config.yaml?.replaceFirst(exp, 'password: ***\n');
     return SingleChildScrollView(
       child: Container(
         margin: EdgeInsets.all(2 * Application.defaultPadding),
-        child: Text(yaml),
+        child: Text(yaml ?? '-- No Content --'),
       ),
     );
   }

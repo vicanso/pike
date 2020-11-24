@@ -25,7 +25,6 @@ class _AdminPageState extends State<AdminPage> {
 
   final _accountCtrl = TextEditingController();
   final _passCtrl = TextEditingController();
-  final _prefixCtrl = TextEditingController();
 
   ConfigBloc _configBloc;
 
@@ -42,7 +41,6 @@ class _AdminPageState extends State<AdminPage> {
     }
     _accountCtrl.value = TextEditingValue(text: admin.user ?? '');
     _passCtrl.clear();
-    _prefixCtrl.value = TextEditingValue(text: admin.prefix ?? '');
   }
 
   // _updateAdmin 更新admin
@@ -50,7 +48,6 @@ class _AdminPageState extends State<AdminPage> {
     final adminConfig = AdminConfig(
       user: _accountCtrl.text.trim(),
       password: hashPassword(_passCtrl.text.trim()),
-      prefix: _prefixCtrl.text?.trim(),
     );
     _configBloc.add(ConfigUpdate(
       config: state.config.copyWith(
@@ -86,24 +83,6 @@ class _AdminPageState extends State<AdminPage> {
       ),
       obscureText: true,
       validator: (v) => v.trim().isNotEmpty ? null : 'password can not be null',
-    ));
-
-    // 前缀url
-    formItems.add(TextFormField(
-      controller: _prefixCtrl,
-      decoration: InputDecoration(
-        labelText: 'Prefix',
-        hintText: 'Please input the prefix, optional',
-      ),
-      validator: (v) {
-        if (v == null || v.isEmpty) {
-          return null;
-        }
-        if (!v.startsWith('/')) {
-          return null;
-        }
-        return 'prefix url is invalid';
-      },
     ));
 
     return Container(

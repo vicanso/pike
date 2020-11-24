@@ -198,7 +198,7 @@ class _CachePageState extends State<CachePage> {
       controller: _sizeCtrl,
       decoration: InputDecoration(
         labelText: 'Size',
-        hintText: 'Please input the size of cache',
+        hintText: 'Please input the size of cache, e.g.: 51200',
       ),
       validator:
           createNumberValidator('size of cache should be number and gt 0'),
