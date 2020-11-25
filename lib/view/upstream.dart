@@ -87,6 +87,7 @@ class _UpstreamPageState extends State<UpstreamPage> {
     });
   }
 
+  // _deleteUpstream 删除upstream
   void _deleteUpstream(ConfigCurrentState state, String name) {
     // 校验该upstream是否被其它配置使用
     if (!state.config.validateForDelete('upstream', name)) {

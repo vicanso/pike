@@ -66,7 +66,6 @@ class _AdminPageState extends State<AdminPage> {
     formItems.add(TextFormField(
       autofocus: true,
       controller: _accountCtrl,
-      // initialValue: state.config.admin?.user ,
       decoration: InputDecoration(
         labelText: 'Account',
         hintText: 'Please input the account',

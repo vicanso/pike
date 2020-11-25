@@ -37,18 +37,22 @@ class XFormSelector extends StatelessWidget {
       ),
     ];
     options.forEach((element) {
-      var iconColor = Colors.green;
+      Color iconColor = Colors.blue;
+      Color textColor = Colors.blue;
       if (_isSupportMultiple) {
         if (!(values?.contains(element) ?? false)) {
           iconColor = Colors.grey;
+          textColor = Application.fontColorOfSecondaryColor;
         }
       } else {
         if (value != element) {
           iconColor = Colors.grey;
+          textColor = Application.fontColorOfSecondaryColor;
         }
       }
       items.add(RaisedButton(
         color: Colors.white,
+        textColor: iconColor,
         onPressed: () {
           if (_isSupportMultiple) {
             final result = <String>[];
@@ -85,7 +89,7 @@ class XFormSelector extends StatelessWidget {
             Text(
               element,
               style: TextStyle(
-                color: Application.fontColorOfSecondaryColor,
+                color: textColor,
               ),
             ),
           ],

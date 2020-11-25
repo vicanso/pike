@@ -35,13 +35,21 @@ class _HomePageState extends State<HomePage>
   int _currentIndex = 0;
   ConfigBloc _configBloc;
 
+  // _renderAppBar 渲染顶部导航条
   PreferredSizeWidget _renderAppBar(MainNavigationSuccess state) {
     // 如果未登录，则不需要展示
     if (!_isLogin) {
       return null;
     }
+    // 生成导航列表
     final tabs = state.navs
-        .map((e) => Tab(
+        .map(
+          (e) => Container(
+            margin: EdgeInsets.only(
+              left: Application.defaultPadding,
+              right: Application.defaultPadding,
+            ),
+            child: Tab(
               iconMargin: EdgeInsets.only(
                 bottom: 0.5 * Application.defaultPadding,
               ),
@@ -49,8 +57,11 @@ class _HomePageState extends State<HomePage>
                 e.icon,
               ),
               text: e.title,
-            ))
+            ),
+          ),
+        )
         .toList();
+    // 添加tab controller的事件
     _tabController ??= TabController(
       length: tabs.length,
       vsync: this,
@@ -62,12 +73,45 @@ class _HomePageState extends State<HomePage>
           top: 0.5 * Application.defaultPadding,
         ),
         color: Theme.of(context).primaryColor,
-        child: TabBar(
-          labelColor: Application.fontColorOfPrimaryColor,
-          // isScrollable: true,
-          indicatorColor: Application.blueColor,
-          tabs: tabs,
-          controller: _tabController,
+        width: double.infinity,
+        child: Row(
+          children: [
+            // LOGO
+            Container(
+              margin: EdgeInsets.only(
+                left: 30,
+                right: 50,
+              ),
+              child: Row(
+                children: [
+                  Image(
+                    image: AssetImage('images/logo.png'),
+                    height: 40,
+                  ),
+                  Container(
+                    width: Application.defaultPadding,
+                  ),
+                  Text(
+                    'Pike',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: Application.fontColorOfPrimaryColor,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            // 导航条
+            Expanded(
+              child: TabBar(
+                labelColor: Application.fontColorOfPrimaryColor,
+                isScrollable: true,
+                indicatorColor: Application.blueColor,
+                tabs: tabs,
+                controller: _tabController,
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -82,17 +126,24 @@ class _HomePageState extends State<HomePage>
     });
   }
 
+  // _renderYAMLConfig 渲染yaml的配置
   Widget _renderYAMLConfig(ConfigCurrentState state) {
     final exp = RegExp(r'(password:[\S\s]+?\n)');
     final yaml = state.config.yaml?.replaceFirst(exp, 'password: ***\n');
     return SingleChildScrollView(
       child: Container(
         margin: EdgeInsets.all(2 * Application.defaultPadding),
-        child: Text(yaml ?? '-- No Content --'),
+        child: Text(
+          yaml ?? '-- No Content --',
+          style: TextStyle(
+            height: 1.5,
+          ),
+        ),
       ),
     );
   }
 
+  // _renderConfig 渲染配置
   Widget _renderConfig(ConfigState state) {
     if (state is ConfigErrorState) {
       return XErrorMessage(
@@ -160,6 +211,14 @@ class _HomePageState extends State<HomePage>
         builder: (context, state) => _renderConfig(state),
       ),
     );
+  }
+
+  @override
+  void dispose() {
+    if (_tabController != null) {
+      _tabController.dispose();
+    }
+    super.dispose();
   }
 
   @override

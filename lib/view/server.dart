@@ -61,6 +61,7 @@ class _ServerPageState extends State<ServerPage> {
     _remarkCtrl.clear();
   }
 
+  // _fillEditor 填充表格内容
   void _fillEditor(ServerConfig element) {
     _addrCtrl.value = TextEditingValue(text: element.addr ?? '');
     _locations = element.locations;
@@ -74,6 +75,7 @@ class _ServerPageState extends State<ServerPage> {
     _remarkCtrl.value = TextEditingValue(text: element.remark ?? '');
   }
 
+  // _deleteServer 删除服务
   void _deleteServer(ConfigCurrentState state, String addr) {
     final serverList = <ServerConfig>[];
     state.config.servers?.forEach((element) {
@@ -87,6 +89,7 @@ class _ServerPageState extends State<ServerPage> {
     )));
   }
 
+  // _renderServerList 渲染服务器列表
   Widget _renderServerList(ConfigCurrentState state) {
     final rows = <TableRow>[
       TableRow(
