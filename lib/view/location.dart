@@ -38,6 +38,10 @@ class _LocationPageState extends State<LocationPage> {
   final _rewriteCtrlList = <TextEditingController>[
     TextEditingController(),
   ];
+  // query string配置
+  final _queryStringCtrlList = <TextEditingController>[
+    TextEditingController(),
+  ];
   // 响应头配置
   final _respHeaderCtrlList = <TextEditingController>[
     TextEditingController(),
@@ -110,6 +114,7 @@ class _LocationPageState extends State<LocationPage> {
     _fillList(_prefixCtrlList, element.prefixes);
     _fillList(_hostCtrlList, element.hosts);
     _fillList(_rewriteCtrlList, element.rewrites);
+    _fillList(_queryStringCtrlList, element.queryStrings);
     _fillList(_respHeaderCtrlList, element.respHeaders);
     _fillList(_reqHeaderCtrlList, element.reqHeaders);
     _proxyTimeoutCtrl.value =
@@ -212,6 +217,17 @@ class _LocationPageState extends State<LocationPage> {
       ),
     ));
 
+    final divideValidator = (String v) {
+      if (v == null || v.isEmpty) {
+        return null;
+      }
+      if (v.split(':').length == 2) {
+        return null;
+      }
+
+      return 'The value should contain one :';
+    };
+
     // url rewrite编辑列表
     _rewriteCtrlList.forEach((element) {
       formItems.add(TextFormField(
@@ -220,15 +236,7 @@ class _LocationPageState extends State<LocationPage> {
           labelText: 'Rewrite',
           hintText: 'Please input the url rewrite, e.g.: /api/*:/\$1',
         ),
-        validator: (v) {
-          if (v == null || v.isEmpty) {
-            return null;
-          }
-          if (v.contains(':')) {
-            return null;
-          }
-          return 'Rewrite is invalid';
-        },
+        validator: divideValidator,
       ));
     });
     // 添加更多rewrite
@@ -247,13 +255,42 @@ class _LocationPageState extends State<LocationPage> {
       ),
     ));
 
+    // querystring
+    _queryStringCtrlList.forEach((element) {
+      formItems.add(TextFormField(
+        controller: element,
+        decoration: InputDecoration(
+          labelText: 'Querystring',
+          hintText: 'Please input the querystring, e.g.: id:1',
+        ),
+        validator: divideValidator,
+      ));
+    });
+    // 添加更多的querystring
+    formItems.add(Container(
+      child: XFullButton(
+        text: Text('Add More Querystring'),
+        padding: EdgeInsets.all(1.5 * Application.defaultPadding),
+        margin: EdgeInsets.only(
+          top: Application.defaultPadding,
+        ),
+        onPressed: () {
+          setState(() {
+            _queryStringCtrlList.add(TextEditingController());
+          });
+        },
+      ),
+    ));
+
     // 响应头
     _respHeaderCtrlList.forEach((element) {
       formItems.add(TextFormField(
         controller: element,
         decoration: InputDecoration(
-            labelText: 'Resp Header',
-            hintText: 'Please input the response header, e.g.: X-Resp-Id:1'),
+          labelText: 'Resp Header',
+          hintText: 'Please input the response header, e.g.: X-Resp-Id:1',
+        ),
+        validator: divideValidator,
       ));
     });
     // 添加更多的响应头
@@ -280,6 +317,7 @@ class _LocationPageState extends State<LocationPage> {
           labelText: 'Req Header',
           hintText: 'Please int the request header, e.g.: X-Req-Id:1',
         ),
+        validator: divideValidator,
       ));
     });
     // 添加更多的请求头
@@ -349,6 +387,7 @@ class _LocationPageState extends State<LocationPage> {
           createRowItem('Prefixes'),
           createRowItem('Hosts'),
           createRowItem('Rewrites'),
+          createRowItem('QueryStrings'),
           createRowItem('Resp Headers'),
           createRowItem('Req Headers'),
           createRowItem('Proxy Timeout'),
@@ -365,6 +404,7 @@ class _LocationPageState extends State<LocationPage> {
           createRowListItem(element.prefixes),
           createRowListItem(element.hosts),
           createRowListItem(element.rewrites),
+          createRowListItem(element.queryStrings),
           createRowListItem(element.respHeaders),
           createRowListItem(element.reqHeaders),
           createRowItem(element.proxyTimeout),
@@ -400,7 +440,7 @@ class _LocationPageState extends State<LocationPage> {
         // 指定表格列宽
         1: FixedColumnWidth(120),
         2: FixedColumnWidth(120),
-        7: FixedColumnWidth(100),
+        8: FixedColumnWidth(100),
         9: FixedColumnWidth(150),
       },
       border: TableBorder.all(
@@ -454,6 +494,7 @@ class _LocationPageState extends State<LocationPage> {
       upstream: _upstream,
       prefixes: _getValues(_prefixCtrlList),
       hosts: _getValues(_hostCtrlList),
+      queryStrings: _getValues(_queryStringCtrlList),
       rewrites: _getValues(_rewriteCtrlList),
       respHeaders: _getValues(_respHeaderCtrlList),
       reqHeaders: _getValues(_reqHeaderCtrlList),

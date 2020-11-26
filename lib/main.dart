@@ -5,6 +5,7 @@ import 'package:fluro/fluro.dart';
 
 import './bloc/bloc.dart';
 import './config/application.dart';
+import './helper/util.dart';
 import './router/routes.dart';
 import './service/store.dart' as store;
 
@@ -16,7 +17,7 @@ Future main() async {
     runZoned(() {
       runApp(MyApp());
     }, onError: (err, trace) {
-      // TODO 添加出错日志
+      showErrorMessage(err.toString());
     });
   }
 }

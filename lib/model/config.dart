@@ -27,6 +27,7 @@ void fillEmptyList(Map<String, dynamic> m) {
     [
       'prefixes',
       'rewrites',
+      'queryStrings',
       'respHeaders',
       'reqHeaders',
       'hosts',
@@ -417,6 +418,7 @@ class LocationConfig {
   final List<String> prefixes;
   final List<String> hosts;
   final List<String> rewrites;
+  final List<String> queryStrings;
   final List<String> respHeaders;
   final List<String> reqHeaders;
   final String proxyTimeout;
@@ -426,10 +428,11 @@ class LocationConfig {
     this.name,
     this.upstream,
     this.prefixes,
+    this.hosts,
     this.rewrites,
+    this.queryStrings,
     this.respHeaders,
     this.reqHeaders,
-    this.hosts,
     this.proxyTimeout,
     this.remark,
   });
@@ -438,10 +441,11 @@ class LocationConfig {
     String name,
     String upstream,
     List<String> prefixes,
+    List<String> hosts,
     List<String> rewrites,
+    List<String> queryStrings,
     List<String> respHeaders,
     List<String> reqHeaders,
-    List<String> hosts,
     String proxyTimeout,
     String remark,
   }) {
@@ -449,10 +453,11 @@ class LocationConfig {
       name: name ?? this.name,
       upstream: upstream ?? this.upstream,
       prefixes: prefixes ?? this.prefixes,
+      hosts: hosts ?? this.hosts,
       rewrites: rewrites ?? this.rewrites,
+      queryStrings: queryStrings ?? this.queryStrings,
       respHeaders: respHeaders ?? this.respHeaders,
       reqHeaders: reqHeaders ?? this.reqHeaders,
-      hosts: hosts ?? this.hosts,
       proxyTimeout: proxyTimeout ?? this.proxyTimeout,
       remark: remark ?? this.remark,
     );
@@ -463,10 +468,11 @@ class LocationConfig {
       'name': name,
       'upstream': upstream,
       'prefixes': prefixes,
+      'hosts': hosts,
       'rewrites': rewrites,
+      'queryStrings': queryStrings,
       'respHeaders': respHeaders,
       'reqHeaders': reqHeaders,
-      'hosts': hosts,
       'proxyTimeout': proxyTimeout,
       'remark': remark,
     };
@@ -479,10 +485,11 @@ class LocationConfig {
       name: map['name'],
       upstream: map['upstream'],
       prefixes: List<String>.from(map['prefixes']),
+      hosts: List<String>.from(map['hosts']),
       rewrites: List<String>.from(map['rewrites']),
+      queryStrings: List<String>.from(map['queryStrings']),
       respHeaders: List<String>.from(map['respHeaders']),
       reqHeaders: List<String>.from(map['reqHeaders']),
-      hosts: List<String>.from(map['hosts']),
       proxyTimeout: map['proxyTimeout'],
       remark: map['remark'],
     );
@@ -495,7 +502,7 @@ class LocationConfig {
 
   @override
   String toString() {
-    return 'LocationConfig(name: $name, upstream: $upstream, prefixes: $prefixes, rewrites: $rewrites, respHeaders: $respHeaders, reqHeaders: $reqHeaders, hosts: $hosts, proxyTimeout: $proxyTimeout, remark: $remark)';
+    return 'LocationConfig(name: $name, upstream: $upstream, prefixes: $prefixes, hosts: $hosts, rewrites: $rewrites, queryStrings: $queryStrings, respHeaders: $respHeaders, reqHeaders: $reqHeaders, proxyTimeout: $proxyTimeout, remark: $remark)';
   }
 
   @override
@@ -506,10 +513,11 @@ class LocationConfig {
         o.name == name &&
         o.upstream == upstream &&
         listEquals(o.prefixes, prefixes) &&
+        listEquals(o.hosts, hosts) &&
         listEquals(o.rewrites, rewrites) &&
+        listEquals(o.queryStrings, queryStrings) &&
         listEquals(o.respHeaders, respHeaders) &&
         listEquals(o.reqHeaders, reqHeaders) &&
-        listEquals(o.hosts, hosts) &&
         o.proxyTimeout == proxyTimeout &&
         o.remark == remark;
   }
@@ -519,10 +527,11 @@ class LocationConfig {
     return name.hashCode ^
         upstream.hashCode ^
         prefixes.hashCode ^
+        hosts.hashCode ^
         rewrites.hashCode ^
+        queryStrings.hashCode ^
         respHeaders.hashCode ^
         reqHeaders.hashCode ^
-        hosts.hashCode ^
         proxyTimeout.hashCode ^
         remark.hashCode;
   }
