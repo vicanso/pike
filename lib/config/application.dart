@@ -23,11 +23,14 @@ class Application {
 
   // 蓝色
   static Color blueColor = Colors.blueAccent;
+  // 灰色
+  static Color greyColor = Colors.grey[200];
+  static Color greyBlackColor = Colors.black54;
 
   // 主字体颜色
   static Color primaryFontCoolor = Colors.black87;
   // 默认边框颜色
-  static Color defaultBorderColor = Colors.grey[200];
+  static Color defaultBorderColor = Colors.grey[300];
 
   // 常用的几种字体大小
   static double tinyFontSize = 10.0;

@@ -6,8 +6,10 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../bloc/bloc.dart';
 import '../config/application.dart';
+import '../widget/card.dart';
 import '../widget/error_message.dart';
 import './admin.dart';
+import './application_info.dart';
 import './cache.dart';
 import './compress.dart';
 import './location.dart';
@@ -126,18 +128,32 @@ class _HomePageState extends State<HomePage>
     });
   }
 
+  // _renderBasicInfo 渲染基本信息
+  Widget _renderBasicInfo(ConfigCurrentState state) => SingleChildScrollView(
+        child: Container(
+          margin: EdgeInsets.all(2 * Application.defaultPadding),
+          child: Column(
+            children: [
+              ApplicationInfoPage(),
+              Container(
+                height: 2 * Application.defaultPadding,
+              ),
+              _renderYAMLConfig(state),
+            ],
+          ),
+        ),
+      );
+
   // _renderYAMLConfig 渲染yaml的配置
   Widget _renderYAMLConfig(ConfigCurrentState state) {
     final exp = RegExp(r'(password:[\S\s]+?\n)');
     final yaml = state.config.yaml?.replaceFirst(exp, 'password: ***\n');
-    return SingleChildScrollView(
-      child: Container(
-        margin: EdgeInsets.all(2 * Application.defaultPadding),
-        child: Text(
-          yaml ?? '-- No Content --',
-          style: TextStyle(
-            height: 1.5,
-          ),
+    return XCard(
+      'Config',
+      Text(
+        yaml ?? '-- No Content --',
+        style: TextStyle(
+          height: 1.5,
         ),
       ),
     );
@@ -160,8 +176,8 @@ class _HomePageState extends State<HomePage>
     }
     switch (_currentIndex) {
       case 0:
-        // 渲染yaml详细配置
-        return _renderYAMLConfig(configState);
+        // 渲染基本信息
+        return _renderBasicInfo(configState);
         break;
       case 1:
         // 压缩配置

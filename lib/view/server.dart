@@ -11,7 +11,7 @@ import '../model/config.dart';
 import '../widget/button.dart';
 import '../widget/error_message.dart';
 import '../widget/selector.dart';
-import './common.dart';
+import '../widget/table.dart';
 
 @immutable
 class ServerPage extends StatefulWidget {
@@ -91,72 +91,54 @@ class _ServerPageState extends State<ServerPage> {
 
   // _renderServerList 渲染服务器列表
   Widget _renderServerList(ConfigCurrentState state) {
-    final rows = <TableRow>[
-      TableRow(
-        children: [
-          createRowItem('Addr'),
-          createRowItem('Locations'),
-          createRowItem('Cache'),
-          createRowItem('Compress'),
-          createRowItem('Compress Min Length'),
-          createRowItem('Compress Content Filter'),
-          createRowItem('Log Format'),
-          createRowItem('Remark'),
-          createRowItem('Operations'),
-        ],
-      ),
-    ];
-    state.config.servers?.forEach((element) {
-      rows.add(TableRow(
-        children: [
-          createRowItem(element.addr),
-          createRowListItem(element.locations),
-          createRowItem(element.cache),
-          createRowItem(element.compress),
-          createRowItem(element.compressMinLength),
-          createRowItem(element.compressContentTypeFilter),
-          createRowItem(element.logFormat),
-          createRowItem(element.remark),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              TextButton(
-                onPressed: () {
-                  // 重置当前数据，并将需要更新的配置填充
-                  _reset();
-                  _fillEditor(element);
+    // 表格内容
+    final contents = state.config.servers
+        ?.map((e) => [
+              e.addr,
+              e.locations,
+              e.cache,
+              e.compress,
+              e.compressMinLength,
+              e.compressContentTypeFilter,
+              e.logFormat,
+              e.remark,
+            ])
+        ?.toList();
+    final doUpdate = (int index) {
+      final element = state.config.servers.elementAt(index);
+      // 重置当前数据，并将需要更新的配置填充
+      _reset();
+      _fillEditor(element);
 
-                  setState(() {
-                    _mode = _updateMode;
-                  });
-                },
-                child: Text('Update'),
-              ),
-              TextButton(
-                onPressed: () {
-                  _deleteServer(state, element.addr);
-                },
-                child: Text('Delete'),
-              ),
-            ],
-          ),
-        ],
-      ));
-    });
-    return Table(
-      columnWidths: {
-        // 指定表格列宽
-        1: FixedColumnWidth(120),
-        2: FixedColumnWidth(120),
-        3: FixedColumnWidth(120),
-        4: FixedColumnWidth(160),
-        5: FixedColumnWidth(180),
-        8: FixedColumnWidth(150),
+      setState(() {
+        _mode = _updateMode;
+      });
+    };
+    final doDelete = (int index) {
+      final element = state.config.servers.elementAt(index);
+      _deleteServer(state, element.addr);
+    };
+    return XConfigTable(
+      headers: [
+        'Addr',
+        'Locations',
+        'Cache',
+        'Compress',
+        'Compress Min Length',
+        'Compress Content Filter',
+        'Log Format',
+        'Remark',
+      ],
+      contents: contents,
+      onUpdate: doUpdate,
+      onDelete: doDelete,
+      columnWidths: <String, double>{
+        'Locations': 160,
+        'Cache': 140,
+        'Compress': 140,
+        'Compress Min Length': 200,
+        'Compress Content Filter': 220,
       },
-      border: TableBorder.all(
-        color: Application.primaryColor.withAlpha(60),
-      ),
-      children: rows,
     );
   }
 

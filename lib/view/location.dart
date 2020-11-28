@@ -11,7 +11,7 @@ import '../model/config.dart';
 import '../widget/button.dart';
 import '../widget/error_message.dart';
 import '../widget/selector.dart';
-import './common.dart';
+import '../widget/table.dart';
 
 @immutable
 class LocationPage extends StatefulWidget {
@@ -378,75 +378,56 @@ class _LocationPageState extends State<LocationPage> {
 
   // _renderLocationList 渲染location 列表
   Widget _renderLocationList(ConfigCurrentState state) {
-    // 表头
-    final rows = <TableRow>[
-      TableRow(
-        children: [
-          createRowItem('Name'),
-          createRowItem('Upstream'),
-          createRowItem('Prefixes'),
-          createRowItem('Hosts'),
-          createRowItem('Rewrites'),
-          createRowItem('QueryStrings'),
-          createRowItem('Resp Headers'),
-          createRowItem('Req Headers'),
-          createRowItem('Proxy Timeout'),
-          createRowItem('Remark'),
-          createRowItem('Operations'),
-        ],
-      ),
-    ];
-    state.config.locations?.forEach((element) {
-      rows.add(TableRow(
-        children: [
-          createRowItem(element.name),
-          createRowItem(element.upstream),
-          createRowListItem(element.prefixes),
-          createRowListItem(element.hosts),
-          createRowListItem(element.rewrites),
-          createRowListItem(element.queryStrings),
-          createRowListItem(element.respHeaders),
-          createRowListItem(element.reqHeaders),
-          createRowItem(element.proxyTimeout),
-          createRowItem(element.remark),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              TextButton(
-                onPressed: () {
-                  // 重置当前数据，并将需要更新的配置填充
-                  _reset();
-                  _fillEditor(element);
+    // 表格内容
+    final contents = state.config.locations
+        ?.map((e) => [
+              e.name,
+              e.upstream,
+              e.prefixes,
+              e.hosts,
+              e.rewrites,
+              e.queryStrings,
+              e.respHeaders,
+              e.reqHeaders,
+              e.proxyTimeout,
+              e.remark,
+            ])
+        ?.toList();
+    final doUpdate = (int index) {
+      final element = state.config.locations.elementAt(index);
+      // 重置当前数据，并将需要更新的配置填充
+      _reset();
+      _fillEditor(element);
 
-                  setState(() {
-                    _mode = _updateMode;
-                  });
-                },
-                child: Text('Update'),
-              ),
-              TextButton(
-                onPressed: () {
-                  _deleteLocation(state, element.name);
-                },
-                child: Text('Delete'),
-              ),
-            ],
-          ),
-        ],
-      ));
-    });
-    return Table(
-      columnWidths: {
-        // 指定表格列宽
-        1: FixedColumnWidth(120),
-        2: FixedColumnWidth(120),
-        8: FixedColumnWidth(100),
-        9: FixedColumnWidth(150),
+      setState(() {
+        _mode = _updateMode;
+      });
+    };
+    final doDelete = (int index) {
+      final element = state.config.locations.elementAt(index);
+      _deleteLocation(state, element.name);
+    };
+    return XConfigTable(
+      headers: [
+        'Name',
+        'Upstream',
+        'Prefixes',
+        'Hosts',
+        'Rewrites',
+        'QueryStrings',
+        'Resp Headers',
+        'Req Headers',
+        'Proxy Timeout',
+        'Remark',
+      ],
+      contents: contents,
+      onUpdate: doUpdate,
+      onDelete: doDelete,
+      columnWidths: <String, double>{
+        'Upstream': 120,
+        'Prefixes': 120,
+        'Proxy Timeout': 140,
       },
-      border: TableBorder.all(
-        color: Application.primaryColor.withAlpha(60),
-      ),
-      children: rows,
     );
   }
 

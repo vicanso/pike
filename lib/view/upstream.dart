@@ -11,7 +11,7 @@ import '../model/config.dart';
 import '../widget/button.dart';
 import '../widget/error_message.dart';
 import '../widget/selector.dart';
-import './common.dart';
+import '../widget/table.dart';
 
 @immutable
 class UpstreamPage extends StatefulWidget {
@@ -155,7 +155,7 @@ class _UpstreamPageState extends State<UpstreamPage> {
   }
 
   // _renderServerList 渲染服务器列表
-  Widget _renderServerList(List<UpstreamServerConfig> servers) {
+  List<Row> _renderServerList(List<UpstreamServerConfig> servers) {
     final items = servers?.map((element) {
       var addr = element.addr;
       if (element.backup != null && element.backup) {
@@ -174,7 +174,6 @@ class _UpstreamPageState extends State<UpstreamPage> {
         );
       }
       return Row(
-        mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Text(addr),
           Container(
@@ -184,15 +183,7 @@ class _UpstreamPageState extends State<UpstreamPage> {
         ],
       );
     })?.toList();
-    return Padding(
-      padding: EdgeInsets.only(
-        top: Application.defaultPadding,
-        bottom: Application.defaultPadding,
-      ),
-      child: Column(
-        children: items,
-      ),
-    );
+    return items;
   }
 
   // _renderServerEditor 渲染服务器编辑列表
@@ -407,74 +398,51 @@ class _UpstreamPageState extends State<UpstreamPage> {
 
   // _renderUpstreamList 渲染upstream列表
   Widget _renderUpstreamList(ConfigCurrentState state) {
-    // 表头
-    final rows = <TableRow>[
-      TableRow(
-        children: [
-          createRowItem('Name'),
-          createRowItem('Health Check'),
-          createRowItem('Policy'),
-          createRowItem('Enable H2C'),
-          createRowItem('Accept Encoding'),
-          createRowItem('Servers'),
-          createRowItem('Remark'),
-          createRowItem('Operations'),
-        ],
-      ),
-    ];
-    state.config.upstreams?.forEach((element) {
-      var enableH2C = 'off';
-      if (element.enableH2C != null && element.enableH2C) {
-        enableH2C = 'on';
-      }
-      rows.add(TableRow(
-        children: [
-          createRowItem(element.name),
-          createRowItem(element.healthCheck),
-          createRowItem(element.policy),
-          createRowItem(enableH2C),
-          createRowItem(element.acceptEncoding),
-          _renderServerList(element.servers),
-          createRowItem(element.remark),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              TextButton(
-                onPressed: () {
-                  // 重置当前数据，并将需要更新的配置填充
-                  _reset();
-                  _fillEditor(element);
+    // 表格内容
+    final contents = state.config.upstreams
+        ?.map((e) => [
+              e.name,
+              e.healthCheck,
+              e.policy,
+              (e.enableH2C != null && e.enableH2C) ? 'on' : 'off',
+              e.acceptEncoding,
+              _renderServerList(e.servers),
+              e.remark,
+            ])
+        ?.toList();
+    final doUpdate = (int index) {
+      final element = state.config.upstreams.elementAt(index);
+      // 重置当前数据，并将需要更新的配置填充
+      _reset();
+      _fillEditor(element);
 
-                  setState(() {
-                    _mode = _updateMode;
-                  });
-                },
-                child: Text('Update'),
-              ),
-              TextButton(
-                onPressed: () {
-                  _deleteUpstream(state, element.name);
-                },
-                child: Text('Delete'),
-              ),
-            ],
-          ),
-        ],
-      ));
-    });
-    return Table(
-      columnWidths: {
-        // 指定表格列宽
-        1: FixedColumnWidth(150),
-        2: FixedColumnWidth(120),
-        3: FixedColumnWidth(100),
-        4: FixedColumnWidth(140),
-        7: FixedColumnWidth(150),
+      setState(() {
+        _mode = _updateMode;
+      });
+    };
+    final doDelete = (int index) {
+      final element = state.config.upstreams.elementAt(index);
+      _deleteUpstream(state, element.name);
+    };
+    return XConfigTable(
+      headers: [
+        'Name',
+        'Health Check',
+        'Policy',
+        'Enable H2C',
+        'Accept Encoding',
+        'Servers',
+        'Remark',
+      ],
+      contents: contents,
+      onUpdate: doUpdate,
+      onDelete: doDelete,
+      columnWidths: <String, double>{
+        'Health Check': 150,
+        'Policy': 120,
+        'Enable H2C': 120,
+        'Accept Encoding': 160,
       },
-      border: TableBorder.all(
-        color: Application.primaryColor.withAlpha(60),
-      ),
-      children: rows,
     );
   }
 

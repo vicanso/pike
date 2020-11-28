@@ -11,7 +11,7 @@ import '../helper/util.dart';
 import '../model/config.dart';
 import '../widget/button.dart';
 import '../widget/error_message.dart';
-import './common.dart';
+import '../widget/table.dart';
 
 @immutable
 class CachePage extends StatefulWidget {
@@ -86,65 +86,43 @@ class _CachePageState extends State<CachePage> {
 
   // _renderCacheList 渲染当前缓存服务列表
   Widget _renderCacheList(ConfigCurrentState state) {
-    // 表头
-    final rows = <TableRow>[
-      TableRow(
-        children: [
-          createRowItem('Name'),
-          createRowItem('Size'),
-          createRowItem('Hit For Pass'),
-          createRowItem('Remark'),
-          createRowItem('Operations'),
-        ],
-      ),
-    ];
+    // 表格内容
+    final contents = state.config.caches
+        ?.map((e) => [
+              e.name,
+              numberFormat.format(e.size),
+              e.hitForPass,
+              e.remark,
+            ])
+        ?.toList();
+    final doUpdate = (int index) {
+      final element = state.config.caches.elementAt(index);
+      // 重置当前数据，并将需要更新的配置填充
+      _reset();
+      _fillEditor(element);
 
-    // 表格内容，缓存服务的相关配置
-    state.config.caches?.forEach((element) {
-      rows.add(TableRow(
-        children: [
-          createRowItem(element.name),
-          createRowItem(numberFormat.format(element.size)),
-          createRowItem(element.hitForPass),
-          createRowItem(element.remark),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              TextButton(
-                onPressed: () {
-                  // 重置当前数据，并将需要更新的配置填充
-                  _reset();
-                  _fillEditor(element);
-
-                  setState(() {
-                    _mode = _updateMode;
-                  });
-                },
-                child: Text('Update'),
-              ),
-              TextButton(
-                onPressed: () {
-                  _deleteCache(state, element.name);
-                },
-                child: Text('Delete'),
-              ),
-            ],
-          ),
-        ],
-      ));
-    });
-
-    return Table(
-      columnWidths: {
-        // 指定表格列宽
-        1: FixedColumnWidth(100),
-        2: FixedColumnWidth(100),
-        4: FixedColumnWidth(150),
+      setState(() {
+        _mode = _updateMode;
+      });
+    };
+    final doDelete = (int index) {
+      final element = state.config.caches.elementAt(index);
+      _deleteCache(state, element.name);
+    };
+    return XConfigTable(
+      headers: [
+        'Name',
+        'Size',
+        'Hit For Pass',
+        'Remark',
+      ],
+      contents: contents,
+      onUpdate: doUpdate,
+      onDelete: doDelete,
+      columnWidths: <String, double>{
+        'Size': 100,
+        'Hit For Pass': 130,
       },
-      border: TableBorder.all(
-        color: Application.primaryColor.withAlpha(60),
-      ),
-      children: rows,
     );
   }
 

@@ -40,6 +40,10 @@ class MyApp extends StatelessWidget {
         BlocProvider<UserBloc>(
           create: (context) => UserBloc()..add(UserMeFetch()),
         ),
+        // 应用信息bloc
+        BlocProvider<ApplicationInfoBloc>(
+          create: (context) => ApplicationInfoBloc(),
+        ),
       ],
       child: MaterialApp(
         theme: ThemeData(

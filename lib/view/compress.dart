@@ -10,7 +10,7 @@ import '../helper/util.dart';
 import '../model/config.dart';
 import '../widget/button.dart';
 import '../widget/error_message.dart';
-import './common.dart';
+import '../widget/table.dart';
 
 @immutable
 class CompressPage extends StatefulWidget {
@@ -113,64 +113,45 @@ class _CompressPageState extends State<CompressPage> {
 
   // _renderCompressList 渲染当前压缩服务列表
   Widget _renderCompressList(ConfigCurrentState state) {
-    // 表头
-    final rows = <TableRow>[
-      TableRow(
-        children: [
-          createRowItem('Name'),
-          createRowItem(_gzipName[0].toUpperCase() + _gzipName.substring(1)),
-          createRowItem(_brName[0].toLowerCase() + _brName.substring(1)),
-          createRowItem('Remark'),
-          createRowItem('Operations'),
-        ],
-      ),
-    ];
     // 表格内容，压缩服务的相关配置
-    state.config.compresses?.forEach((element) {
-      rows.add(TableRow(
-        children: [
-          createRowItem(element.name),
-          createRowItem(_getLevelDesc(element.levels, _gzipName)),
-          createRowItem(_getLevelDesc(element.levels, _brName)),
-          createRowItem(element.remark),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              TextButton(
-                onPressed: () {
-                  // 重置当前数据，并将需要更新的配置填充
-                  _reset();
-                  _fillEditor(element);
+    final contents = state.config.compresses
+        ?.map((e) => [
+              e.name,
+              _getLevelDesc(e.levels, _gzipName),
+              _getLevelDesc(e.levels, _brName),
+              e.remark,
+            ])
+        ?.toList();
+    final doUpdate = (int index) {
+      final element = state.config.compresses.elementAt(index);
+      // 重置当前数据，并将需要更新的配置填充
+      _reset();
+      _fillEditor(element);
 
-                  setState(() {
-                    _mode = _updateMode;
-                  });
-                },
-                child: Text('Update'),
-              ),
-              TextButton(
-                onPressed: () {
-                  _deleteCompress(state, element.name);
-                },
-                child: Text('Delete'),
-              ),
-            ],
-          ),
-        ],
-      ));
-    });
-
-    return Table(
-      columnWidths: {
-        // 指定表格列宽
-        1: FixedColumnWidth(80),
-        2: FixedColumnWidth(80),
-        4: FixedColumnWidth(150),
+      setState(() {
+        _mode = _updateMode;
+      });
+    };
+    final doDelete = (int index) {
+      final element = state.config.compresses.elementAt(index);
+      _deleteCompress(state, element.name);
+    };
+    final gzipHeaderName = _gzipName[0].toUpperCase() + _gzipName.substring(1);
+    final brHeaderName = _brName[0].toLowerCase() + _brName.substring(1);
+    return XConfigTable(
+      headers: [
+        'Name',
+        gzipHeaderName,
+        brHeaderName,
+        'Remark',
+      ],
+      contents: contents,
+      onUpdate: doUpdate,
+      onDelete: doDelete,
+      columnWidths: <String, double>{
+        gzipHeaderName: 80,
+        brHeaderName: 80,
       },
-      border: TableBorder.all(
-        color: Application.primaryColor.withAlpha(60),
-      ),
-      children: rows,
     );
   }
 
