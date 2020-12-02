@@ -22,7 +22,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/go-yaml/yaml"
+	"gopkg.in/yaml.v2"
 )
 
 var (
@@ -469,6 +469,6 @@ func (cfg *Config) NewInfluxdbConfig() *Influxdb {
 func (cfg *Config) NewAlarmConfig(name string) *Alarm {
 	return &Alarm{
 		Name: name,
-		cfg: cfg,
+		cfg:  cfg,
 	}
 }

@@ -7,7 +7,6 @@ require (
 	github.com/asaskevich/govalidator v0.0.0-20190424111038-f61b66f89f4a
 	github.com/coreos/etcd v3.3.22+incompatible // indirect
 	github.com/dgraph-io/badger v1.6.1
-	github.com/go-yaml/yaml v2.1.0+incompatible
 	github.com/gobuffalo/packr/v2 v2.8.0
 	github.com/golang/snappy v0.0.1
 	github.com/google/uuid v1.1.1 // indirect
@@ -25,4 +24,5 @@ require (
 	go.uber.org/automaxprocs v1.3.0
 	go.uber.org/zap v1.15.0
 	golang.org/x/net v0.0.0-20200707034311-ab3426394381
+	gopkg.in/yaml.v2 v2.2.5
 )
