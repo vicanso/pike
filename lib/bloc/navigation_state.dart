@@ -36,6 +36,7 @@ class MainNavigationSuccess extends NavigationState {
           NavItem(title: 'Location', icon: Icons.alt_route),
           NavItem(title: 'Server', icon: Icons.widgets),
           NavItem(title: 'Admin', icon: Icons.admin_panel_settings),
+          NavItem(title: 'Caches', icon: Icons.format_list_bulleted),
         ],
       );
 

@@ -11,6 +11,7 @@ import '../widget/error_message.dart';
 import './admin.dart';
 import './application_info.dart';
 import './cache.dart';
+import './caches.dart';
 import './compress.dart';
 import './location.dart';
 import './server.dart';
@@ -202,6 +203,10 @@ class _HomePageState extends State<HomePage>
       case 6:
         // admin配置
         return AdminPage();
+        break;
+      case 7:
+        // caches列表
+        return CachesPage();
         break;
       default:
     }

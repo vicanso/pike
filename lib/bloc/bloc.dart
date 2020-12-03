@@ -2,6 +2,10 @@ export './application_info_bloc.dart';
 export './application_info_event.dart';
 export './application_info_state.dart';
 
+export './cache_bloc.dart';
+export './cache_event.dart';
+export './cache_state.dart';
+
 export './config_bloc.dart';
 export './config_event.dart';
 export './config_state.dart';

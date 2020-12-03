@@ -44,6 +44,10 @@ class MyApp extends StatelessWidget {
         BlocProvider<ApplicationInfoBloc>(
           create: (context) => ApplicationInfoBloc(),
         ),
+        // 缓存bloc
+        BlocProvider<CacheBloc>(
+          create: (context) => CacheBloc(),
+        ),
       ],
       child: MaterialApp(
         theme: ThemeData(

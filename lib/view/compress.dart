@@ -190,7 +190,7 @@ class _CompressPageState extends State<CompressPage> {
       controller: _brCtrl,
       decoration: InputDecoration(
         labelText: 'Br Level',
-        hintText: 'Please input the compress level of br(1-11)',
+        hintText: 'Please input the compress level of br(1-10)',
       ),
       validator: fn,
     ));

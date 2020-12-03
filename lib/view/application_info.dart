@@ -38,7 +38,7 @@ class _ApplicationInfoPageState extends State<ApplicationInfoPage> {
   Widget _renderItem(String key, String value) => Row(
         children: [
           Container(
-            width: 100,
+            width: 140,
             height: _infoHeight,
             margin: EdgeInsets.only(
               right: Application.defaultPadding,
@@ -52,7 +52,7 @@ class _ApplicationInfoPageState extends State<ApplicationInfoPage> {
             ),
           ),
           Container(
-            width: 200,
+            width: 160,
             height: _infoHeight,
             child: Text(value ?? '--'),
           ),
