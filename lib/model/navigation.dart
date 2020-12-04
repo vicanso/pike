@@ -10,18 +10,22 @@ import 'package:flutter/material.dart';
 class NavItem {
   final String title;
   final IconData icon;
+  final String name;
   NavItem({
     this.title,
     this.icon,
+    this.name,
   });
 
   NavItem copyWith({
     String title,
     IconData icon,
+    String name,
   }) {
     return NavItem(
       title: title ?? this.title,
       icon: icon ?? this.icon,
+      name: name ?? this.name,
     );
   }
 
@@ -29,6 +33,7 @@ class NavItem {
     return {
       'title': title,
       'icon': icon?.codePoint,
+      'name': name,
     };
   }
 
@@ -38,6 +43,7 @@ class NavItem {
     return NavItem(
       title: map['title'],
       icon: IconData(map['icon'], fontFamily: 'MaterialIcons'),
+      name: map['name'],
     );
   }
 
@@ -47,15 +53,15 @@ class NavItem {
       NavItem.fromMap(json.decode(source));
 
   @override
-  String toString() => 'NavItem(title: $title, icon: $icon)';
+  String toString() => 'NavItem(title: $title, icon: $icon, name: $name)';
 
   @override
   bool operator ==(Object o) {
     if (identical(this, o)) return true;
 
-    return o is NavItem && o.title == title && o.icon == icon;
+    return o is NavItem && o.title == title && o.icon == icon && o.name == name;
   }
 
   @override
-  int get hashCode => title.hashCode ^ icon.hashCode;
+  int get hashCode => title.hashCode ^ icon.hashCode ^ name.hashCode;
 }

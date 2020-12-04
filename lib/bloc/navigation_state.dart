@@ -29,14 +29,46 @@ class MainNavigationSuccess extends NavigationState {
   factory MainNavigationSuccess.newDefault() => MainNavigationSuccess(
         currentIndex: 0,
         navs: [
-          NavItem(title: 'Home', icon: Icons.sensor_window),
-          NavItem(title: 'Compress', icon: Icons.filter_frames),
-          NavItem(title: 'Cache', icon: Icons.storage),
-          NavItem(title: 'Upstram', icon: Icons.dvr),
-          NavItem(title: 'Location', icon: Icons.alt_route),
-          NavItem(title: 'Server', icon: Icons.widgets),
-          NavItem(title: 'Admin', icon: Icons.admin_panel_settings),
-          NavItem(title: 'Caches', icon: Icons.format_list_bulleted),
+          NavItem(
+            title: 'Home',
+            icon: Icons.sensor_window,
+            name: 'home',
+          ),
+          NavItem(
+            title: 'Compress',
+            icon: Icons.filter_frames,
+            name: 'compress',
+          ),
+          NavItem(
+            title: 'Cache',
+            icon: Icons.storage,
+            name: 'cache',
+          ),
+          NavItem(
+            title: 'Upstram',
+            icon: Icons.dvr,
+            name: 'upstream',
+          ),
+          NavItem(
+            title: 'Location',
+            icon: Icons.alt_route,
+            name: 'location',
+          ),
+          NavItem(
+            title: 'Server',
+            icon: Icons.widgets,
+            name: 'server',
+          ),
+          NavItem(
+            title: 'Admin',
+            icon: Icons.admin_panel_settings,
+            name: 'admin',
+          ),
+          NavItem(
+            title: 'Caches',
+            icon: Icons.format_list_bulleted,
+            name: 'caches',
+          ),
         ],
       );
 

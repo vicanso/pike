@@ -180,7 +180,8 @@ class _CompressPageState extends State<CompressPage> {
       controller: _gzipCtrl,
       decoration: InputDecoration(
         labelText: 'Gzip Level',
-        hintText: 'Please input the compress level of gzip(1-9)',
+        hintText:
+            'Please input the compress level of gzip(1-9), 6 is recommended',
       ),
       validator: fn,
     ));
@@ -190,7 +191,8 @@ class _CompressPageState extends State<CompressPage> {
       controller: _brCtrl,
       decoration: InputDecoration(
         labelText: 'Br Level',
-        hintText: 'Please input the compress level of br(1-10)',
+        hintText:
+            'Please input the compress level of br(1-10), 6 is recommended',
       ),
       validator: fn,
     ));

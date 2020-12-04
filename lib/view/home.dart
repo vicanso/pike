@@ -6,6 +6,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../bloc/bloc.dart';
 import '../config/application.dart';
+import '../model/navigation.dart';
 import '../widget/card.dart';
 import '../widget/error_message.dart';
 import './admin.dart';
@@ -37,6 +38,7 @@ class _HomePageState extends State<HomePage>
   TabController _tabController;
   int _currentIndex = 0;
   ConfigBloc _configBloc;
+  List<NavItem> _navs;
 
   // _renderAppBar 渲染顶部导航条
   PreferredSizeWidget _renderAppBar(MainNavigationSuccess state) {
@@ -44,6 +46,7 @@ class _HomePageState extends State<HomePage>
     if (!_isLogin) {
       return null;
     }
+    _navs ??= state.navs;
     // 生成导航列表
     final tabs = state.navs
         .map(
@@ -124,6 +127,10 @@ class _HomePageState extends State<HomePage>
     if (!_tabController.indexIsChanging) {
       return;
     }
+    // upstream的状态需要每次拉取
+    if (_navs?.elementAt(_tabController.index)?.name == 'upstream') {
+      _configBloc.add(ConfigFetch());
+    }
     setState(() {
       _currentIndex = _tabController.index;
     });
@@ -175,42 +182,43 @@ class _HomePageState extends State<HomePage>
         child: Text('Fetching config...'),
       );
     }
-    switch (_currentIndex) {
-      case 0:
+    switch (_navs?.elementAt(_currentIndex)?.name) {
+      case 'home':
         // 渲染基本信息
         return _renderBasicInfo(configState);
         break;
-      case 1:
+      case 'compress':
         // 压缩配置
         return CompressPage();
         break;
-      case 2:
+      case 'cache':
         // 缓存配置
         return CachePage();
         break;
-      case 3:
+      case 'upstream':
         // upstream配置
         return UpstreamPage();
         break;
-      case 4:
+      case 'location':
         // location配置
         return LocationPage();
         break;
-      case 5:
+      case 'server':
         // server配置
         return ServerPage();
         break;
-      case 6:
+      case 'admin':
         // admin配置
         return AdminPage();
         break;
-      case 7:
+      case 'caches':
         // caches列表
         return CachesPage();
         break;
       default:
+        return Container();
+        break;
     }
-    return Container();
   }
 
   Widget _renderBody() {
