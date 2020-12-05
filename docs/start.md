@@ -1,12 +1,9 @@
 ---
-description: 程序启动
+description: 如何开始使用pike
 ---
 
-Pike是纯go的项目，可以方便的在各平台的执行文件启动或者使用已打包好的docker镜像(vicanso/pike)，配置信息支持保存在文件或etcd中，生产环境中建议使用etcd便于多实例部署。
+Pike是纯go的项目，可以使用各平台的执行文件启动或者已打包好的docker镜像(vicanso/pike)，配置信息支持保存在文件或etcd中，生产环境中建议使用etcd便于多实例部署。
 
-<p align="center">
-<img src="./images/home.jpg"/>
-</p>
 
 ## 启动参数
 
@@ -116,7 +113,7 @@ Flags:
 - `Compress` 压缩，根据带宽与CPU的考虑，选择合适的压缩
 - `Compress Min Length` 最小压缩长度，此值不要设置太少，因为压缩小数据效果并不明显，而且浪费CPU。一般建议设置为1kb，如果是内网间调用，建议此值可以调更大的值
 - `Compress Content Filter` 压缩数据类型筛选，指定针对哪些数据类型压缩，默认值为：`text|javascript|json|wasm|xml`，可按应用的需求自定义配置或不匹配。
-- `Log Format` 请求日志格式化配置，如`{remote} {when-iso} {:proxyTarget} {method} {uri} {proto} {status} {size-human} {referer} {userAgent}`，配置规则参考[elton logger](https://github.com/vicanso/elton/blob/master/docs/middlewares.md#logger)
+- `Log Format` 请求日志格式化配置，如`{remote} {when-iso} {:proxyTarget} {method} {uri} {proto} {status} {size-human} {referer} {userAgent}`，配置规则参考[elton logger](https://github.com/vicanso/elton/blob/master/docs/middlewares.md#logger)，日志的输出对于性能会有所影响
 - `Remark` 备注
 
 <p align="center">

@@ -178,11 +178,13 @@ func (l *Location) AddResponseHeader(header http.Header) {
 	l.mergeHeader(header, l.ResponseHeader)
 }
 
+// ShouldModifyQuery should modify query
+func (l *Location) ShouldModifyQuery() bool {
+	return len(l.Query) != 0
+}
+
 // AddQuery add query to request
 func (l *Location) AddQuery(req *http.Request) {
-	if len(l.Query) == 0 {
-		return
-	}
 	query := req.URL.Query()
 	for key, values := range l.Query {
 		for _, value := range values {

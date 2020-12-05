@@ -1,5 +1,5 @@
 ---
-description: 系统错误
+description: 程序处理异常时的各出错信息
 ---
 
 pike程序处理出错时，均返回category: "pike"的出错信息，可根据此分类判断是否系统错误，主要的错误如下：

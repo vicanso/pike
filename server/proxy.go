@@ -125,7 +125,11 @@ func NewProxy(s *server) elton.Handler {
 		l.AddRequestHeader(reqHeader)
 
 		// 添加query string
-		l.AddQuery(c.Request)
+		var originRawQuery string
+		if l.ShouldModifyQuery() {
+			originRawQuery = c.Request.URL.RawQuery
+			l.AddQuery(c.Request)
+		}
 
 		var acceptEncoding string
 
@@ -145,6 +149,7 @@ func NewProxy(s *server) elton.Handler {
 		// clone当前header，用于后续恢复
 		originalHeader := c.Header().Clone()
 		c.ResetHeader()
+		// TODO 将timeout转换为pike error
 		err = upstream.Proxy(c)
 
 		// 恢复请求头
@@ -156,6 +161,11 @@ func NewProxy(s *server) elton.Handler {
 		}
 		if acceptEncodingChanged {
 			reqHeader.Set(elton.HeaderAcceptEncoding, acceptEncoding)
+		}
+
+		// 恢复query
+		if originRawQuery != "" {
+			c.Request.URL.RawQuery = originRawQuery
 		}
 
 		header := c.Header()
