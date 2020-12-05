@@ -35,11 +35,11 @@ import (
 	"github.com/vicanso/elton"
 	jwt "github.com/vicanso/elton-jwt"
 	"github.com/vicanso/elton/middleware"
-	"github.com/vicanso/hes"
 	"github.com/vicanso/pike/cache"
 	"github.com/vicanso/pike/config"
 	"github.com/vicanso/pike/log"
 	"github.com/vicanso/pike/upstream"
+	"github.com/vicanso/pike/util"
 	"go.uber.org/zap"
 	"gopkg.in/yaml.v2"
 )
@@ -82,18 +82,11 @@ var (
 	assetBox = packr.New("asset", "../asset")
 )
 
-var userNotLogin = &hes.Error{
-	Message:    "Please login first",
-	StatusCode: http.StatusUnauthorized,
-}
-var accountOrPasswordIsWrong = &hes.Error{
-	Message:    "Account or password is wrong",
-	StatusCode: http.StatusBadRequest,
-}
-var cacheKeyIsNil = &hes.Error{
-	Message:    "Cache's key can't be null",
-	StatusCode: http.StatusBadRequest,
-}
+var userNotLogin = util.NewError("Please login first", http.StatusUnauthorized)
+
+var accountOrPasswordIsWrong = util.NewError("Account or password is wrong", http.StatusBadRequest)
+
+var cacheKeyIsNil = util.NewError("The key of cache can't be null", http.StatusBadRequest)
 
 var buildedAt time.Time
 var commitID string

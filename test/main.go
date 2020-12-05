@@ -48,5 +48,8 @@ func main() {
 		Handler: h2c.NewHandler(e, &http2.Server{}),
 	}
 
-	e.ListenAndServe(":3001")
+	err := e.ListenAndServe(":3001")
+	if err != nil {
+		panic(err)
+	}
 }

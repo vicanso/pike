@@ -22,7 +22,13 @@
 
 package util
 
-import "sync"
+import (
+	"sync"
+
+	"github.com/vicanso/hes"
+)
+
+const errCategory = "pie"
 
 type DeleteMatch func(string) bool
 
@@ -48,4 +54,13 @@ func MapDelete(m *sync.Map, match DeleteMatch) []interface{} {
 	})
 
 	return result
+}
+
+// NewError create a new http error
+func NewError(message string, statusCode int) error {
+	return &hes.Error{
+		Message:    message,
+		StatusCode: statusCode,
+		Category:   errCategory,
+	}
 }

@@ -32,7 +32,6 @@ import (
 	"github.com/dustin/go-humanize"
 	"github.com/vicanso/elton"
 	"github.com/vicanso/elton/middleware"
-	"github.com/vicanso/hes"
 	"github.com/vicanso/pike/cache"
 	"github.com/vicanso/pike/config"
 	"github.com/vicanso/pike/log"
@@ -101,22 +100,13 @@ const (
 )
 
 var (
-	ErrInvalidResponse = &hes.Error{
-		Message:    "Invalid Response",
-		StatusCode: http.StatusServiceUnavailable,
-	}
-	ErrDispatcherNotFound = &hes.Error{
-		Message:    "Available Dispatcher Not Found",
-		StatusCode: http.StatusServiceUnavailable,
-	}
-	ErrLocationNotFound = &hes.Error{
-		StatusCode: http.StatusServiceUnavailable,
-		Message:    "Available Location Not Found",
-	}
-	ErrUpstreamNotFound = &hes.Error{
-		StatusCode: http.StatusServiceUnavailable,
-		Message:    "Available Upstream Not Found",
-	}
+	ErrInvalidResponse = util.NewError("Invalid response", http.StatusServiceUnavailable)
+
+	ErrCacheDispatcherNotFound = util.NewError("Available cache dispatcher not found", http.StatusServiceUnavailable)
+
+	ErrLocationNotFound = util.NewError("Available location not found", http.StatusServiceUnavailable)
+
+	ErrUpstreamNotFound = util.NewError("Available upstream not found", http.StatusBadGateway)
 )
 
 func getCacheStatus(c *elton.Context) cache.Status {
@@ -332,6 +322,7 @@ func (s *server) Start(useGoRoutine bool) (err error) {
 		defer s.processing.Dec()
 		return c.Next()
 	})
+	// TODO 考虑是否自定义出错中间件，对于系统的error(category: "pike")触发告警
 	e.Use(middleware.NewDefaultError())
 	e.Use(middleware.NewDefaultFresh())
 	e.Use(NewResponder())

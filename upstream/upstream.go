@@ -88,7 +88,7 @@ var defaultUpstreamServers = NewUpstreamServers(nil)
 var (
 	ErrUpstreamNotFound = &hes.Error{
 		StatusCode: http.StatusServiceUnavailable,
-		Message:    "Upstream Not Found",
+		Message:    "Available Upstream Not Found",
 	}
 )
 

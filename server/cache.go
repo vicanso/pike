@@ -75,7 +75,7 @@ func NewCache(s *server) elton.Handler {
 		}
 		disp := cache.GetDispatcher(s.GetCache())
 		if disp == nil {
-			err = ErrDispatcherNotFound
+			err = ErrCacheDispatcherNotFound
 			return
 		}
 

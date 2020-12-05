@@ -27,6 +27,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/vicanso/hes"
 )
 
 func TestMapDelete(t *testing.T) {
@@ -46,4 +47,18 @@ func TestMapDelete(t *testing.T) {
 	assert.True(ok)
 	assert.Equal("2", value)
 
+}
+
+func TestNewError(t *testing.T) {
+	assert := assert.New(t)
+	message := "error"
+	statusCode := 400
+	err := NewError(message, statusCode)
+
+	assert.NotNil(err)
+	he, ok := err.(*hes.Error)
+	assert.True(ok)
+	assert.Equal(statusCode, he.StatusCode)
+	assert.Equal(message, he.Message)
+	assert.Equal(errCategory, he.Category)
 }
