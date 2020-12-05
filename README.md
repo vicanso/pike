@@ -1,54 +1,24 @@
-# Pike
-
-[中文](./README_zh.md)
-
-HTTP cache server such as varnish.
-
-- TTL of cache is set through response header: `Cache-Control`
-- Web UI is easy
-- Support br and gzip
-- Support non-interrupted update config
-- Support multi port listen for multi http servers
-- Support h2c upstream proxy
-- Custom alarm for upstream or panic
-- Support add cert for http2
-- Support influxdb for performance statistics
+# pike
 
 
-## Flow
+与varnish类似的HTTP缓存服务器，主要的特性如下：
 
-<p align="center">
-<img src="./images/flow.jpg"/>
-</p>
+- 提供WEB的管理配置界面
+- 支持br与gzip两种压缩方式，根据客户端自动选择
+- 无中断的配置实时更新
+- 支持H2C的转发，提升与后端服务的调用性能
 
-## Script
 
-### dev
+## build
 
-You should install go and nodejs, then run the scripts. 
-
-```bash
-# use etcd as config's storage
-go run main.go --config etcd://127.0.0.1:2379/pike --init
-
-# use file as config's storage
-go run main.go --config /tmp --init
-```
-
-```bash
-cd web && yarn start
-```
-
-then open `http://127.0.0.1:3015/` in the browser.
-
-### build
-
-You should install packr2 to pack the resources.
+编译需要依赖`packr2`，需要先执行脚本安装：
 
 ```bash
 go get -u github.com/gobuffalo/packr/v2/packr2 
 ```
 
-```bash
-make build-web && make build
-```
+后执行`make build`则可编译当前系统版本程序
+
+## TODO
+
+- 缓存查询（如果缓存量较大，有可能导致查询性能较差，暂时未支持）

@@ -1,18 +1,22 @@
 package main
 
 import (
+	"bytes"
 	"fmt"
+	"io/ioutil"
+	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
-	"time"
 
 	"github.com/spf13/cobra"
-	"github.com/vicanso/pike/application"
+	"github.com/vicanso/pike/cache"
+	"github.com/vicanso/pike/compress"
 	"github.com/vicanso/pike/config"
+	"github.com/vicanso/pike/location"
 	"github.com/vicanso/pike/log"
 	"github.com/vicanso/pike/server"
-	"go.uber.org/automaxprocs/maxprocs"
+	"github.com/vicanso/pike/upstream"
 	"go.uber.org/zap"
 )
 
@@ -23,110 +27,152 @@ var (
 	CommitID = "" // nolint
 )
 
-// cmds
-var (
-	// 配置保存的路径，支持etcd或者文件形式
-	configPath string
-	// initMode模式在首次未配时服务时启用
-	initMode bool
-)
-var rootCmd = &cobra.Command{
-	Use:   "Pike",
-	Short: "Pike is a very fast http cache server",
-	Long: fmt.Sprintf(`Pike support gzip and brotli compress.
-Versions: build at %s, commit id is %s`, BuildedAt, CommitID),
-	Run: func(cmd *cobra.Command, args []string) {
-		cfg, err := config.NewConfig(configPath)
-		if err != nil {
-			log.Default().Error(err.Error())
-			os.Exit(1)
+// alarmURL 告警发送的地址
+var alarmURL string
+
+// doAlarm 发送告警
+func doAlarm(category, message string) {
+	if alarmURL == "" {
+		return
+	}
+	data := fmt.Sprintf(`{"application": "pike", "category": "%s", "message": "%s"}`, category, message)
+	resp, err := http.Post(alarmURL, "application/json", bytes.NewBufferString(data))
+	if err != nil {
+		log.Default().Error("do alarm fail",
+			zap.Error(err),
+		)
+		return
+	}
+	result, _ := ioutil.ReadAll(resp.Body)
+	if resp.StatusCode >= 400 {
+		log.Default().Error("do alarm fail",
+			zap.Int("status", resp.StatusCode),
+			zap.String("result", string(result)),
+		)
+	}
+}
+
+func update() (err error) {
+	pikeConfig, err := config.Read()
+	if err != nil {
+		return
+	}
+	// 重置压缩列表
+	compress.Reset(pikeConfig.Compresses)
+	// 重置默认dispatcher列表
+	cache.ResetDispatchers(pikeConfig.Caches)
+	// 重置默认的upstream列表
+	upstream.ResetWithOnStats(pikeConfig.Upstreams, func(si upstream.StatusInfo) {
+		log.Default().Info("upstream status change",
+			zap.String("name", si.Name),
+			zap.String("status", si.Status),
+			zap.String("addr", si.URL),
+		)
+
+		if si.Status == "sick" {
+			message := fmt.Sprintf("%s is %s, addr: %s", si.Name, si.Status, si.URL)
+			go doAlarm("upstream", message)
 		}
-		startServer(cfg)
-	},
+	})
+	// 重置location列表
+	location.Reset(pikeConfig.Locations)
+
+	server.Reset(pikeConfig.Servers)
+	return server.Start()
 }
 
-func init() {
-	app := application.Default()
-	app.SetBuildedAt(BuildedAt)
-	app.SetCommitID(CommitID)
-	// 测试模式自动添加启动参数
-	goMode := os.Getenv("GO_MODE")
-	if goMode == "test" || goMode == "dev" {
-		rootCmd.SetArgs([]string{
-			"--config",
-			"etcd://127.0.0.1:2379/pike",
-			"--init",
-		})
+func startAdminServer(addr string) error {
+	pikeConfig, err := config.Read()
+	if err != nil {
+		return err
 	}
-
-	rootCmd.Flags().StringVarP(&configPath, "config", "c", "", "the config's address, E.g: etcd://127.0.0.1:2379/pike or /tmp/pike (required)")
-	_ = rootCmd.MarkFlagRequired("config")
-
-	rootCmd.Flags().BoolVar(&initMode, "init", false, "init mode will enabled server listen on :3015")
-
-	_, _ = maxprocs.Set(maxprocs.Logger(func(format string, args ...interface{}) {
-		value := fmt.Sprintf(format, args...)
-		log.Default().Info(value)
-	}))
+	return server.StartAdminServer(server.AdminServerConfig{
+		Addr:     addr,
+		User:     pikeConfig.Admin.User,
+		Password: pikeConfig.Admin.Password,
+	})
 }
 
-func startServer(cfg *config.Config) {
-	ins := server.Instance{
-		Config:             cfg,
-		EnabledAdminServer: initMode,
-	}
+func run() {
+	logger := log.Default()
 
-	err := ins.Start()
+	go config.Watch(func() {
+		err := update()
+		if err != nil {
+			logger.Error("update config fail",
+				zap.Error(err),
+			)
+			go doAlarm("config", err.Error())
+		} else {
+			logger.Info("update config success")
+		}
+	})
+
+	err := update()
 	if err != nil {
 		panic(err)
 	}
-	logger := log.Default()
-	var fetchAndRestart func()
-	fetchAndRestart = func() {
-		err := ins.Fetch()
-		if err != nil {
-			logger.Error("fetch config fail",
-				zap.Error(err),
-			)
-			// 如果拉取失败，则在10秒后再次尝试
-			go func() {
-				time.Sleep(10 * time.Second)
-				fetchAndRestart()
-			}()
-			return
-		}
-		ins.Restart()
-	}
-
-	cfg.Watch(func(changeType config.ChangeType, value string) {
-		fetchAndRestart()
-	})
-
-	// TODO 增加监听信息关闭服务
-	c := make(chan os.Signal, 1)
-	signal.Notify(c, syscall.SIGQUIT, syscall.SIGINT, syscall.SIGTERM)
-	for s := range c {
-		switch s {
-		case syscall.SIGINT:
-			fallthrough
-		case syscall.SIGTERM:
-			fallthrough
-		case syscall.SIGQUIT:
-			if ins.InfluxSrv != nil {
-				ins.InfluxSrv.Close()
-			}
-			cfg.Close()
-			// TODO 将server设置为stop，延时退出
-			os.Exit(0)
-		default:
-			logger.Info("exit should use sigquit")
-		}
-	}
 }
 
+func isHelpCmd() bool {
+	for _, arg := range os.Args {
+		if arg == "-h" || arg == "--help" {
+			return true
+		}
+	}
+	return false
+}
 func main() {
-	if err := rootCmd.Execute(); err != nil {
-		log.Default().Error(err.Error())
-		os.Exit(1)
+	logger := log.Default()
+	server.SetBuildInfo(BuildedAt, CommitID)
+	defer config.Close()
+	configURL := ""
+	adminAddr := ""
+
+	var rootCmd = &cobra.Command{
+		Use:   "pike",
+		Short: "Pike is a http cache server",
+		PreRun: func(cmd *cobra.Command, args []string) {
+			// 初始化配置
+			err := config.InitDefaultClient(configURL)
+			if err != nil {
+				panic(err)
+			}
+		},
+		Run: func(cmd *cobra.Command, args []string) {
+
+			if adminAddr != "" {
+				go func() {
+					err := startAdminServer(adminAddr)
+					if err != nil {
+						logger.Error("start admin server fail",
+							zap.String("addr", adminAddr),
+							zap.Error(err),
+						)
+						go doAlarm("admin", adminAddr+", "+err.Error())
+					}
+				}()
+			}
+			run()
+		},
+	}
+	rootCmd.Flags().StringVar(&configURL, "config", "pike.yml", "The config of pike, support etcd or file, etcd://127.0.0.1:2379/pike or /opt/pike")
+	rootCmd.Flags().StringVar(&adminAddr, "admin", "", "The address of admin web page, e.g.: :9013")
+	rootCmd.Flags().StringVar(&alarmURL, "alarm", "", "The alarm request url, alarm will post to the url, e.g.: http://192.168.1.2:3000/alarms")
+
+	err := rootCmd.Execute()
+	if err != nil {
+		panic(err)
+	}
+	if isHelpCmd() {
+		return
+	}
+
+	logger.Info("pike is running")
+	c := make(chan os.Signal, 1)
+	signal.Notify(c, syscall.SIGHUP, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
+	for range c {
+		// TODO 添加graceful close
+		os.Exit(0)
 	}
 }

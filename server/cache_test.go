@@ -1,193 +1,126 @@
-// Copyright 2019 tree xie
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+// MIT License
+
+// Copyright (c) 2020 Tree Xie
+
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+
+// The above copyright notice and this permission notice shall be included in all
+// copies or substantial portions of the Software.
+
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+// SOFTWARE.
 
 package server
 
 import (
-	"bytes"
-	"net/http"
 	"net/http/httptest"
 	"testing"
-	"time"
 
+	"github.com/stretchr/testify/assert"
 	"github.com/vicanso/elton"
 	"github.com/vicanso/pike/cache"
 	"github.com/vicanso/pike/config"
-
-	"github.com/stretchr/testify/assert"
 )
 
 func TestRequestIsPass(t *testing.T) {
 	assert := assert.New(t)
-	req := &http.Request{
-		Method: "GET",
-	}
-	assert.False(requestIsPass(req))
-
-	req.Method = "HEAD"
-	assert.False(requestIsPass(req))
-
-	req.Method = "POST"
-	assert.True(requestIsPass(req))
+	assert.True(requestIsPass(httptest.NewRequest("POST", "/", nil)))
+	assert.True(requestIsPass(httptest.NewRequest("PATCH", "/", nil)))
+	assert.True(requestIsPass(httptest.NewRequest("PUT", "/", nil)))
+	assert.False(requestIsPass(httptest.NewRequest("GET", "/", nil)))
+	assert.False(requestIsPass(httptest.NewRequest("HEAD", "/", nil)))
 }
 
-func TestGetCacheAge(t *testing.T) {
+func TestGetKey(t *testing.T) {
 	assert := assert.New(t)
-	h := make(http.Header)
 
-	h.Set(elton.HeaderSetCookie, "abc")
-	assert.Equal(0, getCacheAge(h))
-	h.Del(elton.HeaderSetCookie)
-
-	assert.Equal(0, getCacheAge(h))
-
-	h.Set(elton.HeaderCacheControl, "no-cache")
-	assert.Equal(0, getCacheAge(h))
-
-	h.Set(elton.HeaderCacheControl, "public, max-age=10, s-maxage=2")
-	assert.Equal(2, getCacheAge(h))
-
-	h.Set(elton.HeaderCacheControl, "public, max-age=10")
-	assert.Equal(10, getCacheAge(h))
-
-	h.Set(headerAge, "2")
-	assert.Equal(8, getCacheAge(h))
-
+	req := httptest.NewRequest("GET", "http://test.com/users/me?type=1", nil)
+	assert.Equal("GET test.com http://test.com/users/me?type=1", string(getKey(req)))
 }
 
-func TestCacheDispatchMiddleware(t *testing.T) {
+func TestCacheMiddleware(t *testing.T) {
+	assert := assert.New(t)
 
-	dispatcher := cache.NewDispatcher(&config.Cache{
-		Size:       10,
-		Zone:       10,
-		HitForPass: 30,
-	})
+	cacheableContext := elton.NewContext(
+		httptest.NewRecorder(),
+		httptest.NewRequest("GET", "/", nil),
+	)
+	// 设置可缓存有效期为10
+	setHTTPCacheMaxAge(cacheableContext, 10)
+	setHTTPResp(cacheableContext, &cache.HTTPResponse{})
 
-	compressConfig := &config.Compress{
-		Filter:    "text|json|javascript",
-		MinLength: 1,
+	tests := []struct {
+		c      *elton.Context
+		status cache.Status
+	}{
+		// 直接pass的请求
+		{
+			c: elton.NewContext(
+				httptest.NewRecorder(),
+				httptest.NewRequest("POST", "/users/login", nil),
+			),
+			status: cache.StatusPassed,
+		},
+		// 首次fetching，返回不可缓存
+		{
+			c: elton.NewContext(
+				httptest.NewRecorder(),
+				httptest.NewRequest("GET", "/users/me", nil),
+			),
+			status: cache.StatusFetching,
+		},
+		// 第二次hit for pass
+		{
+			c: elton.NewContext(
+				httptest.NewRecorder(),
+				httptest.NewRequest("GET", "/users/me", nil),
+			),
+			status: cache.StatusHitForPass,
+		},
+		// 首次fetching，返回可缓存
+		{
+			c:      cacheableContext,
+			status: cache.StatusFetching,
+		},
+		// 第二次则从缓存获取
+		{
+			c: elton.NewContext(
+				httptest.NewRecorder(),
+				httptest.NewRequest("GET", "/", nil),
+			),
+			status: cache.StatusCacheable,
+		},
 	}
-	fn := newCacheDispatchMiddleware(dispatcher, compressConfig, true)
 
-	t.Run("no cache", func(t *testing.T) {
-		assert := assert.New(t)
-		req := httptest.NewRequest("GET", "https://aslant.site/users/me", nil)
-		req.Header.Set(elton.HeaderAcceptEncoding, elton.Gzip)
-		resp := httptest.NewRecorder()
-
-		c := elton.NewContext(resp, req)
-		count := 0
-		c.Next = func() error {
-			count++
-			c.SetHeader(elton.HeaderContentType, "text/plain")
-			c.BodyBuffer = bytes.NewBufferString("abcd")
-			return nil
-		}
-		err := fn(c)
-		assert.Nil(err)
-		assert.Equal(1, count)
-		assert.Equal(cache.StatusFetching, c.GetInt(statusKey))
-		assert.NotEmpty(c.BodyBuffer)
-		assert.NotEmpty(c.GetHeader(elton.HeaderETag))
-		assert.Equal(elton.Gzip, c.GetHeader(elton.HeaderContentEncoding))
-
-		// 第二次请求hit for pass
-		c.Response = httptest.NewRecorder()
-		err = fn(c)
-		assert.Nil(err)
-		assert.Equal(2, count)
-		assert.Equal(cache.StatusHitForPass, c.GetInt(statusKey))
-		assert.NotEmpty(c.BodyBuffer)
-		assert.NotEmpty(c.GetHeader(elton.HeaderETag))
-		assert.Equal(elton.Gzip, c.GetHeader(elton.HeaderContentEncoding))
+	cacheName := "test"
+	cache.ResetDispatchers([]config.CacheConfig{
+		{
+			Name: cacheName,
+			Size: 100,
+		},
+	})
+	s := NewServer(ServerOption{
+		Cache: cacheName,
 	})
 
-	t.Run("cacheable", func(t *testing.T) {
-		assert := assert.New(t)
-		req := httptest.NewRequest("GET", "https://aslant.site/users", nil)
-		req.Header.Set(elton.HeaderAcceptEncoding, elton.Br)
-		resp := httptest.NewRecorder()
-
-		c := elton.NewContext(resp, req)
-		count := 0
-		c.Next = func() error {
-			count++
-			c.CacheMaxAge("10s")
-			c.SetHeader(elton.HeaderContentType, "application/json")
-			c.BodyBuffer = bytes.NewBufferString(`{
-				"users": [
-					{
-						"account": "foo"
-					},
-					{
-						"account": "bar"
-					}
-				]
-			}`)
+	fn := NewCache(s)
+	for _, tt := range tests {
+		tt.c.Next = func() error {
 			return nil
 		}
-		err := fn(c)
+		err := fn(tt.c)
 		assert.Nil(err)
-		assert.Equal(1, count)
-		assert.Equal(cache.StatusFetching, c.GetInt(statusKey))
-		assert.NotEmpty(c.BodyBuffer)
-		assert.NotEmpty(c.GetHeader(elton.HeaderETag))
-		assert.Equal(elton.Br, c.GetHeader(elton.HeaderContentEncoding))
+		assert.Equal(tt.status, getCacheStatus(tt.c))
+	}
 
-		// 第二次读取缓存
-		time.Sleep(time.Second)
-		c.Response = httptest.NewRecorder()
-		err = fn(c)
-		assert.Nil(err)
-		assert.Equal(1, count)
-		assert.NotEmpty(c.GetHeader(headerAge))
-		assert.Equal(cache.StatusCacheable, c.GetInt(statusKey))
-		assert.NotEmpty(c.BodyBuffer)
-		assert.NotEmpty(c.GetHeader(elton.HeaderETag))
-		assert.Equal(elton.Br, c.GetHeader(elton.HeaderContentEncoding))
-	})
-
-	t.Run("pass", func(t *testing.T) {
-		assert := assert.New(t)
-		req := httptest.NewRequest("POST", "https://aslant.site/users/login", nil)
-		req.Header.Set(elton.HeaderAcceptEncoding, elton.Gzip)
-		resp := httptest.NewRecorder()
-
-		c := elton.NewContext(resp, req)
-		count := 0
-		c.Next = func() error {
-			count++
-			c.SetHeader(elton.HeaderContentType, "text/plain")
-			c.BodyBuffer = bytes.NewBufferString("abcd")
-			return nil
-		}
-		err := fn(c)
-		assert.Nil(err)
-		assert.Equal(1, count)
-		assert.Equal(cache.StatusPassed, c.GetInt(statusKey))
-		assert.NotEmpty(c.BodyBuffer)
-		assert.NotEmpty(c.GetHeader(elton.HeaderETag))
-		assert.Equal(elton.Gzip, c.GetHeader(elton.HeaderContentEncoding))
-
-		// 第二次请求还是pass
-		c.Response = httptest.NewRecorder()
-		err = fn(c)
-		assert.Nil(err)
-		assert.Equal(2, count)
-		assert.Equal(cache.StatusPassed, c.GetInt(statusKey))
-		assert.NotEmpty(c.BodyBuffer)
-		assert.NotEmpty(c.GetHeader(elton.HeaderETag))
-		assert.Equal(elton.Gzip, c.GetHeader(elton.HeaderContentEncoding))
-	})
 }

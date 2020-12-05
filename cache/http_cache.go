@@ -1,289 +1,198 @@
-// Copyright 2019 tree xie
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+// MIT License
 
-// HTTP缓存模块，返回当前对应的缓存状态，是获取中、hit for pass等等。
-// 以及对缓存数据压缩、智能匹配返回格式等处理。
+// Copyright (c) 2020 Tree Xie
+
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+
+// The above copyright notice and this permission notice shall be included in all
+// copies or substantial portions of the Software.
+
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+// SOFTWARE.
+
+// 针对同一个请求，在状态未知时，控制只允许一个请求转发至后续流程
+// 在获取状态之后，支持hit for pass 与 cacheable 两种处理，其中hit for pass表示该请求不可缓存，
+// 直接转发至后端程序，而cacheable则返回当前缓存的响应数据
 
 package cache
 
 import (
-	"bytes"
-	"net/http"
-	"strconv"
-	"strings"
 	"sync"
 	"time"
 
-	"github.com/vicanso/elton"
-	"github.com/vicanso/pike/util"
+	"github.com/vicanso/pike/compress"
 )
+
+type Status int
 
 const (
 	// StatusUnknown unknown status
-	StatusUnknown = iota
+	StatusUnknown Status = iota
 	// StatusFetching fetching status
 	StatusFetching
 	// StatusHitForPass hit-for-pass status
 	StatusHitForPass
-	// StatusCacheable cachable status
+	// StatusCacheable cacheable status
 	StatusCacheable
 	// StatusPassed pass status
 	StatusPassed
 )
 
-const (
-	statusFetchingDesc   = "fetching"
-	statusHitForPassDesc = "hitForPass"
-	statusCacheableDesc  = "cacheable"
-	statusPassedDesc     = "passed"
-	statusUnknownDesc    = "unknown"
-)
+// defaultHitForPass default hit for pass: 300 seconds
+const defaultHitForPass = 300
 
 type (
-	// HTTPHeader http header
-	HTTPHeader [][]byte
-	// HTTPHeaders http headers
-	HTTPHeaders []HTTPHeader
-	// HTTPData http data
-	HTTPData struct {
-		// Header
-		Headers    HTTPHeaders
-		StatusCode int
-		GzipBody   []byte
-		BrBody     []byte
-		RawBody    []byte
-	}
-	// HTTPCache cache status
-	HTTPCache struct {
-		mu        sync.Mutex
-		status    int
-		chans     []chan struct{}
-		data      *HTTPData
+	// httpCache http cache (only for same request method+host+uri)
+	httpCache struct {
+		mu        *sync.RWMutex
+		status    Status
+		chanList  []chan struct{}
+		response  *HTTPResponse
 		createdAt int
 		expiredAt int
 	}
 )
 
-func StatusString(status int) string {
-	switch status {
+func nowUnix() int {
+	return int(time.Now().Unix())
+}
+
+func (i Status) String() string {
+	switch i {
 	case StatusFetching:
-		return statusFetchingDesc
+		return "fetching"
 	case StatusHitForPass:
-		return statusHitForPassDesc
+		return "hitForPass"
 	case StatusCacheable:
-		return statusCacheableDesc
+		return "cacheable"
 	case StatusPassed:
-		return statusPassedDesc
+		return "passed"
 	default:
-		return statusUnknownDesc
+		return "unknown"
 	}
-}
-
-// SetResponse set response
-func (httpData *HTTPData) SetResponse(c *elton.Context, ignoreHeader bool) {
-	c.StatusCode = httpData.StatusCode
-	acceptEncoding := c.GetRequestHeader(elton.HeaderAcceptEncoding)
-	var buf *bytes.Buffer
-	encoding := ""
-	// 如果支持br而且有br压缩数据
-	if strings.Contains(acceptEncoding, elton.Br) && len(httpData.BrBody) != 0 {
-		encoding = elton.Br
-		buf = bytes.NewBuffer(httpData.BrBody)
-	} else if strings.Contains(acceptEncoding, elton.Gzip) && len(httpData.GzipBody) != 0 {
-		// 如果支持gzip而且有gzip压缩数据
-		encoding = elton.Gzip
-		buf = bytes.NewBuffer(httpData.GzipBody)
-	} else {
-		// 如果不支持压缩或者该数据不符合压缩条件
-		rawBody := httpData.RawBody
-		// 如果无原始数据，则从gzip中解压
-		if len(rawBody) == 0 && len(httpData.GzipBody) != 0 {
-			rawBody, _ = util.Gunzip(httpData.GzipBody)
-		}
-		if len(rawBody) != 0 {
-			buf = bytes.NewBuffer(rawBody)
-		}
-	}
-	if !ignoreHeader {
-		for _, httpHeader := range httpData.Headers {
-			c.AddHeader(util.ByteSliceToString(httpHeader[0]), util.ByteSliceToString(httpHeader[1]))
-		}
-	}
-
-	if buf != nil {
-		c.SetHeader(elton.HeaderContentLength, strconv.Itoa(buf.Len()))
-		c.SetHeader(elton.HeaderContentEncoding, encoding)
-	}
-	c.BodyBuffer = buf
-}
-
-// CacheHeaders 设置要缓存的http头
-func (httpData *HTTPData) CacheHeaders(header http.Header, ignoreHeaders ...string) {
-	headers := make(HTTPHeaders, 0, 10)
-	for key, values := range header {
-		ignore := false
-		for _, ignoreHeader := range ignoreHeaders {
-			if ignoreHeader == key {
-				ignore = true
-			}
-		}
-		if ignore {
-			continue
-		}
-		k := []byte(key)
-		for _, value := range values {
-			v := []byte(value)
-			h := NewHTTPHeader(k, v)
-			headers = append(headers, h)
-		}
-	}
-	httpData.Headers = headers
-}
-
-// DoGzip 数据做gzip压缩处理
-func (httpData *HTTPData) DoGzip(level int) (err error) {
-	// 已压缩
-	if len(httpData.GzipBody) != 0 {
-		return
-	}
-	// 不存在原始数据
-	if len(httpData.RawBody) == 0 {
-		return
-	}
-	httpData.GzipBody, err = util.Gzip(httpData.RawBody, level)
-	if err != nil {
-		return
-	}
-	return
-}
-
-func (httpData *HTTPData) DoBrotli(level int) (err error) {
-	// 已压缩
-	if len(httpData.BrBody) != 0 {
-		return
-	}
-	rawBody := httpData.RawBody
-	if len(rawBody) == 0 && len(httpData.GzipBody) != 0 {
-		rawBody, _ = util.Gunzip(httpData.GzipBody)
-	}
-	// 无原始数据
-	if len(rawBody) == 0 {
-		return
-	}
-	httpData.BrBody, err = util.Brotli(rawBody, level)
-	if err != nil {
-		return
-	}
-	return
-}
-
-// NewHTTPHeader new a http header
-func NewHTTPHeader(key, value []byte) HTTPHeader {
-	header := make([][]byte, 2)
-	header[0] = key
-	header[1] = value
-	return header
 }
 
 // NewHTTPCache new a http cache
-func NewHTTPCache() *HTTPCache {
-	return &HTTPCache{}
+func NewHTTPCache() *httpCache {
+	return &httpCache{
+		mu: &sync.RWMutex{},
+	}
 }
 
 // Get get http cache
-func (hc *HTTPCache) Get() (status int, data *HTTPData) {
-	status, done, data := hc.get()
+func (hc *httpCache) Get() (status Status, response *HTTPResponse) {
+	hc.mu.Lock()
+	status, done, response := hc.get()
+	hc.mu.Unlock()
+	// 如果done不为空，表示需要等待确认当前请求状态
 	if done != nil {
-		// TODO 后续再考虑是否需要添加timeout
+		// TODO 后续再考虑是否需要添加timeout（proxy部分有超时，因此暂时可不添加)
 		<-done
+		// 完成后重新获取当前状态与响应
+		// 此时状态只可能是hit for pass 或者 cacheable
+		// 而此两种状态的数据缓存均不会立即失效，因此可以从hc中获取
 		status = hc.status
-		data = hc.data
+		response = hc.response
 	}
 	return
 }
 
-// get get http cache
-func (hc *HTTPCache) get() (status int, done chan struct{}, data *HTTPData) {
-	hc.mu.Lock()
-	defer hc.mu.Unlock()
-	now := int(time.Now().Unix())
+func (hc *httpCache) get() (status Status, done chan struct{}, data *HTTPResponse) {
+	now := nowUnix()
 	// 如果缓存已过期，设置为StatusUnknown
 	if hc.expiredAt != 0 && hc.expiredAt < now {
 		hc.status = StatusUnknown
+		// 将有效期重置（若不重置则导致hs.status每次都被重置为Unknown)
+		hc.expiredAt = 0
 	}
+
+	// 仅有同类请求为fetching，才会需要等待
 	// 如果是fetching，则相同的请求需要等待完成
-	// 通过chan bool返回完成
+	// 通过chan返回完成
 	if hc.status == StatusFetching {
 		done = make(chan struct{})
-		hc.chans = append(hc.chans, done)
+		hc.chanList = append(hc.chanList, done)
 	}
 
 	if hc.status == StatusUnknown {
 		hc.status = StatusFetching
-		hc.chans = make([]chan struct{}, 0, 5)
+		hc.chanList = make([]chan struct{}, 0, 5)
 	}
 
 	status = hc.status
 	// 为什么需要返回status与data
 	// 因为有可能在函数调用完成后，刚好缓存过期了，如果此时不返回status与data
-	// 当其它goroutin获取锁之后，有可能刚好重置数据
+	// 当其它goroutine获取锁之后，有可能刚好重置数据
 	if status == StatusCacheable {
-		data = hc.data
+		data = hc.response
 	}
 	return
 }
 
 // HitForPass set the http cache hit for pass
-func (hc *HTTPCache) HitForPass(ttl int) {
+func (hc *httpCache) HitForPass(ttl int) {
 	hc.mu.Lock()
 	defer hc.mu.Unlock()
-	hc.expiredAt = int(time.Now().Unix()) + ttl
+	if ttl <= 0 {
+		ttl = defaultHitForPass
+	}
+	hc.expiredAt = nowUnix() + ttl
 	hc.status = StatusHitForPass
-	for _, ch := range hc.chans {
+	list := hc.chanList
+	hc.chanList = nil
+	for _, ch := range list {
 		ch <- struct{}{}
 	}
 }
 
-// Cachable set the http cache cachable
-func (hc *HTTPCache) Cachable(ttl int, httpData *HTTPData) {
+// Cacheable set http cache cacheable and compress it
+func (hc *httpCache) Cacheable(resp *HTTPResponse, ttl int) {
 	hc.mu.Lock()
 	defer hc.mu.Unlock()
-	hc.createdAt = int(time.Now().Unix())
+	// 如果是可缓存数据，则选择默认的best compression
+	resp.CompressSrv = compress.BestCompression
+	_ = resp.Compress()
+	hc.createdAt = nowUnix()
 	hc.expiredAt = hc.createdAt + ttl
 	hc.status = StatusCacheable
-
-	hc.data = httpData
-	for _, ch := range hc.chans {
+	hc.response = resp
+	list := hc.chanList
+	hc.chanList = nil
+	for _, ch := range list {
 		ch <- struct{}{}
 	}
 }
 
-// Age get the http cache's age
-func (hc *HTTPCache) Age() int {
-	return int(time.Now().Unix()) - hc.createdAt
+// Age get http cache's age
+func (hc *httpCache) Age() int {
+	hc.mu.RLock()
+	defer hc.mu.RUnlock()
+	return nowUnix() - hc.createdAt
 }
 
 // GetStatus get http cache status
-func (hc *HTTPCache) GetStatus() int {
+func (hc *httpCache) GetStatus() Status {
+	hc.mu.RLock()
+	defer hc.mu.RUnlock()
 	return hc.status
 }
 
 // IsExpired the cache is expired
-func (hc *HTTPCache) IsExpired() bool {
+func (hc *httpCache) IsExpired() bool {
+	hc.mu.RLock()
+	defer hc.mu.RUnlock()
 	if hc.expiredAt == 0 {
 		return false
 	}
-	now := int(time.Now().Unix())
-	return hc.expiredAt < now
+	return hc.expiredAt < nowUnix()
 }

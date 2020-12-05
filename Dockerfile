@@ -1,16 +1,6 @@
-FROM node:12-alpine as webbuilder
+FROM golang:1.15-alpine as builder
 
 COPY ./ /pike 
-
-RUN cd /pike/web \
-  && yarn \
-  && yarn build \
-  && rm -rf node_module
-
-FROM golang:1.14-alpine as builder
-
-COPY --from=webbuilder /pike /pike
-
 
 RUN apk update \
   && apk add git make \
@@ -20,12 +10,14 @@ RUN apk update \
 
 FROM alpine
 
-RUN addgroup -g 1000 pike \
-  && adduser -u 1000 -G pike -s /bin/sh -D pike \
-  && apk add --no-cache ca-certificates
-
 COPY --from=builder /pike/pike /usr/local/bin/pike
 COPY --from=builder /pike/entrypoint.sh /usr/local/bin/entrypoint.sh
+
+RUN addgroup -g 1000 pike \
+  && adduser -u 1000 -G pike -s /bin/sh -D pike \
+  && chmod +x /usr/local/bin/entrypoint.sh \
+  && apk add --no-cache ca-certificates
+
 
 USER pike
 

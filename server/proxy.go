@@ -1,144 +1,85 @@
-// Copyright 2019 tree xie
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+// MIT License
+
+// Copyright (c) 2020 Tree Xie
+
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+
+// The above copyright notice and this permission notice shall be included in all
+// copies or substantial portions of the Software.
+
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+// SOFTWARE.
 
 package server
 
 import (
-	"bytes"
-	"crypto/tls"
-	"net"
 	"net/http"
-	"net/url"
-	"time"
+	"regexp"
+	"strconv"
 
 	"github.com/vicanso/elton"
-	"github.com/vicanso/elton/middleware"
 	"github.com/vicanso/pike/cache"
-	"github.com/vicanso/pike/config"
+	"github.com/vicanso/pike/location"
 	"github.com/vicanso/pike/upstream"
-	"github.com/vicanso/pike/util"
-	"golang.org/x/net/http2"
+	"golang.org/x/net/context"
 )
 
 var (
-	// 需要清除的header
-	clearHeaders = []string{
-		"Date",
-		"Connection",
-		elton.HeaderContentLength,
-	}
+	noCacheReg = regexp.MustCompile(`no-cache|no-store|private`)
+	sMaxAgeReg = regexp.MustCompile(`s-maxage=(\d+)`)
+	maxAgeReg  = regexp.MustCompile(`max-age=(\d+)`)
 )
 
-const (
-	snappyEncoding = "snz"
-	lz4Encoding    = "lz4"
-)
-
-// 解压函数
-type Decompression func([]byte) ([]byte, error)
-
-func newProxyHandlers(locations config.Locations, upstreams *upstream.Upstreams) (proxyMids map[string]elton.Handler, acceptEncodings map[string]string) {
-	proxyMids = make(map[string]elton.Handler)
-	acceptEncodings = make(map[string]string)
-
-	for _, item := range locations {
-		up := upstreams.Get(item.Upstream)
-		if up == nil {
-			continue
-		}
-		var transport http.RoundTripper
-		// 判断该upstream是否支持h2c的形式
-		if upstreams.H2CIsEnabled(item.Upstream) {
-			transport = &http2.Transport{
-				// 允许使用http的方式
-				AllowHTTP: true,
-				// tls的dial覆盖
-				DialTLS: func(network, addr string, cfg *tls.Config) (net.Conn, error) {
-					return net.Dial(network, addr)
-				},
-			}
-		} else {
-			transport = &http.Transport{
-				Proxy: http.ProxyFromEnvironment,
-				DialContext: (&net.Dialer{
-					Timeout:   30 * time.Second,
-					KeepAlive: 30 * time.Second,
-					DualStack: true,
-				}).DialContext,
-				ForceAttemptHTTP2: true,
-				MaxIdleConns:      1000,
-				// 调整默认的每个host的最大连接因为缓存服务与backend调用较多
-				MaxIdleConnsPerHost:   50,
-				IdleConnTimeout:       90 * time.Second,
-				TLSHandshakeTimeout:   10 * time.Second,
-				ExpectContinueTimeout: 1 * time.Second,
-			}
-		}
-		// location 对应的upstream接受的编码
-		acceptEncoding := upstreams.GetAcceptEncoding(item.Upstream)
-		// 如果配置了则设置该location对应的编码
-		if acceptEncoding != "" {
-			acceptEncodings[item.Name] = acceptEncoding
-		}
-
-		proxyMids[item.Name] = middleware.NewProxy(middleware.ProxyConfig{
-			Rewrites:  item.Rewrites,
-			Transport: transport,
-			TargetPicker: func(c *elton.Context) (*url.URL, middleware.ProxyDone, error) {
-				httpUpstream, done := up.Next()
-				if httpUpstream == nil {
-					return nil, nil, errServiceUnavailable
-				}
-				// 如果不需要设置done
-				if done == nil {
-					return httpUpstream.URL, nil, nil
-				}
-				// 返回了done（如最少连接数的策略）
-				return httpUpstream.URL, func(_ *elton.Context) {
-					done()
-				}, nil
-			},
-		})
+// 根据Cache-Control的信息，获取s-maxage 或者max-age的值
+func getCacheMaxAge(header http.Header) int {
+	// 如果有设置cookie，则为不可缓存
+	if header.Get(elton.HeaderSetCookie) != "" {
+		return 0
 	}
-	return
+	// 如果没有设置cache-control，则不可缓存
+	cc := header.Get(elton.HeaderCacheControl)
+	if cc == "" {
+		return 0
+	}
+
+	// 如果设置不可缓存，返回0
+	if noCacheReg.MatchString(cc) {
+		return 0
+	}
+	// 优先从s-maxage中获取
+	var maxAge = 0
+	result := sMaxAgeReg.FindStringSubmatch(cc)
+	if len(result) == 2 {
+		maxAge, _ = strconv.Atoi(result[1])
+	} else {
+		// 从max-age中获取缓存时间
+		result = maxAgeReg.FindStringSubmatch(cc)
+		if len(result) == 2 {
+			maxAge, _ = strconv.Atoi(result[1])
+		}
+	}
+
+	// 如果有设置了 age 字段，则最大缓存时长减少
+	if age := header.Get(headerAge); age != "" {
+		v, _ := strconv.Atoi(age)
+		maxAge -= v
+	}
+
+	return maxAge
 }
 
-// decompress 对于snappy与lz4的压缩解压
-func decompress(c *elton.Context) (err error) {
-	var fn Decompression
-	switch c.GetHeader(elton.HeaderContentEncoding) {
-	case snappyEncoding:
-		fn = util.DecodeSnappy
-	case lz4Encoding:
-		fn = util.DecodeLz4
-	}
-	// 如果无匹配的压缩处理，则返回
-	if fn == nil {
-		return
-	}
-	buf, err := fn(c.BodyBuffer.Bytes())
-	if err != nil {
-		return err
-	}
-	c.BodyBuffer = bytes.NewBuffer(buf)
-	c.Header().Del(elton.HeaderContentEncoding)
-	return
-}
-
-// createProxyMiddleware create proxy middleware handler
-func createProxyMiddleware(locations config.Locations, upstreams *upstream.Upstreams) elton.Handler {
-	proxyMids, acceptEncodings := newProxyHandlers(locations, upstreams)
+// NewProxy create proxy middleware
+func NewProxy(s *server) elton.Handler {
 	return func(c *elton.Context) (err error) {
 		originalNext := c.Next
 		// 由于proxy中间件会调用next，因此直接覆盖，
@@ -147,37 +88,21 @@ func createProxyMiddleware(locations config.Locations, upstreams *upstream.Upstr
 			return nil
 		}
 
-		host := c.Request.Host
-		url := c.Request.RequestURI
-		l := locations.GetMatch(host, url)
+		l := location.Get(c.Request.Host, c.Request.RequestURI, s.GetLocations()...)
 		if l == nil {
-			err = errServiceUnavailable
+			err = ErrLocationNotFound
 			return
 		}
-		// 设置请求头
-		if l.ReqHeader != nil {
-			util.MergeHeader(c.Request.Header, l.ReqHeader)
-			host := l.ReqHeader.Get("Host")
-			// 如果有配置Host请求头，则设置request host
-			if host != "" {
-				c.Request.Host = host
-			}
-		}
-		// 设置响应头
-		if l.ResHeader != nil {
-			util.MergeHeader(c.Header(), l.ResHeader)
-		}
 
-		fn, ok := proxyMids[l.Name]
-		if !ok || fn == nil {
-			err = errServiceUnavailable
+		upstream := upstream.Get(l.Upstream)
+		if upstream == nil {
+			err = ErrUpstreamNotFound
 			return
 		}
 
 		reqHeader := c.Request.Header
 		var ifModifiedSince, ifNoneMatch string
-		status := c.GetInt(statusKey)
-		acceptEncoding := reqHeader.Get(elton.HeaderAcceptEncoding)
+		status := getCacheStatus(c)
 		// 针对fetching的请求，由于其最终状态未知，因此需要删除有可能导致304的请求，避免无法生成缓存
 		if status == cache.StatusFetching {
 			ifModifiedSince = reqHeader.Get(elton.HeaderIfModifiedSince)
@@ -189,34 +114,95 @@ func createProxyMiddleware(locations config.Locations, upstreams *upstream.Upstr
 				reqHeader.Del(elton.HeaderIfNoneMatch)
 			}
 		}
-		// 设置默认支持snappy lz4与gzip压缩
-		reqAcceptEncoding, ok := acceptEncodings[l.Name]
-		if !ok {
-			reqAcceptEncoding = elton.Gzip
+
+		// url rewrite
+		var originalPath string
+		if l.URLRewriter != nil {
+			originalPath = c.Request.URL.Path
+			l.URLRewriter(c.Request)
 		}
-		reqHeader.Set(elton.HeaderAcceptEncoding, reqAcceptEncoding)
+		// 添加额外的请求头
+		l.AddRequestHeader(reqHeader)
 
-		err = fn(c)
+		// 添加query string
+		l.AddQuery(c.Request)
 
-		// 解压处理，解压出错的忽略
-		_ = decompress(c)
+		var acceptEncoding string
 
-		// 将原有的请求头恢复（就算出错也需要恢复）
-		reqHeader.Set(elton.HeaderAcceptEncoding, acceptEncoding)
+		// 根据upstream设置可接受压缩编码调整
+		acceptEncodingChanged := upstream.Option.AcceptEncoding != ""
+		if acceptEncodingChanged {
+			acceptEncoding = reqHeader.Get(elton.HeaderAcceptEncoding)
+			reqHeader.Set(elton.HeaderAcceptEncoding, upstream.Option.AcceptEncoding)
+		}
+
+		if l.ProxyTimeout != 0 {
+			ctx, cancel := context.WithTimeout(c.Context(), l.ProxyTimeout)
+			defer cancel()
+			c.WithContext(ctx)
+		}
+
+		// clone当前header，用于后续恢复
+		originalHeader := c.Header().Clone()
+		c.ResetHeader()
+		err = upstream.Proxy(c)
+
+		// 恢复请求头
 		if ifModifiedSince != "" {
 			reqHeader.Set(elton.HeaderIfModifiedSince, ifModifiedSince)
 		}
 		if ifNoneMatch != "" {
 			reqHeader.Set(elton.HeaderIfNoneMatch, ifNoneMatch)
 		}
+		if acceptEncodingChanged {
+			reqHeader.Set(elton.HeaderAcceptEncoding, acceptEncoding)
+		}
+
+		header := c.Header()
+		// 添加额外的响应头
+		l.AddResponseHeader(header)
+		// 恢复原始url path
+		if originalPath != "" {
+			c.Request.URL.Path = originalPath
+		}
+
 		if err != nil {
 			return
 		}
-		for _, key := range clearHeaders {
-			// 清除header
-			c.SetHeader(key, "")
+
+		var data []byte
+		if c.BodyBuffer != nil {
+			data = c.BodyBuffer.Bytes()
 		}
 
-		return originalNext()
+		// 对于fetching的请求，从响应头中判断该请求缓存的有效期
+		if status == cache.StatusFetching {
+			maxAge := getCacheMaxAge(header)
+			if maxAge > 0 {
+				setHTTPCacheMaxAge(c, maxAge)
+			}
+		}
+
+		// 初始化http response时，如果已压缩，而且非gzip br，则会解压
+		httpResp, err := cache.NewHTTPResponse(c.StatusCode, header, header.Get(elton.HeaderContentEncoding), data)
+		if err != nil {
+			return
+		}
+
+		compressSrv, minLength, filter := s.GetCompress()
+		httpResp.CompressSrv = compressSrv
+		httpResp.CompressMinLength = minLength
+		httpResp.CompressContentTypeFilter = filter
+		setHTTPResp(c, httpResp)
+
+		// 重置context中由于proxy中间件影响的状态 statusCode, header, body
+		// 因为最终响应会从http response中生成，该响应会包括http响应头，
+		// 因此清除现在的header并恢复原来的header
+		c.ResetHeader()
+		c.MergeHeader(originalHeader)
+		c.BodyBuffer = nil
+		c.StatusCode = 0
+		c.Next = originalNext
+		return c.Next()
 	}
 }

@@ -1,170 +1,124 @@
-// Copyright 2019 tree xie
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+// MIT License
+
+// Copyright (c) 2020 Tree Xie
+
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+
+// The above copyright notice and this permission notice shall be included in all
+// copies or substantial portions of the Software.
+
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+// SOFTWARE.
 
 package server
 
 import (
 	"net/http"
-	"strconv"
 
 	"github.com/vicanso/elton"
 	"github.com/vicanso/pike/cache"
-	"github.com/vicanso/pike/config"
-	"github.com/vicanso/pike/util"
 )
 
 const (
-	headerStatusKey = "X-Status"
+	// spaceByte 空格
+	spaceByte = byte(' ')
 )
 
+// requestIsPass check request is passed
 func requestIsPass(req *http.Request) bool {
-	method := req.Method
-	return method != http.MethodGet && method != http.MethodHead
+	// 非GET HEAD 的请求均直接pass
+	return req.Method != http.MethodGet &&
+		req.Method != http.MethodHead
 }
 
-// 根据Cache-Control的信息，获取s-maxage 或者max-age的值
-func getCacheAge(header http.Header) int {
-	// 如果有设置cookie，则为不可缓存
-	if len(header.Get(elton.HeaderSetCookie)) != 0 {
-		return 0
-	}
-	// 如果没有设置cache-control，则不可缓存
-	cc := header.Get(elton.HeaderCacheControl)
-	if len(cc) == 0 {
-		return 0
-	}
+// getKey get key of request
+func getKey(req *http.Request) []byte {
+	methodLen := len(req.Method)
+	hostLen := len(req.Host)
+	uriLen := len(req.RequestURI)
+	buffer := make([]byte, methodLen+hostLen+uriLen+2)
+	len := 0
 
-	// 如果设置不可缓存，返回0
-	match := noCacheReg.MatchString(cc)
-	if match {
-		return 0
-	}
-	// 优先从s-maxage中获取
-	var maxAge = 0
-	result := sMaxAgeReg.FindStringSubmatch(cc)
-	if len(result) == 2 {
-		maxAge, _ = strconv.Atoi(result[1])
-	} else {
-		// 从max-age中获取缓存时间
-		result = maxAgeReg.FindStringSubmatch(cc)
-		if len(result) == 2 {
-			maxAge, _ = strconv.Atoi(result[1])
-		}
-	}
+	copy(buffer[len:], req.Method)
+	len += methodLen
 
-	// 如果有设置了 age 字段，则最大缓存时长减少
-	age := header.Get(headerAge)
-	if age != "" {
-		v, _ := strconv.Atoi(age)
-		maxAge -= v
-	}
+	buffer[len] = spaceByte
+	len++
 
-	return maxAge
+	copy(buffer[len:], req.Host)
+	len += hostLen
+
+	buffer[len] = spaceByte
+	len++
+
+	copy(buffer[len:], req.RequestURI)
+	return buffer
 }
 
-// newCacheDispatchMiddleware create a cache dispatch middleware
-func newCacheDispatchMiddleware(dispatcher *cache.Dispatcher, compress *config.Compress, generateEtag bool) elton.Handler {
-
-	compressHandler := createCompressHandler(compress)
+// NewCache new a cache middleware
+func NewCache(s *server) elton.Handler {
 	return func(c *elton.Context) (err error) {
-		status := cache.StatusUnknown
-		cacheable := false
-		passed := false
-		var httpData *cache.HTTPData
-		var httpCache *cache.HTTPCache
-		// 如果设置了dispatcher，而且不是pass类的请求
-		// 则表示有可能可缓存请求
-		if dispatcher != nil && !requestIsPass(c.Request) {
-			key := util.GetIdentity(c.Request)
-			httpCache = dispatcher.GetHTTPCache(key)
-
-			status, httpData = httpCache.Get()
-			c.Set(statusKey, status)
-			// 如果获取到缓存，则直接返回
-			if status == cache.StatusCacheable {
-				httpData.SetResponse(c, false)
-				// 设置Age
-				age := httpCache.Age()
-				if age > 0 {
-					c.SetHeader(headerAge, strconv.Itoa(age))
-				}
-				c.SetHeader(headerStatusKey, cache.StatusString(status))
-				return
-			}
-			c.SetHeader(headerStatusKey, cache.StatusString(status))
-			c.Set(httpCacheKey, httpCache)
-		} else {
-			passed = true
-			c.Set(statusKey, cache.StatusPassed)
-			c.SetHeader(headerStatusKey, cache.StatusString(cache.StatusPassed))
+		// 不可缓存请求，直接pass至upstream
+		if requestIsPass(c.Request) {
+			setCacheStatus(c, cache.StatusPassed)
+			return c.Next()
+		}
+		disp := cache.GetDispatcher(s.GetCache())
+		if disp == nil {
+			err = ErrDispatcherNotFound
+			return
 		}
 
+		key := getKey(c.Request)
+		httpCache := disp.GetHTTPCache(key)
+		cacheStatus, httpResp := httpCache.Get()
+
+		cacheable := false
 		// 对于fetching类的请求，如果最终是不可缓存的，则设置hit for pass
-		if status == cache.StatusFetching {
+		// 保证只要不是panic，fetching的请求非可缓存的都为hit for pass
+		if cacheStatus == cache.StatusFetching {
 			defer func() {
 				if !cacheable {
-					httpCache.HitForPass(dispatcher.HitForPass)
+					httpCache.HitForPass(disp.GetHitForPass())
 				}
 			}()
 		}
 
+		setCacheStatus(c, cacheStatus)
+		// 可缓存数据，不需要next
+		if cacheStatus == cache.StatusCacheable {
+			// 设置缓存数据
+			setHTTPResp(c, httpResp)
+			// 设置缓存数据的age
+			setHTTPRespAge(c, httpCache.Age())
+			return nil
+		}
+
 		err = c.Next()
 		if err != nil {
-			return
+			return err
 		}
 
-		// 执行proxy成功之后
-		headers := c.Header()
-		encoding := headers.Get(elton.HeaderContentEncoding)
-		var body []byte
-		if c.BodyBuffer != nil {
-			body = c.BodyBuffer.Bytes()
-		}
-
-		// 生成etag
-		if generateEtag {
-			etag := headers.Get(elton.HeaderETag)
-			if etag == "" {
-				etag = util.GenerateETag(body)
-				headers.Set(elton.HeaderETag, etag)
+		if cacheStatus == cache.StatusFetching {
+			// 获取缓存有效期
+			if maxAge := getHTTPCacheMaxAge(c); maxAge > 0 {
+				// 只有有响应数据可缓存时才设置为cacheable
+				if httpResp = getHTTPResp(c); httpResp != nil {
+					cacheable = true
+					httpCache.Cacheable(httpResp, maxAge)
+				}
 			}
 		}
-
-		// 如果是不支持的encoding，则直接返回
-		if encoding != "" && encoding != elton.Gzip {
-			return
-		}
-
-		// 如果是fetching状态的，在成功获取数据后，要根据返回数据设置缓存状态
-		cacheAge := 0
-		// 如果是pass的请求，都不可以缓存
-		if !passed {
-			if status == cache.StatusFetching {
-				cacheAge = getCacheAge(c.Header())
-			}
-			// 缓存时长大于0
-			if cacheAge != 0 {
-				cacheable = true
-			}
-		}
-
-		httpData = compressHandler(c, cacheable)
-		// 如果是可缓存的，则缓存数据
-		if cacheable {
-			httpCache.Cachable(cacheAge, httpData)
-		}
-
-		return
+		return nil
 	}
 }

@@ -2,7 +2,7 @@ language: go
 sudo: required
 
 go:
-  - "1.14"
+  - "1.15"
 
 services:
   - docker
@@ -18,10 +18,10 @@ script:
 
 after_success:
   - docker build -t pike .
-  - export VERSION=`cat assets/version`
+  - export VERSION=`cat asset/version`
   - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
   - docker tag pike $DOCKER_USERNAME/pike:$VERSION
-  - docker tag pike $DOCKER_USERNAME/pike:latest
+  # - docker tag pike $DOCKER_USERNAME/pike:latest
   - docker push $DOCKER_USERNAME/pike:$VERSION
-  - docker push $DOCKER_USERNAME/pike:latest
+  # - docker push $DOCKER_USERNAME/pike:latest
   - docker images

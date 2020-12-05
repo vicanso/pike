@@ -1,428 +1,427 @@
-// Copyright 2019 tree xie
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+// MIT License
 
-// The http server of pike
+// Copyright (c) 2020 Tree Xie
+
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+
+// The above copyright notice and this permission notice shall be included in all
+// copies or substantial portions of the Software.
+
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+// SOFTWARE.
 
 package server
 
 import (
-	"bytes"
-	"crypto/tls"
-	"encoding/base64"
-	"encoding/json"
-	"errors"
+	"net"
 	"net/http"
 	"regexp"
-	"runtime"
-	"strings"
 	"sync"
-	"sync/atomic"
-	"unsafe"
+	"time"
 
-	"github.com/robfig/cron/v3"
+	"github.com/dustin/go-humanize"
 	"github.com/vicanso/elton"
-
+	"github.com/vicanso/elton/middleware"
+	"github.com/vicanso/hes"
 	"github.com/vicanso/pike/cache"
 	"github.com/vicanso/pike/config"
 	"github.com/vicanso/pike/log"
-	"github.com/vicanso/pike/upstream"
+	"github.com/vicanso/pike/util"
+	"go.uber.org/atomic"
 	"go.uber.org/zap"
 )
 
-const (
-	serverStatusNotRunning = iota // nolint
-	serverStatusRunning
-	serverStatusStop
+type (
+	// server pike server
+	server struct {
+		mutex                     *sync.RWMutex
+		logFormat                 string
+		listening                 bool
+		listenAddr                string
+		addr                      string
+		locations                 []string
+		cache                     string
+		compress                  string
+		compressMinLength         int
+		compressContentTypeFilter *regexp.Regexp
+		processing                atomic.Int32
+		ln                        net.Listener
+		e                         *elton.Elton
+	}
+	// servers pike server list
+	servers struct {
+		m *sync.Map
+	}
+	ServerOption struct {
+		// 访问日志格式化
+		LogFormat string
+		// 监听地址
+		Addr string
+		// 使用的location列表
+		Locations []string
+		// 使用的缓存
+		Cache string
+		// 使用的压缩服务
+		Compress string
+		// 压缩最小尺寸
+		CompressMinLength int
+		// 压缩数据类型
+		CompressContentTypeFilter *regexp.Regexp
+	}
 )
 
-// Server http server
-type Server struct {
-	opts    *ServerOptions
-	message string
-	status  int32
-	server  *http.Server
-	e       *elton.Elton
-}
-
-// ServerOptions server options
-type ServerOptions struct {
-	name        string
-	influxSrv   *InfluxSrv
-	server      *config.Server
-	locations   config.Locations
-	upstreams   *upstream.Upstreams
-	dispatchers *cache.Dispatchers
-	dispatcher  *cache.Dispatcher
-	compress    *config.Compress
-	cfg         *config.Config
-}
-
-// Instance pike server instance
-type Instance struct {
-	InfluxSrv          *InfluxSrv
-	Config             *config.Config
-	EnabledAdminServer bool
-	servers            *sync.Map
-	upstreams          *upstream.Upstreams
-	cron               *cron.Cron
-}
-
-type uncaughtErrorInfo struct {
-	Name    string `json:"name,omitempty"`
-	Host    string `json:"host,omitempty"`
-	URL     string `json:"url,omitempty"`
-	Message string `json:"message,omitempty"`
-	Stack   string `json:"stack,omitempty"`
-}
-
 const (
-	upstreamAlarm      = "upstream"
-	uncaughtErrorAlarm = "uncaught-error"
+	// statusKey 保存该请求对应的status: fetching, pass 等
+	statusKey = "_status"
+	// httpRespKey 保存请求对应的响应数据
+	httpRespKey = "_httpResp"
+	// httpRespAgeKey 保存缓存响应的age
+	httpRespAgeKey = "_httpRespAge"
+	// httpCacheMaxAgeKey 缓存有效期
+	httpCacheMaxAgeKey = "_httpCacheMaxAge"
 )
 
-func struct2map(value interface{}) map[string]string {
-	// 内部使用，忽略出错
-	m := make(map[string]string)
-	buf, _ := json.Marshal(value)
-	_ = json.Unmarshal(buf, &m)
-	return m
+const defaultCompressMinLength = 1024
+
+var defaultServers = NewServers(nil)
+
+const (
+	headerAge         = "Age"
+	headerCacheStatus = "X-Status"
+)
+
+var (
+	ErrInvalidResponse = &hes.Error{
+		Message:    "Invalid Response",
+		StatusCode: http.StatusServiceUnavailable,
+	}
+	ErrDispatcherNotFound = &hes.Error{
+		Message:    "Available Dispatcher Not Found",
+		StatusCode: http.StatusServiceUnavailable,
+	}
+	ErrLocationNotFound = &hes.Error{
+		StatusCode: http.StatusServiceUnavailable,
+		Message:    "Available Location Not Found",
+	}
+	ErrUpstreamNotFound = &hes.Error{
+		StatusCode: http.StatusServiceUnavailable,
+		Message:    "Available Upstream Not Found",
+	}
+)
+
+func getCacheStatus(c *elton.Context) cache.Status {
+	return cache.Status(c.GetInt(statusKey))
+}
+func setCacheStatus(c *elton.Context, cacheStatus cache.Status) {
+	c.Set(statusKey, int(cacheStatus))
 }
 
-func alarmHandle(alarmConfig *config.Alarm, data map[string]string) (err error) {
-	template := alarmConfig.Template
-	if data != nil {
-		reg := regexp.MustCompile(`{{\S+?}}`)
-		keys := reg.FindAllString(template, -1)
-		for _, key := range keys {
-			k := key[2 : len(key)-2]
-			value := data[k]
-			template = strings.ReplaceAll(template, key, value)
-		}
+func getHTTPResp(c *elton.Context) *cache.HTTPResponse {
+	value, exists := c.Get(httpRespKey)
+	if !exists {
+		return nil
 	}
-	resp, err := http.Post(alarmConfig.URI, "application/json", bytes.NewBufferString(template))
-	if resp != nil && resp.StatusCode >= 400 {
-		err = errors.New("status:" + resp.Status)
+	resp, ok := value.(*cache.HTTPResponse)
+	if !ok {
+		return nil
 	}
-	if err != nil {
-		log.Default().Error("alarm fail",
-			zap.Error(err),
-		)
-	}
-	return
+	return resp
+}
+func setHTTPResp(c *elton.Context, resp *cache.HTTPResponse) {
+	c.Set(httpRespKey, resp)
 }
 
-func getStack() []byte {
-	size := 2 << 10
-	stack := make([]byte, size)
-	runtime.Stack(stack, true)
-	return stack
+func setHTTPRespAge(c *elton.Context, age int) {
+	c.Set(httpRespAgeKey, age)
+}
+func getHTTPRespAge(c *elton.Context) int {
+	return c.GetInt(httpRespAgeKey)
 }
 
-// Fetch fetch config for instance
-func (ins *Instance) Fetch() (err error) {
-	logger := log.Default()
-	cronIns := cron.New()
-	cfg := ins.Config
-	serversConfig, err := cfg.GetServers()
-	if err != nil {
-		return
-	}
-	if ins.EnabledAdminServer {
-		serversConfig = append(serversConfig, &config.Server{
-			Name: "admin",
-			Addr: ":3015",
-		})
-	}
-
-	influxdbConfig, err := cfg.GetInfluxdb()
-	if err != nil {
-		return
-	}
-	var influxSrv *InfluxSrv
-	if influxdbConfig != nil && influxdbConfig.Enabled {
-		influxSrv, err = NewInfluxSrv(influxdbConfig)
-	}
-	// 初始化influxdb失败只输出日志
-	if err != nil {
-		log.Default().Error("create influxdb service fail",
-			zap.Error(err),
-		)
-	}
-	if ins.InfluxSrv != nil {
-		ins.InfluxSrv.Close()
-	}
-	ins.InfluxSrv = influxSrv
-
-	cachesConfig, err := cfg.GetCaches()
-	if err != nil {
-		return
-	}
-	dispatchers := cache.NewDispatchers(cachesConfig)
-	// 缓存的定期清除任务
-	for _, cacheConfig := range cachesConfig {
-		if cacheConfig.PurgedAt != "" {
-			func(name string) {
-				_, err := cronIns.AddFunc(cacheConfig.PurgedAt, func() {
-					count := dispatchers.Get(name).RemoveExpired()
-					logger.Info("purge cahce by cron successful",
-						zap.String("name", name),
-						zap.Int("count", count),
-					)
-				})
-				if err != nil {
-					logger.Error("create cache purge cron fail",
-						zap.String("name", name),
-						zap.Error(err),
-					)
-				}
-			}(cacheConfig.Name)
-		}
-	}
-
-	locationsConfig, err := cfg.GetLocations()
-	if err != nil {
-		return
-	}
-	locationsConfig.Sort()
-
-	upstreamsConfig, err := cfg.GetUpstreams()
-	if err != nil {
-		return
-	}
-	alarmsConfig, err := cfg.GetAlarms()
-	if err != nil {
-		return
-	}
-	upstreams := upstream.NewUpstreams(upstreamsConfig)
-	upstreamAlarmConfig := alarmsConfig.Get(upstreamAlarm)
-	upstreams.OnStatus(func(info upstream.UpStream) {
-		logger.Info("upstream status change",
-			zap.String("name", info.Name),
-			zap.String("url", info.URL),
-			zap.String("status", info.Status),
-		)
-		if upstreamAlarmConfig != nil && upstreamAlarmConfig.Enabled {
-			// 已输出日志，忽略出错
-			_ = alarmHandle(upstreamAlarmConfig, struct2map(info))
-		}
-	})
-
-	compressesConfig, err := cfg.GetCompresses()
-	if err != nil {
-		return
-	}
-	servers := ins.servers
-	if servers == nil {
-		servers = new(sync.Map)
-	}
-	for _, conf := range serversConfig {
-		locations := locationsConfig.Filter(conf.Locations...)
-		dispatcher := dispatchers.Get(conf.Cache)
-		compress := compressesConfig.Get(conf.Compress)
-
-		data, ok := servers.Load(conf.Name)
-		// 如果已存在，仅更新信息
-		opts := &ServerOptions{
-			name:        conf.Name,
-			influxSrv:   influxSrv,
-			server:      conf,
-			locations:   locations,
-			upstreams:   upstreams,
-			dispatchers: dispatchers,
-			dispatcher:  dispatcher,
-			compress:    compress,
-			cfg:         cfg,
-		}
-		var srv *Server
-		if ok {
-			srv = data.(*Server)
-			srv.opts = opts
-		} else {
-			srv = NewServer(opts)
-			servers.Store(conf.Name, srv)
-		}
-		srv.toggleElton()
-		// 添加异常的日志与alarm
-		func(e *elton.Elton, name string) {
-			uncaughtErrorAlarmConfig := alarmsConfig.Get(uncaughtErrorAlarm)
-			e.OnError(func(c *elton.Context, err error) {
-				logger.Info("uncaught error",
-					zap.String("name", name),
-					zap.String("host", c.Request.Host),
-					zap.String("url", c.Request.RequestURI),
-					zap.Error(err),
-				)
-				if uncaughtErrorAlarmConfig != nil && uncaughtErrorAlarmConfig.Enabled {
-					_ = alarmHandle(uncaughtErrorAlarmConfig, struct2map(uncaughtErrorInfo{
-						Name:    name,
-						Host:    c.Request.Host,
-						URL:     c.Request.RequestURI,
-						Message: err.Error(),
-						Stack:   string(getStack()),
-					}))
-				}
-			})
-		}(srv.GetElton(), conf.Name)
-	}
-	oldUpstreams := ins.upstreams
-	// 如果已有upstreams存在，则将原有upstream销毁
-	if oldUpstreams != nil {
-		oldUpstreams.Destroy()
-	}
-	ins.servers = servers
-	ins.upstreams = upstreams
-	if ins.cron != nil {
-		go ins.cron.Stop()
-	}
-	ins.cron = cronIns
-	cronIns.Start()
-
-	return
+func setHTTPCacheMaxAge(c *elton.Context, age int) {
+	c.Set(httpCacheMaxAgeKey, age)
+}
+func getHTTPCacheMaxAge(c *elton.Context) int {
+	return c.GetInt(httpCacheMaxAgeKey)
 }
 
-// Restart restart all server
-func (ins *Instance) Restart() {
-	ins.servers.Range(func(k, v interface{}) bool {
-		srv, ok := v.(*Server)
-		if ok {
-			go func() {
-				_ = srv.ListenAndServe()
-			}()
-		}
-		return true
-	})
+// NewServer create a new server
+func NewServer(opt ServerOption) *server {
+	minLength := opt.CompressMinLength
+	// 如果未设置最少压缩长度，则设置为1KB
+	if minLength == 0 {
+		minLength = defaultCompressMinLength
+	}
+	return &server{
+		mutex:                     &sync.RWMutex{},
+		logFormat:                 opt.LogFormat,
+		addr:                      opt.Addr,
+		locations:                 opt.Locations,
+		cache:                     opt.Cache,
+		compress:                  opt.Compress,
+		compressMinLength:         minLength,
+		compressContentTypeFilter: opt.CompressContentTypeFilter,
+	}
+}
+
+// NewServers create new server list
+func NewServers(opts []ServerOption) *servers {
+	m := &sync.Map{}
+	for _, opt := range opts {
+		m.Store(opt.Addr, NewServer(opt))
+	}
+	return &servers{
+		m: m,
+	}
 }
 
 // Start start all server
-func (ins *Instance) Start() (err error) {
-	err = ins.Fetch()
-	if err != nil {
-		return
-	}
-	// restart 根据当前配置重新启动server
-	ins.Restart()
-	return
+func (ss *servers) Start() (err error) {
+	ss.m.Range(func(key, value interface{}) bool {
+		s, ok := value.(*server)
+		if ok {
+			err := s.Start(true)
+			if err != nil {
+				log.Default().Error("server start fail",
+					zap.String("addr", s.addr),
+					zap.Error(err),
+				)
+			}
+		}
+		return true
+	})
+	return nil
 }
 
-// NewServer new a server
-func NewServer(opts *ServerOptions) *Server {
-	conf := opts.server
-	srv := &Server{
-		opts: opts,
-	}
-	var tlsConfig *tls.Config
-	if len(conf.Certs) != 0 {
-		tlsConfig = &tls.Config{}
-		tlsConfig.Certificates = make([]tls.Certificate, 0)
-		for _, name := range conf.Certs {
-			c := opts.cfg.NewCertConfig(name)
-			err := c.Fetch()
-			if err != nil {
-				continue
+// Reset reset server list
+func (ss *servers) Reset(opts []ServerOption) {
+	// 删除不再存在的server
+	result := util.MapDelete(ss.m, func(key string) bool {
+		exists := false
+		for _, opt := range opts {
+			if opt.Addr == key {
+				exists = true
+				break
 			}
-			key, err := base64.StdEncoding.DecodeString(c.Key)
-			if err != nil {
-				continue
-			}
-			cert, err := base64.StdEncoding.DecodeString(c.Cert)
-			if err != nil {
-				continue
-			}
-			certificate, err := tls.X509KeyPair(cert, key)
-			if err != nil {
-				continue
-			}
-			tlsConfig.Certificates = append(tlsConfig.Certificates, certificate)
+		}
+		return !exists
+	})
+	for _, item := range result {
+		s, _ := item.(*server)
+		if s != nil {
+			// 由于close需要等待，因此切换时，使用goroutine来关闭
+			go func() {
+				err := s.Close()
+				if err != nil {
+					log.Default().Error("close server fail",
+						zap.String("addr", s.addr),
+						zap.Error(err),
+					)
+				}
+			}()
 		}
 	}
-
-	server := &http.Server{
-		Addr:              conf.Addr,
-		ReadTimeout:       conf.ReadTimeout,
-		ReadHeaderTimeout: conf.ReadHeaderTimeout,
-		WriteTimeout:      conf.WriteTimeout,
-		IdleTimeout:       conf.IdleTimeout,
-		MaxHeaderBytes:    conf.MaxHeaderBytes,
-		Handler:           srv,
+	for _, opt := range opts {
+		value, ok := ss.m.Load(opt.Addr)
+		// 如果该服务存在，则修改属性
+		if ok {
+			s, _ := value.(*server)
+			if s != nil {
+				s.Update(opt)
+			}
+		} else {
+			ss.m.Store(opt.Addr, NewServer(opt))
+		}
 	}
-
-	if tlsConfig != nil {
-		server.TLSConfig = tlsConfig.Clone()
-	}
-	srv.server = server
-
-	return srv
 }
 
-// ListenAndServe call http server's listen and serve
-func (s *Server) ListenAndServe() (err error) {
-	if s.GetStatus() == serverStatusRunning {
+// Close close the server list
+func (ss *servers) Close() error {
+	ss.m.Range(func(_, value interface{}) bool {
+		s, _ := value.(*server)
+		if s != nil {
+			err := s.Close()
+			log.Default().Error("close server fail",
+				zap.String("addr", s.addr),
+				zap.Error(err),
+			)
+		}
+		return true
+	})
+	return nil
+}
+
+// Get get server for server list
+func (ss *servers) Get(name string) *server {
+	value, ok := ss.m.Load(name)
+	if !ok {
 		return nil
 	}
-	s.SetStatus(serverStatusRunning)
-
-	log.Default().Info("server listening",
-		zap.String("addr", s.server.Addr),
-	)
-	if s.server.TLSConfig != nil {
-		err = s.server.ListenAndServeTLS("", "")
-	} else {
-		err = s.server.ListenAndServe()
+	s, ok := value.(*server)
+	if !ok {
+		return nil
 	}
-	if err != nil {
-		s.message = err.Error()
-		log.Default().Error("server listen fail",
-			zap.String("addr", s.server.Addr),
-			zap.Error(err),
-		)
-	}
-	s.SetStatus(serverStatusStop)
-	return
+	return s
 }
 
-// toggleElton toggle elton
-func (s *Server) toggleElton() *elton.Elton {
-	e := NewElton(s.opts)
-	return s.SetElton(e)
+// Update 更新配置
+func (s *server) Update(opt ServerOption) {
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
+	s.locations = opt.Locations
+	s.cache = opt.Cache
+	s.compress = opt.Compress
+	s.compressMinLength = opt.CompressMinLength
+	s.compressContentTypeFilter = opt.CompressContentTypeFilter
 }
 
-// GetElton get elton from server
-func (s *Server) GetElton() *elton.Elton {
-	return (*elton.Elton)(atomic.LoadPointer((*unsafe.Pointer)(unsafe.Pointer(&s.e))))
+// GetCache get the cache of server
+func (s *server) GetCache() string {
+	s.mutex.RLock()
+	defer s.mutex.RUnlock()
+	return s.cache
 }
 
-// SetElton set elton to server
-func (s *Server) SetElton(e *elton.Elton) (oldElton *elton.Elton) {
-	oldPoint := atomic.SwapPointer((*unsafe.Pointer)(unsafe.Pointer(&s.e)), unsafe.Pointer(e))
-	if oldPoint == nil {
+// GetLocations get the locations of server
+func (s *server) GetLocations() []string {
+	s.mutex.RLock()
+	defer s.mutex.RUnlock()
+	return s.locations
+}
+
+// GetCompress get the compress option of server
+func (s *server) GetCompress() (name string, minLength int, filter *regexp.Regexp) {
+	s.mutex.RLock()
+	defer s.mutex.RUnlock()
+	return s.compress, s.compressMinLength, s.compressContentTypeFilter
+}
+
+// Start start the server
+func (s *server) Start(useGoRoutine bool) (err error) {
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
+	// 如监听中，则直接返回
+	if s.listening {
 		return
 	}
-	oldElton = (*elton.Elton)(oldPoint)
-	return
+
+	logger := log.Default()
+
+	// TODO 如果发生panic，停止处理新请求，程序退出
+	e := elton.New()
+	if s.logFormat != "" {
+		e.Use(middleware.NewLogger(middleware.LoggerConfig{
+			OnLog: func(str string, _ *elton.Context) {
+				logger.Info(str)
+			},
+			Format: s.logFormat,
+		}))
+	}
+	e.Use(func(c *elton.Context) error {
+		s.processing.Add(1)
+		defer s.processing.Dec()
+		return c.Next()
+	})
+	e.Use(middleware.NewDefaultError())
+	e.Use(middleware.NewDefaultFresh())
+	e.Use(NewResponder())
+	e.Use(NewCache(s))
+	e.Use(NewProxy(s))
+	e.ALL("/*", func(c *elton.Context) error {
+		return nil
+	})
+	srv := &http.Server{
+		Handler: e,
+	}
+	ln, err := net.Listen("tcp", s.addr)
+	if err != nil {
+		return
+	}
+	s.listening = true
+	s.e = e
+	s.ln = ln
+	s.listenAddr = ln.Addr().String()
+	if !useGoRoutine {
+		return srv.Serve(ln)
+	}
+	go func() {
+		err := srv.Serve(ln)
+		log.Default().Error("server serve fail",
+			zap.String("addr", s.addr),
+			zap.Error(err),
+		)
+	}()
+	return nil
 }
 
-// GetStatus get status of server
-func (s *Server) GetStatus() int32 {
-	return atomic.LoadInt32(&s.status)
+// Close close the server
+func (s *server) Close() error {
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
+	if !s.listening {
+		return nil
+	}
+	s.listening = false
+	err := s.e.GracefulClose(10 * time.Second)
+	if err != nil {
+		return err
+	}
+	return s.ln.Close()
 }
 
-// SetStatus set status of server
-func (s *Server) SetStatus(status int32) {
-	atomic.StoreInt32(&s.status, status)
+// GetAddr get listen addr of server
+func (s *server) GetListenAddr() string {
+	return s.listenAddr
 }
 
-// ServeHTTP serve http
-func (s *Server) ServeHTTP(resp http.ResponseWriter, req *http.Request) {
-	s.GetElton().ServeHTTP(resp, req)
+func convertConfig(configs []config.ServerConfig) []ServerOption {
+	opts := make([]ServerOption, 0)
+	for _, item := range configs {
+		minLength, _ := humanize.ParseBytes(item.CompressMinLength)
+		var reg *regexp.Regexp
+		// 如果有配置则生成
+		if item.CompressContentTypeFilter != "" {
+			reg, _ = regexp.Compile(item.CompressContentTypeFilter)
+		}
+		opts = append(opts, ServerOption{
+			LogFormat:                 item.LogFormat,
+			Addr:                      item.Addr,
+			Locations:                 item.Locations,
+			Cache:                     item.Cache,
+			Compress:                  item.Compress,
+			CompressMinLength:         int(minLength),
+			CompressContentTypeFilter: reg,
+		})
+	}
+	return opts
+}
+
+// Reset reset the default server list
+func Reset(configs []config.ServerConfig) {
+	defaultServers.Reset(convertConfig(configs))
+}
+
+// Get get server from default server list
+func Get(name string) *server {
+	return defaultServers.Get(name)
+}
+
+// Start start the default server list
+func Start() error {
+	return defaultServers.Start()
+}
+
+// CLose close the default server list
+func Close() error {
+	return defaultServers.Close()
 }

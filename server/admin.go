@@ -1,375 +1,420 @@
-// Copyright 2019 tree xie
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+// MIT License
+
+// Copyright (c) 2020 Tree Xie
+
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+
+// The above copyright notice and this permission notice shall be included in all
+// copies or substantial portions of the Software.
+
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+// SOFTWARE.
 
 package server
 
 import (
 	"bytes"
-	"encoding/base64"
-	"io/ioutil"
-	"net"
+	"encoding/json"
+	"io"
 	"net/http"
-	"strconv"
-	"strings"
+	"os"
+	"runtime"
+	"time"
 
+	"github.com/gobuffalo/packr/v2"
 	"github.com/vicanso/elton"
-	compress "github.com/vicanso/elton-compress"
+	jwt "github.com/vicanso/elton-jwt"
 	"github.com/vicanso/elton/middleware"
 	"github.com/vicanso/hes"
-	intranetip "github.com/vicanso/intranet-ip"
-	"github.com/vicanso/pike/application"
 	"github.com/vicanso/pike/cache"
 	"github.com/vicanso/pike/config"
+	"github.com/vicanso/pike/log"
+	"github.com/vicanso/pike/upstream"
+	"go.uber.org/zap"
+	"gopkg.in/yaml.v2"
 )
 
-func newAdminValidateMiddlewares(adminConfig *config.Admin) []elton.Handler {
-	handlers := make([]elton.Handler, 0)
-	// 不允许外网访问
-	if !adminConfig.EnabledInternetAccess {
-		fn := func(c *elton.Context) (err error) {
-			// 会获取客户的访问IP（获取到非内网IP为止，如果都没有，则remote addr)
-			ip := c.ClientIP()
-			if !intranetip.Is(net.ParseIP(ip)) {
-				err = hes.NewWithStatusCode("Not allow to access", http.StatusForbidden)
-				return
-			}
-			return c.Next()
-		}
-		handlers = append(handlers, fn)
+type (
+	AdminServerConfig struct {
+		Addr     string
+		User     string
+		Password string
+		Prefix   string
 	}
-	user := adminConfig.User
-	password := adminConfig.Password
-	// 如果配置了认证
-	if user != "" && password != "" {
-		fn := middleware.NewBasicAuth(middleware.BasicAuthConfig{
-			Validate: func(account, pwd string, c *elton.Context) (bool, error) {
-				if account == user && pwd == password {
-					return true, nil
-				}
-				return false, nil
-			},
+	staticFile struct {
+		box *packr.Box
+	}
+	loginParams struct {
+		Account  string `json:"account,omitempty"`
+		Password string `json:"password,omitempty"`
+	}
+	userInfo struct {
+		Account string `json:"account,omitempty"`
+	}
+
+	// applicationInfo application info
+	applicationInfo struct {
+		GOARCH       string           `json:"goarch,omitempty"`
+		GOOS         string           `json:"goos,omitempty"`
+		GoVersion    string           `json:"goVersion,omitempty"`
+		Version      string           `json:"version,omitempty"`
+		BuildedAt    string           `json:"buildedAt,omitempty"`
+		CommitID     string           `json:"commitID,omitempty"`
+		Uptime       string           `json:"uptime,omitempty"`
+		GoMaxProcs   int              `json:"goMaxProcs,omitempty"`
+		RoutineCount int              `json:"routineCount,omitempty"`
+		Processing   map[string]int32 `json:"processing,omitempty"`
+	}
+)
+
+var (
+	webBox   = packr.New("web", "../web")
+	assetBox = packr.New("asset", "../asset")
+)
+
+var userNotLogin = &hes.Error{
+	Message:    "Please login first",
+	StatusCode: http.StatusUnauthorized,
+}
+var accountOrPasswordIsWrong = &hes.Error{
+	Message:    "Account or password is wrong",
+	StatusCode: http.StatusBadRequest,
+}
+var cacheKeyIsNil = &hes.Error{
+	Message:    "Cache's key can't be null",
+	StatusCode: http.StatusBadRequest,
+}
+
+var buildedAt time.Time
+var commitID string
+var startedAt = time.Now()
+
+const jwtCookie = "pike"
+
+// SetBuildInfo set build info
+func SetBuildInfo(build, id string) {
+	buildedAt, _ = time.Parse("20060102.150405", build)
+	commitID = id
+}
+
+// Exists Test whether or not the given path exists
+func (sf *staticFile) Exists(file string) bool {
+	return sf.box.Has(file)
+}
+
+// Get Get data from file
+func (sf *staticFile) Get(file string) ([]byte, error) {
+	return sf.box.Find(file)
+}
+
+// Stat Get file's stat
+func (sf *staticFile) Stat(file string) os.FileInfo {
+	// 文件打包至程序中，因此无file info
+	return nil
+}
+
+// NewReader Create a reader for file
+func (sf *staticFile) NewReader(file string) (io.Reader, error) {
+	buf, err := sf.Get(file)
+	if err != nil {
+		return nil, err
+	}
+	return bytes.NewReader(buf), nil
+}
+
+func sendFile(c *elton.Context, file string) (err error) {
+	data, err := webBox.Find(file)
+	if err != nil {
+		return
+	}
+	c.SetContentTypeByExt(file)
+	c.CacheMaxAge(5 * time.Minute)
+	c.BodyBuffer = bytes.NewBuffer(data)
+	return
+}
+
+func getUserAccount(c *elton.Context) string {
+	data := c.GetString(jwt.DefaultKey)
+	params := userInfo{}
+	_ = json.Unmarshal([]byte(data), &params)
+
+	return params.Account
+}
+
+func newIsLoginHandler(user string) elton.Handler {
+	return func(c *elton.Context) error {
+		account := getUserAccount(c)
+		if account == "" {
+			return userNotLogin
+		}
+		return c.Next()
+	}
+}
+
+func newLoginHandler(ttlToken *jwt.TTLToken, account, password string) elton.Handler {
+	return func(c *elton.Context) (err error) {
+		params := loginParams{}
+		err = json.Unmarshal(c.RequestBody, &params)
+		if err != nil {
+			return
+		}
+		if params.Account != account || params.Password != password {
+			err = accountOrPasswordIsWrong
+			return
+		}
+		err = ttlToken.AddToCookie(c, &userInfo{
+			Account: account,
 		})
+		if err != nil {
+			return
+		}
 
-		handlers = append(handlers, fn)
+		c.Body = &userInfo{
+			Account: account,
+		}
+		return
 	}
-	return handlers
 }
-func newGetConfigHandler(cfg *config.Config) elton.Handler {
+
+func newUserMeHandler(user string) elton.Handler {
 	return func(c *elton.Context) (err error) {
-		var data interface{}
-		res := make(map[string]interface{})
-		arr := strings.Split(c.Param("category"), ",")
-		for _, category := range arr {
-			switch category {
-			case config.CachesCategory:
-				data, err = cfg.GetCaches()
-			case config.CompressesCategory:
-				data, err = cfg.GetCompresses()
-			case config.LocationsCategory:
-				data, err = cfg.GetLocations()
-			case config.ServersCategory:
-				data, err = cfg.GetServers()
-			case config.UpstreamsCategory:
-				data, err = cfg.GetUpstreams()
-			case config.AdminCategory:
-				data, err = cfg.GetAdmin()
-			case config.CertsCategory:
-				data, err = cfg.GetCerts()
-			case config.InfluxdbCategory:
-				data, err = cfg.GetInfluxdb()
-			case config.AlarmsCategory:
-				data, err = cfg.GetAlarms()
-			default:
-				err = hes.New(category + " is not support")
+		account := "anonymous"
+		if user != "" {
+			account = getUserAccount(c)
+		}
+		c.Body = &userInfo{
+			Account: account,
+		}
+		return nil
+	}
+}
+
+func updateServerStatus(conf *config.PikeConfig) {
+	// 数据需要复制
+	upstreamServers := make([]config.UpstreamConfig, len(conf.Upstreams))
+	for i, item := range conf.Upstreams {
+		up := upstream.Get(item.Name)
+		if len(item.Servers) == 0 || up == nil {
+			upstreamServers[i] = item
+			continue
+		}
+		p := &item
+		statusList := up.GetServerStatusList()
+		servers := make([]config.UpstreamServerConfig, len(p.Servers))
+		// 填充upstream server的状态
+		for j, server := range p.Servers {
+			for _, status := range statusList {
+				if server.Addr == status.Addr {
+					server.Healthy = status.Healthy
+				}
 			}
-			if err != nil {
-				return
-			}
-			res[category] = data
+			servers[j] = server
 		}
-		c.Body = res
-		return
+		p.Servers = servers
+		upstreamServers[i] = *p
 	}
+	conf.Upstreams = upstreamServers
 }
 
-func newCreateOrUpdateConfigHandler(cfg *config.Config) elton.Handler {
-	return func(c *elton.Context) (err error) {
-		category := c.Param("category")
-		var iconfig config.IConfig
-		switch category {
-		case config.CachesCategory:
-			iconfig = cfg.NewCacheConfig("")
-		case config.CompressesCategory:
-			iconfig = cfg.NewCompressConfig("")
-		case config.LocationsCategory:
-			iconfig = cfg.NewLocationConfig("")
-		case config.ServersCategory:
-			iconfig = cfg.NewServerConfig("")
-		case config.UpstreamsCategory:
-			iconfig = cfg.NewUpstreamConfig("")
-		case config.AdminCategory:
-			iconfig = cfg.NewAdminConfig()
-		case config.CertsCategory:
-			iconfig = cfg.NewCertConfig("")
-		case config.InfluxdbCategory:
-			iconfig = cfg.NewInfluxdbConfig()
-		case config.AlarmsCategory:
-			iconfig = cfg.NewAlarmConfig("")
-		default:
-			err = hes.New(category + " is not support")
-			return
-		}
-
-		err = doValidate(iconfig, c.RequestBody)
-		if err != nil {
-			return
-		}
-		err = iconfig.Save()
-		if err != nil {
-			return
-		}
-
-		if err != nil {
-			return
-		}
-		c.NoContent()
+// getConfig 获取config配置
+func getConfig(c *elton.Context) (err error) {
+	conf, err := config.Read()
+	if err != nil {
 		return
 	}
+	updateServerStatus(conf)
+	c.Body = conf
+	return nil
 }
 
-func newDeleteConfigHandler(cfg *config.Config) elton.Handler {
-	return func(c *elton.Context) (err error) {
-		serverConfigs, err := cfg.GetServers()
-		if err != nil {
-			return
-		}
-		locations, err := cfg.GetLocations()
-		if err != nil {
-			return
-		}
-
-		category := c.Param("category")
-		name := c.Param("name")
-		var iconfig config.IConfig
-		shouldBeCheckedByServer := false
-		shouldBeCheckedByLocation := false
-		switch category {
-		case config.CachesCategory:
-			shouldBeCheckedByServer = true
-			iconfig = cfg.NewCacheConfig(name)
-		case config.CompressesCategory:
-			shouldBeCheckedByServer = true
-			iconfig = cfg.NewCompressConfig(name)
-		case config.LocationsCategory:
-			shouldBeCheckedByServer = true
-			iconfig = cfg.NewLocationConfig(name)
-		case config.ServersCategory:
-			iconfig = cfg.NewServerConfig(name)
-		case config.UpstreamsCategory:
-			shouldBeCheckedByLocation = true
-			iconfig = cfg.NewUpstreamConfig(name)
-		case config.CertsCategory:
-			shouldBeCheckedByServer = true
-			iconfig = cfg.NewCertConfig(name)
-		case config.InfluxdbCategory:
-			iconfig = cfg.NewInfluxdbConfig()
-		case config.AlarmsCategory:
-			iconfig = cfg.NewAlarmConfig(name)
-		default:
-			err = hes.New(category + " is not support")
-			return
-		}
-		// 判断是否在现有server配置中有使用
-		if shouldBeCheckedByServer && serverConfigs.Exists(category, name) {
-			err = hes.New(name + " of " + category + " is used by server, it can't be delelted")
-			return
-		}
-		// 判断是否有location在使用该upstream
-		if shouldBeCheckedByLocation && locations.ExistsUpstream(name) {
-			err = hes.New(name + " of " + category + " is used by location, it can't be delelted")
-			return
-		}
-
-		err = iconfig.Delete()
-		if err != nil {
-			return
-		}
-		c.NoContent()
+// saveConfig 保存config配置
+func saveConfig(c *elton.Context) (err error) {
+	conf := config.PikeConfig{}
+	err = json.Unmarshal(c.RequestBody, &conf)
+	if err != nil {
 		return
 	}
+	err = config.Write(&conf)
+	if err != nil {
+		return
+	}
+	data, _ := yaml.Marshal(conf)
+	conf.YAML = string(data)
+	// 简单的等待1秒后再更新状态
+	// 这样有可能检测到配置有更新，重新加载
+	delay := c.QueryParam("delay")
+	if delay != "" {
+		v, _ := time.ParseDuration(delay)
+		if v == 0 || v > 5*time.Second {
+			v = time.Second
+		}
+		time.Sleep(v)
+	}
+	updateServerStatus(&conf)
+	// 因为yaml部分要根据配置数据重新生成，因此重新读取返回
+	c.Body = conf
+	return
 }
 
-// NewAdmin new an admin elton istance
-func NewAdmin(opts *ServerOptions) (string, *elton.Elton) {
-	cfg := opts.cfg
-	adminConfig, _ := cfg.GetAdmin()
-	if adminConfig == nil {
-		return "", nil
-	}
-	adminPath := defaultAdminPath
-	if adminConfig.Prefix != "" {
-		adminPath = adminConfig.Prefix
-	}
-
-	e := elton.New()
-
-	if adminConfig != nil {
-		e.Use(newAdminValidateMiddlewares(adminConfig)...)
-	}
-	compressConfig := middleware.NewCompressConfig(
-		new(compress.BrCompressor),
-		new(middleware.GzipCompressor),
-	)
-	e.Use(middleware.NewCompress(compressConfig))
-
-	e.Use(middleware.NewDefaultFresh())
-	e.Use(middleware.NewDefaultETag())
-
-	e.Use(middleware.NewDefaultError())
-	e.Use(middleware.NewDefaultResponder())
-	e.Use(middleware.NewDefaultBodyParser())
-
-	g := elton.NewGroup(adminPath)
-
-	// 按分类获取配置
-	g.GET("/configs/{category}", newGetConfigHandler(cfg))
-	// 添加与更新使用相同处理
-	g.POST("/configs/{category}", newCreateOrUpdateConfigHandler(cfg))
-	// 删除配置
-	g.DELETE("/configs/{category}/{name}", newDeleteConfigHandler(cfg))
-
-	files := new(assetFiles)
-
-	g.GET("/", func(c *elton.Context) (err error) {
-		file := "index.html"
-		buf, err := files.Get(file)
-		if err != nil {
-			return
+// getApplicationInfo 获取应用信息
+func getApplicationInfo(c *elton.Context) (err error) {
+	processing := make(map[string]int32)
+	defaultServers.m.Range(func(key, value interface{}) bool {
+		if key == nil || value == nil {
+			return true
 		}
-		c.SetContentTypeByExt(file)
-		c.BodyBuffer = bytes.NewBuffer(buf)
+		name, ok := key.(string)
+		if !ok {
+			return true
+		}
+		s, ok := value.(*server)
+		if !ok {
+			return true
+		}
+		processing[name] = s.processing.Load()
+		return true
+	})
+	seconds := time.Duration(time.Since(startedAt).Seconds())
+	d := time.Second * seconds
+	version, _ := assetBox.Find("version")
+	c.Body = &applicationInfo{
+		GOARCH:       runtime.GOARCH,
+		GOOS:         runtime.GOOS,
+		GoVersion:    runtime.Version(),
+		Version:      string(version),
+		BuildedAt:    buildedAt.Format(time.RFC3339),
+		CommitID:     commitID,
+		Uptime:       d.String(),
+		GoMaxProcs:   runtime.GOMAXPROCS(0),
+		RoutineCount: runtime.NumGoroutine(),
+		Processing:   processing,
+	}
+	return
+}
+
+// removeCache 删除缓存
+func removeCache(c *elton.Context) (err error) {
+	key := c.QueryParam("key")
+	if key == "" {
+		err = cacheKeyIsNil
 		return
+	}
+	cache.RemoveHTTPCache(c.QueryParam("cache"), []byte(key))
+	c.NoContent()
+	return
+}
+
+// StartAdminServer start admin server
+func StartAdminServer(config AdminServerConfig) (err error) {
+	logger := log.Default()
+	ttlToken := &jwt.TTLToken{
+		TTL: 24 * time.Hour,
+		// 密钥用于加密数据，需保密
+		Secret:     []byte(config.Password),
+		CookieName: jwtCookie,
+	}
+
+	// Passthrough为false，会校验token是否正确
+	jwtNormal := jwt.NewJWT(jwt.Config{
+		CookieName: jwtCookie,
+		Decode:     ttlToken.Decode,
+	})
+	// 用于初始化创建token使用（此时可能token还没有或者已过期)
+	jwtPassthrough := jwt.NewJWT(jwt.Config{
+		CookieName:  jwtCookie,
+		Decode:      ttlToken.Decode,
+		Passthrough: true,
 	})
 
-	icons := []string{
-		"favicon.ico",
-		"logo.png",
-	}
-	handleIcon := func(icon string) {
-		g.GET("/"+icon, func(c *elton.Context) (err error) {
-			buf, err := application.DefaultAsset().Find(icon)
-			if err != nil {
-				return
-			}
-			c.SetContentTypeByExt(icon)
-			c.Body = buf
-			return
-		})
-	}
-	for _, icon := range icons {
-		handleIcon(icon)
+	e := elton.New()
+	sf := &staticFile{
+		box: webBox,
 	}
 
-	g.GET("/static/*", middleware.NewStaticServe(files, middleware.StaticServeConfig{
-		Path: "/static",
+	e.Use(func(c *elton.Context) error {
+		// 全局设置为不可缓存，后续可覆盖
+		c.NoCache()
+
+		// cors
+		c.SetHeader("Access-Control-Allow-Credentials", "true")
+		c.SetHeader("Access-Control-Allow-Origin", "http://127.0.0.1:3123")
+		c.SetHeader("Access-Control-Allow-Methods", "POST, GET, PUT, DELETE, OPTIONS")
+		c.SetHeader("Access-Control-Allow-Headers", "Content-Type, Accept")
+		c.SetHeader("Access-Control-Max-Age", "86400")
+		return c.Next()
+	})
+
+	e.Use(middleware.NewError(middleware.ErrorConfig{
+		ResponseType: "json",
+	}))
+	e.Use(middleware.NewStats(middleware.StatsConfig{
+		OnStats: func(info *middleware.StatsInfo, _ *elton.Context) {
+			logger.Info("access log",
+				zap.String("ip", info.IP),
+				zap.String("method", info.Method),
+				zap.String("uri", info.URI),
+				zap.Int("status", info.Status),
+				zap.String("consuming", info.Consuming.String()),
+				zap.Int("bytes", info.Size),
+			)
+		},
+	}))
+
+	e.Use(middleware.NewDefaultCompress())
+	e.Use(middleware.NewDefaultBodyParser())
+	e.Use(middleware.NewDefaultResponder())
+
+	// 获取、更新配置
+	var isLogin elton.Handler
+	if config.User != "" {
+		isLogin = elton.Compose(jwtNormal, newIsLoginHandler(config.User))
+	} else {
+		isLogin = func(c *elton.Context) error {
+			return c.Next()
+		}
+	}
+	e.GET("/config", isLogin, getConfig)
+	e.PUT("/config", isLogin, saveConfig)
+
+	// 登录
+	e.POST("/login", jwtPassthrough, newLoginHandler(ttlToken, config.User, config.Password))
+	// 用户信息
+	e.GET("/me", jwtPassthrough, newUserMeHandler(config.User))
+
+	e.GET("/application-info", getApplicationInfo)
+
+	// 缓存
+	e.DELETE("/cache", removeCache)
+
+	// 静态文件
+	e.GET("/", func(c *elton.Context) error {
+		return sendFile(c, "index.html")
+	})
+	e.GET("/*", middleware.NewStaticServe(sf, middleware.StaticServeConfig{
 		// 客户端缓存一年
-		MaxAge: 365 * 24 * 3600,
+		MaxAge: 365 * 24 * time.Hour,
 		// 缓存服务器缓存一个小时
-		SMaxAge:             60 * 60,
-		DenyQueryString:     true,
+		SMaxAge:             time.Hour,
 		DisableLastModified: true,
 	}))
 
-	// 获取应用状态
-	g.GET("/application", func(c *elton.Context) error {
-		c.Body = application.Default()
+	// cors设置
+	e.OPTIONS("/*", func(c *elton.Context) error {
+		c.NoContent()
 		return nil
 	})
-
-	// 获取upstream的状态
-	g.GET("/upstreams", func(c *elton.Context) error {
-		c.Body = opts.upstreams.Status()
-		return nil
-	})
-
-	// 上传
-	g.POST("/upload", func(c *elton.Context) (err error) {
-		file, fileHeader, err := c.Request.FormFile("file")
-		if err != nil {
-			return
-		}
-		buf, err := ioutil.ReadAll(file)
-		if err != nil {
-			return
-		}
-		c.Body = map[string]string{
-			"contentType": fileHeader.Header.Get("Content-Type"),
-			"data":        base64.StdEncoding.EncodeToString(buf),
-		}
-		return
-	})
-	// alarm 测试
-	g.POST("/alarms/{name}/try", func(c *elton.Context) (err error) {
-		name := c.Param("name")
-		alarms, err := cfg.GetAlarms()
-		if err != nil {
-			return
-		}
-		alarm := alarms.Get(name)
-		if alarm == nil {
-			err = hes.New("alarm is nil, please check the alarm configs")
-			return
-		}
-		err = alarmHandle(alarm, nil)
-		if err != nil {
-			return
-		}
-		c.NoContent()
-		return
-	})
-
-	// list caches 获取缓存列表
-	g.GET("/caches/{name}", func(c *elton.Context) (err error) {
-		disp := opts.dispatchers.Get(c.Param("name"))
-		if disp == nil {
-			err = hes.New("cache not found")
-			return
-		}
-		status, _ := strconv.Atoi(c.QueryParam("status"))
-		limit, _ := strconv.Atoi(c.QueryParam("limit"))
-		if status <= 0 {
-			status = cache.StatusCacheable
-		}
-		if limit <= 0 {
-			limit = 100
-		}
-
-		c.Body = disp.List(status, limit, c.QueryParam("keyword"))
-		return
-	})
-	// delete cache 删除缓存
-	g.DELETE("/caches/{name}", func(c *elton.Context) (err error) {
-		disp := opts.dispatchers.Get(c.Param("name"))
-		if disp == nil {
-			err = hes.New("cache not found")
-			return
-		}
-		disp.Remove([]byte(c.QueryParam("key")))
-		c.NoContent()
-		return
-	})
-
-	e.AddGroup(g)
-	return adminPath, e
+	logger.Info("start admin server",
+		zap.String("addr", config.Addr),
+	)
+	return e.ListenAndServe(config.Addr)
 }

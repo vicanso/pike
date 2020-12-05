@@ -1,68 +1,173 @@
-// Copyright 2019 tree xie
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-
 package upstream
 
 import (
-	"net"
 	"net/http"
 	"testing"
 
-	"github.com/vicanso/pike/config"
-
 	"github.com/stretchr/testify/assert"
+	"github.com/vicanso/elton"
+	"github.com/vicanso/pike/config"
+	us "github.com/vicanso/upstream"
+	"golang.org/x/net/http2"
 )
 
-func TestUpstreams(t *testing.T) {
+func TestNewTransport(t *testing.T) {
 	assert := assert.New(t)
-	l, err := net.Listen("tcp", "0.0.0.0:0")
-	assert.Nil(err)
-	defer func() {
-		_ = l.Close()
-	}()
-	go func() {
-		server := http.Server{}
-		_ = server.Serve(l)
-	}()
-	addr := "http://" + l.Addr().String()
 
-	name := "test"
-	upstreamsConfig := config.Upstreams{
-		&config.Upstream{
-			EnableH2C: true,
-			Name:      name,
-			Servers: []config.UpstreamServer{
-				config.UpstreamServer{
-					Addr: addr,
+	transport := newTransport(true)
+
+	h2Transport, ok := transport.(*http2.Transport)
+	assert.True(ok)
+	assert.True(h2Transport.AllowHTTP)
+
+	transport = newTransport(false)
+
+	hTransport, ok := transport.(*http.Transport)
+	assert.True(ok)
+	assert.True(hTransport.ForceAttemptHTTP2)
+}
+
+func TestNewTargetPicker(t *testing.T) {
+	assert := assert.New(t)
+
+	uh := &us.HTTP{
+		Policy: us.PolicyLeastconn,
+	}
+	err := uh.Add("http://127.0.0.1:3000")
+	assert.Nil(err)
+	for _, up := range uh.GetUpstreamList() {
+		up.Healthy()
+	}
+	fn := newTargetPicker(uh)
+	c := elton.NewContext(nil, nil)
+	url, done, err := fn(c)
+	assert.Nil(err)
+	assert.NotNil(done)
+	assert.Equal("http://127.0.0.1:3000", url.String())
+	done(c)
+}
+
+func TestUpstreamServer(t *testing.T) {
+	assert := assert.New(t)
+	addr := "https://www.baidu.com"
+	server := NewUpstreamServer(UpstreamServerOption{
+		Policy:      us.PolicyLeastconn,
+		Name:        "baidu",
+		HealthCheck: "/",
+		Servers: []UpstreamServerConfig{
+			{
+				Addr: addr,
+			},
+			{
+				Addr:   "https://baidu.com",
+				Backup: true,
+			},
+		},
+		OnStatus: func(info StatusInfo) {
+			assert.Equal("healthy", info.Status)
+		},
+	})
+	up, done := server.HTTPUpstream.Next()
+	assert.NotNil(up)
+	assert.False(up.Backup)
+	assert.Equal(addr, up.URL.String())
+	assert.NotNil(done)
+
+	statusList := server.GetServerStatusList()
+	assert.Equal(len(server.servers), len(statusList))
+
+	server.Destroy()
+}
+
+func TestUpstreamServers(t *testing.T) {
+	assert := assert.New(t)
+	baidu := "baidu"
+	servers := NewUpstreamServers([]UpstreamServerOption{
+		{
+			Name:        baidu,
+			HealthCheck: "/",
+			Servers: []UpstreamServerConfig{
+				{
+					Addr: "https://www.baidu.com",
 				},
-				config.UpstreamServer{
-					Backup: true,
-					Addr:   "http://127.0.0.1:80",
+			},
+		},
+	})
+	baiduServer := servers.Get(baidu)
+	assert.NotNil(baiduServer)
+	assert.Equal(baidu, baiduServer.Option.Name)
+
+	bing := "bing"
+	servers.Reset([]UpstreamServerOption{
+		{
+			Name:        bing,
+			HealthCheck: "/",
+			Servers: []UpstreamServerConfig{
+				{
+					Addr: "https://www.bing.com/",
+				},
+			},
+		},
+	})
+	assert.Nil(servers.Get(baidu))
+	bingServer := servers.Get(bing)
+	assert.NotNil(bingServer)
+	assert.Equal(bing, bingServer.Option.Name)
+}
+
+func TestConvertConfig(t *testing.T) {
+	assert := assert.New(t)
+
+	name := "upstream-test"
+	healthCheck := "/ping"
+	policy := "first"
+	enableH2C := true
+	acceptEncoding := "gzip, br"
+	addr := "http://127.0.0.1:3015"
+	backup := true
+
+	configs := []config.UpstreamConfig{
+		{
+			Name:           name,
+			HealthCheck:    healthCheck,
+			Policy:         policy,
+			EnableH2C:      enableH2C,
+			AcceptEncoding: acceptEncoding,
+			Servers: []config.UpstreamServerConfig{
+				{
+					Addr:   addr,
+					Backup: backup,
 				},
 			},
 		},
 	}
-	upstreams := NewUpstreams(upstreamsConfig)
-	us := upstreams.Get(name)
-	assert.NotNil(us)
-	for i := 0; i < 10; i++ {
-		httpUpstream, _ := us.Next()
-		assert.Equal(addr, httpUpstream.URL.String())
-	}
-	data := upstreams.Status()
-	assert.Equal(1, len(data))
-	assert.True(upstreams.H2CIsEnabled(name))
+	opts := convertConfigs(configs, nil)
+	assert.Equal(1, len(opts))
+	assert.Equal(name, opts[0].Name)
+	assert.Equal(healthCheck, opts[0].HealthCheck)
+	assert.Equal(policy, opts[0].Policy)
+	assert.Equal(enableH2C, opts[0].EnableH2C)
+	assert.Equal(acceptEncoding, opts[0].AcceptEncoding)
+	assert.Equal(1, len(opts[0].Servers))
+	assert.Equal(addr, opts[0].Servers[0].Addr)
+	assert.True(opts[0].Servers[0].Backup)
+}
 
-	upstreams.Destroy()
+func TestDefaultUpstreamServers(t *testing.T) {
+	bing := "bing"
+	assert := assert.New(t)
+	Reset([]config.UpstreamConfig{
+		{
+			Name:        bing,
+			HealthCheck: "/",
+			Servers: []config.UpstreamServerConfig{
+				{
+					Addr: "https://www.bing.com/",
+				},
+			},
+		},
+	})
+	bingServer := Get(bing)
+	assert.NotNil(bingServer)
+	assert.Equal(bing, bingServer.Option.Name)
 }

@@ -1,11 +1,6 @@
 # Summary
 
-* [Performance](./docs/performance.md)
-* [Cache](./docs/cache.md)
-
-
-## 中文
-
-* [Start](./docs/start_zh.md)
-* [Performance](./docs/performance_zh.md)
-* [Cache](./docs/cache_zh.md)
+* [程序启动](./docs/start.md)
+* [模块](./docs/modules.md)
+* [缓存处理](./docs/cache-handler.md)
+* [答疑](./docs/questions.md)

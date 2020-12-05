@@ -1,0 +1,35 @@
+admin:
+  user: vicanso
+  password: z6+5xIgzATEPuK5T8LL8/SLWI7HhZdm5OJ445xaHsX0=
+compresses:
+- name: compressTest
+  levels:
+    br: 6
+    gzip: 6
+caches:
+- name: cacheTest
+  size: 20480
+  hitForPass: 1m
+upstreams:
+- name: upstreamTest
+  healthCheck: /ping
+  servers:
+  - addr: http://test:3000
+locations:
+- name: locationTest
+  upstream: upstreamTest
+  rewrites:
+  - /api/*:/$1
+  respHeaders:
+  - a:1
+  reqHeaders:
+  - a:2
+servers:
+- logFormat: '{remote} {when-iso} {:proxyTarget} {method} {uri} {proto} {status} {size-human} {referer} {userAgent}'
+  addr: :3015
+  locations:
+  - locationTest
+  cache: cacheTest
+  compress: compressTest
+  compressMinLength: 1kb
+  compressContentTypeFilter: text|json

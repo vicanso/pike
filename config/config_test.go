@@ -1,80 +1,231 @@
-// Copyright 2019 tree xie
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+// MIT License
+
+// Copyright (c) 2020 Tree Xie
+
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+
+// The above copyright notice and this permission notice shall be included in all
+// copies or substantial portions of the Software.
+
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+// SOFTWARE.
 
 package config
 
 import (
-	"path/filepath"
-	"strings"
+	"math/rand"
+	"os"
+	"strconv"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 )
 
-func TestGetKey(t *testing.T) {
-	cfg := NewTestConfig()
+func TestValidate(t *testing.T) {
 	assert := assert.New(t)
-	key, err := cfg.getKey("test", "")
-	assert.Equal(errKeyIsNil, err)
-	assert.Empty(key)
 
-	key, _ = cfg.getKey("test")
-	assert.Equal(cfg.basePath+"/test", key)
+	// location配置的upstream不存在
+	c := &PikeConfig{
+		Locations: []LocationConfig{
+			{
+				Name:     "location-test",
+				Upstream: "upstream-test",
+			},
+		},
+	}
+	err := c.Validate()
+	assert.Equal(ErrUpstreamNotFound, err)
 
-	key, _ = cfg.getKey("/test")
-	assert.Equal(cfg.basePath+"/test", key)
+	c = &PikeConfig{
+		Servers: []ServerConfig{
+			{
+				Addr: ":3015",
+				Locations: []string{
+					"location-test",
+				},
+				Cache: "cache-test",
+			},
+		},
+	}
+	err = c.Validate()
+	assert.Equal(ErrLocationNotFound, err)
 
-	key, _ = cfg.getKey("test", "1")
-	assert.Equal(cfg.basePath+"/test/1", key)
+	c = &PikeConfig{
+		Upstreams: []UpstreamConfig{
+			{
+				Name: "upstream-test",
+				Servers: []UpstreamServerConfig{
+					{
+						Addr: "http://127.0.0.1:3015",
+					},
+				},
+			},
+		},
+		Locations: []LocationConfig{
+			{
+				Name:     "location-test",
+				Upstream: "upstream-test",
+			},
+		},
+		Servers: []ServerConfig{
+			{
+				Addr: ":3015",
+				Locations: []string{
+					"location-test",
+				},
+				Cache: "cache-test",
+			},
+		},
+	}
+	err = c.Validate()
+	assert.Equal(ErrCacheNotFound, err)
+
+	c = &PikeConfig{
+		Caches: []CacheConfig{
+			{
+				Name:       "cache-test",
+				Size:       100,
+				HitForPass: "1m",
+			},
+		},
+		Upstreams: []UpstreamConfig{
+			{
+				Name: "upstream-test",
+				Servers: []UpstreamServerConfig{
+					{
+						Addr: "http://127.0.0.1:3015",
+					},
+				},
+			},
+		},
+		Locations: []LocationConfig{
+			{
+				Name:     "location-test",
+				Upstream: "upstream-test",
+			},
+		},
+		Servers: []ServerConfig{
+			{
+				Addr: ":3015",
+				Locations: []string{
+					"location-test",
+				},
+				Cache:    "cache-test",
+				Compress: "compress-test",
+			},
+		},
+	}
+	err = c.Validate()
+	assert.Equal(ErrCompressNotFound, err)
+
+	c = &PikeConfig{
+		Caches: []CacheConfig{
+			{
+				Name:       "cache-test",
+				Size:       100,
+				HitForPass: "1m",
+			},
+		},
+		Compresses: []CompressConfig{
+			{
+				Name: "compress-test",
+			},
+		},
+		Upstreams: []UpstreamConfig{
+			{
+				Name:        "upstream-test",
+				HealthCheck: "/ping",
+				Policy:      "first",
+				Servers: []UpstreamServerConfig{
+					{
+						Addr: "http://127.0.0.1:3015",
+					},
+				},
+			},
+		},
+		Locations: []LocationConfig{
+			{
+				Name:     "location-test",
+				Upstream: "upstream-test",
+				Prefixes: []string{
+					"/api",
+				},
+				Rewrites: []string{
+					"/api/:/$1",
+				},
+				QueryStrings: []string{
+					"id:1",
+				},
+				Hosts: []string{
+					"test.com",
+				},
+				RespHeaders: []string{
+					"X-Resp-Id:1",
+				},
+				ReqHeaders: []string{
+					"X-Req-Id:2",
+				},
+			},
+		},
+		Servers: []ServerConfig{
+			{
+				Addr: ":3015",
+				Locations: []string{
+					"location-test",
+				},
+				Cache:                     "cache-test",
+				Compress:                  "compress-test",
+				CompressMinLength:         "1kb",
+				CompressContentTypeFilter: "text|json",
+			},
+		},
+	}
+	err = c.Validate()
+	assert.Nil(err)
 }
 
-func TestConfig(t *testing.T) {
-	cfg := NewTestConfig()
+func TestInitDefaultClient(t *testing.T) {
 	assert := assert.New(t)
-	prefix := "foo"
-	key := filepath.Join(prefix, "1")
-	value := map[string]string{
-		"a": "1",
+
+	file := strconv.Itoa(int(rand.Int31()))
+
+	err := InitDefaultClient("etcd://127.0.0.1:2379/" + file)
+	assert.Nil(err)
+
+	err = InitDefaultClient(os.TempDir() + "/" + file)
+	assert.Nil(err)
+	err = Close()
+	assert.Nil(err)
+}
+
+func TestReadWriteConfig(t *testing.T) {
+	assert := assert.New(t)
+
+	file := strconv.Itoa(int(rand.Int31()))
+	err := InitDefaultClient(os.TempDir() + "/" + file)
+	assert.Nil(err)
+
+	c := &PikeConfig{
+		Compresses: []CompressConfig{
+			{
+				Name: "compress-test",
+			},
+		},
 	}
-	// 保存当前配置
-	err := cfg.saveConfig(value, key)
+	err = Write(c)
 	assert.Nil(err)
 
-	// 从存储中读取
-	result := make(map[string]string)
-	err = cfg.fetchConfig(result, key)
+	currentConfig, err := Read()
 	assert.Nil(err)
-	assert.Equal(value, result)
-
-	// 获取当前前缀下在所有keys
-	keys, err := cfg.listKeys(key)
-	assert.Nil(err)
-	assert.NotEmpty(keys)
-	for _, item := range keys {
-		assert.True(strings.HasPrefix(item, filepath.Join(cfg.basePath, key)))
-	}
-
-	// 获取当前前缀下的所有keys，并去除前缀
-	keys, err = cfg.listKeysExcludePrefix(prefix)
-	assert.Nil(err)
-	assert.Equal(1, len(keys))
-	assert.Equal("1", keys[0])
-
-	// 删除数据并校验删除后是否为空
-	err = cfg.deleteConfig(key)
-	assert.Nil(err)
-	keys, err = cfg.listKeys(key)
-	assert.Nil(err)
-	assert.Empty(keys)
+	assert.Equal(c.Compresses[0].Name, currentConfig.Compresses[0].Name)
 }

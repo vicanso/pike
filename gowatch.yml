@@ -1,0 +1,5 @@
+cmd_args:
+  - --admin
+  - :9013
+  - --alarm
+  - http://127.0.0.1:3001/alarms

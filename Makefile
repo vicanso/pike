@@ -1,32 +1,36 @@
-.PHONY: test
-
-export GO111MODULE = on
+.PHONY: default test test-cover dev
 
 # for dev
 dev:
-	GO_MODE=dev fresh
+	/usr/local/bin/gowatch 
 
+# for test
 test:
-	GO_MODE=test go test -race -cover ./... 
+	go test -race -cover ./...
 
 test-cover:
-	GO_MODE=test go test -race -coverprofile=test.out ./... && go tool cover --html=test.out
+	go test -race -coverprofile=test.out ./... && go tool cover --html=test.out
 
-build-web:
-	cd web && yarn build
+bench:
+	go test -bench=. ./...
 
-format:
-	cd web && yarn format
+lint:
+	golangci-lint run
+
+tidy:
+	go mod tidy
 
 build:
 	packr2
 	go build -ldflags "-X main.BuildedAt=`date -u +%Y%m%d.%H%M%S` -X main.CommitID=`git rev-parse --short HEAD`" -o pike
-
-bench:
-	GO_MODE=test go test -bench=. ./...
-
-lint:
-	golangci-lint run --timeout=2m
-
-clean:
 	packr2 clean
+
+build-linux:
+	GOOS=linux GOARCH=amd64 make build && mv pike pike-linux
+
+build-darwin:
+	GOOS=darwin GOARCH=amd64 make build && mv pike pike-darwin
+
+build-win:
+	GOOS=windows GOARCH=amd64 make build && mv pike pike-win.exe
+	
