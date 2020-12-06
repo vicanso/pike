@@ -28,6 +28,7 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"regexp"
 	"runtime"
 	"time"
 
@@ -363,7 +364,9 @@ func StartAdminServer(config AdminServerConfig) (err error) {
 		},
 	}))
 
-	e.Use(middleware.NewDefaultCompress())
+	compressConfig := middleware.NewCompressConfig(new(middleware.GzipCompressor))
+	compressConfig.Checker = regexp.MustCompile("text|javascript|json|wasm|font")
+	e.Use(middleware.NewCompress(compressConfig))
 	e.Use(middleware.NewDefaultBodyParser())
 	e.Use(middleware.NewDefaultResponder())
 
