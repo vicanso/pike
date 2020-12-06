@@ -23,6 +23,7 @@
 package server
 
 import (
+	"bytes"
 	"net"
 	"net/http"
 	"regexp"
@@ -328,9 +329,17 @@ func (s *server) Start(useGoRoutine bool) (err error) {
 	e.Use(NewResponder())
 	e.Use(NewCache(s))
 	e.Use(NewProxy(s))
+	e.GET("/ping", func(c *elton.Context) error {
+		c.BodyBuffer = bytes.NewBufferString("pong")
+		return nil
+	})
 	e.ALL("/*", func(c *elton.Context) error {
 		return nil
 	})
+	// TODO 一般使用时，pike的前置还有nginx或haproxy，
+	// 因此与客户端的各类超时由前置反向代理处理，
+	// 后续确认是否需要增加更多的参数设置，
+	// 如ReadTimeout ReadHeaderTimeout等，
 	srv := &http.Server{
 		Handler: e,
 	}

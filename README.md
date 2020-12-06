@@ -1,6 +1,5 @@
 # pike
 
-
 与varnish类似的HTTP缓存服务器，主要的特性如下：
 
 - 提供WEB的管理配置界面，简单易上手
@@ -15,6 +14,20 @@
 <p align="center">
 <img src="./docs/images/home.png"/>
 </p>
+
+## 启动方式
+
+### 使用文件保存配置
+
+```bash
+# 命令行
+./pike --config=etcd://127.0.0.1:2379/pike --admin=:9013
+
+# docker
+docker run -it --rm \
+    -p 9013:9013 \
+    vicanso/pike:4.0.0-alpha --config=etcd://172.16.183.177:2379/pike --admin=:9013
+```
 
 
 ## build

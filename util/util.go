@@ -28,7 +28,7 @@ import (
 	"github.com/vicanso/hes"
 )
 
-const errCategory = "pie"
+const errCategory = "pike"
 
 type DeleteMatch func(string) bool
 

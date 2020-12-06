@@ -6,4 +6,5 @@
 * [响应处理](./docs/response.md)
 * [告警](./docs/alarm.md)
 * [系统出错](./docs/error.md)
+* [性能测试](./docs/performance.md)
 * [答疑](./docs/questions.md)

@@ -43,6 +43,7 @@ func doAlarm(category, message string) {
 		)
 		return
 	}
+	defer resp.Body.Close()
 	result, _ := ioutil.ReadAll(resp.Body)
 	if resp.StatusCode >= 400 {
 		log.Default().Error("do alarm fail",
