@@ -54,6 +54,7 @@ Flags:
 为什么会有需要hit for pass的场景？考虑一下以下场景，由于产品刚好被下架处理，因此请求产品详情信息时，该接口返回了出错（http status: 400，cache control: no-cache），因此访问该产品的接口缓存为hit for pass，而后续产品上架了，接口正常响应，缓存时长为cache-control: max-age=60，此时接口应该可缓存的。而由于hit for pass未过期，因此只能等hit for pass过期后接口才变为可缓存。
 
 因此在设置hit for pass的时候需要考虑应用的具体出错处理逻辑，Cache-Control是否无论怎样都不会变化（有一种处理是同样的参数，无论成功失败均使用同样的Cache-Control，这样保证无论成功还是失败，接口均是缓存，避免过多请求），如果是不变的，可以将hit for pass设置为较长的有效期，否则应该选择更短的有效期。
+TODO: 后续再确认是否需要支持针对hit for pass的请求，如果返回Cache-Control可缓存则清除hit for pass
 
 <p align="center">
 <img src="./images/add-cache.png"/>
@@ -130,6 +131,14 @@ location列表中，按是否匹配prefix与host排序，其优先级是 prefix+
 - `Password` 登录密码
 
 设置配置成功后重启pike，之后每次使用都需要登录校验，建议在首次配置则设置。
+
+## 缓存列表
+
+暂未支持查询当前缓存列表功能，仅可用于删除缓存
+
+<p align="center">
+<img src="./images/caches.png"/>
+</p>
 
 ## 非实时生效配置
 

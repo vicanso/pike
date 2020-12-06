@@ -109,6 +109,7 @@ func NewCache(s *server) elton.Handler {
 			return err
 		}
 
+		// TODO 如果是hit for pass，但是缓存有效期不为0
 		if cacheStatus == cache.StatusFetching {
 			// 获取缓存有效期
 			if maxAge := getHTTPCacheMaxAge(c); maxAge > 0 {
