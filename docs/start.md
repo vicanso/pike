@@ -121,6 +121,8 @@ TODO: 后续再确认是否需要支持针对hit for pass的请求，如果返�
 <img src="./images/add-server.png"/>
 </p>
 
+当Server配置完成后，可以使用`curl http://addr/ping`来检测该Server是否启动成功，`/ping`默认由pike处理而不会转发至upstream
+
 ### Location匹配
 
 location列表中，按是否匹配prefix与host排序，其优先级是 prefix+host > prefix > host > 无配置，从列表中按顺序一个个location匹配，匹配则该请求由此location处理，如果所有均不匹配则出错。

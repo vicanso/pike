@@ -389,6 +389,10 @@ func StartAdminServer(config AdminServerConfig) (err error) {
 	// 缓存
 	e.DELETE("/cache", removeCache)
 
+	e.GET("/ping", func(c *elton.Context) error {
+		c.BodyBuffer = bytes.NewBufferString("pong")
+		return nil
+	})
 	// 静态文件
 	e.GET("/", func(c *elton.Context) error {
 		return sendFile(c, "index.html")
