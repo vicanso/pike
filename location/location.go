@@ -223,8 +223,10 @@ func NewLocations(opts ...Location) *Locations {
 // Set set location list
 func (ls *Locations) Set(locations []Location) {
 	data := make([]*Location, len(locations))
-	for index, l := range locations {
-		p := &l
+	for index := range locations {
+		// 需要注意，golang 的range 返回的item是复用同一块内存的，
+		// 需要对数据另外获取保存，因此使用index来获取元素
+		p := &locations[index]
 		p.URLRewriter = generateURLRewriter(p.Rewrites)
 		data[index] = p
 	}

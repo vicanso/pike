@@ -143,9 +143,15 @@ func TestLocations(t *testing.T) {
 			},
 		},
 	})
+	// 重新排序后，test在前
+	assert.Equal("test2", ls.locations[0].Name)
+	assert.Equal("test1", ls.locations[1].Name)
 
 	l = ls.Get("test.com", "/api/users/me", "test1", "test2")
 	assert.Equal("test2", l.Name)
+
+	l = ls.Get("test.com", "/users/me", "test1", "test2")
+	assert.Equal("test1", l.Name)
 }
 
 func TestConvertConfig(t *testing.T) {
