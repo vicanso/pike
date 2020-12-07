@@ -10,13 +10,16 @@ import (
 	"syscall"
 
 	"github.com/spf13/cobra"
+	"github.com/vicanso/pike/app"
 	"github.com/vicanso/pike/cache"
 	"github.com/vicanso/pike/compress"
 	"github.com/vicanso/pike/config"
 	"github.com/vicanso/pike/location"
 	"github.com/vicanso/pike/log"
+	_ "github.com/vicanso/pike/schedule"
 	"github.com/vicanso/pike/server"
 	"github.com/vicanso/pike/upstream"
+	"go.uber.org/automaxprocs/maxprocs"
 	"go.uber.org/zap"
 )
 
@@ -29,6 +32,14 @@ var (
 
 // alarmURL 告警发送的地址
 var alarmURL string
+
+func init() {
+	_, _ = maxprocs.Set(maxprocs.Logger(func(format string, args ...interface{}) {
+		value := fmt.Sprintf(format, args...)
+		log.Default().Info(value)
+	}))
+	app.SetBuildInfo(BuildedAt, CommitID)
+}
 
 // doAlarm 发送告警
 func doAlarm(category, message string) {
@@ -125,7 +136,6 @@ func isHelpCmd() bool {
 }
 func main() {
 	logger := log.Default()
-	server.SetBuildInfo(BuildedAt, CommitID)
 	defer config.Close()
 	configURL := ""
 	adminAddr := ""

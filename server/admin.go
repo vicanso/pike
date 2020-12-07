@@ -28,14 +28,13 @@ import (
 	"io"
 	"net/http"
 	"os"
-	"regexp"
-	"runtime"
 	"time"
 
 	"github.com/gobuffalo/packr/v2"
 	"github.com/vicanso/elton"
 	jwt "github.com/vicanso/elton-jwt"
 	"github.com/vicanso/elton/middleware"
+	"github.com/vicanso/pike/app"
 	"github.com/vicanso/pike/cache"
 	"github.com/vicanso/pike/config"
 	"github.com/vicanso/pike/log"
@@ -65,23 +64,12 @@ type (
 
 	// applicationInfo application info
 	applicationInfo struct {
-		GOARCH       string           `json:"goarch,omitempty"`
-		GOOS         string           `json:"goos,omitempty"`
-		GoVersion    string           `json:"goVersion,omitempty"`
-		Version      string           `json:"version,omitempty"`
-		BuildedAt    string           `json:"buildedAt,omitempty"`
-		CommitID     string           `json:"commitID,omitempty"`
-		Uptime       string           `json:"uptime,omitempty"`
-		GoMaxProcs   int              `json:"goMaxProcs,omitempty"`
-		RoutineCount int              `json:"routineCount,omitempty"`
-		Processing   map[string]int32 `json:"processing,omitempty"`
+		*app.Info
+		Processing map[string]int32 `json:"processing,omitempty"`
 	}
 )
 
-var (
-	webBox   = packr.New("web", "../web")
-	assetBox = packr.New("asset", "../asset")
-)
+var webBox = packr.New("web", "../web")
 
 var userNotLogin = util.NewError("Please login first", http.StatusUnauthorized)
 
@@ -89,17 +77,7 @@ var accountOrPasswordIsWrong = util.NewError("Account or password is wrong", htt
 
 var cacheKeyIsNil = util.NewError("The key of cache can't be null", http.StatusBadRequest)
 
-var buildedAt time.Time
-var commitID string
-var startedAt = time.Now()
-
 const jwtCookie = "pike"
-
-// SetBuildInfo set build info
-func SetBuildInfo(build, id string) {
-	buildedAt, _ = time.Parse("20060102.150405", build)
-	commitID = id
-}
 
 // Exists Test whether or not the given path exists
 func (sf *staticFile) Exists(file string) bool {
@@ -278,20 +256,9 @@ func getApplicationInfo(c *elton.Context) (err error) {
 		processing[name] = s.processing.Load()
 		return true
 	})
-	seconds := time.Duration(time.Since(startedAt).Seconds())
-	d := time.Second * seconds
-	version, _ := assetBox.Find("version")
 	c.Body = &applicationInfo{
-		GOARCH:       runtime.GOARCH,
-		GOOS:         runtime.GOOS,
-		GoVersion:    runtime.Version(),
-		Version:      string(version),
-		BuildedAt:    buildedAt.Format(time.RFC3339),
-		CommitID:     commitID,
-		Uptime:       d.String(),
-		GoMaxProcs:   runtime.GOMAXPROCS(0),
-		RoutineCount: runtime.NumGoroutine(),
-		Processing:   processing,
+		Info:       app.GetInfo(),
+		Processing: processing,
 	}
 	return
 }
@@ -364,9 +331,7 @@ func StartAdminServer(config AdminServerConfig) (err error) {
 		},
 	}))
 
-	compressConfig := middleware.NewCompressConfig(new(middleware.GzipCompressor))
-	compressConfig.Checker = regexp.MustCompile("text|javascript|json|wasm|font")
-	e.Use(middleware.NewCompress(compressConfig))
+	e.Use(middleware.NewDefaultCompress())
 	e.Use(middleware.NewDefaultBodyParser())
 	e.Use(middleware.NewDefaultResponder())
 

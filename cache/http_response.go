@@ -48,7 +48,7 @@ var ignoreHeaders = []string{
 
 var ErrBodyIsNil = errors.New("body is nil")
 
-var defaultCompressContentTypeFilter = regexp.MustCompile(`text|javascript|json|wasm|xml`)
+var defaultCompressContentTypeFilter = regexp.MustCompile(`text|javascript|json|wasm|xml|font`)
 
 type (
 	// HTTPResponse http response's cache
