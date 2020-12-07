@@ -75,8 +75,24 @@ class _ApplicationInfoPageState extends State<ApplicationInfoPage> {
     final info = currentState.info;
     final infos = [
       _InfoDetail(
+        name: 'CPU Usage',
+        value: info.cpuUsage.toString(),
+      ),
+      _InfoDetail(
+        name: 'RSS',
+        value: info.rssHumanize,
+      ),
+      _InfoDetail(
+        name: 'Swap',
+        value: info.swapHumanize,
+      ),
+      _InfoDetail(
         name: 'Go Routines',
         value: info.routineCount.toString(),
+      ),
+      _InfoDetail(
+        name: 'Threads',
+        value: info.threadCount.toString(),
       ),
       _InfoDetail(
         name: 'Go Max Procs',

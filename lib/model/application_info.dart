@@ -9,6 +9,7 @@ import 'package:flutter/foundation.dart';
 
 void fillEmptyList(Map<String, dynamic> m) {
   m['processing'] ??= <String, int>{};
+  m['cpuUsage'] ??= 0;
 }
 
 class ApplicationInfo {
@@ -20,7 +21,11 @@ class ApplicationInfo {
   final String commitID;
   final String uptime;
   final int goMaxProcs;
+  final int cpuUsage;
   final int routineCount;
+  final int threadCount;
+  final String rssHumanize;
+  final String swapHumanize;
   final Map<String, int> processing;
   ApplicationInfo({
     this.goarch,
@@ -31,7 +36,11 @@ class ApplicationInfo {
     this.commitID,
     this.uptime,
     this.goMaxProcs,
+    this.cpuUsage,
     this.routineCount,
+    this.threadCount,
+    this.rssHumanize,
+    this.swapHumanize,
     this.processing,
   });
 
@@ -44,7 +53,11 @@ class ApplicationInfo {
     String commitID,
     String uptime,
     int goMaxProcs,
+    int cpuUsage,
     int routineCount,
+    int threadCount,
+    String rssHumanize,
+    String swapHumanize,
     Map<String, int> processing,
   }) {
     return ApplicationInfo(
@@ -56,7 +69,11 @@ class ApplicationInfo {
       commitID: commitID ?? this.commitID,
       uptime: uptime ?? this.uptime,
       goMaxProcs: goMaxProcs ?? this.goMaxProcs,
+      cpuUsage: cpuUsage ?? this.cpuUsage,
       routineCount: routineCount ?? this.routineCount,
+      threadCount: threadCount ?? this.threadCount,
+      rssHumanize: rssHumanize ?? this.rssHumanize,
+      swapHumanize: swapHumanize ?? this.swapHumanize,
       processing: processing ?? this.processing,
     );
   }
@@ -71,7 +88,11 @@ class ApplicationInfo {
       'commitID': commitID,
       'uptime': uptime,
       'goMaxProcs': goMaxProcs,
+      'cpuUsage': cpuUsage,
       'routineCount': routineCount,
+      'threadCount': threadCount,
+      'rssHumanize': rssHumanize,
+      'swapHumanize': swapHumanize,
       'processing': processing,
     };
   }
@@ -90,7 +111,11 @@ class ApplicationInfo {
       commitID: map['commitID'],
       uptime: map['uptime'],
       goMaxProcs: map['goMaxProcs'],
+      cpuUsage: map['cpuUsage'],
       routineCount: map['routineCount'],
+      threadCount: map['threadCount'],
+      rssHumanize: map['rssHumanize'],
+      swapHumanize: map['swapHumanize'],
       processing: Map<String, int>.from(map['processing']),
     );
   }
@@ -102,7 +127,7 @@ class ApplicationInfo {
 
   @override
   String toString() {
-    return 'ApplicationInfo(goarch: $goarch, goos: $goos, goVersion: $goVersion, version: $version, buildedAt: $buildedAt, commitID: $commitID, uptime: $uptime, goMaxProcs: $goMaxProcs, routineCount: $routineCount, processing: $processing)';
+    return 'ApplicationInfo(goarch: $goarch, goos: $goos, goVersion: $goVersion, version: $version, buildedAt: $buildedAt, commitID: $commitID, uptime: $uptime, goMaxProcs: $goMaxProcs, cpuUsage: $cpuUsage, routineCount: $routineCount, threadCount: $threadCount, rssHumanize: $rssHumanize, swapHumanize: $swapHumanize, processing: $processing)';
   }
 
   @override
@@ -118,7 +143,11 @@ class ApplicationInfo {
         o.commitID == commitID &&
         o.uptime == uptime &&
         o.goMaxProcs == goMaxProcs &&
+        o.cpuUsage == cpuUsage &&
         o.routineCount == routineCount &&
+        o.threadCount == threadCount &&
+        o.rssHumanize == rssHumanize &&
+        o.swapHumanize == swapHumanize &&
         mapEquals(o.processing, processing);
   }
 
@@ -132,7 +161,11 @@ class ApplicationInfo {
         commitID.hashCode ^
         uptime.hashCode ^
         goMaxProcs.hashCode ^
+        cpuUsage.hashCode ^
         routineCount.hashCode ^
+        threadCount.hashCode ^
+        rssHumanize.hashCode ^
+        swapHumanize.hashCode ^
         processing.hashCode;
   }
 }
