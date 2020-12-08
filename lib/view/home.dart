@@ -1,6 +1,8 @@
 ///
 /// 首页
 ///
+import 'dart:convert';
+import 'dart:html' as html;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -156,6 +158,32 @@ class _HomePageState extends State<HomePage>
   Widget _renderYAMLConfig(ConfigCurrentState state) {
     final exp = RegExp(r'(password:[\S\s]+?\n)');
     final yaml = state.config.yaml?.replaceFirst(exp, 'password: ***\n');
+    final actions = <Widget>[];
+    // 如果有配置文件，则添加下载按钮
+    if (yaml != null && yaml.isNotEmpty) {
+      actions.add(IconButton(
+        padding: EdgeInsets.all(0),
+        constraints: BoxConstraints(),
+        icon: Icon(
+          Icons.cloud_download,
+        ),
+        onPressed: () {
+          final bytes = utf8.encode(state.config.yaml);
+          final blob = html.Blob([bytes]);
+          final url = html.Url.createObjectUrlFromBlob(blob);
+          final anchor = html.document.createElement('a') as html.AnchorElement
+            ..href = url
+            ..style.display = 'none'
+            ..download = 'pike.yaml';
+          html.document.body.children.add(anchor);
+          // download
+          anchor.click();
+          // cleanup
+          html.document.body.children.remove(anchor);
+          html.Url.revokeObjectUrl(url);
+        },
+      ));
+    }
     return XCard(
       'Config',
       Text(
@@ -164,6 +192,7 @@ class _HomePageState extends State<HomePage>
           height: 1.5,
         ),
       ),
+      actions: actions,
     );
   }
 

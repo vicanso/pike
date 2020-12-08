@@ -8,9 +8,11 @@ import '../config/application.dart';
 class XCard extends StatelessWidget {
   final String title;
   final Widget content;
+  final List<Widget> actions;
   const XCard(
     this.title,
     this.content, {
+    this.actions,
     Key key,
   })  : assert(
           title != null,
@@ -18,38 +20,49 @@ class XCard extends StatelessWidget {
         ),
         super(key: key);
   @override
-  Widget build(BuildContext context) => Container(
-        decoration: BoxDecoration(
-          border: Border.all(
-            color: Application.defaultBorderColor,
+  Widget build(BuildContext context) {
+    final items = <Widget>[
+      Text(
+        title,
+        style: TextStyle(
+          fontWeight: FontWeight.bold,
+        ),
+      ),
+    ];
+    if (actions != null && actions.isNotEmpty) {
+      items.add(Spacer());
+      items.addAll(actions);
+    }
+    return Container(
+      decoration: BoxDecoration(
+        border: Border.all(
+          color: Application.defaultBorderColor,
+        ),
+      ),
+      child: Column(
+        children: [
+          Container(
+            width: double.infinity,
+            padding: EdgeInsets.all(2 * Application.defaultPadding),
+            decoration: BoxDecoration(
+              color: Application.greyColor,
+              border: Border(
+                bottom: BorderSide(
+                  color: Application.defaultBorderColor,
+                ),
+              ),
+            ),
+            child: Row(
+              children: items,
+            ),
           ),
-        ),
-        child: Column(
-          children: [
-            Container(
-              width: double.infinity,
-              padding: EdgeInsets.all(2 * Application.defaultPadding),
-              decoration: BoxDecoration(
-                color: Application.greyColor,
-                border: Border(
-                  bottom: BorderSide(
-                    color: Application.defaultBorderColor,
-                  ),
-                ),
-              ),
-              child: Text(
-                title,
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
-            Container(
-              width: double.infinity,
-              padding: EdgeInsets.all(2 * Application.defaultPadding),
-              child: content,
-            ),
-          ],
-        ),
-      );
+          Container(
+            width: double.infinity,
+            padding: EdgeInsets.all(2 * Application.defaultPadding),
+            child: content,
+          ),
+        ],
+      ),
+    );
+  }
 }

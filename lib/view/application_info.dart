@@ -76,7 +76,7 @@ class _ApplicationInfoPageState extends State<ApplicationInfoPage> {
     final infos = [
       _InfoDetail(
         name: 'CPU Usage',
-        value: info.cpuUsage.toString(),
+        value: '${info.cpuUsage.toString()} %',
       ),
       _InfoDetail(
         name: 'RSS',
@@ -149,17 +149,6 @@ class _ApplicationInfoPageState extends State<ApplicationInfoPage> {
         value: '',
       ));
     }
-
-    // 		GOARCH       string           `json:"goarch,omitempty"`
-    // GOOS         string           `json:"goos,omitempty"`
-    // GoVersion    string           `json:"goVersion,omitempty"`
-    // Version      string           `json:"version,omitempty"`
-    // BuildedAt    string           `json:"buildedAt,omitempty"`
-    // CommitID     string           `json:"commitID,omitempty"`
-    // Uptime       string           `json:"uptime,omitempty"`
-    // GoMaxProcs   int              `json:"goMaxProcs,omitempty"`
-    // RoutineCount int              `json:"routineCount,omitempty"`
-    // Processing   map[string]int32 `json:"processing,omitempty"`
 
     return Column(
       children: infosList.map((e) {
