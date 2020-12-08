@@ -85,16 +85,20 @@ func bytesToMB(value uint64) string {
 	return strconv.Itoa(int(v)) + " MB"
 }
 
+func GetVersion() string {
+	version, _ := assetBox.Find("version")
+	return string(version)
+}
+
 // GetInfo get application info
 func GetInfo() *Info {
 	seconds := time.Duration(time.Since(startedAt).Seconds())
 	d := time.Second * seconds
-	version, _ := assetBox.Find("version")
 	info := &Info{
 		GOARCH:       runtime.GOARCH,
 		GOOS:         runtime.GOOS,
 		GoVersion:    runtime.Version(),
-		Version:      string(version),
+		Version:      GetVersion(),
 		BuildedAt:    buildedAt.Format(time.RFC3339),
 		CommitID:     commitID,
 		Uptime:       d.String(),

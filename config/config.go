@@ -26,6 +26,7 @@ import (
 	"errors"
 	"strings"
 
+	"github.com/vicanso/pike/app"
 	"github.com/vicanso/pike/log"
 	"go.uber.org/zap"
 	"gopkg.in/yaml.v2"
@@ -48,7 +49,9 @@ type (
 	// PikeConfig pike config
 	PikeConfig struct {
 		// YAML 界面展示之用，不需要保存
-		YAML       string           `json:"yaml,omitempty" yaml:"-"`
+		YAML string `json:"yaml,omitempty" yaml:"-"`
+		// Version 程序版本
+		Version    string           `json:"version,omitempty" yaml:"version,omitempty" `
 		Admin      AdminConfig      `json:"admin,omitempty" yaml:"admin,omitempty" validate:"omitempty,dive"`
 		Compresses []CompressConfig `json:"compresses,omitempty" yaml:"compresses,omitempty" validate:"omitempty,dive"`
 		Caches     []CacheConfig    `json:"caches,omitempty" yaml:"caches,omitempty" validate:"omitempty,dive"`
@@ -239,6 +242,7 @@ func Write(config *PikeConfig) (err error) {
 	if err != nil {
 		return
 	}
+	config.Version = app.GetVersion()
 	data, err := yaml.Marshal(config)
 	if err != nil {
 		return

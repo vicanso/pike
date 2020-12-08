@@ -1,3 +1,4 @@
+version: 4.0.0-alpha
 admin:
   user: vicanso
   password: z6+5xIgzATEPuK5T8LL8/SLWI7HhZdm5OJ445xaHsX0=
@@ -24,8 +25,10 @@ locations:
   - a:1
   reqHeaders:
   - a:2
+  proxyTimeout: 10s
 servers:
-- logFormat: '{remote} {when-iso} {:proxyTarget} {method} {uri} {proto} {status} {size-human} {referer} {userAgent}'
+- logFormat: '{remote} {when-iso} {:proxyTarget} {method} {uri} {proto} {status} {size-human}
+    {referer} {userAgent}'
   addr: :3015
   locations:
   - locationTest
