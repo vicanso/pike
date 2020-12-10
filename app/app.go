@@ -92,8 +92,16 @@ func GetVersion() string {
 
 // GetInfo get application info
 func GetInfo() *Info {
-	seconds := time.Duration(time.Since(startedAt).Seconds())
-	d := time.Second * seconds
+	uptime := ""
+	d := time.Since(startedAt)
+	if d > 24*time.Hour {
+		uptime = strconv.Itoa(int(d/(24*time.Hour))) + "d"
+	} else if d > time.Hour {
+		uptime = strconv.Itoa(int(d.Hours())) + "h"
+	} else {
+		uptime = (time.Second * time.Duration(d.Seconds())).String()
+	}
+
 	info := &Info{
 		GOARCH:       runtime.GOARCH,
 		GOOS:         runtime.GOOS,
@@ -101,7 +109,7 @@ func GetInfo() *Info {
 		Version:      GetVersion(),
 		BuildedAt:    buildedAt.Format(time.RFC3339),
 		CommitID:     commitID,
-		Uptime:       d.String(),
+		Uptime:       uptime,
 		GoMaxProcs:   runtime.GOMAXPROCS(0),
 		CPUUsage:     cpuUsage.Load(),
 		RoutineCount: runtime.NumGoroutine(),
