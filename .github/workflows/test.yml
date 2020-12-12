@@ -7,10 +7,11 @@ on:
     branches: [ master ]
 
 jobs:
-
   build:
     name: Build
     runs-on: ubuntu-latest
+    env:
+      VERSION: 4.0.0-alpha
     services:
       etcd:
         image: bitnami/etcd
@@ -47,7 +48,6 @@ jobs:
     - name: Build and push
       id: docker_build
       uses: docker/build-push-action@v2
-      run: export VERSION=`cat asset/version`
       with:
         push: true
         tags: vicanso/pike:$VERSION
