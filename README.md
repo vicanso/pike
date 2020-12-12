@@ -19,7 +19,7 @@
 
 启动参数主要如下：
 
-- `config` 配置保存地址，可以指定为etcd或者本地文件，如：`etcd://user:pass@127.0.0.1:2379/pike`，本地文件：`/opt/pike/config.yaml`
+- `config` 配置保存地址，可以指定为etcd或者本地文件，如：`etcd://user:pass@127.0.0.1:2379/pike`，本地文件：`/opt/pike/config.yml`
 - `admin` 配置管理后台的访问地址，如：`--admin=:9013`
 
 ### 使用文件保存配置
