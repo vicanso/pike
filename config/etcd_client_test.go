@@ -30,7 +30,7 @@ import (
 
 func TestEtcdClient(t *testing.T) {
 	assert := assert.New(t)
-	etcdClient, err := NewEtcdClient("etcd://127.0.0.1:2379/test-etcd")
+	etcdClient, err := NewEtcdClient("etcd://root:123456@127.0.0.1:2379/test-etcd")
 	assert.Nil(err)
 	defer etcdClient.Close()
 	go etcdClient.Watch(func() {
