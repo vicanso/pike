@@ -167,7 +167,7 @@ func main() {
 			run()
 		},
 	}
-	rootCmd.Flags().StringVar(&configURL, "config", "pike.yml", "The config of pike, support etcd or file, etcd://127.0.0.1:2379/pike or /opt/pike")
+	rootCmd.Flags().StringVar(&configURL, "config", "pike.yml", "The config of pike, support etcd or file, etcd://user:pass@127.0.0.1:2379/pike or /opt/pike")
 	rootCmd.Flags().StringVar(&adminAddr, "admin", "", "The address of admin web page, e.g.: :9013")
 	rootCmd.Flags().StringVar(&alarmURL, "alarm", "", "The alarm request url, alarm will post to the url, e.g.: http://192.168.1.2:3000/alarms")
 

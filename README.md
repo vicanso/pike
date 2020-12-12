@@ -17,6 +17,11 @@
 
 ## 启动方式
 
+启动参数主要如下：
+
+- `config` 配置保存地址，可以指定为etcd或者本地文件，如：`etcd://user:pass@127.0.0.1:2379/pike`，本地文件：`/opt/pike/config.yaml`
+- `admin` 配置管理后台的访问地址，如：`--admin=:9013`
+
 ### 使用文件保存配置
 
 ```bash
@@ -28,7 +33,6 @@ docker run -it --rm \
     -p 9013:9013 \
     vicanso/pike:4.0.0-alpha --config=etcd://172.16.183.177:2379/pike --admin=:9013
 ```
-
 
 ## build
 

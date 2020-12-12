@@ -58,6 +58,7 @@ func NewEtcdClient(uri string) (client *etcdClient, err error) {
 		conf.Username = u.User.Username()
 		conf.Password, _ = u.User.Password()
 	}
+	// TODO 后续有需要添加支持tls
 	// TODO 后续支持从querystring中配置更多的参数
 	c, err := clientv3.New(conf)
 	if err != nil {
