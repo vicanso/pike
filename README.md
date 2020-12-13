@@ -1,5 +1,7 @@
 # pike
 
+[![Build Status](https://github.com/vicanso/pike/workflows/Test/badge.svg)](https://github.com/vicanso/pike/actions)
+
 与varnish类似的HTTP缓存服务器，主要的特性如下：
 
 - 提供WEB的管理配置界面，简单易上手
