@@ -26,6 +26,7 @@ package config
 
 import (
 	"context"
+	"crypto/tls"
 	"net/url"
 	"strings"
 	"time"
@@ -58,7 +59,18 @@ func NewEtcdClient(uri string) (client *etcdClient, err error) {
 		conf.Username = u.User.Username()
 		conf.Password, _ = u.User.Password()
 	}
-	// TODO 后续有需要添加支持tls
+	cert := u.Query().Get("cert")
+	key := u.Query().Get("key")
+	if cert != "" && key != "" {
+		tlsConfig := tls.Config{}
+		tlsConfig.Certificates = make([]tls.Certificate, 1)
+		// TODO 支持更多种形式的拉取证书，如HTTP的方式
+		tlsConfig.Certificates[0], err = tls.LoadX509KeyPair(cert, key)
+		if err != nil {
+			return nil, err
+		}
+		conf.TLS = &tlsConfig
+	}
 	// TODO 后续支持从querystring中配置更多的参数
 	c, err := clientv3.New(conf)
 	if err != nil {
