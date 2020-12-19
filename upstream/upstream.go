@@ -105,7 +105,8 @@ func newTransport(h2c bool) http.RoundTripper {
 		}
 	}
 	return &http.Transport{
-		Proxy: http.ProxyFromEnvironment,
+		// TODO 暂时不配置proxy，后续再确认是否需要
+		// Proxy: http.ProxyFromEnvironment,
 		DialContext: (&net.Dialer{
 			Timeout:   30 * time.Second,
 			KeepAlive: 30 * time.Second,

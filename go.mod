@@ -10,7 +10,7 @@ require (
 	github.com/andybalholm/brotli v1.0.1
 	github.com/coreos/etcd v3.3.25+incompatible
 	github.com/dustin/go-humanize v1.0.0
-	github.com/frankban/quicktest v1.11.2 // indirect
+	github.com/frankban/quicktest v1.11.3 // indirect
 	github.com/fsnotify/fsnotify v1.4.9
 	github.com/go-playground/validator/v10 v10.4.1
 	github.com/gobuffalo/packr/v2 v2.8.1
@@ -23,14 +23,14 @@ require (
 	github.com/shirou/gopsutil/v3 v3.20.11
 	github.com/spf13/cobra v1.1.1
 	github.com/stretchr/testify v1.6.1
-	github.com/vicanso/elton v1.2.2
+	github.com/vicanso/elton v1.2.3
 	github.com/vicanso/elton-jwt v1.1.1
 	github.com/vicanso/hes v0.2.4
 	github.com/vicanso/upstream v0.1.0
 	go.uber.org/atomic v1.7.0
 	go.uber.org/automaxprocs v1.3.0
 	go.uber.org/zap v1.16.0
-	golang.org/x/net v0.0.0-20201110031124-69a78807bb2b
+	golang.org/x/net v0.0.0-20201216054612-986b41b23924
 	gopkg.in/yaml.v2 v2.4.0
 	sigs.k8s.io/yaml v1.2.0 // indirect
 )
