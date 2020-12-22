@@ -32,6 +32,7 @@ var (
 
 // alarmURL 告警发送的地址
 var alarmURL string
+var alarmTemplate string
 
 func init() {
 	_, _ = maxprocs.Set(maxprocs.Logger(func(format string, args ...interface{}) {
@@ -39,6 +40,13 @@ func init() {
 		log.Default().Info(value)
 	}))
 	app.SetBuildInfo(BuildedAt, CommitID)
+	hostname, _ := os.Hostname()
+	alarmTemplate = `{
+		"application": "pike",
+		"hostname": "` + hostname + `",
+		"category": "%s",
+		"message": "%s"
+	}`
 }
 
 // doAlarm 发送告警
@@ -46,7 +54,7 @@ func doAlarm(category, message string) {
 	if alarmURL == "" {
 		return
 	}
-	data := fmt.Sprintf(`{"application": "pike", "category": "%s", "message": "%s"}`, category, message)
+	data := fmt.Sprintf(alarmTemplate, category, message)
 	resp, err := http.Post(alarmURL, "application/json", bytes.NewBufferString(data))
 	if err != nil {
 		log.Default().Error("do alarm fail",
@@ -167,7 +175,7 @@ func main() {
 			run()
 		},
 	}
-	rootCmd.Flags().StringVar(&configURL, "config", "pike.yml", "The config of pike, support etcd or file, etcd://user:pass@127.0.0.1:2379/pike or /opt/pike")
+	rootCmd.Flags().StringVar(&configURL, "config", "pike.yml", "The config of pike, support etcd or file, etcd://user:pass@192.168.1.2:2379,192.168.1.3:2379/pike or /opt/pike")
 	rootCmd.Flags().StringVar(&adminAddr, "admin", "", "The address of admin web page, e.g.: :9013")
 	rootCmd.Flags().StringVar(&alarmURL, "alarm", "", "The alarm request url, alarm will post to the url, e.g.: http://192.168.1.2:3000/alarms")
 

@@ -3,36 +3,39 @@ admin:
   user: vicanso
   password: z6+5xIgzATEPuK5T8LL8/SLWI7HhZdm5OJ445xaHsX0=
 compresses:
-- name: compressTest
+- name: compressCommon
   levels:
     br: 6
     gzip: 6
+  remark: 通用压缩配置
 caches:
-- name: cacheTest
-  size: 20480
-  hitForPass: 1m
+- name: cacheCommon
+  size: 51200
+  hitForPass: 5m
+  remark: 通用缓存配置
 upstreams:
 - name: upstreamTest
   healthCheck: /ping
+  policy: roundRobin
   servers:
   - addr: http://test:3000
+  remark: 测试使用的upstream
 locations:
 - name: locationTest
   upstream: upstreamTest
+  prefixes:
+  - /api
   rewrites:
   - /api/*:/$1
-  respHeaders:
-  - a:1
-  reqHeaders:
-  - a:2
-  proxyTimeout: 10s
+  proxyTimeout: 30s
+  remark: 测试location
 servers:
 - logFormat: '{remote} {when-iso} {:proxyTarget} {method} {uri} {proto} {status} {size-human}
     {referer} {userAgent}'
   addr: :3015
   locations:
   - locationTest
-  cache: cacheTest
-  compress: compressTest
+  cache: cacheCommon
+  compress: compressCommon
   compressMinLength: 1kb
-  compressContentTypeFilter: text|json
+  remark: 测试服务，监听地址:3015

@@ -14,7 +14,7 @@ Usage:
 Flags:
       --admin string    The address of admin web page, e.g.: :9013
       --alarm string    The alarm request url, alarm will post to the url, e.g.: http://192.168.1.2:3000/alarms
-      --config string   The config of pike, support etcd or file, etcd://127.0.0.1:2379/pike or /opt/pike (default "pike.yml")
+      --config string   The config of pike, support etcd or file, etcd://user:pass@192.168.1.2:2379,192.168.1.3:2379/pike or /opt/pike (default "pike.yml")
   -h, --help            help for pike
 ```
 
@@ -42,7 +42,7 @@ Flags:
 <img src="./images/add-compress.png"/>
 </p>
 
-需要注意，对于缓存数据的压缩会直接使用默认的`bestCompression`的压缩配置，该配置的压缩级别为gzip:9, br:6，如果需要覆盖默认的配置，则直接新配置名为`bestCompression`的配置则可覆盖。缓存的数据只压缩一次而可使用多次，选择的压缩级别都较高，对于常规的压缩配置，br的压缩级别配置为6则可，如果CPU占用较多，可以选择更小的值，具体各压缩级别耗时可查看模块-压缩模块的说明。
+需要注意，对于缓存数据的压缩会直接使用默认的`bestCompression`的压缩配置，该配置的压缩级别为gzip:9, br:6，如果需要覆盖默认的配置，则直接新配置名为`bestCompression`的配置则可覆盖。缓存的数据只压缩一次而可使用多次，可以选择较高的压缩级别，对于常规的压缩配置，br的压缩级别配置为6则可，如果CPU占用较多，可以选择更小的值，具体各压缩级别耗时可查看模块-压缩模块的说明。
 
 ## 缓存参数配置
 
@@ -54,7 +54,6 @@ Flags:
 为什么会有需要hit for pass的场景？考虑一下以下场景，由于产品刚好被下架处理，因此请求产品详情信息时，该接口返回了出错（http status: 400，cache control: no-cache），因此访问该产品的接口缓存为hit for pass，而后续产品上架了，接口正常响应，缓存时长为cache-control: max-age=60，此时接口应该可缓存的。而由于hit for pass未过期，因此只能等hit for pass过期后接口才变为可缓存。
 
 因此在设置hit for pass的时候需要考虑应用的具体出错处理逻辑，Cache-Control是否无论怎样都不会变化（有一种处理是同样的参数，无论成功失败均使用同样的Cache-Control，这样保证无论成功还是失败，接口均是缓存，避免过多请求），如果是不变的，可以将hit for pass设置为较长的有效期，否则应该选择更短的有效期。
-TODO: 后续再确认是否需要支持针对hit for pass的请求，如果返回Cache-Control可缓存则清除hit for pass
 
 <p align="center">
 <img src="./images/add-cache.png"/>

@@ -1,5 +1,5 @@
 ---
-description: 告警回调，通过配置相应的回调地址可请及时获知程序异常
+description: 告警回调，通过配置相应的回调地址可及时获知程序异常
 ---
 
 当程序出现异常时，如更新配置失败、upstream节点异常等，若启动指定了告警的回调地址，程序则会以POST的形式调用告警地址，内容如下： 
@@ -7,6 +7,7 @@ description: 告警回调，通过配置相应的回调地址可请及时获知�
 ```json
 {
     "application": "pike",
+    "hostname": "tiger",
     "category": "类别",
     "message": "告警消息"
 }
