@@ -18,7 +18,7 @@ Pike有6个主要模块，下面对这些模块一一介绍。
 - pike与upstream部署在不同的IDC，网络通过专线传输，此时则可以考虑使用zstd或者snappy压缩响应数据，减少专线带宽的使用
 - pike与upstream的访问通过公网访问，由于公网的网络性能较差，此时尽可量考虑使用br或者zstd压缩响应数据，提升性能
 
-下面表示展示了压缩算法执行100次压缩解压的测试结果（原始数据45KB的json数据）：
+下面表示展示了压缩算法执行100次压缩解压的测试结果（原始数据160KB的json数据）：
 
 <p align="center">
 <img src="./images/compression-performance.jpg"/>
