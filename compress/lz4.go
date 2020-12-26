@@ -23,28 +23,25 @@
 package compress
 
 import (
-	"bytes"
-	"io/ioutil"
-
 	"github.com/pierrec/lz4"
 )
 
 func doLZ4Encode(data []byte, level int) ([]byte, error) {
-	dst := &bytes.Buffer{}
-	w := lz4.NewWriter(dst)
-	w.CompressionLevel = level
-	_, err := w.Write(data)
+	buf := make([]byte, len(data))
+	n, err := lz4.CompressBlock(data, buf, nil)
 	if err != nil {
 		return nil, err
 	}
-	err = w.Close()
-	if err != nil {
-		return nil, err
-	}
-	return dst.Bytes(), nil
+	buf = buf[:n]
+	return buf, nil
 }
 
 func doLZ4Decode(buf []byte) ([]byte, error) {
-	r := lz4.NewReader(bytes.NewReader(buf))
-	return ioutil.ReadAll(r)
+	dst := make([]byte, 10*len(buf))
+	n, err := lz4.UncompressBlock(buf, dst)
+	if err != nil {
+		return nil, err
+	}
+	dst = dst[:n]
+	return dst, nil
 }

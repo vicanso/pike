@@ -96,7 +96,7 @@ func TestCompressList(t *testing.T) {
 
 func TestDecompress(t *testing.T) {
 	assert := assert.New(t)
-	data := []byte("Hello World")
+	data := compressTestData
 	// 不同的压缩解压
 	tests := []struct {
 		fn       func() ([]byte, error)
@@ -137,7 +137,7 @@ func TestDecompress(t *testing.T) {
 	for _, tt := range tests {
 		result, err := tt.fn()
 		assert.Nil(err)
-		assert.NotNil(data)
+		assert.NotEmpty(result)
 		result, err = Get("").Decompress(tt.encoding, result)
 		assert.Nil(err)
 		assert.Equal(data, result)

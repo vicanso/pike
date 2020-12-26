@@ -21,11 +21,11 @@ Pike有6个主要模块，下面对这些模块一一介绍。
 下面表示展示了压缩算法执行100次压缩解压的测试结果（原始数据45KB的json数据）：
 
 <p align="center">
-<img src="./images/compression-performance.png"/>
+<img src="./images/compression-performance.jpg"/>
 </p>
 
 由上图可以看出，br压缩使用的时间较长，一般建议使用6则可，而内网或专线等网络较好而又希望减少带宽占用的，可以在pike与upstream使用snappy，减少带宽占用，节约成本。
-golang的lz4压缩测试时性能表现比较差（解压特别慢），后续继续研究，具体测试代码[compression-performance](https://github.com/vicanso/compression-performance)。
+具体测试代码[compression-performance](https://github.com/vicanso/compression-performance)。
 
 ## Cache
 
