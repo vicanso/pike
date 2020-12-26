@@ -7,7 +7,6 @@ on:
 
 jobs:
   build:
-    needs: Test
     runs-on: ubuntu-latest
     name: Build
     steps:
