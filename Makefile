@@ -1,4 +1,4 @@
-.PHONY: default test test-cover dev
+.PHONY: default test test-cover dev hooks
 
 # for dev
 dev:
@@ -34,3 +34,5 @@ build-darwin:
 build-win:
 	GOOS=windows GOARCH=amd64 make build && mv pike pike-win.exe
 	
+hooks:
+	cp hooks/* .git/hooks/
