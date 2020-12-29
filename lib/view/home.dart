@@ -1,15 +1,12 @@
 ///
 /// 首页
 ///
-import 'dart:convert';
-import 'dart:html' as html;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../bloc/bloc.dart';
 import '../config/application.dart';
 import '../model/navigation.dart';
-import '../widget/card.dart';
 import '../widget/error_message.dart';
 import './admin.dart';
 import './application_info.dart';
@@ -19,6 +16,7 @@ import './compress.dart';
 import './location.dart';
 import './server.dart';
 import './upstream.dart';
+import './yaml_config.dart';
 
 @immutable
 class HomePage extends StatefulWidget {
@@ -148,53 +146,11 @@ class _HomePageState extends State<HomePage>
               Container(
                 height: 2 * Application.defaultPadding,
               ),
-              _renderYAMLConfig(state),
+              YAMLConfigPage(),
             ],
           ),
         ),
       );
-
-  // _renderYAMLConfig 渲染yaml的配置
-  Widget _renderYAMLConfig(ConfigCurrentState state) {
-    final exp = RegExp(r'(password:[\S\s]+?\n)');
-    final yaml = state.config.yaml?.replaceFirst(exp, 'password: ***\n');
-    final actions = <Widget>[];
-    // 如果有配置文件，则添加下载按钮
-    if (yaml != null && yaml.isNotEmpty) {
-      actions.add(IconButton(
-        padding: EdgeInsets.all(0),
-        constraints: BoxConstraints(),
-        icon: Icon(
-          Icons.cloud_download,
-        ),
-        onPressed: () {
-          final bytes = utf8.encode(state.config.yaml);
-          final blob = html.Blob([bytes]);
-          final url = html.Url.createObjectUrlFromBlob(blob);
-          final anchor = html.document.createElement('a') as html.AnchorElement
-            ..href = url
-            ..style.display = 'none'
-            ..download = 'pike.yaml';
-          html.document.body.children.add(anchor);
-          // download
-          anchor.click();
-          // cleanup
-          html.document.body.children.remove(anchor);
-          html.Url.revokeObjectUrl(url);
-        },
-      ));
-    }
-    return XCard(
-      'Config',
-      Text(
-        yaml ?? '-- No Content --',
-        style: TextStyle(
-          height: 1.5,
-        ),
-      ),
-      actions: actions,
-    );
-  }
 
   // _renderConfig 渲染配置
   Widget _renderConfig(ConfigState state) {

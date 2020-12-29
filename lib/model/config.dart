@@ -706,7 +706,6 @@ class Config {
   }
 
   Config copyWith({
-    String yaml,
     AdminConfig admin,
     List<CompressConfig> compresses,
     List<CacheConfig> caches,
@@ -714,8 +713,8 @@ class Config {
     List<LocationConfig> locations,
     List<ServerConfig> servers,
   }) {
+    // copy with不支持复制yaml（因为yaml包括所有配置，后台会优先使用更新）
     return Config(
-      yaml: yaml ?? this.yaml,
       admin: admin ?? this.admin,
       compresses: compresses ?? this.compresses,
       caches: caches ?? this.caches,
