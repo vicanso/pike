@@ -216,6 +216,12 @@ func saveConfig(c *elton.Context) (err error) {
 	if err != nil {
 		return
 	}
+	if conf.YAML != "" {
+		err = yaml.Unmarshal([]byte(conf.YAML), &conf)
+		if err != nil {
+			return
+		}
+	}
 	err = config.Write(&conf)
 	if err != nil {
 		return
