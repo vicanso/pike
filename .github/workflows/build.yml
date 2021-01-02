@@ -26,8 +26,8 @@ jobs:
         password: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
     - name: Set version
       run: |
-        ls -l
         echo ${{ steps.vars.outputs.tag }} > asset/version
+        cat asset/version
     - name: Build and push
       id: docker_build
       uses: docker/build-push-action@v2
