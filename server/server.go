@@ -311,6 +311,7 @@ func (s *server) Start(useGoRoutine bool) (err error) {
 	e := elton.New()
 	if s.logFormat != "" {
 		e.Use(middleware.NewLogger(middleware.LoggerConfig{
+			DefaultFill: "-",
 			OnLog: func(str string, _ *elton.Context) {
 				logger.Info(str)
 			},

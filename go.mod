@@ -16,16 +16,16 @@ require (
 	github.com/gobuffalo/packr/v2 v2.8.1
 	github.com/golang/groupcache v0.0.0-20200121045136-8c9f03a8e57e
 	github.com/golang/snappy v0.0.2
-	github.com/google/uuid v1.1.2 // indirect
-	github.com/klauspost/compress v1.11.4
+	github.com/google/uuid v1.1.4 // indirect
+	github.com/klauspost/compress v1.11.7
 	github.com/pierrec/lz4 v2.6.0+incompatible
 	github.com/robfig/cron/v3 v3.0.1
-	github.com/shirou/gopsutil/v3 v3.20.11
+	github.com/shirou/gopsutil/v3 v3.20.12
 	github.com/spf13/cobra v1.1.1
-	github.com/stretchr/testify v1.6.1
-	github.com/vicanso/elton v1.2.3
+	github.com/stretchr/testify v1.7.0
+	github.com/vicanso/elton v1.2.4
 	github.com/vicanso/elton-jwt v1.1.1
-	github.com/vicanso/hes v0.2.4
+	github.com/vicanso/hes v0.3.0
 	github.com/vicanso/upstream v0.1.0
 	go.uber.org/atomic v1.7.0
 	go.uber.org/automaxprocs v1.3.0
