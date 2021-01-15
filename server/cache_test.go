@@ -98,7 +98,7 @@ func TestCacheMiddleware(t *testing.T) {
 				httptest.NewRecorder(),
 				httptest.NewRequest("GET", "/", nil),
 			),
-			status: cache.StatusCacheable,
+			status: cache.StatusHit,
 		},
 	}
 

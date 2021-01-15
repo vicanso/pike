@@ -13,7 +13,7 @@ func TestCacheStatusString(t *testing.T) {
 
 	assert.Equal("fetching", StatusFetching.String())
 	assert.Equal("hitForPass", StatusHitForPass.String())
-	assert.Equal("cacheable", StatusCacheable.String())
+	assert.Equal("hit", StatusHit.String())
 	assert.Equal("passed", StatusPassed.String())
 	assert.Equal("unknown", StatusUnknown.String())
 }
@@ -34,7 +34,7 @@ func TestHTTPCacheGet(t *testing.T) {
 		resp   *HTTPResponse
 	}{
 		{
-			status: StatusCacheable,
+			status: StatusHit,
 			hc:     expiredHC,
 			resp:   cacheResp,
 		},
@@ -68,7 +68,7 @@ func TestHTTPCacheGet(t *testing.T) {
 		// 简单等待10ms，让所有for中的goroutine都已执行
 		time.Sleep(10 * time.Millisecond)
 		switch tt.status {
-		case StatusCacheable:
+		case StatusHit:
 			tt.hc.Cacheable(tt.resp, 300)
 		case StatusHitForPass:
 			tt.hc.HitForPass(-1)

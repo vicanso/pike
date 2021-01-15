@@ -95,8 +95,8 @@ func NewCache(s *server) elton.Handler {
 		}
 
 		setCacheStatus(c, cacheStatus)
-		// 可缓存数据，不需要next
-		if cacheStatus == cache.StatusCacheable {
+		// 缓存中读取的可缓存数据，不需要next
+		if cacheStatus == cache.StatusHit {
 			// 设置缓存数据
 			setHTTPResp(c, httpResp)
 			// 设置缓存数据的age

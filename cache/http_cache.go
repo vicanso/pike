@@ -21,8 +21,8 @@
 // SOFTWARE.
 
 // 针对同一个请求，在状态未知时，控制只允许一个请求转发至后续流程
-// 在获取状态之后，支持hit for pass 与 cacheable 两种处理，其中hit for pass表示该请求不可缓存，
-// 直接转发至后端程序，而cacheable则返回当前缓存的响应数据
+// 在获取状态之后，支持hit for pass 与 hit 两种处理，其中hit for pass表示该请求不可缓存，
+// 直接转发至后端程序，而hit则返回当前缓存的响应数据
 
 package cache
 
@@ -42,14 +42,14 @@ const (
 	StatusFetching
 	// StatusHitForPass hit-for-pass status
 	StatusHitForPass
-	// StatusCacheable cacheable status
-	StatusCacheable
+	// StatusHit hit cache status
+	StatusHit
 	// StatusPassed pass status
 	StatusPassed
 )
 
-// defaultHitForPass default hit for pass: 300 seconds
-const defaultHitForPass = 300
+// defaultHitForPassSeconds default hit for pass: 300 seconds
+const defaultHitForPassSeconds = 300
 
 type (
 	// httpCache http cache (only for same request method+host+uri)
@@ -73,8 +73,8 @@ func (i Status) String() string {
 		return "fetching"
 	case StatusHitForPass:
 		return "hitForPass"
-	case StatusCacheable:
-		return "cacheable"
+	case StatusHit:
+		return "hit"
 	case StatusPassed:
 		return "passed"
 	default:
@@ -99,7 +99,7 @@ func (hc *httpCache) Get() (status Status, response *HTTPResponse) {
 		// TODO 后续再考虑是否需要添加timeout（proxy部分有超时，因此暂时可不添加)
 		<-done
 		// 完成后重新获取当前状态与响应
-		// 此时状态只可能是hit for pass 或者 cacheable
+		// 此时状态只可能是hit for pass 或者 hit
 		// 而此两种状态的数据缓存均不会立即失效，因此可以从hc中获取
 		status = hc.status
 		response = hc.response
@@ -133,7 +133,7 @@ func (hc *httpCache) get() (status Status, done chan struct{}, data *HTTPRespons
 	// 为什么需要返回status与data
 	// 因为有可能在函数调用完成后，刚好缓存过期了，如果此时不返回status与data
 	// 当其它goroutine获取锁之后，有可能刚好重置数据
-	if status == StatusCacheable {
+	if status == StatusHit {
 		data = hc.response
 	}
 	return
@@ -144,7 +144,7 @@ func (hc *httpCache) HitForPass(ttl int) {
 	hc.mu.Lock()
 	defer hc.mu.Unlock()
 	if ttl <= 0 {
-		ttl = defaultHitForPass
+		ttl = defaultHitForPassSeconds
 	}
 	hc.expiredAt = nowUnix() + ttl
 	hc.status = StatusHitForPass
@@ -164,7 +164,7 @@ func (hc *httpCache) Cacheable(resp *HTTPResponse, ttl int) {
 	_ = resp.Compress()
 	hc.createdAt = nowUnix()
 	hc.expiredAt = hc.createdAt + ttl
-	hc.status = StatusCacheable
+	hc.status = StatusHit
 	hc.response = resp
 	list := hc.chanList
 	hc.chanList = nil

@@ -36,8 +36,8 @@ func TestGetSetCacheStatus(t *testing.T) {
 	assert := assert.New(t)
 	c := elton.NewContext(nil, nil)
 	assert.Equal(cache.StatusUnknown, getCacheStatus(c))
-	setCacheStatus(c, cache.StatusCacheable)
-	assert.Equal(cache.StatusCacheable, getCacheStatus(c))
+	setCacheStatus(c, cache.StatusHit)
+	assert.Equal(cache.StatusHit, getCacheStatus(c))
 }
 
 func TestGetSetHTTPResp(t *testing.T) {
