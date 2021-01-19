@@ -35,6 +35,16 @@ var alarmURL string
 var alarmTemplate string
 
 func init() {
+
+	err := runCMD()
+	if err != nil {
+		panic(err)
+	}
+	// 如果是help cmd，则
+	if isHelpCmd() {
+		os.Exit(0)
+		return
+	}
 	_, _ = maxprocs.Set(maxprocs.Logger(func(format string, args ...interface{}) {
 		value := fmt.Sprintf(format, args...)
 		log.Default().Info(value)
@@ -113,6 +123,54 @@ func startAdminServer(addr string) error {
 	})
 }
 
+// runCMD 解析各命令参数
+func runCMD() error {
+	configURL := ""
+	adminAddr := ""
+	logOutputPath := ""
+
+	var rootCmd = &cobra.Command{
+		Use:   "pike",
+		Short: "Pike is a http cache server",
+		PreRun: func(cmd *cobra.Command, args []string) {
+			if logOutputPath != "" {
+				log.SetOutputPath(logOutputPath)
+			}
+			// 初始化配置
+			err := config.InitDefaultClient(configURL)
+			if err != nil {
+				panic(err)
+			}
+		},
+		Run: func(cmd *cobra.Command, args []string) {
+
+			if adminAddr != "" {
+				go func() {
+					err := startAdminServer(adminAddr)
+					if err != nil {
+						log.Default().Error("start admin server fail",
+							zap.String("addr", adminAddr),
+							zap.Error(err),
+						)
+						go doAlarm("admin", adminAddr+", "+err.Error())
+					}
+				}()
+			}
+			run()
+		},
+	}
+	// 配置文件地址
+	rootCmd.Flags().StringVar(&configURL, "config", "pike.yml", "The config of pike, support etcd or file, etcd://user:pass@192.168.1.2:2379,192.168.1.3:2379/pike or /opt/pike.yml")
+	// 管理后台地址
+	rootCmd.Flags().StringVar(&adminAddr, "admin", "", "The address of admin web page, e.g.: :9013")
+	// 告警发送地址
+	rootCmd.Flags().StringVar(&alarmURL, "alarm", "", "The alarm request url, alarm will post to the url, e.g.: http://192.168.1.2:3000/alarms")
+	// 日志文件
+	rootCmd.Flags().StringVar(&logOutputPath, "log", "", "The log path, e.g.: /var/pike.log or lumberjack:///tmp/pike.log?maxSize=100&maxAge=1&compress=true")
+
+	return rootCmd.Execute()
+}
+
 func run() {
 	logger := log.Default()
 
@@ -143,51 +201,9 @@ func isHelpCmd() bool {
 	return false
 }
 func main() {
-	logger := log.Default()
 	defer config.Close()
-	configURL := ""
-	adminAddr := ""
 
-	var rootCmd = &cobra.Command{
-		Use:   "pike",
-		Short: "Pike is a http cache server",
-		PreRun: func(cmd *cobra.Command, args []string) {
-			// 初始化配置
-			err := config.InitDefaultClient(configURL)
-			if err != nil {
-				panic(err)
-			}
-		},
-		Run: func(cmd *cobra.Command, args []string) {
-
-			if adminAddr != "" {
-				go func() {
-					err := startAdminServer(adminAddr)
-					if err != nil {
-						logger.Error("start admin server fail",
-							zap.String("addr", adminAddr),
-							zap.Error(err),
-						)
-						go doAlarm("admin", adminAddr+", "+err.Error())
-					}
-				}()
-			}
-			run()
-		},
-	}
-	rootCmd.Flags().StringVar(&configURL, "config", "pike.yml", "The config of pike, support etcd or file, etcd://user:pass@192.168.1.2:2379,192.168.1.3:2379/pike or /opt/pike")
-	rootCmd.Flags().StringVar(&adminAddr, "admin", "", "The address of admin web page, e.g.: :9013")
-	rootCmd.Flags().StringVar(&alarmURL, "alarm", "", "The alarm request url, alarm will post to the url, e.g.: http://192.168.1.2:3000/alarms")
-
-	err := rootCmd.Execute()
-	if err != nil {
-		panic(err)
-	}
-	if isHelpCmd() {
-		return
-	}
-
-	logger.Info("pike is running")
+	log.Default().Info("pike is running")
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, syscall.SIGHUP, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
 	for range c {

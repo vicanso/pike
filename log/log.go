@@ -23,16 +23,77 @@
 package log
 
 import (
+	"net/url"
+	"strconv"
+
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
+	"gopkg.in/natefinch/lumberjack.v2"
 )
 
-var defaultLogger = newLoggerX()
+func init() {
+	err := zap.RegisterSink("lumberjack", newLumberJack)
+	if err != nil {
+		panic(err)
+	}
+}
+
+var defaultLogger = newLoggerX("")
+
+type LumberjackLogger struct {
+	lumberjack.Logger
+}
+
+func (ll *LumberjackLogger) Sync() error {
+	return nil
+}
+
+func newLumberJack(u *url.URL) (zap.Sink, error) {
+	maxSize := 0
+	v := u.Query().Get("maxSize")
+	if v != "" {
+		maxSize, _ = strconv.Atoi(v)
+	}
+	maxAge := 0
+	v = u.Query().Get("maxAge")
+	if v != "" {
+		maxAge, _ = strconv.Atoi(v)
+	}
+	if maxAge == 0 {
+		maxAge = 1
+	}
+	compress := false
+	if u.Query().Get("compress") == "true" {
+		compress = true
+	}
+
+	return &LumberjackLogger{
+		Logger: lumberjack.Logger{
+			MaxSize:  maxSize,
+			MaxAge:   maxAge,
+			Filename: u.Path,
+			Compress: compress,
+		},
+	}, nil
+}
 
 // newLoggerX 初始化logger
-func newLoggerX() *zap.Logger {
+func newLoggerX(outputPath string) *zap.Logger {
 
 	c := zap.NewProductionConfig()
+	if outputPath != "" {
+		c.OutputPaths = []string{
+			outputPath,
+		}
+		c.ErrorOutputPaths = []string{
+			outputPath,
+		}
+	}
+
+	// 在一秒钟内, 如果某个级别的日志输出量超过了 Initial, 那么在超过之后, 每 Thereafter 条日志才会输出一条, 其余的日志都将被删除
+	// 如果需要输出所有日志，则设置为nil
+	c.Sampling = nil
+
 	c.EncoderConfig.EncodeTime = zapcore.ISO8601TimeEncoder
 	// 只针对panic 以上的日志增加stack trace
 	l, err := c.Build(zap.AddStacktrace(zap.DPanicLevel))
@@ -40,6 +101,10 @@ func newLoggerX() *zap.Logger {
 		panic(err)
 	}
 	return l
+}
+
+func SetOutputPath(outputPath string) {
+	defaultLogger = newLoggerX(outputPath)
 }
 
 // Default get default logger

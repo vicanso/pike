@@ -23,12 +23,15 @@
 
 - `config` 配置保存地址，可以指定为etcd或者本地文件，如：`etcd://user:pass@127.0.0.1:2379/pike`，本地文件：`/opt/pike/config.yml`
 - `admin` 配置管理后台的访问地址，如：`--admin=:9013`
+- `log` 日志文件目录，支持单文件与lumberjack形式，如`/var/pike.log`或`lumberjack:///tmp/pike.log?maxSize=100&maxAge=1&compress=true`，lumberjack会根据文件内容大小与时间将文件分割
 
 ### 使用文件保存配置
 
 ```bash
-# 命令行
+# linux etcd，管理后台使用9013端口访问
 ./pike --config=etcd://127.0.0.1:2379/pike --admin=:9013
+# linux file，配置文件保存在/opt/pike.yml，管理后台使用9013端口访问
+./pike --config=/opt/pike.yml --admin=:9013
 
 # docker
 docker run -it --rm \
