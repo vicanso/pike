@@ -11,6 +11,7 @@
 - 支持H2C的转发，提升与后端服务的调用性能（如果是内网转发，不需要启用）
 - 与upstream的调用支持`gzip`，`brotli`，`lz4`，`snappy`以及`zstd`压缩，可根据与upstream的网络线路选择合适的压缩方式
 - 支持upstream检测失败时回调配置，可及时获取异常upstream
+- 支持自定义日志，可配置按日期与大小分割日志并压缩
 
 
 <p align="center">

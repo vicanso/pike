@@ -8,14 +8,17 @@ Pike是纯go的项目，可以使用各平台的执行文件启动或者已打�
 ## 启动参数
 
 ```bash
+Pike is a http cache server
+
 Usage:
   pike [flags]
 
 Flags:
       --admin string    The address of admin web page, e.g.: :9013
       --alarm string    The alarm request url, alarm will post to the url, e.g.: http://192.168.1.2:3000/alarms
-      --config string   The config of pike, support etcd or file, etcd://user:pass@192.168.1.2:2379,192.168.1.3:2379/pike or /opt/pike (default "pike.yml")
+      --config string   The config of pike, support etcd or file, etcd://user:pass@192.168.1.2:2379,192.168.1.3:2379/pike or /opt/pike.yml (default "pike.yml")
   -h, --help            help for pike
+      --log string      The log path, e.g.: /var/pike.log or lumberjack:///tmp/pike.log?maxSize=100&maxAge=1&compress=true
 ```
 
 如上所示pike的启动参数如下：
@@ -23,6 +26,7 @@ Flags:
 - admin 管理后台监听地址，用于启动管理后台，建议最少其中一个实例启用管理后台，方便使用WEB管理后台编辑配置
 - alarm 告警回调服务地址，当upstream的服务器检测失败或配置更新失败等时回调，用于告警通知
 - config 配置地址，可以用于etcd或者file的形式，建议在生产环境中使用etcd，如果不配置则直接使用文件形式，文件为pike.yml
+- log 日志目录配置，可以指定单一文件或使用lumberjack按时按文件大小分割日志并压缩
 
 
 首次启动指定管理后台监听地址为:9013，未指定配置地址（使用pike.yml)，启动成功后可以看到在执行目录下生成了一个空白的新文件pike.yml（如果该文件已存在则不新建），之后可以打开`http://127.0.0.1:9013/#/`进行配置。
@@ -113,7 +117,7 @@ Flags:
 - `Compress` 压缩，根据带宽与CPU的考虑，选择合适的压缩
 - `Compress Min Length` 最小压缩长度，此值不要设置太少，因为压缩小数据效果并不明显，而且浪费CPU。一般建议设置为1kb，如果是内网间调用，建议此值可以调更大的值
 - `Compress Content Filter` 压缩数据类型筛选，指定针对哪些数据类型压缩，默认值为：`text|javascript|json|wasm|xml`，可按应用的需求自定义配置或不匹配。
-- `Log Format` 请求日志格式化配置，如`{remote} {when-iso} {:proxyTarget} {method} {uri} {proto} {status} {size-human} {referer} {userAgent}`，配置规则参考[elton logger](https://github.com/vicanso/elton/blob/master/docs/middlewares.md#logger)，日志的输出对于性能会有所影响
+- `Log Format` 请求日志格式化配置，如`{remote} {when-iso} {:proxyTarget} {method} {uri} {proto} {status} {<x-status} {size-human} {referer} {userAgent}`，配置规则参考[elton logger](https://github.com/vicanso/elton/blob/master/docs/middlewares.md#logger)，日志的输出对于性能会有所影响
 - `Remark` 备注
 
 <p align="center">
