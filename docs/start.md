@@ -120,6 +120,11 @@ Flags:
 - `Log Format` 请求日志格式化配置，如`{remote} {when-iso} {:proxyTarget} {method} {uri} {proto} {status} {<x-status} {size-human} {referer} {userAgent}`，配置规则参考[elton logger](https://github.com/vicanso/elton/blob/master/docs/middlewares.md#logger)，日志的输出对于性能会有所影响
 - `Remark` 备注
 
+日志格式化配置中大部分都是通用的属性，需要注意以下字段：
+
+- `:proxyTarget` 转发的目标地址
+- `<x-status` 接口响应的缓存状态
+
 <p align="center">
 <img src="./images/add-server.png"/>
 </p>
