@@ -28,9 +28,11 @@ import (
 	"strconv"
 
 	"github.com/vicanso/elton"
+	"github.com/vicanso/hes"
 	"github.com/vicanso/pike/cache"
 	"github.com/vicanso/pike/location"
 	"github.com/vicanso/pike/upstream"
+	"github.com/vicanso/pike/util"
 	"golang.org/x/net/context"
 )
 
@@ -149,8 +151,15 @@ func NewProxy(s *server) elton.Handler {
 		// clone当前header，用于后续恢复
 		originalHeader := c.Header().Clone()
 		c.ResetHeader()
-		// TODO 将timeout转换为pike error
 		err = upstream.Proxy(c)
+		// 如果出错超时，则转换为504 timeout，category:pike
+		if err != nil {
+			if he, ok := err.(*hes.Error); ok {
+				if he.Err == context.DeadlineExceeded {
+					err = util.NewError("Timeout", http.StatusGatewayTimeout)
+				}
+			}
+		}
 
 		// 恢复请求头
 		if ifModifiedSince != "" {
