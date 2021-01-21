@@ -206,8 +206,11 @@ func main() {
 	log.Default().Info("pike is running")
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, syscall.SIGHUP, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
-	for range c {
-		// TODO 添加graceful close
+	for si := range c {
+		log.Default().Info("closing",
+			zap.String("signal", si.String()),
+		)
+		server.Close()
 		os.Exit(0)
 	}
 }

@@ -109,7 +109,9 @@ func NewCache(s *server) elton.Handler {
 			return err
 		}
 
-		// TODO 如果是hit for pass，但是缓存有效期不为0
+		// TODO 如果是hit for pass，但此次返回的缓存有效期不为0，
+		// 有可能因为上一次接口出错，导致了hit for pass，此次成功则可缓存，
+		// 后续再确认是否需要在此情况下将缓存更新
 		if cacheStatus == cache.StatusFetching {
 			// 获取缓存有效期
 			if maxAge := getHTTPCacheMaxAge(c); maxAge > 0 {
