@@ -45,7 +45,13 @@ func requestIsPass(req *http.Request) bool {
 func getKey(req *http.Request) []byte {
 	methodLen := len(req.Method)
 	hostLen := len(req.Host)
-	uriLen := len(req.RequestURI)
+	uri := req.RequestURI
+	// 正常RequestURI均不为空，但是如果直接创建一个request对象，
+	// 则有可能为空
+	if len(uri) == 0 {
+		uri = req.URL.String()
+	}
+	uriLen := len(uri)
 	buffer := make([]byte, methodLen+hostLen+uriLen+2)
 	len := 0
 
@@ -61,7 +67,7 @@ func getKey(req *http.Request) []byte {
 	buffer[len] = spaceByte
 	len++
 
-	copy(buffer[len:], req.RequestURI)
+	copy(buffer[len:], uri)
 	return buffer
 }
 
