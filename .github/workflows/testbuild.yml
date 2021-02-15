@@ -1,4 +1,4 @@
-name: build on tag
+name: build latest 
 
 on:
   push:
@@ -34,6 +34,6 @@ jobs:
       uses: docker/build-push-action@v2
       with:
         push: false 
-        tags: ${{ secrets.DOCKER_HUB_USERNAME }}/pike:${{ steps.vars.outputs.tag }}
+        tags: ${{ secrets.DOCKER_HUB_USERNAME }}/pike:latest
     - name: Image digest
       run: echo ${{ steps.docker_build.outputs.digest }}

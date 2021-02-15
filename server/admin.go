@@ -144,12 +144,10 @@ func newLoginHandler(ttlToken *jwt.TTLToken, account, password string) elton.Han
 			err = accountOrPasswordIsWrong
 			return
 		}
-		err = ttlToken.AddToCookie(c, &userInfo{
+		data, _ := json.Marshal(&userInfo{
 			Account: account,
 		})
-		if err != nil {
-			return
-		}
+		c.Set(jwt.DefaultKey, string(data))
 
 		c.Body = &userInfo{
 			Account: account,
@@ -287,19 +285,20 @@ func StartAdminServer(config AdminServerConfig) (err error) {
 	ttlToken := &jwt.TTLToken{
 		TTL: 24 * time.Hour,
 		// 密钥用于加密数据，需保密
-		Secret:     []byte(config.Password),
-		CookieName: jwtCookie,
+		Secret: []byte(config.Password),
+		// CookieName: jwtCookie,
 	}
 
 	// Passthrough为false，会校验token是否正确
 	jwtNormal := jwt.NewJWT(jwt.Config{
 		CookieName: jwtCookie,
-		Decode:     ttlToken.Decode,
+		TTLToken:   ttlToken,
+		// Decode:     ttlToken.Decode,
 	})
 	// 用于初始化创建token使用（此时可能token还没有或者已过期)
 	jwtPassthrough := jwt.NewJWT(jwt.Config{
 		CookieName:  jwtCookie,
-		Decode:      ttlToken.Decode,
+		TTLToken:    ttlToken,
 		Passthrough: true,
 	})
 
