@@ -50,7 +50,10 @@ func TestLRUGetCache(t *testing.T) {
 
 func TestDispatcher(t *testing.T) {
 	assert := assert.New(t)
-	d := NewDispatcher(0, 30)
+	d := NewDispatcher(DispatcherOption{
+		Size:       0,
+		HitForPass: 30,
+	})
 	assert.Equal(30, d.GetHitForPass())
 	key := []byte("key")
 	c := d.GetHTTPCache(key)

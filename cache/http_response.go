@@ -30,6 +30,7 @@ package cache
 
 import (
 	"bytes"
+	"encoding/json"
 	"errors"
 	"net/http"
 	"regexp"
@@ -54,18 +55,19 @@ type (
 	// HTTPResponse http response's cache
 	HTTPResponse struct {
 		// 压缩服务名称
-		CompressSrv string
+		CompressSrv string `json:"compressSrv,omitempty"`
 		// 压缩最小尺寸
-		CompressMinLength int
+		CompressMinLength int    `json:"compressMinLength,omitempty"`
+		ContentTypeFilter string `json:"contentTypeFilter,omitempty"`
 		// 压缩数据类型
-		CompressContentTypeFilter *regexp.Regexp
+		CompressContentTypeFilter *regexp.Regexp `json:"-,omitempty"`
 		// 响应头
-		Header http.Header
+		Header http.Header `json:"header,omitempty"`
 		// 响应状态码
-		StatusCode int
-		GzipBody   []byte
-		BrBody     []byte
-		RawBody    []byte
+		StatusCode int    `json:"statusCode,omitempty"`
+		GzipBody   []byte `json:"gzipBody,omitempty"`
+		BrBody     []byte `json:"brBody,omitempty"`
+		RawBody    []byte `json:"rawBody,omitempty"`
 	}
 )
 
@@ -101,6 +103,29 @@ func NewHTTPResponse(statusCode int, header http.Header, encoding string, data [
 		resp.RawBody = data
 	}
 	return resp, nil
+}
+
+// Bytes http response to bytes
+func (resp *HTTPResponse) Bytes() ([]byte, error) {
+	if resp.CompressContentTypeFilter != nil {
+		resp.ContentTypeFilter = resp.CompressContentTypeFilter.String()
+	}
+	return json.Marshal(resp)
+}
+
+// FromBytes http response from bytes
+func (resp *HTTPResponse) FromBytes(data []byte) (err error) {
+	err = json.Unmarshal(data, resp)
+	if err != nil {
+		return
+	}
+	if resp.ContentTypeFilter != "" {
+		resp.CompressContentTypeFilter, err = regexp.Compile(resp.ContentTypeFilter)
+		if err != nil {
+			return
+		}
+	}
+	return
 }
 
 func (resp *HTTPResponse) shouldCompressed() bool {

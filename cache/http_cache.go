@@ -27,10 +27,14 @@
 package cache
 
 import (
+	"encoding/json"
 	"sync"
 	"time"
 
 	"github.com/vicanso/pike/compress"
+	"github.com/vicanso/pike/log"
+	"github.com/vicanso/pike/store"
+	"go.uber.org/zap"
 )
 
 type Status int
@@ -54,12 +58,23 @@ const defaultHitForPassSeconds = 300
 type (
 	// httpCache http cache (only for same request method+host+uri)
 	httpCache struct {
+		// key the key of store data
+		key []byte
+		// store the store to save http cache
+		store store.Store
+
 		mu        *sync.RWMutex
 		status    Status
 		chanList  []chan struct{}
 		response  *HTTPResponse
 		createdAt int
 		expiredAt int
+	}
+	httpCacheStore struct {
+		Status    Status `json:"status,omitempty"`
+		Resp      []byte `json:"resp,omitempty"`
+		CreatedAt int    `json:"createdAt,omitempty"`
+		ExpiredAt int    `json:"expiredAt,omitempty"`
 	}
 )
 
@@ -89,6 +104,14 @@ func NewHTTPCache() *httpCache {
 	}
 }
 
+// NewHTTPStoreCache new a http store cache
+func NewHTTPStoreCache(key []byte, store store.Store) *httpCache {
+	hc := NewHTTPCache()
+	hc.key = key
+	hc.store = store
+	return hc
+}
+
 // Get get http cache
 func (hc *httpCache) Get() (status Status, response *HTTPResponse) {
 	hc.mu.Lock()
@@ -107,8 +130,83 @@ func (hc *httpCache) Get() (status Status, response *HTTPResponse) {
 	return
 }
 
+// Bytes httpcache to bytes
+func (hc *httpCache) Bytes() ([]byte, error) {
+	data := httpCacheStore{
+		Status:    hc.status,
+		CreatedAt: hc.createdAt,
+		ExpiredAt: hc.expiredAt,
+	}
+	if hc.response != nil {
+		resp, err := hc.response.Bytes()
+		if err != nil {
+			return nil, err
+		}
+		data.Resp = resp
+	}
+
+	return json.Marshal(&data)
+}
+
+// FromBytes restore httpcache from bytes
+func (hc *httpCache) FromBytes(data []byte) (err error) {
+	cs := httpCacheStore{}
+	err = json.Unmarshal(data, &cs)
+	if err != nil {
+		return
+	}
+	hc.status = cs.Status
+	resp := &HTTPResponse{}
+	if len(cs.Resp) != 0 {
+		err = resp.FromBytes(cs.Resp)
+		if err != nil {
+			return
+		}
+	}
+	hc.response = resp
+	hc.createdAt = cs.CreatedAt
+	hc.expiredAt = cs.ExpiredAt
+	return
+}
+
+// initFromStore init cache from store
+func (hc *httpCache) initFromStore() (err error) {
+	if hc.store == nil || len(hc.key) == 0 {
+		return
+	}
+	data, err := hc.store.Get(hc.key)
+	if err != nil {
+		return
+	}
+	return hc.FromBytes(data)
+}
+
+// saveToStore save cache to store
+func (hc *httpCache) saveToStore() (err error) {
+	if hc.store == nil || len(hc.key) == 0 {
+		return
+	}
+	data, err := hc.Bytes()
+	if err != nil {
+		return
+	}
+	ttl := time.Duration(hc.expiredAt-hc.createdAt) * time.Second
+	return hc.store.Set(hc.key, data, ttl)
+}
+
 func (hc *httpCache) get() (status Status, done chan struct{}, data *HTTPResponse) {
 	now := nowUnix()
+	// 如果首次创建并且设置store
+	if hc.status == StatusUnknown {
+		// 如果从缓存中读取失败，暂忽略出错信息
+		err := hc.initFromStore()
+		if err != nil {
+			log.Default().Error("init from store fail",
+				zap.Error(err),
+			)
+		}
+	}
+
 	// 如果缓存已过期，设置为StatusUnknown
 	if hc.expiredAt != 0 && hc.expiredAt < now {
 		hc.status = StatusUnknown
@@ -153,6 +251,14 @@ func (hc *httpCache) HitForPass(ttl int) {
 	for _, ch := range list {
 		ch <- struct{}{}
 	}
+	err := hc.saveToStore()
+	if err != nil {
+		log.Default().Error("save cache to store fail",
+			zap.String("category", "hitForPass"),
+			zap.String("key", string(hc.key)),
+			zap.Error(err),
+		)
+	}
 }
 
 // Cacheable set http cache cacheable and compress it
@@ -170,6 +276,14 @@ func (hc *httpCache) Cacheable(resp *HTTPResponse, ttl int) {
 	hc.chanList = nil
 	for _, ch := range list {
 		ch <- struct{}{}
+	}
+	err := hc.saveToStore()
+	if err != nil {
+		log.Default().Error("save cache to store fail",
+			zap.String("category", "cacheable"),
+			zap.String("key", string(hc.key)),
+			zap.Error(err),
+		)
 	}
 }
 

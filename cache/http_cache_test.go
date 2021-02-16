@@ -18,6 +18,29 @@ func TestCacheStatusString(t *testing.T) {
 	assert.Equal("unknown", StatusUnknown.String())
 }
 
+func TestHTTPCacheBytes(t *testing.T) {
+	assert := assert.New(t)
+	hc := httpCache{
+		status: StatusFetching,
+		response: &HTTPResponse{
+			CompressSrv: "compress",
+		},
+		createdAt: 1,
+		expiredAt: 2,
+	}
+	data, err := hc.Bytes()
+	assert.Nil(err)
+	assert.Equal(`{"status":1,"resp":"eyJjb21wcmVzc1NydiI6ImNvbXByZXNzIn0=","createdAt":1,"expiredAt":2}`, string(data))
+
+	newHC := NewHTTPCache()
+	err = newHC.FromBytes(data)
+	assert.Nil(err)
+	assert.Equal(hc.status, newHC.status)
+	assert.Equal(hc.response.CompressSrv, newHC.response.CompressSrv)
+	assert.Equal(hc.createdAt, newHC.createdAt)
+	assert.Equal(hc.expiredAt, newHC.expiredAt)
+}
+
 func TestHTTPCacheGet(t *testing.T) {
 	assert := assert.New(t)
 	cacheResp, err := NewHTTPResponse(200, nil, "", []byte("Hello world!"))

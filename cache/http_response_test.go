@@ -3,6 +3,7 @@ package cache
 import (
 	"net/http"
 	"net/http/httptest"
+	"regexp"
 	"strings"
 	"testing"
 
@@ -23,6 +24,40 @@ func TestCloneHeaderAndIgnore(t *testing.T) {
 	for _, key := range ignoreHeaders {
 		assert.Empty(newHeader.Get(key))
 	}
+}
+
+func TestHTTPResponseMarshal(t *testing.T) {
+	assert := assert.New(t)
+	header := make(http.Header)
+	header.Add("a", "1")
+	header.Add("a", "2")
+	header.Add("b", "3")
+	resp := &HTTPResponse{
+		CompressSrv:               "compress",
+		CompressMinLength:         1000,
+		CompressContentTypeFilter: regexp.MustCompile(`a|b|c`),
+		Header:                    header,
+		StatusCode:                200,
+		GzipBody:                  []byte("gzip"),
+		BrBody:                    []byte("br"),
+		RawBody:                   []byte("raw"),
+	}
+	data, err := resp.Bytes()
+	assert.Nil(err)
+	assert.Equal(`{"compressSrv":"compress","compressMinLength":1000,"contentTypeFilter":"a|b|c","-":{},"header":{"A":["1","2"],"B":["3"]},"statusCode":200,"gzipBody":"Z3ppcA==","brBody":"YnI=","rawBody":"cmF3"}`, string(data))
+
+	newResp := &HTTPResponse{}
+	err = newResp.FromBytes(data)
+	assert.Nil(err)
+
+	assert.Equal(resp.CompressSrv, newResp.CompressSrv)
+	assert.Equal(resp.CompressMinLength, newResp.CompressMinLength)
+	assert.Equal(resp.CompressContentTypeFilter, newResp.CompressContentTypeFilter)
+	assert.Equal(resp.Header, newResp.Header)
+	assert.Equal(resp.StatusCode, newResp.StatusCode)
+	assert.Equal(resp.GzipBody, newResp.GzipBody)
+	assert.Equal(resp.BrBody, newResp.BrBody)
+	assert.Equal(resp.RawBody, newResp.RawBody)
 }
 
 func TestNewHTTPResponse(t *testing.T) {

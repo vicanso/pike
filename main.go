@@ -18,6 +18,7 @@ import (
 	"github.com/vicanso/pike/log"
 	_ "github.com/vicanso/pike/schedule"
 	"github.com/vicanso/pike/server"
+	"github.com/vicanso/pike/store"
 	"github.com/vicanso/pike/upstream"
 	"go.uber.org/automaxprocs/maxprocs"
 	"go.uber.org/zap"
@@ -202,6 +203,7 @@ func isHelpCmd() bool {
 }
 func main() {
 	defer config.Close()
+	defer store.Close()
 
 	log.Default().Info("pike is running")
 	c := make(chan os.Signal, 1)

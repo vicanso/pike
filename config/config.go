@@ -76,6 +76,7 @@ type (
 		Name       string `json:"name,omitempty" yaml:"name,omitempty" validate:"required,xName"`
 		Size       int    `json:"size,omitempty" yaml:"size,omitempty" validate:"required,gt=0" `
 		HitForPass string `json:"hitForPass,omitempty" yaml:"hitForPass,omitempty" validate:"required,xDuration"`
+		Store      string `json:"store,omitempty" yaml:"store,omitempty" validate:"omitempty,url"`
 		Remark     string `json:"remark,omitempty" yaml:"remark,omitempty"`
 	}
 	// UpstreamServerConfig upstream server config

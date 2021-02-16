@@ -29,7 +29,10 @@ import (
 	"sync"
 
 	"github.com/golang/groupcache/lru"
+	"github.com/vicanso/pike/log"
+	"github.com/vicanso/pike/store"
 	"github.com/vicanso/pike/util"
+	"go.uber.org/zap"
 )
 
 // defaultZoneSize default zone size
@@ -46,6 +49,7 @@ type (
 		zoneSize   uint64
 		hitForPass int
 		list       []*httpLRUCache
+		store      store.Store
 	}
 	// dispatchers http cache dispatchers
 	dispatchers struct {
@@ -56,6 +60,7 @@ type (
 		Name       string
 		Size       int
 		HitForPass int
+		Store      string
 	}
 )
 
@@ -90,9 +95,10 @@ func (lru *httpLRUCache) removeCache(key []byte) {
 }
 
 // NewDispatcher new a http cache dispatcher
-func NewDispatcher(size, hitForPass int) *dispatcher {
+func NewDispatcher(option DispatcherOption) *dispatcher {
 	zoneSize := defaultZoneSize
-	if size <= 0 {
+	size := option.Size
+	if option.Size <= 0 {
 		size = zoneSize * 100
 	}
 
@@ -103,11 +109,23 @@ func NewDispatcher(size, hitForPass int) *dispatcher {
 	for i := 0; i < zoneSize; i++ {
 		list[i] = newHTTPLRUCache(lruSize)
 	}
-	return &dispatcher{
+	disp := &dispatcher{
 		zoneSize:   uint64(zoneSize),
 		list:       list,
-		hitForPass: hitForPass,
+		hitForPass: option.HitForPass,
 	}
+	// 如果有配置store
+	if option.Store != "" {
+		store, err := store.NewStore(option.Store)
+		if err != nil {
+			log.Default().Error("new store fail",
+				zap.String("url", option.Store),
+				zap.Error(err),
+			)
+		}
+		disp.store = store
+	}
+	return disp
 }
 
 func (d *dispatcher) getLRU(key []byte) *httpLRUCache {
@@ -127,7 +145,11 @@ func (d *dispatcher) GetHTTPCache(key []byte) *httpCache {
 	if ok {
 		return hc
 	}
-	hc = NewHTTPCache()
+	if d.store != nil {
+		hc = NewHTTPStoreCache(key, d.store)
+	} else {
+		hc = NewHTTPCache()
+	}
 	lru.addCache(key, hc)
 	return hc
 }
@@ -151,7 +173,7 @@ func NewDispatchers(opts []DispatcherOption) *dispatchers {
 		m: &sync.Map{},
 	}
 	for _, opt := range opts {
-		ds.m.Store(opt.Name, NewDispatcher(opt.Size, opt.HitForPass))
+		ds.m.Store(opt.Name, NewDispatcher(opt))
 	}
 	return ds
 }
@@ -209,7 +231,7 @@ func (ds *dispatchers) Reset(opts []DispatcherOption) {
 		// 如果当前dispatcher不存在，则创建
 		// 如果存在，对原来的size不调整
 		if !ok {
-			ds.m.Store(opt.Name, NewDispatcher(opt.Size, opt.HitForPass))
+			ds.m.Store(opt.Name, NewDispatcher(opt))
 		}
 	}
 }

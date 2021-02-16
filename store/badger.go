@@ -1,6 +1,6 @@
 // MIT License
 
-// Copyright (c) 2020 Tree Xie
+// Copyright (c) 2021 Tree Xie
 
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -20,47 +20,60 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-package cache
+package store
 
 import (
 	"time"
-	"unsafe"
 
-	"github.com/vicanso/pike/config"
+	badger "github.com/dgraph-io/badger/v3"
 )
 
-// byteSliceToString converts a []byte to string without a heap allocation.
-func byteSliceToString(b []byte) string {
-	return *(*string)(unsafe.Pointer(&b))
+type badgerStore struct {
+	db *badger.DB
 }
 
-var defaultDispatchers = NewDispatchers(nil)
-
-// GetDispatcher get dispatcher form default dispatchers
-func GetDispatcher(name string) *dispatcher {
-	return defaultDispatchers.Get(name)
-}
-
-// RemoveHTTPCache remove http cache form default dispatchers
-func RemoveHTTPCache(name string, key []byte) {
-	defaultDispatchers.RemoveHTTPCache(name, key)
-}
-
-func convertConfigs(configs []config.CacheConfig) []DispatcherOption {
-	opts := make([]DispatcherOption, 0)
-	for _, item := range configs {
-		d, _ := time.ParseDuration(item.HitForPass)
-		opts = append(opts, DispatcherOption{
-			Name:       item.Name,
-			Size:       item.Size,
-			HitForPass: int(d.Seconds()),
-			Store:      item.Store,
-		})
+// newBadgerStore create a new badger store
+func newBadgerStore(path string) (*badgerStore, error) {
+	db, err := badger.Open(badger.DefaultOptions(path))
+	if err != nil {
+		return nil, err
 	}
-	return opts
+	return &badgerStore{
+		db: db,
+	}, nil
 }
 
-// ResetDispatchers reset default dispatchers
-func ResetDispatchers(configs []config.CacheConfig) {
-	defaultDispatchers.Reset(convertConfigs(configs))
+// Get get data from badger
+func (bs *badgerStore) Get(key []byte) (data []byte, err error) {
+	err = bs.db.View(func(txn *badger.Txn) error {
+		item, err := txn.Get(key)
+		if err != nil {
+			if err == badger.ErrKeyNotFound {
+				err = ErrNotFound
+			}
+			return err
+		}
+		return item.Value(func(val []byte) error {
+			data = append([]byte{}, val...)
+			return nil
+		})
+	})
+	if err != nil {
+		return
+	}
+	return
+}
+
+// Set set data to badger
+func (bs *badgerStore) Set(key []byte, data []byte, ttl time.Duration) (err error) {
+	return bs.db.Update(func(txn *badger.Txn) error {
+		e := badger.NewEntry(key, data).
+			WithTTL(ttl)
+		return txn.SetEntry(e)
+	})
+}
+
+// Close close badger
+func (bs *badgerStore) Close() error {
+	return bs.db.Close()
 }

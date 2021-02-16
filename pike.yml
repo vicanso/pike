@@ -12,6 +12,7 @@ caches:
 - name: cacheCommon
   size: 51200
   hitForPass: 5m
+  store: badger:///tmp
   remark: 通用缓存配置
 upstreams:
 - name: upstreamTest
