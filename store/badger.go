@@ -23,18 +23,51 @@
 package store
 
 import (
+	"fmt"
+	"strings"
 	"time"
 
 	badger "github.com/dgraph-io/badger/v3"
+	"github.com/vicanso/pike/log"
+	"go.uber.org/zap"
 )
 
 type badgerStore struct {
 	db *badger.DB
 }
 
+type badgerLogger struct{}
+
+func (bl *badgerLogger) Errorf(format string, args ...interface{}) {
+	msg := strings.TrimSpace(fmt.Sprintf(format, args...))
+	log.Default().Error(msg,
+		zap.String("category", "badger"),
+	)
+}
+func (bl *badgerLogger) Warningf(format string, args ...interface{}) {
+	msg := strings.TrimSpace(fmt.Sprintf(format, args...))
+	log.Default().Warn(msg,
+		zap.String("category", "badger"),
+	)
+}
+func (bl *badgerLogger) Infof(format string, args ...interface{}) {
+	msg := strings.TrimSpace(fmt.Sprintf(format, args...))
+	log.Default().Info(msg,
+		zap.String("category", "badger"),
+	)
+}
+func (bl *badgerLogger) Debugf(format string, args ...interface{}) {
+	msg := strings.TrimSpace(fmt.Sprintf(format, args...))
+	log.Default().Debug(msg,
+		zap.String("category", "badger"),
+	)
+}
+
 // newBadgerStore create a new badger store
 func newBadgerStore(path string) (*badgerStore, error) {
-	db, err := badger.Open(badger.DefaultOptions(path))
+	options := badger.DefaultOptions(path)
+	options.Logger = &badgerLogger{}
+	db, err := badger.Open(options)
 	if err != nil {
 		return nil, err
 	}
@@ -70,6 +103,13 @@ func (bs *badgerStore) Set(key []byte, data []byte, ttl time.Duration) (err erro
 		e := badger.NewEntry(key, data).
 			WithTTL(ttl)
 		return txn.SetEntry(e)
+	})
+}
+
+// Delete delete data from store
+func (bs *badgerStore) Delete(key []byte) (err error) {
+	return bs.db.Update(func(txn *badger.Txn) error {
+		return txn.Delete(key)
 	})
 }
 

@@ -123,7 +123,9 @@ func NewDispatcher(option DispatcherOption) *dispatcher {
 				zap.Error(err),
 			)
 		}
-		disp.store = store
+		if store != nil {
+			disp.store = store
+		}
 	}
 	return disp
 }
@@ -160,6 +162,15 @@ func (d *dispatcher) RemoveHTTPCache(key []byte) {
 	lru.mu.Lock()
 	defer lru.mu.Unlock()
 	lru.removeCache(key)
+	if d.store != nil {
+		err := d.store.Delete(key)
+		if err != nil {
+			log.Default().Error("delete from store fail",
+				zap.String("key", string(key)),
+				zap.Error(err),
+			)
+		}
+	}
 }
 
 // GetHitForPass get hit for pass

@@ -38,6 +38,8 @@ type Store interface {
 	Get(key []byte) (data []byte, err error)
 	// Set set data from store
 	Set(key []byte, data []byte, ttl time.Duration) (err error)
+	// Delete delete data from store
+	Delete(key []byte) (err error)
 	// Close close the store
 	Close() error
 }
@@ -46,8 +48,21 @@ var ErrNotFound = errors.New("Not found")
 
 var stores = sync.Map{}
 
+var newStoreLock = sync.Mutex{}
+
 // NewStore create a new store
 func NewStore(storeURL string) (store Store, err error) {
+	// 保证new store只允许一个实例操作
+	newStoreLock.Lock()
+	defer newStoreLock.Unlock()
+
+	// 如果该store已存在，直接返回
+	store = GetStore(storeURL)
+	if store != nil {
+		return
+	}
+
+	// 初始化新的store
 	urlInfo, err := url.Parse(storeURL)
 	if err != nil {
 		return
@@ -59,12 +74,24 @@ func NewStore(storeURL string) (store Store, err error) {
 			return
 		}
 	}
-	value, ok := stores.Load(storeURL)
-	if ok {
-		value.(Store).Close()
+	// 保存store
+	if store != nil {
+		stores.Store(storeURL, store)
 	}
-	stores.Store(storeURL, store)
 	return
+}
+
+// GetStore get store
+func GetStore(storeURL string) Store {
+	value, ok := stores.Load(storeURL)
+	if !ok {
+		return nil
+	}
+	s, ok := value.(Store)
+	if !ok {
+		return nil
+	}
+	return s
 }
 
 // Close close stores
@@ -80,6 +107,7 @@ func Close() error {
 		return true
 	})
 	if he.IsNotEmpty() {
+		// 由于close是在程序退出时调用，因此如果失败，则先输出出错日志再返回出错
 		log.Default().Error("close stores fail",
 			zap.Error(he),
 		)

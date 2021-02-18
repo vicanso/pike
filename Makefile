@@ -2,7 +2,7 @@
 
 # for dev
 dev:
-	/usr/local/bin/gowatch 
+	air -c .air.toml	
 
 # for test
 test:

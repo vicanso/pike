@@ -31,8 +31,16 @@ import (
 func TestNewStrore(t *testing.T) {
 	assert := assert.New(t)
 
-	store, err := NewStore("badger:///tmp")
+	url := "badger:///tmp"
+
+	store, err := NewStore(url)
 	assert.Nil(err)
 	assert.NotNil(store)
 	defer store.Close()
+
+	newStore, err := NewStore(url)
+	assert.Nil(err)
+	assert.Equal(store, newStore)
+
+	assert.Equal(store, GetStore(url))
 }

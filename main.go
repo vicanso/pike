@@ -201,6 +201,12 @@ func isHelpCmd() bool {
 	}
 	return false
 }
+
+// isDev 判断是否开发环境
+func isDev() bool {
+	return os.Getenv("GO_ENV") == "dev"
+}
+
 func main() {
 	defer config.Close()
 	defer store.Close()
@@ -212,7 +218,10 @@ func main() {
 		log.Default().Info("closing",
 			zap.String("signal", si.String()),
 		)
-		server.Close()
+		// 如果非开发环境，则需要close所有的server
+		if !isDev() {
+			server.Close()
+		}
 		os.Exit(0)
 	}
 }
