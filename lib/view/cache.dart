@@ -27,6 +27,7 @@ class _CachePageState extends State<CachePage> {
   final _nameCtrl = TextEditingController();
   final _sizeCtrl = TextEditingController();
   final _hitForPassCtrl = TextEditingController();
+  final _storeCtrl = TextEditingController();
   final _remarkCtrl = TextEditingController();
 
   ConfigBloc _configBloc;
@@ -51,6 +52,7 @@ class _CachePageState extends State<CachePage> {
     _nameCtrl.clear();
     _sizeCtrl.clear();
     _hitForPassCtrl.clear();
+    _storeCtrl.clear();
     _remarkCtrl.clear();
   }
 
@@ -59,6 +61,7 @@ class _CachePageState extends State<CachePage> {
     _nameCtrl.value = TextEditingValue(text: element.name);
     _sizeCtrl.value = TextEditingValue(text: element.size.toString());
     _hitForPassCtrl.value = TextEditingValue(text: element.hitForPass);
+    _storeCtrl.value = TextEditingValue(text: element.store ?? '');
     _remarkCtrl.value = TextEditingValue(text: element.remark ?? '');
   }
 
@@ -92,6 +95,7 @@ class _CachePageState extends State<CachePage> {
               e.name,
               numberFormat.format(e.size),
               e.hitForPass,
+              e.store,
               e.remark,
             ])
         ?.toList();
@@ -114,6 +118,7 @@ class _CachePageState extends State<CachePage> {
         'Name',
         'Size',
         'Hit For Pass',
+        'Store',
         'Remark',
       ],
       contents: contents,
@@ -132,6 +137,7 @@ class _CachePageState extends State<CachePage> {
       name: _nameCtrl.text?.trim(),
       size: int.parse(_sizeCtrl.text),
       hitForPass: _hitForPassCtrl.text?.trim(),
+      store: _storeCtrl.text?.trim(),
       remark: _remarkCtrl.text?.trim(),
     );
     final cacheList = <CacheConfig>[];
@@ -196,6 +202,15 @@ class _CachePageState extends State<CachePage> {
         }
         return null;
       },
+    ));
+
+    // store 存储地址
+    formItems.add(TextFormField(
+      controller: _storeCtrl,
+      decoration: InputDecoration(
+        labelText: 'Store',
+        hintText: 'Please input the store url, e.g.: badger:///tmp/badger',
+      ),
     ));
 
     // remark

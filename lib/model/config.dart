@@ -174,12 +174,14 @@ class CacheConfig {
   final String name;
   final int size;
   final String hitForPass;
+  final String store;
   final String remark;
 
   CacheConfig({
     this.name,
     this.size,
     this.hitForPass,
+    this.store,
     this.remark,
   });
 
@@ -187,12 +189,14 @@ class CacheConfig {
     String name,
     int size,
     String hitForPass,
+    String store,
     String remark,
   }) {
     return CacheConfig(
       name: name ?? this.name,
       size: size ?? this.size,
       hitForPass: hitForPass ?? this.hitForPass,
+      store: store ?? this.store,
       remark: remark ?? this.remark,
     );
   }
@@ -202,6 +206,7 @@ class CacheConfig {
       'name': name,
       'size': size,
       'hitForPass': hitForPass,
+      'store': store,
       'remark': remark,
     };
   }
@@ -213,6 +218,7 @@ class CacheConfig {
       name: map['name'],
       size: map['size'],
       hitForPass: map['hitForPass'],
+      store: map['store'],
       remark: map['remark'],
     );
   }
@@ -224,7 +230,7 @@ class CacheConfig {
 
   @override
   String toString() {
-    return 'CacheConfig(name: $name, size: $size, hitForPass: $hitForPass, remark: $remark)';
+    return 'CacheConfig(name: $name, size: $size, hitForPass: $hitForPass, store: $store, remark: $remark)';
   }
 
   @override
@@ -235,6 +241,7 @@ class CacheConfig {
         o.name == name &&
         o.size == size &&
         o.hitForPass == hitForPass &&
+        o.store == store &&
         o.remark == remark;
   }
 
@@ -243,6 +250,7 @@ class CacheConfig {
     return name.hashCode ^
         size.hashCode ^
         hitForPass.hashCode ^
+        store.hashCode ^
         remark.hashCode;
   }
 }
