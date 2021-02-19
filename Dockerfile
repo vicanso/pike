@@ -3,7 +3,7 @@ FROM golang:1.15-alpine as builder
 COPY ./ /pike 
 
 RUN apk update \
-  && apk add git make \
+  && apk add git make gcc \
   && go get -u github.com/gobuffalo/packr/v2/packr2 \
   && cd /pike \
   && make build
