@@ -53,6 +53,7 @@ Flags:
 - `Name` 缓存配置名称，用于区分每个缓存配置，对于请求量特别大的服务，可单独使用一个缓存，其它的服务则共用一个缓存则可
 - `Size` 缓存数量大小，指定LRU缓存的最大数量，可根据服务的缓存情况以及机器内存选择较为合适的值，一般设置为51200已能满足大部分应用的需求，如果内存较少则设置为更小的值
 - `HitForPass` 设置hit for pass的缓存时长，对于不可缓存的GET、HEAD请求，为了后续快速判断请求是否hit for pass，缓存中也有保存该请求的缓存状态(hitForPass)。
+- `Store` 设置缓存持久化存储的方式，暂只支持badger，如`badger:///tmp/badger`表示将缓存保存至`/tmp/badger`目录。如果内存较为空余，可设置LRU的Size为较大的值而不设置Store。
 - `Remark` 备注
 
 为什么会有需要hit for pass的场景？考虑一下以下场景，由于产品刚好被下架处理，因此请求产品详情信息时，该接口返回了出错（http status: 400，cache control: no-cache），因此访问该产品的接口缓存为hit for pass，而后续产品上架了，接口正常响应，缓存时长为cache-control: max-age=60，此时接口应该可缓存的。而由于hit for pass未过期，因此只能等hit for pass过期后接口才变为可缓存。

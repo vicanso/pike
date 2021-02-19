@@ -12,7 +12,7 @@
 - 与upstream的调用支持`gzip`，`brotli`，`lz4`，`snappy`以及`zstd`压缩，可根据与upstream的网络线路选择合适的压缩方式
 - 支持upstream检测失败时回调告警，可及时获取异常upstream信息
 - 支持自定义日志，可配置按日期与大小分割日志并压缩
-
+- LUR与持久化存储（可选）配合使用，可根据内存使用选择更小的LRU缓存并增加持久化存储的方式
 
 <p align="center">
 <img src="./docs/images/home.png"/>

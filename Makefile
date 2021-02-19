@@ -15,7 +15,7 @@ bench:
 	go test -bench=. ./...
 
 lint:
-	golangci-lint run
+	golangci-lint run --timeout=2m
 
 tidy:
 	go mod tidy
