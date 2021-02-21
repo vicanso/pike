@@ -8,7 +8,7 @@ RUN apk update \
   && make cp-asset \
   && CGO_ENABLED=0 make build
 
-FROM alpine
+FROM alpine:3.13
 
 COPY --from=builder /pike/pike /usr/local/bin/pike
 COPY --from=builder /pike/entrypoint.sh /usr/local/bin/entrypoint.sh
