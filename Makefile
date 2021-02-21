@@ -20,10 +20,11 @@ lint:
 tidy:
 	go mod tidy
 
+cp-asset:
+	rm -rf asset/web && cp -rf web asset/web
+
 build:
-	packr2
 	go build -ldflags "-X main.BuildedAt=`date -u +%Y%m%d.%H%M%S` -X main.CommitID=`git rev-parse --short HEAD`" -o pike
-	packr2 clean
 
 build-linux:
 	GOOS=linux GOARCH=amd64 make build && mv pike pike-linux

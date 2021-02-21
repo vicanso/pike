@@ -1,6 +1,6 @@
 module github.com/vicanso/pike
 
-go 1.15
+go 1.16
 
 replace google.golang.org/grpc => google.golang.org/grpc v1.26.0
 
@@ -14,7 +14,6 @@ require (
 	github.com/frankban/quicktest v1.11.3 // indirect
 	github.com/fsnotify/fsnotify v1.4.9
 	github.com/go-playground/validator/v10 v10.4.1
-	github.com/gobuffalo/packr/v2 v2.8.1
 	github.com/golang/groupcache v0.0.0-20200121045136-8c9f03a8e57e
 	github.com/golang/snappy v0.0.2
 	github.com/google/uuid v1.2.0 // indirect

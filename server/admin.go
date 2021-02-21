@@ -24,17 +24,19 @@ package server
 
 import (
 	"bytes"
+	"embed"
 	"encoding/json"
 	"io"
 	"net/http"
 	"os"
+	"path"
 	"time"
 
-	"github.com/gobuffalo/packr/v2"
 	"github.com/vicanso/elton"
 	jwt "github.com/vicanso/elton-jwt"
 	"github.com/vicanso/elton/middleware"
 	"github.com/vicanso/pike/app"
+	"github.com/vicanso/pike/asset"
 	"github.com/vicanso/pike/cache"
 	"github.com/vicanso/pike/config"
 	"github.com/vicanso/pike/log"
@@ -52,7 +54,8 @@ type (
 		Prefix   string
 	}
 	staticFile struct {
-		box *packr.Box
+		prefix string
+		fs     embed.FS
 	}
 	loginParams struct {
 		Account  string `json:"account,omitempty"`
@@ -69,8 +72,6 @@ type (
 	}
 )
 
-var webBox = packr.New("web", "../web")
-
 var userNotLogin = util.NewError("Please login first", http.StatusUnauthorized)
 
 var accountOrPasswordIsWrong = util.NewError("Account or password is wrong", http.StatusBadRequest)
@@ -79,14 +80,28 @@ var cacheKeyIsNil = util.NewError("The key of cache can't be null", http.StatusB
 
 const jwtCookie = "pike"
 
+var webAsset = &staticFile{
+	prefix: "web/",
+	fs:     asset.GetFS(),
+}
+
+func (sf *staticFile) getFile(file string) string {
+	return path.Join(sf.prefix + file)
+}
+
 // Exists Test whether or not the given path exists
 func (sf *staticFile) Exists(file string) bool {
-	return sf.box.Has(file)
+	f, err := sf.fs.Open(sf.getFile(file))
+	if err != nil {
+		return false
+	}
+	defer f.Close()
+	return true
 }
 
 // Get Get data from file
 func (sf *staticFile) Get(file string) ([]byte, error) {
-	return sf.box.Find(file)
+	return sf.fs.ReadFile(sf.getFile(file))
 }
 
 // Stat Get file's stat
@@ -105,7 +120,7 @@ func (sf *staticFile) NewReader(file string) (io.Reader, error) {
 }
 
 func sendFile(c *elton.Context, file string) (err error) {
-	data, err := webBox.Find(file)
+	data, err := webAsset.Get(file)
 	if err != nil {
 		return
 	}
@@ -303,10 +318,6 @@ func StartAdminServer(config AdminServerConfig) (err error) {
 	})
 
 	e := elton.New()
-	sf := &staticFile{
-		box: webBox,
-	}
-
 	e.Use(func(c *elton.Context) error {
 		// 全局设置为不可缓存，后续可覆盖
 		c.NoCache()
@@ -370,7 +381,7 @@ func StartAdminServer(config AdminServerConfig) (err error) {
 	e.GET("/", func(c *elton.Context) error {
 		return sendFile(c, "index.html")
 	})
-	e.GET("/*", middleware.NewStaticServe(sf, middleware.StaticServeConfig{
+	e.GET("/*", middleware.NewStaticServe(webAsset, middleware.StaticServeConfig{
 		// 客户端缓存一年
 		MaxAge: 365 * 24 * time.Hour,
 		// 缓存服务器缓存一个小时

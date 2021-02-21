@@ -28,8 +28,8 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/gobuffalo/packr/v2"
 	"github.com/shirou/gopsutil/v3/process"
+	"github.com/vicanso/pike/asset"
 	"github.com/vicanso/pike/log"
 	"go.uber.org/atomic"
 	"go.uber.org/zap"
@@ -59,8 +59,6 @@ var startedAt = time.Now()
 var currentProcess *process.Process
 var cpuUsage = atomic.NewInt32(-1)
 
-var assetBox = packr.New("asset", "../asset")
-
 func init() {
 	p, err := process.NewProcess(int32(os.Getpid()))
 	if err != nil {
@@ -86,7 +84,7 @@ func bytesToMB(value uint64) string {
 }
 
 func GetVersion() string {
-	version, _ := assetBox.Find("version")
+	version, _ := asset.ReadFile("version")
 	return string(version)
 }
 

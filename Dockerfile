@@ -1,11 +1,11 @@
-FROM golang:1.15-alpine as builder
+FROM golang:1.16-alpine as builder
 
 COPY ./ /pike 
 
 RUN apk update \
   && apk add git make \
-  && go get -u github.com/gobuffalo/packr/v2/packr2 \
   && cd /pike \
+  && make cp-asset \
   && CGO_ENABLED=0 make build
 
 FROM alpine
