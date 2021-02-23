@@ -28,6 +28,7 @@ import (
 	"time"
 
 	badger "github.com/dgraph-io/badger/v3"
+	badgerOptions "github.com/dgraph-io/badger/v3/options"
 	"github.com/vicanso/pike/log"
 	"go.uber.org/zap"
 )
@@ -66,6 +67,8 @@ func (bl *badgerLogger) Debugf(format string, args ...interface{}) {
 // newBadgerStore create a new badger store
 func newBadgerStore(path string) (*badgerStore, error) {
 	options := badger.DefaultOptions(path)
+	// 为了更高的性能，数据不压缩
+	options.Compression = badgerOptions.None
 	options.Logger = &badgerLogger{}
 	db, err := badger.Open(options)
 	if err != nil {

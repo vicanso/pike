@@ -23,6 +23,8 @@
 package cache
 
 import (
+	"bytes"
+	"encoding/binary"
 	"time"
 	"unsafe"
 
@@ -32,6 +34,40 @@ import (
 // byteSliceToString converts a []byte to string without a heap allocation.
 func byteSliceToString(b []byte) string {
 	return *(*string)(unsafe.Pointer(&b))
+}
+
+// uint32ToBytes convert int to uint32 and convert to bytes
+func uint32ToBytes(value int) []byte {
+	buf := make([]byte, 4)
+	binary.BigEndian.PutUint32(buf, uint32(value))
+	return buf
+}
+
+// readUint32ToInt read uint32 from bytes and convert to int
+func readUint32ToInt(buffer *bytes.Buffer) (int, error) {
+	var value uint32
+	err := binary.Read(buffer, binary.BigEndian, &value)
+	if err != nil {
+		return 0, err
+	}
+	return int(value), nil
+}
+
+// uint64ToBytes convert int64 to uint64 and covert to bytes
+func uint64ToBytes(value int64) []byte {
+	buf := make([]byte, 8)
+	binary.BigEndian.PutUint64(buf, uint64(value))
+	return buf
+}
+
+// readUint64 read uint64 from bytes and convert to int64
+func readUint64ToInt64(buffer *bytes.Buffer) (int64, error) {
+	var value uint64
+	err := binary.Read(buffer, binary.BigEndian, &value)
+	if err != nil {
+		return 0, err
+	}
+	return int64(value), nil
 }
 
 var defaultDispatchers = NewDispatchers(nil)

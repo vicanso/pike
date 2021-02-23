@@ -23,6 +23,7 @@
 package cache
 
 import (
+	"bytes"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -61,4 +62,20 @@ func TestDefaultDispatcher(t *testing.T) {
 		},
 	})
 	assert.NotNil(GetDispatcher(name))
+}
+
+func TestUint32ToBytes(t *testing.T) {
+	assert := assert.New(t)
+	buf := uint32ToBytes(1)
+	value, err := readUint32ToInt(bytes.NewBuffer(buf))
+	assert.Nil(err)
+	assert.Equal(1, value)
+}
+
+func TestUint64ToBytes(t *testing.T) {
+	assert := assert.New(t)
+	buf := uint64ToBytes(1)
+	value, err := readUint64ToInt64(bytes.NewBuffer(buf))
+	assert.Nil(err)
+	assert.Equal(int64(1), value)
 }

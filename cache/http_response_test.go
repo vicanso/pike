@@ -1,6 +1,7 @@
 package cache
 
 import (
+	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"regexp"
@@ -44,7 +45,6 @@ func TestHTTPResponseMarshal(t *testing.T) {
 	}
 	data, err := resp.Bytes()
 	assert.Nil(err)
-	assert.Equal(`{"compressSrv":"compress","compressMinLength":1000,"contentTypeFilter":"a|b|c","-":{},"header":{"A":["1","2"],"B":["3"]},"statusCode":200,"gzipBody":"Z3ppcA==","brBody":"YnI=","rawBody":"cmF3"}`, string(data))
 
 	newResp := &HTTPResponse{}
 	err = newResp.FromBytes(data)
@@ -396,5 +396,52 @@ func TestFill(t *testing.T) {
 		assert.Equal(200, c.StatusCode)
 		assert.Equal(tt.resultEncoding, c.GetHeader(elton.HeaderContentEncoding))
 		assert.Equal(tt.result, c.BodyBuffer.Bytes())
+	}
+}
+
+func BenchmarkMarshalHTTPResponse(b *testing.B) {
+	resp := &HTTPResponse{
+		CompressSrv:       "compress",
+		CompressMinLength: 1024,
+		Header: http.Header{
+			"Content-Type": []string{
+				"application/json; charset=UTF-8",
+			},
+			"ETag": []string{
+				`"60-R79m3yeTgBMQWG5Ysx2j_T3gIsM="`,
+			},
+		},
+		GzipBody: make([]byte, 5*1024),
+		BrBody:   make([]byte, 5*1024),
+	}
+	for i := 0; i < b.N; i++ {
+		buf, err := json.Marshal(resp)
+		if err != nil || len(buf) == 0 {
+			panic("to bytes fail")
+		}
+	}
+}
+
+func BenchmarkHTTPResponseToBytes(b *testing.B) {
+	resp := &HTTPResponse{
+		CompressSrv:               "compress",
+		CompressMinLength:         1024,
+		CompressContentTypeFilter: regexp.MustCompile(`text|javascript|json|wasm|xml|font`),
+		Header: http.Header{
+			"Content-Type": []string{
+				"application/json; charset=UTF-8",
+			},
+			"ETag": []string{
+				`"60-R79m3yeTgBMQWG5Ysx2j_T3gIsM="`,
+			},
+		},
+		GzipBody: make([]byte, 5*1024),
+		BrBody:   make([]byte, 5*1024),
+	}
+	for i := 0; i < b.N; i++ {
+		buf, err := resp.Bytes()
+		if err != nil || len(buf) == 0 {
+			panic("to bytes fail")
+		}
 	}
 }

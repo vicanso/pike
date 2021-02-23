@@ -86,6 +86,9 @@ func init() {
 		if !ok {
 			return false
 		}
+		if len(value) > 1000 {
+			return false
+		}
 		_, err := regexp.Compile(value)
 		return err == nil
 	})

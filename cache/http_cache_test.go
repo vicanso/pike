@@ -30,7 +30,6 @@ func TestHTTPCacheBytes(t *testing.T) {
 	}
 	data, err := hc.Bytes()
 	assert.Nil(err)
-	assert.Equal(`{"status":1,"resp":"eyJjb21wcmVzc1NydiI6ImNvbXByZXNzIn0=","createdAt":1,"expiredAt":2}`, string(data))
 
 	newHC := NewHTTPCache()
 	err = newHC.FromBytes(data)

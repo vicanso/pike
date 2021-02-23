@@ -12,7 +12,7 @@ test-cover:
 	go test -race -coverprofile=test.out ./... && go tool cover --html=test.out
 
 bench:
-	go test -bench=. ./...
+	go test -benchmem -bench=. ./...
 
 lint:
 	golangci-lint run --timeout=2m

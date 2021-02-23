@@ -57,10 +57,9 @@ type (
 		// 压缩服务名称
 		CompressSrv string `json:"compressSrv,omitempty"`
 		// 压缩最小尺寸
-		CompressMinLength int    `json:"compressMinLength,omitempty"`
-		ContentTypeFilter string `json:"contentTypeFilter,omitempty"`
+		CompressMinLength int `json:"compressMinLength,omitempty"`
 		// 压缩数据类型
-		CompressContentTypeFilter *regexp.Regexp `json:"-,omitempty"`
+		CompressContentTypeFilter *regexp.Regexp `json:"-"`
 		// 响应头
 		Header http.Header `json:"header,omitempty"`
 		// 响应状态码
@@ -106,25 +105,124 @@ func NewHTTPResponse(statusCode int, header http.Header, encoding string, data [
 }
 
 // Bytes http response to bytes
-func (resp *HTTPResponse) Bytes() ([]byte, error) {
+func (resp *HTTPResponse) Bytes() (data []byte, err error) {
+	var contentTypeFilter string
 	if resp.CompressContentTypeFilter != nil {
-		resp.ContentTypeFilter = resp.CompressContentTypeFilter.String()
+		contentTypeFilter = resp.CompressContentTypeFilter.String()
 	}
-	return json.Marshal(resp)
+
+	// 压缩服务名称
+	compressSrvBuf := []byte(resp.CompressSrv)
+	compressSrvBufSize := uint32ToBytes(len(compressSrvBuf))
+
+	// 最小压缩尺寸，4个字节
+	compressMinLengthBuf := uint32ToBytes(resp.CompressMinLength)
+
+	// // 压缩类型，4个字节保存长度
+	filterBuf := []byte(contentTypeFilter)
+	filterBufSize := uint32ToBytes(len(filterBuf))
+
+	// 响应头，4个字节保存长度
+	headerBuf, err := json.Marshal(resp.Header)
+	if err != nil {
+		return
+	}
+	headerBufSize := uint32ToBytes(len(headerBuf))
+
+	// 响应码，4个字节
+	statusCodeBuf := uint32ToBytes(resp.StatusCode)
+
+	// gzip，4个字节保存长度
+	gzipBufSize := uint32ToBytes(len(resp.GzipBody))
+
+	// br，4个字节保存长度
+	brBufSize := uint32ToBytes(len(resp.BrBody))
+
+	// raw，4个字节保存长度
+	rawBufSize := uint32ToBytes(len(resp.RawBody))
+
+	return bytes.Join([][]byte{
+		compressSrvBufSize,
+		compressSrvBuf,
+		compressMinLengthBuf,
+		filterBufSize,
+		filterBuf,
+		headerBufSize,
+		headerBuf,
+		statusCodeBuf,
+		gzipBufSize,
+		resp.GzipBody,
+		brBufSize,
+		resp.BrBody,
+		rawBufSize,
+		resp.RawBody,
+	}, []byte("")), nil
+
 }
 
 // FromBytes http response from bytes
 func (resp *HTTPResponse) FromBytes(data []byte) (err error) {
-	err = json.Unmarshal(data, resp)
+	if len(data) == 0 {
+		return
+	}
+	buffer := bytes.NewBuffer(data)
+
+	size, err := readUint32ToInt(buffer)
 	if err != nil {
 		return
 	}
-	if resp.ContentTypeFilter != "" {
-		resp.CompressContentTypeFilter, err = regexp.Compile(resp.ContentTypeFilter)
+	resp.CompressSrv = string(buffer.Next(size))
+
+	resp.CompressMinLength, err = readUint32ToInt(buffer)
+	if err != nil {
+		return
+	}
+
+	size, err = readUint32ToInt(buffer)
+	if err != nil {
+		return
+	}
+	contentTypeFilter := string(buffer.Next(size))
+	if contentTypeFilter != "" {
+		resp.CompressContentTypeFilter, err = regexp.Compile(contentTypeFilter)
 		if err != nil {
 			return
 		}
 	}
+
+	size, err = readUint32ToInt(buffer)
+	if err != nil {
+		return
+	}
+	headerBuf := buffer.Next(size)
+	err = json.Unmarshal(headerBuf, &resp.Header)
+	if err != nil {
+		return
+	}
+
+	resp.StatusCode, err = readUint32ToInt(buffer)
+	if err != nil {
+		return
+	}
+
+	size, err = readUint32ToInt(buffer)
+	if err != nil {
+		return
+	}
+	resp.GzipBody = buffer.Next(size)
+
+	size, err = readUint32ToInt(buffer)
+	if err != nil {
+		return
+	}
+	resp.BrBody = buffer.Next(size)
+
+	size, err = readUint32ToInt(buffer)
+	if err != nil {
+		return
+	}
+	resp.RawBody = buffer.Next(size)
+
 	return
 }
 

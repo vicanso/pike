@@ -27,7 +27,7 @@
 package cache
 
 import (
-	"encoding/json"
+	"bytes"
 	"sync"
 	"time"
 
@@ -67,19 +67,13 @@ type (
 		status    Status
 		chanList  []chan struct{}
 		response  *HTTPResponse
-		createdAt int
-		expiredAt int
-	}
-	httpCacheStore struct {
-		Status    Status `json:"status,omitempty"`
-		Resp      []byte `json:"resp,omitempty"`
-		CreatedAt int    `json:"createdAt,omitempty"`
-		ExpiredAt int    `json:"expiredAt,omitempty"`
+		createdAt int64
+		expiredAt int64
 	}
 )
 
-func nowUnix() int {
-	return int(time.Now().Unix())
+func nowUnix() int64 {
+	return time.Now().Unix()
 }
 
 func (i Status) String() string {
@@ -131,41 +125,62 @@ func (hc *httpCache) Get() (status Status, response *HTTPResponse) {
 }
 
 // Bytes httpcache to bytes
-func (hc *httpCache) Bytes() ([]byte, error) {
-	data := httpCacheStore{
-		Status:    hc.status,
-		CreatedAt: hc.createdAt,
-		ExpiredAt: hc.expiredAt,
-	}
+func (hc *httpCache) Bytes() (data []byte, err error) {
+	statusBuf := uint32ToBytes(int(hc.status))
+
+	var respBuf []byte
+	// 如果有响应数据，则转换
 	if hc.response != nil {
-		resp, err := hc.response.Bytes()
-		if err != nil {
-			return nil, err
-		}
-		data.Resp = resp
-	}
-
-	return json.Marshal(&data)
-}
-
-// FromBytes restore httpcache from bytes
-func (hc *httpCache) FromBytes(data []byte) (err error) {
-	cs := httpCacheStore{}
-	err = json.Unmarshal(data, &cs)
-	if err != nil {
-		return
-	}
-	hc.status = cs.Status
-	resp := &HTTPResponse{}
-	if len(cs.Resp) != 0 {
-		err = resp.FromBytes(cs.Resp)
+		respBuf, err = hc.response.Bytes()
 		if err != nil {
 			return
 		}
 	}
+	respSizeBuf := uint32ToBytes(len(respBuf))
+
+	createdAtBuf := uint64ToBytes(hc.createdAt)
+	expiredAtBuf := uint64ToBytes(hc.expiredAt)
+
+	return bytes.Join([][]byte{
+		statusBuf,
+		respSizeBuf,
+		respBuf,
+		createdAtBuf,
+		expiredAtBuf,
+	}, []byte("")), nil
+}
+
+// FromBytes restore httpcache from bytes
+func (hc *httpCache) FromBytes(data []byte) (err error) {
+	buffer := bytes.NewBuffer(data)
+	status, err := readUint32ToInt(buffer)
+	if err != nil {
+		return
+	}
+	hc.status = Status(status)
+
+	respSize, err := readUint32ToInt(buffer)
+	if err != nil {
+		return
+	}
+	respBuf := buffer.Next(respSize)
+	resp := &HTTPResponse{}
+	err = resp.FromBytes(respBuf)
+	if err != nil {
+		return
+	}
 	hc.response = resp
-	hc.createdAt = cs.CreatedAt
-	hc.expiredAt = cs.ExpiredAt
+
+	hc.createdAt, err = readUint64ToInt64(buffer)
+	if err != nil {
+		return
+	}
+
+	hc.expiredAt, err = readUint64ToInt64(buffer)
+	if err != nil {
+		return
+	}
+
 	return
 }
 
@@ -244,7 +259,7 @@ func (hc *httpCache) HitForPass(ttl int) {
 	if ttl <= 0 {
 		ttl = defaultHitForPassSeconds
 	}
-	hc.expiredAt = nowUnix() + ttl
+	hc.expiredAt = nowUnix() + int64(ttl)
 	hc.status = StatusHitForPass
 	list := hc.chanList
 	hc.chanList = nil
@@ -269,7 +284,7 @@ func (hc *httpCache) Cacheable(resp *HTTPResponse, ttl int) {
 	resp.CompressSrv = compress.BestCompression
 	_ = resp.Compress()
 	hc.createdAt = nowUnix()
-	hc.expiredAt = hc.createdAt + ttl
+	hc.expiredAt = hc.createdAt + int64(ttl)
 	hc.status = StatusHit
 	hc.response = resp
 	list := hc.chanList
@@ -291,7 +306,7 @@ func (hc *httpCache) Cacheable(resp *HTTPResponse, ttl int) {
 func (hc *httpCache) Age() int {
 	hc.mu.RLock()
 	defer hc.mu.RUnlock()
-	return nowUnix() - hc.createdAt
+	return int(nowUnix() - hc.createdAt)
 }
 
 // GetStatus get http cache status
