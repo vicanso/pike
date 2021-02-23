@@ -23,31 +23,51 @@
 package store
 
 import (
-	"os"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/assert"
 )
 
-func TestBadgerStore(t *testing.T) {
+func TestNewRedisStore(t *testing.T) {
 	assert := assert.New(t)
-	badgerStore, err := newBadgerStore(os.TempDir())
+
+	store, err := newRedisStore("redis://user:pwd@127.0.0.1:6379/?db=1&timeout=5s&prefix=test")
 	assert.Nil(err)
-	defer badgerStore.Close()
+	rs := store.(*redisStore)
+	assert.Equal(5*time.Second, rs.timeout)
+	assert.Equal("test", rs.prefix)
+	store.Close()
+
+	store, err = newRedisStore("redis://user:pwd@127.0.0.1:6379,127.0.0.1:6380/?master=master")
+	assert.Nil(err)
+	rs = store.(*redisStore)
+	assert.NotNil(rs.client)
+	assert.Nil(rs.cluster)
+	store.Close()
+
+	store, err = newRedisStore("redis://user:pwd@127.0.0.1:6379,127.0.0.1:6380/?mode=cluster")
+	assert.Nil(err)
+	rs = store.(*redisStore)
+	assert.NotNil(rs.cluster)
+	assert.Nil(rs.client)
+	store.Close()
+
+	store, err = newRedisStore("redis://127.0.0.1:6379/")
+	assert.Nil(err)
 	key := []byte("key")
 	value := []byte("value")
-	_, err = badgerStore.Get(key)
+	_, err = store.Get(key)
 	assert.Equal(ErrNotFound, err)
 
-	err = badgerStore.Set(key, value, time.Second)
+	err = store.Set(key, value, time.Second)
 	assert.Nil(err)
 
-	data, err := badgerStore.Get(key)
+	data, err := store.Get(key)
 	assert.Nil(err)
 	assert.Equal(value, data)
 
-	err = badgerStore.Delete(key)
+	err = store.Delete(key)
 	assert.Nil(err)
-
+	store.Close()
 }

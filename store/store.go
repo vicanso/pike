@@ -73,6 +73,11 @@ func NewStore(storeURL string) (store Store, err error) {
 		if err != nil {
 			return
 		}
+	case "redis":
+		store, err = newRedisStore(storeURL)
+		if err != nil {
+			return
+		}
 	}
 	// 保存store
 	if store != nil {

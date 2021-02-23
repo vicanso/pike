@@ -101,6 +101,10 @@ func NewDispatcher(option DispatcherOption) *dispatcher {
 	if option.Size <= 0 {
 		size = zoneSize * 100
 	}
+	// 如果配置lru缓存数量较小，则zone的空间调小
+	if size < 1024 {
+		zoneSize = 8
+	}
 
 	// 按zoneSize与size创建二维缓存，存放的是LRU缓存实例
 	lruSize := size / zoneSize

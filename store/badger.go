@@ -65,7 +65,7 @@ func (bl *badgerLogger) Debugf(format string, args ...interface{}) {
 }
 
 // newBadgerStore create a new badger store
-func newBadgerStore(path string) (*badgerStore, error) {
+func newBadgerStore(path string) (Store, error) {
 	options := badger.DefaultOptions(path)
 	// 为了更高的性能，数据不压缩
 	options.Compression = badgerOptions.None
@@ -109,7 +109,7 @@ func (bs *badgerStore) Set(key []byte, data []byte, ttl time.Duration) (err erro
 	})
 }
 
-// Delete delete data from store
+// Delete delete data from badger
 func (bs *badgerStore) Delete(key []byte) (err error) {
 	return bs.db.Update(func(txn *badger.Txn) error {
 		return txn.Delete(key)

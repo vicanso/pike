@@ -215,7 +215,8 @@ func (hc *httpCache) get() (status Status, done chan struct{}, data *HTTPRespons
 	if hc.status == StatusUnknown {
 		// 如果从缓存中读取失败，暂忽略出错信息
 		err := hc.initFromStore()
-		if err != nil {
+		// 如果是无数据，则不输出日志
+		if err != nil && err != store.ErrNotFound {
 			log.Default().Error("init from store fail",
 				zap.Error(err),
 			)
