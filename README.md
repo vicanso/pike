@@ -40,16 +40,6 @@ docker run -it --rm \
     vicanso/pike:4.0.0-alpha --config=etcd://172.16.183.177:2379/pike --admin=:9013
 ```
 
-## build
-
-编译需要依赖`packr2`，需要先执行脚本安装：
-
-```bash
-go get -u github.com/gobuffalo/packr/v2/packr2 
-```
-
-后执行`make build`则可编译当前系统版本程序
-
 ## TODO
 
 - 缓存查询（如果缓存量较大，有可能导致查询性能较差，暂时未支持）
