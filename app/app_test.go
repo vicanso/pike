@@ -10,10 +10,10 @@ import (
 func TestSetSetBuildInfo(t *testing.T) {
 	assert := assert.New(t)
 	id := "123"
-	SetBuildInfo("20201206.051341", id)
+	SetBuildInfo("2021-02-27T01:41:32.416Z", id, "version", "")
 
 	assert.Equal(id, commitID)
-	assert.Equal("2020-12-06 05:13:41 +0000 UTC", buildedAt.UTC().String())
+	assert.Equal("2021-02-27 01:41:32.416 +0000 UTC", buildedAt.UTC().String())
 }
 
 func TestUpdateCPUUsage(t *testing.T) {

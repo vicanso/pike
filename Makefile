@@ -24,7 +24,7 @@ cp-asset:
 	rm -rf asset/web && cp -rf web asset/web
 
 build:
-	go build -ldflags "-X main.BuildedAt=`date -u +%Y%m%d.%H%M%S` -X main.CommitID=`git rev-parse --short HEAD`" -o pike
+	go build -o pike
 
 build-linux:
 	GOOS=linux GOARCH=amd64 make build && mv pike pike-linux

@@ -29,7 +29,6 @@ import (
 	"time"
 
 	"github.com/shirou/gopsutil/v3/process"
-	"github.com/vicanso/pike/asset"
 	"github.com/vicanso/pike/log"
 	"go.uber.org/atomic"
 	"go.uber.org/zap"
@@ -55,6 +54,7 @@ type Info struct {
 
 var buildedAt time.Time
 var commitID string
+var version string
 var startedAt = time.Now()
 var currentProcess *process.Process
 var cpuUsage = atomic.NewInt32(-1)
@@ -71,9 +71,13 @@ func init() {
 }
 
 // SetBuildInfo set build info
-func SetBuildInfo(build, id string) {
-	buildedAt, _ = time.Parse("20060102.150405", build)
+func SetBuildInfo(build, id, ver, buildBy string) {
+	buildedAt, _ = time.Parse(time.RFC3339, build)
 	commitID = id
+	if len(id) > 7 {
+		commitID = id[0:7]
+	}
+	version = ver
 }
 
 const MB = 1024 * 1024
@@ -84,8 +88,7 @@ func bytesToMB(value uint64) string {
 }
 
 func GetVersion() string {
-	version, _ := asset.ReadFile("version")
-	return string(version)
+	return version
 }
 
 // GetInfo get application info

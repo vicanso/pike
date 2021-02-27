@@ -25,10 +25,10 @@ import (
 )
 
 var (
-	// BuildedAt application builded at ???
-	BuildedAt = "" // nolint
-	// CommitID git commit id
-	CommitID = "" // nolint
+	version = "dev"
+	commit  = "none"
+	date    = "unknown"
+	builtBy = "unknown"
 )
 
 // alarmURL 告警发送的地址
@@ -50,7 +50,7 @@ func init() {
 		value := fmt.Sprintf(format, args...)
 		log.Default().Info(value)
 	}))
-	app.SetBuildInfo(BuildedAt, CommitID)
+	app.SetBuildInfo(date, commit, version, builtBy)
 	hostname, _ := os.Hostname()
 	alarmTemplate = `{
 		"application": "pike",
