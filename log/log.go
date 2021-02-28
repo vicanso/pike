@@ -93,6 +93,8 @@ func newLoggerX(outputPath string) *zap.Logger {
 	// 在一秒钟内, 如果某个级别的日志输出量超过了 Initial, 那么在超过之后, 每 Thereafter 条日志才会输出一条, 其余的日志都将被删除
 	// 如果需要输出所有日志，则设置为nil
 	c.Sampling = nil
+	// pike的日志比较简单，因此不添加caller
+	c.DisableCaller = true
 
 	c.EncoderConfig.EncodeTime = zapcore.ISO8601TimeEncoder
 	// 只针对panic 以上的日志增加stack trace

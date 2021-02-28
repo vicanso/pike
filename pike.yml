@@ -31,8 +31,7 @@ locations:
   proxyTimeout: 30s
   remark: 测试location
 servers:
-- logFormat: '{remote} {when-iso} {:proxyTarget} {method} {uri} {proto} {status} {<x-status}
-    {size-human} {referer} {userAgent}'
+- logFormat: '{when-iso} {real-ip} {remote} {:proxyTarget} {host} {method} {uri} {proto} {status} {<x-status} {size-human} {referer} {userAgent}'
   addr: :3015
   locations:
   - locationTest
