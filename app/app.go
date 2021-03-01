@@ -26,6 +26,7 @@ import (
 	"os"
 	"runtime"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/shirou/gopsutil/v3/process"
@@ -72,7 +73,7 @@ func init() {
 
 // SetBuildInfo set build info
 func SetBuildInfo(build, id, ver, buildBy string) {
-	buildedAt, _ = time.Parse(time.RFC3339, build)
+	buildedAt, _ = time.Parse(time.RFC3339, strings.Replace(build, " ", "T", 1))
 	commitID = id
 	if len(id) > 7 {
 		commitID = id[0:7]
