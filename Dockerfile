@@ -5,6 +5,7 @@ COPY ./ /pike
 RUN apk update \
   && apk add git make \
   && cd /pike \
+  && env \
   && make cp-asset \
   && CGO_ENABLED=0 make build
 

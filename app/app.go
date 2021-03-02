@@ -73,7 +73,11 @@ func init() {
 
 // SetBuildInfo set build info
 func SetBuildInfo(build, id, ver, buildBy string) {
-	buildedAt, _ = time.Parse(time.RFC3339, strings.Replace(build, " ", "T", 1))
+	if strings.Contains(build, "UTC") {
+		buildedAt, _ = time.Parse(time.UnixDate, build)
+	} else {
+		buildedAt, _ = time.Parse(time.RFC3339, build)
+	}
 	commitID = id
 	if len(id) > 7 {
 		commitID = id[0:7]
