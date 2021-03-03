@@ -13,4 +13,6 @@ func TestMemHash(t *testing.T) {
 	v := MemHash([]byte(data))
 	assert.Equal(v, MemHash([]byte(data)))
 	assert.Equal(v, MemHashString(data))
+
+	assert.NotEqual(v, MemHash([]byte("abc")))
 }

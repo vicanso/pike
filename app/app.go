@@ -73,8 +73,8 @@ func init() {
 
 // SetBuildInfo set build info
 func SetBuildInfo(build, id, ver, buildBy string) {
-	if strings.Contains(build, "UTC") {
-		buildedAt, _ = time.Parse(time.UnixDate, build)
+	if strings.Contains(build, ".") && len(build) == 15 {
+		buildedAt, _ = time.Parse("20060102.150405", build)
 	} else {
 		buildedAt, _ = time.Parse(time.RFC3339, build)
 	}
