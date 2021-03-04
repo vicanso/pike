@@ -175,7 +175,9 @@ func TestConvertConfig(t *testing.T) {
 func TestDefaultServers(t *testing.T) {
 	assert := assert.New(t)
 
-	defer Close()
+	defer func() {
+		_ = Close()
+	}()
 
 	assert.Nil(Get(""))
 
