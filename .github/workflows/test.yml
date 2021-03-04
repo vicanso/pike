@@ -57,9 +57,6 @@ jobs:
     steps:
     - name: Check out code into the Go module directory
       uses: actions/checkout@v2
-    - name: Set output
-      id: vars
-      run: echo ::set-output name=tag::${GITHUB_REF#refs/*/}
     - name: Set up QEMU
       uses: docker/setup-qemu-action@v1
     - name: Set up Docker Buildx
@@ -75,5 +72,6 @@ jobs:
       with:
         push: true 
         tags: ${{ secrets.DOCKER_HUB_USERNAME }}/pike:latest
+        build-args: COMMIT=${{ git_hash=$(git rev-parse --short "$GITHUB_SHA") }}
     - name: Image digest
       run: echo ${{ steps.docker_build.outputs.digest }}
