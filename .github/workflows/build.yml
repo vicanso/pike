@@ -30,7 +30,7 @@ jobs:
       with:
         push: true
         tags: ${{ secrets.DOCKER_HUB_USERNAME }}/pike:${{ steps.vars.outputs.tag }}
-        build-args: GITHUB_SHA=${{ GITHUB_SHA }},VERSION=${{ steps.vars.outputs.tag }}
+        build-args: GITHUB_SHA=${{ env.GITHUB_SHA }},VERSION=${{ steps.vars.outputs.tag }}
     - name: Image digest
       run: echo ${{ steps.docker_build.outputs.digest }}
   goreleaser:

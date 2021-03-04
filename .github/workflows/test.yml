@@ -72,6 +72,6 @@ jobs:
       with:
         push: true 
         tags: ${{ secrets.DOCKER_HUB_USERNAME }}/pike:latest
-        build-args: GITHUB_SHA=${{ GITHUB_SHA }}
+        build-args: GITHUB_SHA=${{ env.GITHUB_SHA }}
     - name: Image digest
       run: echo ${{ steps.docker_build.outputs.digest }}
