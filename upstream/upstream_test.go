@@ -49,17 +49,17 @@ func TestNewTargetPicker(t *testing.T) {
 
 func TestUpstreamServer(t *testing.T) {
 	assert := assert.New(t)
-	addr := "https://www.baidu.com"
+	addr := "https://www.bing.com/"
 	server := NewUpstreamServer(UpstreamServerOption{
 		Policy:      us.PolicyLeastconn,
-		Name:        "baidu",
+		Name:        "bing",
 		HealthCheck: "/",
 		Servers: []UpstreamServerConfig{
 			{
 				Addr: addr,
 			},
 			{
-				Addr:   "https://baidu.com",
+				Addr:   "https://bing.com/",
 				Backup: true,
 			},
 		},
