@@ -24,12 +24,8 @@ package server
 
 import (
 	"bytes"
-	"embed"
 	"encoding/json"
-	"io"
 	"net/http"
-	"os"
-	"path"
 	"time"
 
 	"github.com/vicanso/elton"
@@ -52,10 +48,6 @@ type (
 		User     string
 		Password string
 		Prefix   string
-	}
-	staticFile struct {
-		prefix string
-		fs     embed.FS
 	}
 	loginParams struct {
 		Account  string `json:"account,omitempty"`
@@ -80,44 +72,7 @@ var cacheKeyIsNil = util.NewError("The key of cache can't be null", http.StatusB
 
 const jwtCookie = "pike"
 
-var webAsset = &staticFile{
-	prefix: "web/",
-	fs:     asset.GetFS(),
-}
-
-func (sf *staticFile) getFile(file string) string {
-	return path.Join(sf.prefix + file)
-}
-
-// Exists Test whether or not the given path exists
-func (sf *staticFile) Exists(file string) bool {
-	f, err := sf.fs.Open(sf.getFile(file))
-	if err != nil {
-		return false
-	}
-	defer f.Close()
-	return true
-}
-
-// Get Get data from file
-func (sf *staticFile) Get(file string) ([]byte, error) {
-	return sf.fs.ReadFile(sf.getFile(file))
-}
-
-// Stat Get file's stat
-func (sf *staticFile) Stat(file string) os.FileInfo {
-	// 文件打包至程序中，因此无file info
-	return nil
-}
-
-// NewReader Create a reader for file
-func (sf *staticFile) NewReader(file string) (io.Reader, error) {
-	buf, err := sf.Get(file)
-	if err != nil {
-		return nil, err
-	}
-	return bytes.NewReader(buf), nil
-}
+var webAsset = middleware.NewEmbedStaticFS(asset.GetFS(), "web")
 
 func sendFile(c *elton.Context, file string) (err error) {
 	data, err := webAsset.Get(file)
