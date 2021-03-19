@@ -1,5 +1,7 @@
 # pike admin
 
+最新版本flutter2已默认支持web，使用最新版本则可。
+
 默认stable分支不支持web，因此需要修改`packages/flutter_tools/lib/src/features.dart`的配置。
 
 ```bash
