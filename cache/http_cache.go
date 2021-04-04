@@ -205,7 +205,7 @@ func (hc *httpCache) saveToStore() (err error) {
 	if err != nil {
 		return
 	}
-	ttl := time.Duration(hc.expiredAt-hc.createdAt) * time.Second
+	ttl := time.Duration(hc.expiredAt-nowUnix()) * time.Second
 	return hc.store.Set(hc.key, data, ttl)
 }
 

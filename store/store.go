@@ -78,6 +78,11 @@ func NewStore(storeURL string) (store Store, err error) {
 		if err != nil {
 			return
 		}
+	case "mongodb":
+		store, err = newMongoStore(storeURL)
+		if err != nil {
+			return
+		}
 	}
 	// 保存store
 	if store != nil {
