@@ -69,5 +69,13 @@ func TestNewRedisStore(t *testing.T) {
 
 	err = store.Delete(key)
 	assert.Nil(err)
+
+	// 数据过期
+	err = store.Set(key, value, 10*time.Millisecond)
+	assert.Nil(err)
+	time.Sleep(20 * time.Millisecond)
+	_, err = store.Get(key)
+	assert.Equal(ErrNotFound, err)
+
 	store.Close()
 }
