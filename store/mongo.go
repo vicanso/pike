@@ -24,7 +24,6 @@ package store
 
 import (
 	"context"
-	"fmt"
 	"net/url"
 	"strings"
 	"time"
@@ -147,7 +146,6 @@ func (ms *mongoStore) Set(key []byte, data []byte, ttl time.Duration) (err error
 	ctx, cancel := context.WithTimeout(context.Background(), ms.timeout)
 	defer cancel()
 	upsert := true
-	fmt.Println(time.Now().Add(ttl))
 	_, err = ms.collection().UpdateOne(ctx, &mongoCache{
 		Key: string(key),
 	}, bson.M{
