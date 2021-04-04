@@ -64,6 +64,18 @@ Flags:
 <img src="./images/add-cache.png"/>
 </p>
 
+### 缓存的Store配置
+
+- `badger`：使用badger缓存数据，配置格式为：`badger:///tmp/badger`，表示将数据缓存在`/tmp/badger`目录下。此模式下缓存会以文件的形式持久化，可减少LRU缓存的数据避免占用过多的内存。需要注意如果是启动多个实例，那么多实例间的缓存无法共享
+- `redis`：使用redis缓存数据，配置格式为：`redis://[:pwd@]host1:port1[,...hostN:portN]/[?mode=cluster&timeout=3s]`。密码`pwd`为只选参数，如果是`cluster`或者`sentinel`则指定query中的mode参数。对于`sentinel`还需要指定master参数。
+- `mongodb`：`mongodb://[username:password@]host1[:port1][,...hostN[:portN]][/[defaultauthdb][?options]]`。使用mongodb的connection string形式，增加支持timeout参数指定请求超时。如`mongodb://localhost:27017/pike?timeout=5s`，连接localhost:27017并指定使用db:pike保存缓存数据
+
+### redis配置
+
+- `普通模式`：`redis://:pwd@127.0.0.1:6379/?db=1&timeout=5s&prefix=test`，连接本地127.0.0.1:6379的redis，密码为pwd，使用db:1，并设置超时时间为5秒，key的前缀为test
+- `sentinel`：`redis://:pwd@127.0.0.1:6379,127.0.0.1:6380/?master=master&mode=sentinel&timeout=5s&prefix=test`，以sentinel的模式连接redis，密码为pwd，master name为master，并设置超时时间为5秒，key的前缀为test
+- `cluster`：`redis://:pwd@127.0.0.1:6379,127.0.0.1:6380/?mode=cluster&timeout=5s&prefix=test`，以cluster的模式连接redis，密码为pwd，并设置超时时间为5秒，key的前缀为test
+
 ## Upstream配置
 
 - `Name` upstream的配置名称，用于区分每个upstream配置

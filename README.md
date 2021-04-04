@@ -13,6 +13,7 @@
 - 支持upstream检测失败时回调告警，可及时获取异常upstream信息
 - 支持自定义日志，可配置按日期与大小分割日志并压缩
 - LUR与持久化存储（可选）配合使用，可根据内存使用选择更小的LRU缓存并增加持久化存储的方式
+- 持久化存储支持以下形式：badger(文件)、redis以及mongodb
 
 <p align="center">
 <img src="./docs/images/home.png"/>
