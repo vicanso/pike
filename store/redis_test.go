@@ -45,12 +45,6 @@ func TestNewRedisStore(t *testing.T) {
 	assert.NotNil(rs.client)
 	store.Close()
 
-	store, err = newRedisStore("redis://user:pwd@127.0.0.1:6379,127.0.0.1:6380/")
-	assert.Nil(err)
-	rs = store.(*redisStore)
-	assert.Nil(rs.client)
-	store.Close()
-
 	store, err = newRedisStore("redis://127.0.0.1:6379/")
 	assert.Nil(err)
 	key := []byte("key")
