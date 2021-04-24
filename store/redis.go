@@ -24,7 +24,6 @@ package store
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"net/url"
 	"strconv"
@@ -37,8 +36,7 @@ import (
 )
 
 type redisStore struct {
-	client  *redis.Client
-	cluster *redis.ClusterClient
+	client redis.UniversalClient
 	// timeout 超时设置
 	timeout time.Duration
 	// prefix key的前缀
@@ -76,36 +74,16 @@ func newRedisStore(connectionURI string) (store Store, err error) {
 	prefix := urlInfo.Query().Get("prefix")
 
 	addrs := strings.Split(urlInfo.Host, ",")
-	var client *redis.Client
-	var cluster *redis.ClusterClient
-	switch urlInfo.Query().Get("mode") {
-	case "cluster":
-		cluster = redis.NewClusterClient(&redis.ClusterOptions{
-			Addrs:    addrs,
-			Username: user,
-			Password: password,
-		})
-	case "sentinel":
-		master := urlInfo.Query().Get("master")
-		if master == "" {
-			err = errors.New("master of sentinel cat not be nil")
-			return
-		}
-		client = redis.NewFailoverClient(&redis.FailoverOptions{
-			MasterName:    master,
-			SentinelAddrs: addrs,
-			Username:      user,
-			Password:      password,
-			DB:            db,
-		})
-	default:
-		client = redis.NewClient(&redis.Options{
-			Addr:     addrs[0],
-			Username: user,
-			Password: password,
-			DB:       db,
-		})
-	}
+	master := urlInfo.Query().Get("master")
+
+	client := redis.NewUniversalClient(&redis.UniversalOptions{
+		Addrs:            addrs,
+		Username:         user,
+		Password:         password,
+		DB:               db,
+		SentinelPassword: password,
+		MasterName:       master,
+	})
 
 	// 默认3秒超时
 	if timeout == 0 {
@@ -113,7 +91,6 @@ func newRedisStore(connectionURI string) (store Store, err error) {
 	}
 	store = &redisStore{
 		client:  client,
-		cluster: cluster,
 		timeout: timeout,
 		prefix:  prefix,
 	}
@@ -126,15 +103,10 @@ func (rs *redisStore) getKey(key []byte) string {
 
 // Get get data from redis
 func (rs *redisStore) Get(key []byte) (data []byte, err error) {
-	var cmd *redis.StringCmd
 	ctx, cancel := context.WithTimeout(context.Background(), rs.timeout)
 	defer cancel()
 	k := rs.getKey(key)
-	if rs.client != nil {
-		cmd = rs.client.Get(ctx, k)
-	} else {
-		cmd = rs.cluster.Get(ctx, k)
-	}
+	cmd := rs.client.Get(ctx, k)
 	data, err = cmd.Bytes()
 	if err != nil {
 		if err == redis.Nil {
@@ -150,12 +122,7 @@ func (rs *redisStore) Set(key []byte, data []byte, ttl time.Duration) (err error
 	ctx, cancel := context.WithTimeout(context.Background(), rs.timeout)
 	defer cancel()
 	k := rs.getKey(key)
-	var cmd *redis.StatusCmd
-	if rs.client != nil {
-		cmd = rs.client.Set(ctx, k, data, ttl)
-	} else {
-		cmd = rs.cluster.Set(ctx, k, data, ttl)
-	}
+	cmd := rs.client.Set(ctx, k, data, ttl)
 	return cmd.Err()
 }
 
@@ -164,19 +131,11 @@ func (rs *redisStore) Delete(key []byte) (err error) {
 	ctx, cancel := context.WithTimeout(context.Background(), rs.timeout)
 	defer cancel()
 	k := rs.getKey(key)
-	var cmd *redis.IntCmd
-	if rs.client != nil {
-		cmd = rs.client.Del(ctx, k)
-	} else {
-		cmd = rs.cluster.Del(ctx, k)
-	}
+	cmd := rs.client.Del(ctx, k)
 	return cmd.Err()
 }
 
 // Close close redis
 func (rs *redisStore) Close() error {
-	if rs.client != nil {
-		return rs.client.Close()
-	}
-	return rs.cluster.Close()
+	return rs.client.Close()
 }

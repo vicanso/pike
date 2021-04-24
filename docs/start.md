@@ -67,7 +67,7 @@ Flags:
 ### 缓存的Store配置
 
 - `badger`：使用badger缓存数据，配置格式为：`badger:///tmp/badger`，表示将数据缓存在`/tmp/badger`目录下。此模式下缓存会以文件的形式持久化，可减少LRU缓存的数据避免占用过多的内存。需要注意如果是启动多个实例，那么多实例间的缓存无法共享
-- `redis`：使用redis缓存数据，配置格式为：`redis://[:pwd@]host1:port1[,...hostN:portN]/[?mode=cluster&timeout=3s]`。密码`pwd`为只选参数，如果是`cluster`或者`sentinel`则指定query中的mode参数。对于`sentinel`还需要指定master参数。
+- `redis`：使用redis缓存数据，配置格式为：`redis://[:pwd@]host1:port1[,...hostN:portN]/[?timeout=3s&master=master]`。密码`pwd`为只选参数。对于`sentinel`还需要指定master参数。
 - `mongodb`：使用mongodb缓存数据，配置格式为mongodb的connection string形式，如：`mongodb://[username:password@]host1[:port1][,...hostN[:portN]][/[defaultauthdb][?options]]`，增加支持timeout参数指定请求超时。如`mongodb://localhost:27017/pike?timeout=5s`，连接localhost:27017并指定使用db:pike保存缓存数据
 
 ### redis配置

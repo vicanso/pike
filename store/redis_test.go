@@ -43,13 +43,11 @@ func TestNewRedisStore(t *testing.T) {
 	assert.Nil(err)
 	rs = store.(*redisStore)
 	assert.NotNil(rs.client)
-	assert.Nil(rs.cluster)
 	store.Close()
 
-	store, err = newRedisStore("redis://user:pwd@127.0.0.1:6379,127.0.0.1:6380/?mode=cluster")
+	store, err = newRedisStore("redis://user:pwd@127.0.0.1:6379,127.0.0.1:6380/")
 	assert.Nil(err)
 	rs = store.(*redisStore)
-	assert.NotNil(rs.cluster)
 	assert.Nil(rs.client)
 	store.Close()
 
