@@ -26,6 +26,7 @@ import (
 	"net/http"
 	"regexp"
 	"strconv"
+	"strings"
 
 	"github.com/vicanso/elton"
 	"github.com/vicanso/hes"
@@ -49,7 +50,7 @@ func getCacheMaxAge(header http.Header) int {
 		return 0
 	}
 	// 如果没有设置cache-control，则不可缓存
-	cc := header.Get(elton.HeaderCacheControl)
+	cc := strings.Join(header.Values(elton.HeaderCacheControl), ",")
 	if cc == "" {
 		return 0
 	}
