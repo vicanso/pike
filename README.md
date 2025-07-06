@@ -1,5 +1,7 @@
 # pike
 
+此项目已不再维护，建议使用基于pingora的[pingap](https://github.com/vicanso/pingap)项目。
+
 [![Build Status](https://github.com/vicanso/pike/workflows/Test/badge.svg)](https://github.com/vicanso/pike/actions)
 
 与varnish类似的HTTP缓存服务器，主要的特性如下：
